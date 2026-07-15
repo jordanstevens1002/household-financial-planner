@@ -52,7 +52,7 @@ jobs:
       - run: cp .env.example .env
       - run: docker compose config --quiet
       - run: docker build --target runtime --tag household-financial-planner-api:${{ github.sha }} ./api
-      - uses: aquasecurity/trivy-action@0.33.1
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: household-financial-planner-api:${{ github.sha }}
           format: table
@@ -72,4 +72,3 @@ jobs:
           python-version: "3.12"
       - run: pip install ".[test]" pip-audit
       - run: pip-audit
-
