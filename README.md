@@ -29,7 +29,14 @@ Tests and evaluation metrics are mandatory in every phase. A phase is not comple
 
 ## Running the application
 
-Docker-based local installation will be added in Phase 1. Until then, this repository contains the governing project specification only.
+Copy `.env.example` to `.env`, replace every placeholder secret and OIDC value, then run:
+
+```bash
+docker compose up --build
+```
+
+The API is served at `http://localhost:8000` and Appsmith at `http://localhost:8080`.
+Development authentication remains disabled unless `ALLOW_DEVELOPMENT_AUTH=true` is set explicitly.
 
 ## Contributing
 
