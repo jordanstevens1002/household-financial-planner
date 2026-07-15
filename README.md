@@ -8,7 +8,7 @@ The project is in its initial setup phase. The detailed product and architecture
 
 The planned stack is:
 
-- Python and FastAPI for APIs and financial calculations;
+- Python 3.14 and FastAPI for APIs and financial calculations;
 - PostgreSQL, SQLAlchemy and Alembic for durable data and migrations;
 - Appsmith Community Edition for the initial user interface; and
 - Docker Compose for self-hosted deployment.
@@ -29,7 +29,19 @@ Tests and evaluation metrics are mandatory in every phase. A phase is not comple
 
 ## Running the application
 
-Docker-based local installation will be added in Phase 1. Until then, this repository contains the governing project specification only.
+Copy `.env.example` to `.env`, replace every placeholder secret and OIDC value, then run:
+
+```bash
+docker compose up --build
+```
+
+The API is served at `http://localhost:8000` and Appsmith at `http://localhost:8080`.
+Development authentication remains disabled unless `ALLOW_DEVELOPMENT_AUTH=true` is set explicitly.
+
+Application configuration is loaded from environment variables through `pydantic-settings`.
+API logs are structured JSON by default; set `LOG_FORMAT=console` for local human-readable
+output and use `LOG_LEVEL` to select `DEBUG`, `INFO`, `WARNING`, `ERROR` or `CRITICAL`.
+Every API response includes an `X-Request-ID`, which is also attached to its request log.
 
 ## Contributing
 

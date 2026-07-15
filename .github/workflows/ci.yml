@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  api-quality:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: household_finance_test
+          POSTGRES_USER: household_finance
+          POSTGRES_PASSWORD: test-only-password
+        options: >-
+          --health-cmd "pg_isready -U household_finance -d household_finance_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 5432:5432
+    defaults:
+      run:
+        working-directory: api
+    env:
+      DATABASE_URL: postgresql+asyncpg://household_finance:test-only-password@localhost:5432/household_finance_test
+      OIDC_ISSUER: https://identity.example.com/
+      OIDC_AUDIENCE: household-financial-planner
+      OIDC_JWKS_URL: https://identity.example.com/.well-known/jwks.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: api/pyproject.toml
+      - run: pip install ".[test]"
+      - run: sh scripts/check.sh
+      - run: alembic upgrade head
+      - run: alembic check
+
+  containers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cp .env.example .env
+      - run: docker compose config --quiet
+      - run: docker build --target runtime --tag household-financial-planner-api:${{ github.sha }} ./api
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: household-financial-planner-api:${{ github.sha }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: pip install ".[test]" pip-audit
+      - run: pip-audit
