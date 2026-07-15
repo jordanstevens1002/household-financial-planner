@@ -2,6 +2,8 @@
 
 Phase 1 is complete only when all of the following are demonstrated in its pull request.
 
+The API runtime and all Python quality gates use Python 3.14.
+
 | Area | Metric | Required threshold |
 |---|---|---:|
 | Correctness | Automated unit and integration tests | 100% passing |
@@ -15,4 +17,3 @@ Phase 1 is complete only when all of the following are demonstrated in its pull 
 | Performance | Warm liveness endpoint, local container | p95 below 250 ms over 100 requests |
 
 Test results and any exceptions must be recorded in the Phase 1 pull request. A missed threshold blocks merge.
-

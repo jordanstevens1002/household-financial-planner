@@ -8,7 +8,7 @@ The project is in its initial setup phase. The detailed product and architecture
 
 The planned stack is:
 
-- Python and FastAPI for APIs and financial calculations;
+- Python 3.14 and FastAPI for APIs and financial calculations;
 - PostgreSQL, SQLAlchemy and Alembic for durable data and migrations;
 - Appsmith Community Edition for the initial user interface; and
 - Docker Compose for self-hosted deployment.

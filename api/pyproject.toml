@@ -7,7 +7,7 @@ name = "household-financial-planner-api"
 version = "0.1.0"
 description = "API and calculation service for Household Financial Planner"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
   "alembic>=1.13,<2",
   "asyncpg>=0.29,<1",
@@ -46,6 +46,6 @@ select = ["E", "F", "I", "B", "UP", "ASYNC"]
 ignore = ["B008"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.14"
 strict = true
 plugins = ["pydantic.mypy"]
