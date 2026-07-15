@@ -31,7 +31,7 @@ class Household(Base):
     currency: Mapped[str] = mapped_column(String(3), default="AUD")
     jurisdiction: Mapped[str | None] = mapped_column(String(50))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    memberships: Mapped[list["HouseholdMembership"]] = relationship(cascade="all, delete-orphan")
+    memberships: Mapped[list[HouseholdMembership]] = relationship(cascade="all, delete-orphan")
 
 
 class HouseholdMembership(Base):

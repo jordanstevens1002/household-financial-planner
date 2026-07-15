@@ -1,14 +1,21 @@
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from time import perf_counter
 from typing import Annotated
 
+import structlog
 from fastapi import Depends, FastAPI, HTTPException, Query, status
+from fastapi.requests import Request
+from fastapi.responses import Response
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.middleware.base import RequestResponseEndpoint
 
+from app.config import get_settings
 from app.database import get_session
 from app.dependencies import current_user, require_household_role
+from app.logging import configure_logging, get_logger
 from app.models import (
     ApplicationUser,
     Household,
@@ -27,13 +34,51 @@ from app.schemas import (
     UserRead,
 )
 
+settings = get_settings()
+configure_logging(settings)
+logger = get_logger(component="api")
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    yield
+    logger.info("application_started", version="0.1.0")
+    try:
+        yield
+    finally:
+        logger.info("application_stopped")
 
 
 app = FastAPI(title="Household Financial Planner API", version="0.1.0", lifespan=lifespan)
+
+
+@app.middleware("http")
+async def log_request(request: Request, call_next: RequestResponseEndpoint) -> Response:
+    request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    structlog.contextvars.clear_contextvars()
+    structlog.contextvars.bind_contextvars(
+        request_id=request_id,
+        http_method=request.method,
+        http_path=request.url.path,
+    )
+    started_at = perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        logger.exception(
+            "request_failed",
+            duration_ms=round((perf_counter() - started_at) * 1000, 2),
+        )
+        raise
+    else:
+        logger.info(
+            "request_completed",
+            status_code=response.status_code,
+            duration_ms=round((perf_counter() - started_at) * 1000, 2),
+        )
+        response.headers["X-Request-ID"] = request_id
+        return response
+    finally:
+        structlog.contextvars.clear_contextvars()
 
 
 @app.get("/health/live", tags=["health"])

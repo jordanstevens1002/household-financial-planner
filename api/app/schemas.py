@@ -49,7 +49,7 @@ class PersonCreate(BaseModel):
     notes: str | None = Field(default=None, max_length=2000)
 
     @model_validator(mode="after")
-    def dates_are_ordered(self) -> "PersonCreate":
+    def dates_are_ordered(self) -> PersonCreate:
         if self.effective_to and self.effective_to < self.effective_from:
             raise ValueError("effective_to must not precede effective_from")
         return self

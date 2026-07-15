@@ -25,6 +25,7 @@ services:
       OIDC_JWKS_URL: ${OIDC_JWKS_URL}
       ALLOW_DEVELOPMENT_AUTH: ${ALLOW_DEVELOPMENT_AUTH:-false}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
     ports:
       - "8000:8000"
     depends_on:

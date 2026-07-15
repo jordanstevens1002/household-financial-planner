@@ -38,6 +38,11 @@ docker compose up --build
 The API is served at `http://localhost:8000` and Appsmith at `http://localhost:8080`.
 Development authentication remains disabled unless `ALLOW_DEVELOPMENT_AUTH=true` is set explicitly.
 
+Application configuration is loaded from environment variables through `pydantic-settings`.
+API logs are structured JSON by default; set `LOG_FORMAT=console` for local human-readable
+output and use `LOG_LEVEL` to select `DEBUG`, `INFO`, `WARNING`, `ERROR` or `CRITICAL`.
+Every API response includes an `X-Request-ID`, which is also attached to its request log.
+
 ## Contributing
 
 Contribution guidance, security reporting and the full development workflow will be added as the implementation foundation is established.

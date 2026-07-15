@@ -1,11 +1,17 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import AnyHttpUrl, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        case_sensitive=False,
+    )
 
     app_name: str = "Household Financial Planner API"
     database_url: str = (
@@ -17,7 +23,8 @@ class Settings(BaseSettings):
         default=AnyHttpUrl("https://identity.example.com/.well-known/jwks.json")
     )
     allow_development_auth: bool = False
-    log_level: str = "INFO"
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+    log_format: Literal["json", "console"] = "json"
 
 
 @lru_cache
