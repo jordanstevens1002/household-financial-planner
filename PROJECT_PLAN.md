@@ -67,6 +67,14 @@ Users must be able to configure:
 
 Do not hard-code named people, property names, locations or loan values in application logic.
 
+Do not hard-code a deployment-wide currency or silently persist a jurisdictional currency
+default. Household currency must be selected explicitly. Child financial records may inherit
+that household currency while still allowing an explicit override for cross-currency assets.
+
+Do not convert unknown financial values into zero or unknown provenance into an estimate/fact.
+Inputs such as debt balances and observed-versus-estimated status must be explicit whenever
+omission would change the financial meaning of a record.
+
 ### Practical limits
 
 The schema should not impose an artificial property limit.

@@ -14,6 +14,8 @@ and application logging uses `structlog`.
 | Ownership | Dated totals and incomplete-record warnings | tested at 100%, below and above |
 | Backdating | Historical purchase and current snapshot workflows | both persist atomically |
 | Flexibility | Property without loan or complete address | accepted |
+| Currency | Household selection and property inheritance/override | no jurisdictional default |
+| Provenance | Estimate status and known aggregate debt | explicit, never silently assumed |
 | Performance | Warm property list endpoint, local container | p95 below 300 ms over 100 requests |
 
 Test results and exceptions must be recorded in the Phase 2 pull request. A missed threshold

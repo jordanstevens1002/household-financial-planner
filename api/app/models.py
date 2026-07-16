@@ -60,7 +60,7 @@ class Household(Base):
     __tablename__ = "households"
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     display_name: Mapped[str] = mapped_column(String(200))
-    currency: Mapped[str] = mapped_column(String(3), default="AUD")
+    currency: Mapped[str] = mapped_column(String(3))
     jurisdiction: Mapped[str | None] = mapped_column(String(50))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     memberships: Mapped[list[HouseholdMembership]] = relationship(cascade="all, delete-orphan")
@@ -154,7 +154,7 @@ class PropertyValuation(Base):
         Enum(ValuationType, name="valuation_type")
     )
     source: Mapped[str | None] = mapped_column(String(200))
-    is_estimate: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_estimate: Mapped[bool] = mapped_column(Boolean)
     notes: Mapped[str | None] = mapped_column(String(2000))
 
 
@@ -192,7 +192,7 @@ class PropertyBaseline(Base):
     )
     baseline_date: Mapped[date] = mapped_column(Date)
     property_value: Mapped[Decimal] = mapped_column(Numeric(18, 2))
-    loan_balance_total: Mapped[Decimal] = mapped_column(Numeric(18, 2), default=0)
+    loan_balance_total: Mapped[Decimal] = mapped_column(Numeric(18, 2))
     status_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lookup_items.id"))
     accumulated_cost_base: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
     notes: Mapped[str | None] = mapped_column(String(2000))

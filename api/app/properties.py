@@ -12,6 +12,7 @@ from app.dependencies import ROLE_LEVEL, current_user, require_household_role
 from app.logging import get_logger
 from app.models import (
     ApplicationUser,
+    Household,
     HouseholdMembership,
     HouseholdRole,
     LookupItem,
@@ -106,7 +107,12 @@ async def _create_property(
 ) -> Property:
     await _validate_lookup(payload.property_type_id, "property_type", session)
     await _validate_lookup(payload.current_status_id, "property_status", session)
-    record = Property(household_id=household_id, **payload.model_dump())
+    household = await session.get(Household, household_id)
+    if household is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Household not found")
+    values = payload.model_dump()
+    values["default_currency"] = payload.default_currency or household.currency
+    record = Property(household_id=household_id, **values)
     session.add(record)
     await session.flush()
     return record

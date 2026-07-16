@@ -95,6 +95,56 @@ async def test_current_snapshot_wizard_accepts_no_loan_and_warns_on_incomplete_o
     assert "40.00% rather than 100.00%" in body["warnings"][0]
 
 
+async def test_property_inherits_household_currency_when_omitted(
+    client: AsyncClient, property_lookups: dict[str, str]
+) -> None:
+    response = await client.post(
+        "/api/v1/households",
+        json={"display_name": "International household", "currency": "NZD"},
+    )
+    household = response.json()
+    payload = property_payload(property_lookups)
+    del payload["default_currency"]
+    created = await client.post(f"/api/v1/households/{household['id']}/properties", json=payload)
+    assert created.status_code == 201
+    assert created.json()["default_currency"] == "NZD"
+    overridden = await client.post(
+        f"/api/v1/households/{household['id']}/properties",
+        json=payload | {"display_name": "Overseas property", "default_currency": "USD"},
+    )
+    assert overridden.status_code == 201
+    assert overridden.json()["default_currency"] == "USD"
+
+
+async def test_financial_provenance_and_debt_cannot_be_silently_assumed(
+    client: AsyncClient, property_lookups: dict[str, str]
+) -> None:
+    household = await create_household(client)
+    created = await client.post(
+        f"/api/v1/households/{household['id']}/properties",
+        json=property_payload(property_lookups),
+    )
+    property_id = created.json()["id"]
+    valuation = await client.post(
+        f"/api/v1/properties/{property_id}/valuations",
+        json={
+            "valuation_date": "2026-01-01",
+            "value": 500000,
+            "valuation_type": "USER_ESTIMATE",
+        },
+    )
+    assert valuation.status_code == 422
+    baseline = await client.post(
+        f"/api/v1/properties/{property_id}/baselines",
+        json={
+            "baseline_date": "2026-01-01",
+            "property_value": 500000,
+            "status_id": property_lookups["status"],
+        },
+    )
+    assert baseline.status_code == 422
+
+
 async def test_add_dated_ownership_reports_running_total(
     client: AsyncClient, property_lookups: dict[str, str]
 ) -> None:

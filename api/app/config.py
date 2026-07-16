@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import AnyHttpUrl, Field
+from pydantic import AnyHttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,14 +14,10 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "Household Financial Planner API"
-    database_url: str = (
-        "postgresql+asyncpg://household_finance:change-me@postgres/household_finance"
-    )
-    oidc_issuer: AnyHttpUrl = Field(default=AnyHttpUrl("https://identity.example.com/"))
+    database_url: str
+    oidc_issuer: AnyHttpUrl
     oidc_audience: str = "household-financial-planner"
-    oidc_jwks_url: AnyHttpUrl = Field(
-        default=AnyHttpUrl("https://identity.example.com/.well-known/jwks.json")
-    )
+    oidc_jwks_url: AnyHttpUrl
     allow_development_auth: bool = False
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     log_format: Literal["json", "console"] = "json"

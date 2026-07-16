@@ -21,7 +21,7 @@ class UserRead(ORMModel):
 
 class HouseholdCreate(BaseModel):
     display_name: str = Field(min_length=1, max_length=200)
-    currency: str = Field(default="AUD", pattern=r"^[A-Z]{3}$")
+    currency: str = Field(pattern=r"^[A-Z]{3}$")
     jurisdiction: str | None = Field(default=None, max_length=50)
 
 
@@ -89,7 +89,7 @@ class PropertyCreate(BaseModel):
     purchase_date: date | None = None
     sale_date: date | None = None
     purchase_price: Decimal | None = Field(default=None, ge=0, max_digits=18, decimal_places=2)
-    default_currency: str = Field(default="AUD", pattern=r"^[A-Z]{3}$")
+    default_currency: str | None = Field(default=None, pattern=r"^[A-Z]{3}$")
     notes: str | None = Field(default=None, max_length=2000)
 
     @model_validator(mode="after")
@@ -102,6 +102,7 @@ class PropertyCreate(BaseModel):
 class PropertyRead(PropertyCreate, ORMModel):
     id: uuid.UUID
     household_id: uuid.UUID
+    default_currency: str
 
 
 class ValuationCreate(BaseModel):
@@ -109,7 +110,7 @@ class ValuationCreate(BaseModel):
     value: Decimal = Field(gt=0, max_digits=18, decimal_places=2)
     valuation_type: ValuationType
     source: str | None = Field(default=None, max_length=200)
-    is_estimate: bool = True
+    is_estimate: bool
     notes: str | None = Field(default=None, max_length=2000)
 
 
@@ -152,7 +153,7 @@ class OwnershipResult(BaseModel):
 class BaselineCreate(BaseModel):
     baseline_date: date
     property_value: Decimal = Field(gt=0, max_digits=18, decimal_places=2)
-    loan_balance_total: Decimal = Field(default=Decimal("0"), ge=0, max_digits=18, decimal_places=2)
+    loan_balance_total: Decimal = Field(ge=0, max_digits=18, decimal_places=2)
     status_id: uuid.UUID
     accumulated_cost_base: Decimal | None = Field(
         default=None, ge=0, max_digits=18, decimal_places=2
