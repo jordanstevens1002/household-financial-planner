@@ -1629,6 +1629,9 @@ Phase 0 does not require its own branch or pull request because it creates the r
 
 Every phase from Phase 1 onward must define and satisfy:
 
+- Python 3.14 for the API runtime, tests and static-analysis tooling;
+- `pydantic-settings` as the single typed boundary for environment configuration;
+- `structlog` for structured application and request logging, including request correlation;
 - automated unit tests for new business logic;
 - integration tests for new database, migration and API behaviour;
 - regression tests for defects discovered during the phase;
