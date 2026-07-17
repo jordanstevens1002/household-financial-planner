@@ -1649,6 +1649,13 @@ Every phase from Phase 1 onward must define and satisfy:
 - recorded test and evaluation results in the pull request;
 - CI quality gates appropriate to the changed components.
 
+Until the first stable v1.0 release, database migrations are forward-only. Each phase must
+prove that the previously supported schema upgrades to the new head and that Alembic reports
+no schema drift. Downgrade functions may remain as best-effort development conveniences, but
+downgrade compatibility, data preservation and downgrade tests are not release gates. The v1.0
+release process must establish and test an explicit production rollback and migration-support
+policy before later versions are published.
+
 A phase is not complete, and its pull request must not be merged, when required tests are absent, failing or bypassed, or when its agreed evaluation thresholds are not met. Documentation-only changes must still pass documentation, link and repository-policy checks.
 
 ### Phase 1 — Generic foundation

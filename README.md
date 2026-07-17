@@ -49,6 +49,11 @@ without rewriting observed history. Property state can be resolved at an arbitra
 latest applicable baseline plus deterministically ordered enabled events. Interactive API
 documentation is available at `http://localhost:8000/docs`.
 
+Phase 4 adds household-scoped loans, optional split-loan groups, dated loan events, offsets,
+redraw, atomic refinancing, amortisation schedules, interest comparisons, and configurable loan
+goals. Loan assumptions such as currency, opening balance/date, rate, repayment frequency,
+interest method and interest-only status remain explicit rather than jurisdictional defaults.
+
 ## Contributing
 
 Contribution guidance, security reporting and the full development workflow will be added as the implementation foundation is established.

@@ -26,6 +26,7 @@ from app.models import (
     FinancialEvent,
     HouseholdMembership,
     HouseholdRole,
+    Loan,
     LookupItem,
     Person,
     Property,
@@ -49,6 +50,7 @@ def _event_read(event: FinancialEvent, event_type: EventType) -> FinancialEventR
         recorded_at=event.recorded_at,
         property_id=event.property_id,
         person_id=event.person_id,
+        loan_id=event.loan_id,
         amount=event.amount,
         percentage=event.percentage,
         payload=event.payload,
@@ -108,6 +110,10 @@ async def _validate_event_references(
         person = await session.get(Person, payload.person_id)
         if person is None or person.household_id != household_id:
             raise HTTPException(422, "Event person must belong to the household")
+    if payload.loan_id is not None:
+        loan = await session.get(Loan, payload.loan_id)
+        if loan is None or loan.household_id != household_id:
+            raise HTTPException(422, "Event loan must belong to the household")
     if event_type.code == "PROPERTY_STATUS_CHANGED":
         raw_status_id = payload.payload.get("status_id")
         try:
