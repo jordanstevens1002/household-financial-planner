@@ -66,6 +66,15 @@ class RepaymentFrequency(StrEnum):
     MONTHLY = "MONTHLY"
 
 
+class PaymentFrequency(StrEnum):
+    WEEKLY = "WEEKLY"
+    FORTNIGHTLY = "FORTNIGHTLY"
+    MONTHLY = "MONTHLY"
+    QUARTERLY = "QUARTERLY"
+    ANNUAL = "ANNUAL"
+    ONCE = "ONCE"
+
+
 class ApplicationUser(Base):
     __tablename__ = "application_users"
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
@@ -126,7 +135,7 @@ class LookupItem(Base):
     generates_rental_income: Mapped[bool | None] = mapped_column(Boolean)
     applies_vacancy: Mapped[bool | None] = mapped_column(Boolean)
     applies_management_fee: Mapped[bool | None] = mapped_column(Boolean)
-    applies_landlord_expenses: Mapped[bool | None] = mapped_column(Boolean)
+    applies_rental_expenses: Mapped[bool | None] = mapped_column(Boolean)
     is_occupied_by_household: Mapped[bool | None] = mapped_column(Boolean)
     is_active_asset: Mapped[bool | None] = mapped_column(Boolean)
 
@@ -299,6 +308,58 @@ class Goal(Base):
     target_boolean: Mapped[bool | None] = mapped_column(Boolean)
     priority: Mapped[int] = mapped_column()
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    notes: Mapped[str | None] = mapped_column(String(2000))
+
+
+class RentalProfile(Base):
+    __tablename__ = "rental_profiles"
+    __table_args__ = (
+        CheckConstraint("effective_to IS NULL OR effective_to >= effective_from"),
+        CheckConstraint("market_rent_amount IS NULL OR market_rent_amount >= 0"),
+        CheckConstraint("charged_rent_amount >= 0"),
+        CheckConstraint("vacancy_rate >= 0 AND vacancy_rate <= 100"),
+        CheckConstraint("management_fee_rate >= 0 AND management_fee_rate <= 100"),
+        CheckConstraint("letting_fee IS NULL OR letting_fee >= 0"),
+        CheckConstraint("rental_share_percentage > 0 AND rental_share_percentage <= 100"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    property_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("properties.id", ondelete="CASCADE"), index=True
+    )
+    display_name: Mapped[str] = mapped_column(String(200))
+    effective_from: Mapped[date] = mapped_column(Date, index=True)
+    effective_to: Mapped[date | None] = mapped_column(Date)
+    market_rent_amount: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
+    charged_rent_amount: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    frequency: Mapped[PaymentFrequency] = mapped_column(
+        Enum(PaymentFrequency, name="payment_frequency")
+    )
+    vacancy_rate: Mapped[Decimal] = mapped_column(Numeric(7, 4))
+    management_fee_rate: Mapped[Decimal] = mapped_column(Numeric(7, 4))
+    letting_fee: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
+    rental_share_percentage: Mapped[Decimal] = mapped_column(Numeric(7, 4))
+    notes: Mapped[str | None] = mapped_column(String(2000))
+
+
+class PropertyExpense(Base):
+    __tablename__ = "property_expenses"
+    __table_args__ = (
+        CheckConstraint("effective_to IS NULL OR effective_to >= effective_from"),
+        CheckConstraint("amount >= 0"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    property_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("properties.id", ondelete="CASCADE"), index=True
+    )
+    expense_type_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lookup_items.id"))
+    display_name: Mapped[str] = mapped_column(String(200))
+    amount: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    frequency: Mapped[PaymentFrequency] = mapped_column(
+        Enum(PaymentFrequency, name="payment_frequency", create_type=False)
+    )
+    effective_from: Mapped[date] = mapped_column(Date, index=True)
+    effective_to: Mapped[date | None] = mapped_column(Date)
+    is_rental_expense: Mapped[bool] = mapped_column(Boolean)
     notes: Mapped[str | None] = mapped_column(String(2000))
 
 

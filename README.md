@@ -54,6 +54,11 @@ redraw, atomic refinancing, amortisation schedules, interest comparisons, and co
 goals. Loan assumptions such as currency, opening balance/date, rate, repayment frequency,
 interest method and interest-only status remain explicit rather than jurisdictional defaults.
 
+Phase 5 adds dated rental portions and property expenses with status-driven cash-flow reporting.
+A household can model a whole rented home or named portions such as a room, granny flat, or half
+of a duplex while still living in the rest of the property. The product remains focused on clear
+personal decisions for a small household property setup, not professional property management.
+
 ## Contributing
 
 Contribution guidance, security reporting and the full development workflow will be added as the implementation foundation is established.

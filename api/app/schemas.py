@@ -71,7 +71,7 @@ class LookupRead(ORMModel):
     generates_rental_income: bool | None
     applies_vacancy: bool | None
     applies_management_fee: bool | None
-    applies_landlord_expenses: bool | None
+    applies_rental_expenses: bool | None
     is_occupied_by_household: bool | None
     is_active_asset: bool | None
 
