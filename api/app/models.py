@@ -4,6 +4,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     CheckConstraint,
     Date,
@@ -15,6 +16,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -45,6 +47,12 @@ class OwnerType(StrEnum):
     SUPER_FUND = "SUPER_FUND"
     EXTERNAL_PARTY = "EXTERNAL_PARTY"
     OTHER = "OTHER"
+
+
+class EventClassification(StrEnum):
+    OBSERVED = "OBSERVED"
+    PLANNED = "PLANNED"
+    PROJECTED = "PROJECTED"
 
 
 class ApplicationUser(Base):
@@ -196,3 +204,52 @@ class PropertyBaseline(Base):
     status_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lookup_items.id"))
     accumulated_cost_base: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
     notes: Mapped[str | None] = mapped_column(String(2000))
+
+
+class EventType(Base):
+    __tablename__ = "event_types"
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    code: Mapped[str] = mapped_column(String(80), unique=True, index=True)
+    display_name: Mapped[str] = mapped_column(String(120))
+    priority: Mapped[int] = mapped_column()
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class FinancialEvent(Base):
+    __tablename__ = "financial_events"
+    __table_args__ = (
+        CheckConstraint("percentage IS NULL OR (percentage >= 0 AND percentage <= 100)"),
+        UniqueConstraint("household_id", "idempotency_key"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    household_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("households.id", ondelete="CASCADE"), index=True
+    )
+    event_type_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("event_types.id"), index=True)
+    idempotency_key: Mapped[str | None] = mapped_column(String(100))
+    effective_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    recorded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    property_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("properties.id", ondelete="CASCADE"), index=True
+    )
+    person_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("people.id", ondelete="CASCADE"), index=True
+    )
+    amount: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
+    percentage: Mapped[Decimal | None] = mapped_column(Numeric(7, 4))
+    payload: Mapped[dict[str, object]] = mapped_column(JSON().with_variant(JSONB, "postgresql"))
+    notes: Mapped[str | None] = mapped_column(String(2000))
+    classification: Mapped[EventClassification] = mapped_column(
+        Enum(EventClassification, name="event_classification")
+    )
+    is_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    data_quality_flags: Mapped[list[str]] = mapped_column(JSON().with_variant(JSONB, "postgresql"))
+    created_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("application_users.id", ondelete="RESTRICT")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )

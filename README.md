@@ -43,6 +43,12 @@ API logs are structured JSON by default; set `LOG_FORMAT=console` for local huma
 output and use `LOG_LEVEL` to select `DEBUG`, `INFO`, `WARNING`, `ERROR` or `CRITICAL`.
 Every API response includes an `X-Request-ID`, which is also attached to its request log.
 
+Phase 3 adds a dated financial-event engine and unified household timeline. Event records use
+explicit observed, planned or projected classification; planned events can be moved or toggled
+without rewriting observed history. Property state can be resolved at an arbitrary date from the
+latest applicable baseline plus deterministically ordered enabled events. Interactive API
+documentation is available at `http://localhost:8000/docs`.
+
 ## Contributing
 
 Contribution guidance, security reporting and the full development workflow will be added as the implementation foundation is established.
