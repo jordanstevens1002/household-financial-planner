@@ -1,8 +1,14 @@
+# ruff: noqa: E402
+import os
 from collections.abc import AsyncIterator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite://")
+os.environ.setdefault("OIDC_ISSUER", "https://identity.example.com/")
+os.environ.setdefault("OIDC_JWKS_URL", "https://identity.example.com/.well-known/jwks.json")
 
 from app.auth import Identity, get_identity
 from app.database import Base, get_session

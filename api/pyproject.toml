@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "household-financial-planner-api"
-version = "0.1.0"
+version = "0.2.0"
 description = "API and calculation service for Household Financial Planner"
 readme = "README.md"
 requires-python = ">=3.14"

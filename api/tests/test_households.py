@@ -23,6 +23,11 @@ async def test_first_authenticated_request_provisions_user(client: AsyncClient) 
     assert response.json()["oidc_subject"] == "test-user"
 
 
+async def test_household_currency_is_explicit(client: AsyncClient) -> None:
+    response = await client.post("/api/v1/households", json={"display_name": "No assumed currency"})
+    assert response.status_code == 422
+
+
 async def test_household_creator_is_owner_and_can_add_person(client: AsyncClient) -> None:
     household = await create_household(client)
     memberships = await client.get(f"/api/v1/households/{household['id']}/memberships")

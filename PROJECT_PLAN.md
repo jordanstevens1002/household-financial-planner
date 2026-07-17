@@ -67,6 +67,14 @@ Users must be able to configure:
 
 Do not hard-code named people, property names, locations or loan values in application logic.
 
+Do not hard-code a deployment-wide currency or silently persist a jurisdictional currency
+default. Household currency must be selected explicitly. Child financial records may inherit
+that household currency while still allowing an explicit override for cross-currency assets.
+
+Do not convert unknown financial values into zero or unknown provenance into an estimate/fact.
+Inputs such as debt balances and observed-versus-estimated status must be explicit whenever
+omission would change the financial meaning of a record.
+
 ### Practical limits
 
 The schema should not impose an artificial property limit.
@@ -1629,6 +1637,9 @@ Phase 0 does not require its own branch or pull request because it creates the r
 
 Every phase from Phase 1 onward must define and satisfy:
 
+- Python 3.14 for the API runtime, tests and static-analysis tooling;
+- `pydantic-settings` as the single typed boundary for environment configuration;
+- `structlog` for structured application and request logging, including request correlation;
 - automated unit tests for new business logic;
 - integration tests for new database, migration and API behaviour;
 - regression tests for defects discovered during the phase;
