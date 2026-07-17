@@ -16,6 +16,7 @@ from app.config import get_settings
 from app.database import get_session
 from app.dependencies import current_user, require_household_role
 from app.events import router as events_router
+from app.loans import router as loans_router
 from app.logging import configure_logging, get_logger
 from app.models import (
     ApplicationUser,
@@ -43,16 +44,17 @@ logger = get_logger(component="api")
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    logger.info("application_started", version="0.3.0")
+    logger.info("application_started", version="0.4.0")
     try:
         yield
     finally:
         logger.info("application_stopped")
 
 
-app = FastAPI(title="Household Financial Planner API", version="0.3.0", lifespan=lifespan)
+app = FastAPI(title="Household Financial Planner API", version="0.4.0", lifespan=lifespan)
 app.include_router(properties_router)
 app.include_router(events_router)
+app.include_router(loans_router)
 
 
 @app.middleware("http")

@@ -55,6 +55,17 @@ class EventClassification(StrEnum):
     PROJECTED = "PROJECTED"
 
 
+class InterestCalculationMethod(StrEnum):
+    DAILY = "DAILY"
+    MONTHLY = "MONTHLY"
+
+
+class RepaymentFrequency(StrEnum):
+    WEEKLY = "WEEKLY"
+    FORTNIGHTLY = "FORTNIGHTLY"
+    MONTHLY = "MONTHLY"
+
+
 class ApplicationUser(Base):
     __tablename__ = "application_users"
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
@@ -206,6 +217,91 @@ class PropertyBaseline(Base):
     notes: Mapped[str | None] = mapped_column(String(2000))
 
 
+class LoanGroup(Base):
+    __tablename__ = "loan_groups"
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    household_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("households.id", ondelete="CASCADE"), index=True
+    )
+    display_name: Mapped[str] = mapped_column(String(200))
+    property_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("properties.id", ondelete="SET NULL"), index=True
+    )
+
+
+class Loan(Base):
+    __tablename__ = "loans"
+    __table_args__ = (
+        CheckConstraint("opening_balance >= 0"),
+        CheckConstraint("original_balance IS NULL OR original_balance >= 0"),
+        CheckConstraint("initial_interest_rate >= 0 AND initial_interest_rate <= 100"),
+        CheckConstraint("scheduled_repayment IS NULL OR scheduled_repayment >= 0"),
+        CheckConstraint("term_months IS NULL OR term_months > 0"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    household_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("households.id", ondelete="CASCADE"), index=True
+    )
+    property_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("properties.id", ondelete="SET NULL"), index=True
+    )
+    loan_group_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("loan_groups.id", ondelete="SET NULL"), index=True
+    )
+    display_name: Mapped[str] = mapped_column(String(200))
+    lender: Mapped[str | None] = mapped_column(String(200))
+    account_reference_masked: Mapped[str | None] = mapped_column(String(50))
+    loan_type_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lookup_items.id"))
+    currency: Mapped[str] = mapped_column(String(3))
+    original_balance: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
+    opening_balance: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    opening_balance_date: Mapped[date] = mapped_column(Date)
+    initial_interest_rate: Mapped[Decimal] = mapped_column(Numeric(7, 4))
+    scheduled_repayment: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
+    term_months: Mapped[int | None] = mapped_column()
+    interest_calculation_method: Mapped[InterestCalculationMethod] = mapped_column(
+        Enum(InterestCalculationMethod, name="interest_calculation_method")
+    )
+    repayment_frequency: Mapped[RepaymentFrequency] = mapped_column(
+        Enum(RepaymentFrequency, name="repayment_frequency")
+    )
+    is_interest_only: Mapped[bool] = mapped_column(Boolean)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    notes: Mapped[str | None] = mapped_column(String(2000))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class Goal(Base):
+    __tablename__ = "goals"
+    __table_args__ = (
+        CheckConstraint("target_amount IS NULL OR target_amount >= 0"),
+        CheckConstraint(
+            "target_percentage IS NULL OR (target_percentage >= 0 AND target_percentage <= 100)"
+        ),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    household_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("households.id", ondelete="CASCADE"), index=True
+    )
+    person_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("people.id", ondelete="CASCADE"))
+    property_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("properties.id", ondelete="CASCADE")
+    )
+    loan_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("loans.id", ondelete="CASCADE"))
+    goal_type_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lookup_items.id"))
+    display_name: Mapped[str] = mapped_column(String(200))
+    target_amount: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
+    target_percentage: Mapped[Decimal | None] = mapped_column(Numeric(7, 4))
+    target_date: Mapped[date | None] = mapped_column(Date)
+    target_boolean: Mapped[bool | None] = mapped_column(Boolean)
+    priority: Mapped[int] = mapped_column()
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    notes: Mapped[str | None] = mapped_column(String(2000))
+
+
 class EventType(Base):
     __tablename__ = "event_types"
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
@@ -236,6 +332,9 @@ class FinancialEvent(Base):
     )
     person_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("people.id", ondelete="CASCADE"), index=True
+    )
+    loan_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("loans.id", ondelete="CASCADE"), index=True
     )
     amount: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
     percentage: Mapped[Decimal | None] = mapped_column(Numeric(7, 4))

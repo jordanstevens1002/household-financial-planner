@@ -14,6 +14,7 @@ class FinancialEventCreate(BaseModel):
     effective_at: datetime
     property_id: uuid.UUID | None = None
     person_id: uuid.UUID | None = None
+    loan_id: uuid.UUID | None = None
     amount: Decimal | None = Field(default=None, max_digits=18, decimal_places=2)
     percentage: Decimal | None = Field(default=None, ge=0, le=100, max_digits=7, decimal_places=4)
     payload: dict[str, object] = Field(default_factory=dict)
