@@ -35,6 +35,18 @@ async def rental_lookups(session: AsyncSession) -> dict[str, LookupItem]:
         is_occupied_by_household=True,
         is_active_asset=True,
     )
+    rented = LookupItem(
+        category="property_status",
+        code="RENTED_TEST",
+        display_name="Rented",
+        is_active=True,
+        generates_rental_income=True,
+        applies_vacancy=True,
+        applies_management_fee=True,
+        applies_rental_expenses=True,
+        is_occupied_by_household=False,
+        is_active_asset=True,
+    )
     owner = LookupItem(
         category="property_status",
         code="OWNER_TEST",
@@ -77,11 +89,12 @@ async def rental_lookups(session: AsyncSession) -> dict[str, LookupItem]:
         display_name="Insurance",
         is_active=True,
     )
-    session.add_all([property_type, partial, owner, family, vacant, expense_type])
+    session.add_all([property_type, partial, rented, owner, family, vacant, expense_type])
     await session.commit()
     return {
         "type": property_type,
         "partial": partial,
+        "rented": rented,
         "owner": owner,
         "family": family,
         "vacant": vacant,
@@ -148,6 +161,32 @@ async def test_partial_rental_supports_concurrent_duplex_granny_flat_and_roommat
     assert body["gross_rent"] == "19760.00"
     assert body["rental_days"] == 365
     assert body["market_rent_equivalent"] == "22360.00"
+
+
+async def test_standard_whole_property_rental_applies_vacancy_and_management_fees(
+    client: AsyncClient, rental_lookups: dict[str, LookupItem]
+) -> None:
+    property_id = (await create_property(client, rental_lookups, "rented"))["id"]
+    created = await client.post(
+        f"/api/v1/properties/{property_id}/rental-profiles",
+        json=profile("Whole home", 500, 100),
+    )
+    assert created.status_code == 201
+
+    result = await client.get(
+        f"/api/v1/properties/{property_id}/cashflow",
+        params={"from_date": "2025-01-01", "to_date": "2025-12-31"},
+    )
+    assert result.status_code == 200
+    body = result.json()
+    assert body["gross_rent"] == "26000.00"
+    assert body["vacancy_cost"] == "1300.00"
+    assert body["management_fee"] == "1976.00"
+    assert body["net_cashflow"] == "22724.00"
+    assert body["market_rent_equivalent"] == "28600.00"
+    assert body["charged_rent_equivalent"] == "26000.00"
+    assert body["rent_difference"] == "-2600.00"
+    assert body["rental_days"] == 365
 
 
 async def test_concurrent_rental_shares_cannot_exceed_whole_property(

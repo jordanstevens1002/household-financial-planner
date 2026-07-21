@@ -22,7 +22,8 @@ blocks merge.
 
 ## Recorded local results
 
-- Python 3.14.6: 51 tests passed; 91% statement coverage.
+- Python 3.14.6: 52 tests passed; 91% statement coverage, including an explicit standard
+  whole-property rental calculation with vacancy and management fees.
 - Ruff formatting/lint and strict mypy: no errors.
 - PostgreSQL 16: forward upgrade from Phase 4 to head and Alembic drift check passed.
 - Cash-flow benchmark: ten-year partially rented home with three concurrent rental portions;
