@@ -1773,6 +1773,11 @@ Deliver:
 - fees;
 - projection.
 
+Acceptance requires dated contribution profiles, idempotent balance adjustments, household
+isolation, explicit projection assumptions, and tested calculations for opening balance,
+contributions, contribution tax, fees, earnings and caps. Australian super settings must remain an
+optional profile attached to the generic account model rather than defaults in the shared engine.
+
 ### Phase 8 — Purchase planner
 
 Deliver:
