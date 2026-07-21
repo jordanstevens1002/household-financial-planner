@@ -904,10 +904,23 @@ Tax calculations must be modular.
 tax/
   base.py
   australia.py
-  jurisdictions/
+  registry.py
 ```
 
-The Australian tax implementation should be versioned by financial year.
+The shared income and cash-flow services must depend only on jurisdiction-neutral tax contracts.
+Country-specific parameters belong in the tax profile's `settings.parameters` JSON object. Tax
+providers map dates to their own tax years, validate their own parameters, and return generic named
+calculation components. The Australian implementation is the bundled working example and is
+versioned by financial year.
+
+Additional tax providers may be supplied by installed Python packages through the
+`household_financial_planner.tax_providers` entry-point group. Adding a jurisdiction must not
+require changes to the income service, shared response schemas, or database schema.
+
+Tax outputs are planning estimates, not tax advice. Each implementation must identify its source
+financial year, reject unsupported years rather than silently reuse old rules, expose material
+limitations, and allow a person to replace automatic tax with an explicit manual net-income
+amount.
 
 A household must be able to disable automatic tax calculation and enter net income manually.
 
@@ -1240,10 +1253,13 @@ POST   /loans/{loan_id}/target-calculation
 ```text
 GET    /people/{person_id}/income-sources
 POST   /people/{person_id}/income-sources
+GET    /people/{person_id}/tax-profiles
+POST   /people/{person_id}/tax-profiles
 GET    /households/{household_id}/expenses
 POST   /households/{household_id}/expenses
 POST   /calculations/tax
 GET    /households/{household_id}/income-projection
+GET    /households/{household_id}/cashflow
 ```
 
 ### Retirement accounts
@@ -1742,7 +1758,8 @@ Deliver:
 - multiple income sources;
 - configurable people;
 - tax engine interface;
-- Australian implementation;
+- provider registry and external-provider scaffold;
+- Australian example implementation;
 - manual net-income option;
 - household cash flow.
 

@@ -59,6 +59,13 @@ A household can model a whole rented home or named portions such as a room, gran
 of a duplex while still living in the rest of the property. The product remains focused on clear
 personal decisions for a small household property setup, not professional property management.
 
+Phase 6 adds multiple dated income sources per person, dated household expenses, manual or
+automatic net-income planning, and annual/monthly household cash flow. Tax providers are selected
+by jurisdiction through a generic registry, with support for external provider packages. The
+bundled Australian example is explicitly versioned for 2025–26, rejects unsupported years, and
+reports its limitations; estimates are for planning and are not tax advice. See
+[Adding a tax provider](docs/custom-tax-provider.md) for the extension scaffold.
+
 ## Contributing
 
 Contribution guidance, security reporting and the full development workflow will be added as the implementation foundation is established.
