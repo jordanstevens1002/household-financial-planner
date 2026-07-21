@@ -76,6 +76,11 @@ Phase 8 adds configurable purchase plans, dated funding sources, cost components
 ownership and household-defined comfort thresholds. Country-specific cost estimates use installable
 providers; Australia is a bundled user-configured example rather than a shared-code default.
 
+Phase 9 adds household scenarios with dated metric and planned-event overrides, reusable templates,
+base-scenario inheritance and side-by-side comparisons. The shared scenario engine is
+country-neutral: templates are editable starting points, calculations receive explicit baseline
+metrics, and event changes are returned as a scenario layer without modifying recorded events.
+
 ## Contributing
 
 Contribution guidance, security reporting and the full development workflow will be added as the implementation foundation is established.
