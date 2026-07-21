@@ -24,11 +24,11 @@ class ContributionTerms:
     effective_to: date | None
     employer_rate: Decimal | None
     employer_amount: Decimal | None
-    voluntary_concessional_amount: Decimal
-    non_concessional_amount: Decimal
+    voluntary_pre_tax_amount: Decimal
+    voluntary_post_tax_amount: Decimal
     contribution_tax_rate: Decimal
-    annual_cap: Decimal | None
-    non_concessional_cap: Decimal | None = None
+    annual_pre_tax_cap: Decimal | None
+    annual_post_tax_cap: Decimal | None = None
 
 
 def project_retirement(
@@ -63,35 +63,33 @@ def project_retirement(
             ),
             None,
         )
-        employer = voluntary = non_concessional = contribution_tax = Decimal("0")
+        employer = voluntary_pre_tax = voluntary_post_tax = contribution_tax = Decimal("0")
         if profile is not None:
             annual_employer = profile.employer_amount or (
                 annual_salary * (profile.employer_rate or Decimal("0")) / Decimal("100")
             )
             employer = money(annual_employer / Decimal("12"))
-            voluntary = money(profile.voluntary_concessional_amount / Decimal("12"))
-            non_concessional = money(profile.non_concessional_amount / Decimal("12"))
+            voluntary_pre_tax = money(profile.voluntary_pre_tax_amount / Decimal("12"))
+            voluntary_post_tax = money(profile.voluntary_post_tax_amount / Decimal("12"))
             contribution_tax = money(
-                (employer + voluntary) * profile.contribution_tax_rate / Decimal("100")
+                (employer + voluntary_pre_tax) * profile.contribution_tax_rate / Decimal("100")
             )
             if (
-                profile.annual_cap is not None
-                and annual_employer + profile.voluntary_concessional_amount > profile.annual_cap
+                profile.annual_pre_tax_cap is not None
+                and annual_employer + profile.voluntary_pre_tax_amount > profile.annual_pre_tax_cap
                 and period_end.year not in cap_warning_years
             ):
                 warnings.append(
-                    "Concessional contributions exceed the configured annual cap "
-                    f"in {period_end.year}."
+                    f"Pre-tax contributions exceed the configured annual cap in {period_end.year}."
                 )
                 cap_warning_years.add(period_end.year)
             if (
-                profile.non_concessional_cap is not None
-                and profile.non_concessional_amount > profile.non_concessional_cap
+                profile.annual_post_tax_cap is not None
+                and profile.voluntary_post_tax_amount > profile.annual_post_tax_cap
                 and -period_end.year not in cap_warning_years
             ):
                 warnings.append(
-                    "Non-concessional contributions exceed the configured annual cap "
-                    f"in {period_end.year}."
+                    f"Post-tax contributions exceed the configured annual cap in {period_end.year}."
                 )
                 cap_warning_years.add(-period_end.year)
         adjustment = money(
@@ -102,7 +100,7 @@ def project_retirement(
         )
         opening = balance
         fees = money(annual_fees / Decimal("12"))
-        contribution_net = employer + voluntary + non_concessional - contribution_tax
+        contribution_net = employer + voluntary_pre_tax + voluntary_post_tax - contribution_tax
         earnings = money(
             max(Decimal("0"), opening + contribution_net + adjustment)
             * annual_return_rate
@@ -117,8 +115,8 @@ def project_retirement(
                 projection_date=period_end,
                 opening_balance=opening,
                 employer_contributions=employer,
-                voluntary_concessional_contributions=voluntary,
-                non_concessional_contributions=non_concessional,
+                voluntary_pre_tax_contributions=voluntary_pre_tax,
+                voluntary_post_tax_contributions=voluntary_post_tax,
                 contribution_tax=contribution_tax,
                 fees=fees,
                 earnings=earnings,

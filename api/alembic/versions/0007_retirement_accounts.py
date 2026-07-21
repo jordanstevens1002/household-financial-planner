@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
@@ -31,6 +32,8 @@ def upgrade() -> None:
         sa.Column("expected_return_rate", sa.Numeric(7, 4), nullable=False),
         sa.Column("annual_fees", sa.Numeric(18, 2), nullable=False),
         sa.Column("retirement_age", sa.Integer()),
+        sa.Column("provider_code", sa.String(80)),
+        sa.Column("provider_settings", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column("is_active", sa.Boolean(), nullable=False),
         sa.Column("notes", sa.String(2000)),
         sa.CheckConstraint("opening_balance >= 0"),
@@ -42,28 +45,6 @@ def upgrade() -> None:
     )
     op.create_index("ix_retirement_accounts_household_id", "retirement_accounts", ["household_id"])
     op.create_index("ix_retirement_accounts_person_id", "retirement_accounts", ["person_id"])
-    op.create_table(
-        "australian_super_profiles",
-        sa.Column("id", sa.Uuid(), primary_key=True),
-        sa.Column(
-            "retirement_account_id",
-            sa.Uuid(),
-            sa.ForeignKey("retirement_accounts.id", ondelete="CASCADE"),
-            nullable=False,
-        ),
-        sa.Column("preservation_age", sa.Integer(), nullable=False),
-        sa.Column("concessional_cap", sa.Numeric(18, 2), nullable=False),
-        sa.Column("non_concessional_cap", sa.Numeric(18, 2), nullable=False),
-        sa.CheckConstraint("preservation_age >= 0 AND preservation_age <= 120"),
-        sa.CheckConstraint("concessional_cap >= 0"),
-        sa.CheckConstraint("non_concessional_cap >= 0"),
-    )
-    op.create_index(
-        "ix_australian_super_profiles_retirement_account_id",
-        "australian_super_profiles",
-        ["retirement_account_id"],
-        unique=True,
-    )
     op.create_table(
         "retirement_contribution_profiles",
         sa.Column("id", sa.Uuid(), primary_key=True),
@@ -77,19 +58,19 @@ def upgrade() -> None:
         sa.Column("effective_to", sa.Date()),
         sa.Column("employer_rate", sa.Numeric(7, 4)),
         sa.Column("employer_amount", sa.Numeric(18, 2)),
-        sa.Column("voluntary_concessional_amount", sa.Numeric(18, 2), nullable=False),
-        sa.Column("non_concessional_amount", sa.Numeric(18, 2), nullable=False),
+        sa.Column("voluntary_pre_tax_amount", sa.Numeric(18, 2), nullable=False),
+        sa.Column("voluntary_post_tax_amount", sa.Numeric(18, 2), nullable=False),
         sa.Column("contribution_tax_rate", sa.Numeric(7, 4), nullable=False),
-        sa.Column("annual_cap", sa.Numeric(18, 2)),
+        sa.Column("annual_pre_tax_cap", sa.Numeric(18, 2)),
         sa.CheckConstraint("effective_to IS NULL OR effective_to >= effective_from"),
         sa.CheckConstraint(
             "employer_rate IS NULL OR (employer_rate >= 0 AND employer_rate <= 100)"
         ),
         sa.CheckConstraint("employer_amount IS NULL OR employer_amount >= 0"),
-        sa.CheckConstraint("voluntary_concessional_amount >= 0"),
-        sa.CheckConstraint("non_concessional_amount >= 0"),
+        sa.CheckConstraint("voluntary_pre_tax_amount >= 0"),
+        sa.CheckConstraint("voluntary_post_tax_amount >= 0"),
         sa.CheckConstraint("contribution_tax_rate >= 0 AND contribution_tax_rate <= 100"),
-        sa.CheckConstraint("annual_cap IS NULL OR annual_cap >= 0"),
+        sa.CheckConstraint("annual_pre_tax_cap IS NULL OR annual_pre_tax_cap >= 0"),
     )
     op.create_index(
         "ix_retirement_contribution_profiles_retirement_account_id",
@@ -134,5 +115,4 @@ def downgrade() -> None:
     # Pre-v1.0 migrations are forward-only; this is a best-effort development convenience.
     op.drop_table("retirement_account_events")
     op.drop_table("retirement_contribution_profiles")
-    op.drop_table("australian_super_profiles")
     op.drop_table("retirement_accounts")

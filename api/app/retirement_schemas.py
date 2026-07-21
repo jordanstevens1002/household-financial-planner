@@ -7,12 +7,6 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.models import RetirementEventType
 
 
-class AustralianSuperProfileCreate(BaseModel):
-    preservation_age: int = Field(default=60, ge=0, le=120)
-    concessional_cap: Decimal = Field(default=Decimal("30000"), ge=0)
-    non_concessional_cap: Decimal = Field(default=Decimal("120000"), ge=0)
-
-
 class RetirementAccountCreate(BaseModel):
     person_id: uuid.UUID | None = None
     display_name: str = Field(min_length=1, max_length=200)
@@ -23,9 +17,18 @@ class RetirementAccountCreate(BaseModel):
     expected_return_rate: Decimal = Field(ge=-100, le=100, decimal_places=4)
     annual_fees: Decimal = Field(default=Decimal("0"), ge=0, decimal_places=2)
     retirement_age: int | None = Field(default=None, ge=0, le=120)
+    provider_code: str | None = Field(default=None, min_length=1, max_length=80)
+    provider_settings: dict[str, object] = Field(default_factory=dict)
     is_active: bool = True
     notes: str | None = Field(default=None, max_length=2000)
-    australian_super: AustralianSuperProfileCreate | None = None
+
+    @model_validator(mode="after")
+    def settings_require_provider(self) -> RetirementAccountCreate:
+        if self.provider_settings and self.provider_code is None:
+            raise ValueError("provider_settings require provider_code")
+        if self.provider_code is not None:
+            self.provider_code = self.provider_code.strip().upper()
+        return self
 
 
 class RetirementAccountUpdate(BaseModel):
@@ -33,26 +36,25 @@ class RetirementAccountUpdate(BaseModel):
     expected_return_rate: Decimal = Field(ge=-100, le=100, decimal_places=4)
     annual_fees: Decimal = Field(ge=0, decimal_places=2)
     retirement_age: int | None = Field(default=None, ge=0, le=120)
+    provider_code: str | None = Field(default=None, min_length=1, max_length=80)
+    provider_settings: dict[str, object] = Field(default_factory=dict)
     is_active: bool
     notes: str | None = Field(default=None, max_length=2000)
 
+    @model_validator(mode="after")
+    def settings_require_provider(self) -> RetirementAccountUpdate:
+        if self.provider_settings and self.provider_code is None:
+            raise ValueError("provider_settings require provider_code")
+        if self.provider_code is not None:
+            self.provider_code = self.provider_code.strip().upper()
+        return self
 
-class RetirementAccountRead(BaseModel):
+
+class RetirementAccountRead(RetirementAccountCreate):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID
     household_id: uuid.UUID
-    person_id: uuid.UUID | None
-    display_name: str
-    account_type_id: uuid.UUID
     currency: str
-    opening_balance: Decimal
-    opening_balance_date: date
-    expected_return_rate: Decimal
-    annual_fees: Decimal
-    retirement_age: int | None
-    is_active: bool
-    notes: str | None
-    australian_super: AustralianSuperProfileCreate | None = None
 
 
 class ContributionProfileCreate(BaseModel):
@@ -60,10 +62,10 @@ class ContributionProfileCreate(BaseModel):
     effective_to: date | None = None
     employer_rate: Decimal | None = Field(default=None, ge=0, le=100, decimal_places=4)
     employer_amount: Decimal | None = Field(default=None, ge=0, decimal_places=2)
-    voluntary_concessional_amount: Decimal = Field(default=Decimal("0"), ge=0)
-    non_concessional_amount: Decimal = Field(default=Decimal("0"), ge=0)
+    voluntary_pre_tax_amount: Decimal = Field(default=Decimal("0"), ge=0)
+    voluntary_post_tax_amount: Decimal = Field(default=Decimal("0"), ge=0)
     contribution_tax_rate: Decimal = Field(default=Decimal("0"), ge=0, le=100)
-    annual_cap: Decimal | None = Field(default=None, ge=0)
+    annual_pre_tax_cap: Decimal | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def validate_profile(self) -> ContributionProfileCreate:
@@ -98,8 +100,8 @@ class RetirementProjectionEntry(BaseModel):
     projection_date: date
     opening_balance: Decimal
     employer_contributions: Decimal
-    voluntary_concessional_contributions: Decimal
-    non_concessional_contributions: Decimal
+    voluntary_pre_tax_contributions: Decimal
+    voluntary_post_tax_contributions: Decimal
     contribution_tax: Decimal
     fees: Decimal
     earnings: Decimal
@@ -112,6 +114,7 @@ class RetirementProjectionRead(BaseModel):
     calculation_date: date
     projection_date: date
     currency: str
+    provider_code: str | None
     entries: list[RetirementProjectionEntry]
     projected_balance: Decimal
     total_contributions: Decimal

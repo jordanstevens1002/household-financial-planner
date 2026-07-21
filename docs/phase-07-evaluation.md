@@ -13,6 +13,7 @@ boundary and request/application logging remains structured with `structlog`.
 | Projection | Opening balance, contributions, tax, fees, earnings and adjustments | tested |
 | History | Dated contribution profiles and adjustments | deterministic and tested |
 | Australian super | Preservation age and contribution-cap metadata | validated and tested |
+| Provider extensibility | Non-Australian provider through neutral contract | tested without shared-service changes |
 | Isolation | Cross-household people and retirement accounts | rejected or hidden |
 | Reliability | Duplicate correction event | rejected by idempotency key |
 | Performance | Warm 40-year monthly calculation | p95 below 300 ms over 100 runs |
@@ -22,9 +23,11 @@ threshold blocks merge.
 
 ## Recorded local results
 
-- Python 3.14.6: 85 tests passed; 91.70% backend statement coverage.
+- Python 3.14.6: 87 tests passed; 91.32% backend statement coverage.
 - Ruff formatting/lint and strict mypy: no errors.
 - PostgreSQL 16: forward upgrade from Phase 6 to Phase 7 passed; Alembic reported no schema drift.
 - Packaged Docker test image: full quality suite passed.
-- Forty-year monthly calculation benchmark: 10 warm-ups then 100 runs; p50 8.69 ms,
-  p95 10.18 ms, maximum 40.24 ms; required p95 below 300 ms — **PASS**.
+- Retirement provider contract: a non-Australian example provider validated its own settings,
+  account type and dated rules without changes to shared retirement code or schemas.
+- Forty-year monthly calculation benchmark: 10 warm-ups then 100 runs; p50 8.81 ms,
+  p95 10.57 ms, maximum 44.69 ms; required p95 below 300 ms — **PASS**.

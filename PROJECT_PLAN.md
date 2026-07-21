@@ -998,10 +998,10 @@ effective_from
 effective_to nullable
 employer_rate nullable
 employer_amount nullable
-voluntary_concessional_amount nullable
-non_concessional_amount nullable
+voluntary_pre_tax_amount nullable
+voluntary_post_tax_amount nullable
 contribution_tax_rate nullable
-annual_cap nullable
+annual_pre_tax_cap nullable
 ```
 
 ### Projection requirements
@@ -1775,8 +1775,17 @@ Deliver:
 
 Acceptance requires dated contribution profiles, idempotent balance adjustments, household
 isolation, explicit projection assumptions, and tested calculations for opening balance,
-contributions, contribution tax, fees, earnings and caps. Australian super settings must remain an
-optional profile attached to the generic account model rather than defaults in the shared engine.
+contributions, contribution tax, fees, earnings and caps. Australian super settings must remain in
+an optional provider implementation selected through generic account settings, rather than fields,
+defaults or branches in the shared engine.
+
+### Phase 7A — Cross-cutting jurisdiction modularity audit
+
+Before Phase 8 begins, audit completed services for country-specific branches, field names,
+defaults and calculation rules. Shared services must use neutral contracts and provider registries;
+Australia remains a bundled example implemented outside shared orchestration. External providers
+must be registerable through Python entry points without editing shared services, schemas or
+database structures. Apply this review to every later phase as part of its completion criteria.
 
 ### Phase 8 — Purchase planner
 

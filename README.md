@@ -67,8 +67,10 @@ reports its limitations; estimates are for planning and are not tax advice. See
 [Adding a tax provider](docs/custom-tax-provider.md) for the extension scaffold.
 
 Phase 7 adds generic retirement accounts, dated contribution profiles and balance corrections,
-monthly projections, and an optional Australian super profile. Assumptions and contribution-cap
-warnings remain explicit; retirement drawdown is planned for a later phase.
+monthly projections, and optional jurisdiction providers. Assumptions and contribution-cap
+warnings remain explicit. Jurisdiction-specific rules use installable retirement providers, with
+Australia as the bundled example. See [Adding a retirement provider](docs/custom-retirement-provider.md).
+Retirement drawdown is planned for a later phase.
 
 ## Contributing
 

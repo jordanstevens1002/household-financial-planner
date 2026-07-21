@@ -12,11 +12,11 @@ def run_once() -> float:
         effective_to=None,
         employer_rate=Decimal("12"),
         employer_amount=None,
-        voluntary_concessional_amount=Decimal("5000"),
-        non_concessional_amount=Decimal("2000"),
+        voluntary_pre_tax_amount=Decimal("5000"),
+        voluntary_post_tax_amount=Decimal("2000"),
         contribution_tax_rate=Decimal("15"),
-        annual_cap=Decimal("30000"),
-        non_concessional_cap=Decimal("120000"),
+        annual_pre_tax_cap=Decimal("30000"),
+        annual_post_tax_cap=Decimal("120000"),
     )
     started = time.perf_counter()
     entries, _ = project_retirement(

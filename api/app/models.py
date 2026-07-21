@@ -463,24 +463,12 @@ class RetirementAccount(Base):
     expected_return_rate: Mapped[Decimal] = mapped_column(Numeric(7, 4))
     annual_fees: Mapped[Decimal] = mapped_column(Numeric(18, 2))
     retirement_age: Mapped[int | None] = mapped_column()
+    provider_code: Mapped[str | None] = mapped_column(String(80))
+    provider_settings: Mapped[dict[str, object]] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql"), default=dict
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     notes: Mapped[str | None] = mapped_column(String(2000))
-
-
-class AustralianSuperProfile(Base):
-    __tablename__ = "australian_super_profiles"
-    __table_args__ = (
-        CheckConstraint("preservation_age >= 0 AND preservation_age <= 120"),
-        CheckConstraint("concessional_cap >= 0"),
-        CheckConstraint("non_concessional_cap >= 0"),
-    )
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    retirement_account_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("retirement_accounts.id", ondelete="CASCADE"), unique=True, index=True
-    )
-    preservation_age: Mapped[int] = mapped_column()
-    concessional_cap: Mapped[Decimal] = mapped_column(Numeric(18, 2))
-    non_concessional_cap: Mapped[Decimal] = mapped_column(Numeric(18, 2))
 
 
 class RetirementContributionProfile(Base):
@@ -489,10 +477,10 @@ class RetirementContributionProfile(Base):
         CheckConstraint("effective_to IS NULL OR effective_to >= effective_from"),
         CheckConstraint("employer_rate IS NULL OR (employer_rate >= 0 AND employer_rate <= 100)"),
         CheckConstraint("employer_amount IS NULL OR employer_amount >= 0"),
-        CheckConstraint("voluntary_concessional_amount >= 0"),
-        CheckConstraint("non_concessional_amount >= 0"),
+        CheckConstraint("voluntary_pre_tax_amount >= 0"),
+        CheckConstraint("voluntary_post_tax_amount >= 0"),
         CheckConstraint("contribution_tax_rate >= 0 AND contribution_tax_rate <= 100"),
-        CheckConstraint("annual_cap IS NULL OR annual_cap >= 0"),
+        CheckConstraint("annual_pre_tax_cap IS NULL OR annual_pre_tax_cap >= 0"),
     )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     retirement_account_id: Mapped[uuid.UUID] = mapped_column(
@@ -502,10 +490,10 @@ class RetirementContributionProfile(Base):
     effective_to: Mapped[date | None] = mapped_column(Date)
     employer_rate: Mapped[Decimal | None] = mapped_column(Numeric(7, 4))
     employer_amount: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
-    voluntary_concessional_amount: Mapped[Decimal] = mapped_column(Numeric(18, 2))
-    non_concessional_amount: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    voluntary_pre_tax_amount: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    voluntary_post_tax_amount: Mapped[Decimal] = mapped_column(Numeric(18, 2))
     contribution_tax_rate: Mapped[Decimal] = mapped_column(Numeric(7, 4))
-    annual_cap: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
+    annual_pre_tax_cap: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
 
 
 class RetirementAccountEvent(Base):

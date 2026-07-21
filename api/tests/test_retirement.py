@@ -25,10 +25,10 @@ def test_retirement_projection_applies_contributions_tax_fees_and_adjustments() 
         effective_to=None,
         employer_rate=None,
         employer_amount=Decimal("12000"),
-        voluntary_concessional_amount=Decimal("1200"),
-        non_concessional_amount=Decimal("600"),
+        voluntary_pre_tax_amount=Decimal("1200"),
+        voluntary_post_tax_amount=Decimal("600"),
         contribution_tax_rate=Decimal("15"),
-        annual_cap=Decimal("30000"),
+        annual_pre_tax_cap=Decimal("30000"),
     )
     entries, warnings = project_retirement(
         opening_balance=Decimal("100000"),
@@ -53,11 +53,11 @@ def test_retirement_projection_warns_for_caps_and_rejects_invalid_range() -> Non
         effective_to=None,
         employer_rate=Decimal("12"),
         employer_amount=None,
-        voluntary_concessional_amount=Decimal("20000"),
-        non_concessional_amount=Decimal("130000"),
+        voluntary_pre_tax_amount=Decimal("20000"),
+        voluntary_post_tax_amount=Decimal("130000"),
         contribution_tax_rate=Decimal("15"),
-        annual_cap=Decimal("30000"),
-        non_concessional_cap=Decimal("120000"),
+        annual_pre_tax_cap=Decimal("30000"),
+        annual_post_tax_cap=Decimal("120000"),
     )
     _, warnings = project_retirement(
         Decimal("0"),
@@ -135,8 +135,8 @@ async def test_generic_retirement_account_contributions_events_and_projection(
         json={
             "effective_from": "2025-01-01",
             "employer_amount": 12000,
-            "voluntary_concessional_amount": 1200,
-            "non_concessional_amount": 600,
+            "voluntary_pre_tax_amount": 1200,
+            "voluntary_post_tax_amount": 600,
             "contribution_tax_rate": 15,
         },
     )
@@ -168,7 +168,7 @@ async def test_australian_super_profile_rules_and_duplicate_inputs(
     client: AsyncClient, retirement_types: dict[str, LookupItem]
 ) -> None:
     household = await create_household(client)
-    missing = await client.post(
+    unsupported = await client.post(
         f"/api/v1/households/{household['id']}/retirement-accounts",
         json={
             "display_name": "Super",
@@ -176,17 +176,20 @@ async def test_australian_super_profile_rules_and_duplicate_inputs(
             "opening_balance": 0,
             "opening_balance_date": "2025-01-01",
             "expected_return_rate": 5,
+            "provider_code": "MISSING_PROVIDER",
         },
     )
-    assert missing.status_code == 422
+    assert unsupported.status_code == 422
     account = await create_account(
         client,
         household["id"],
         retirement_types["australian"],
-        australian_super={"preservation_age": 60},
+        provider_code="au_super",
+        provider_settings={"preservation_age": 60},
         retirement_age=67,
     )
-    assert account["australian_super"]["concessional_cap"] == "30000.00"
+    assert account["provider_code"] == "AU_SUPER"
+    assert account["provider_settings"]["annual_pre_tax_cap"] == "30000"
     profile_url = f"/api/v1/retirement-accounts/{account['id']}/contribution-profiles"
     first = await client.post(profile_url, json={"effective_from": "2025-01-01"})
     assert first.status_code == 201
