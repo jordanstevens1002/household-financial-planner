@@ -10,8 +10,8 @@ os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite://")
 os.environ.setdefault("OIDC_ISSUER", "https://identity.example.com/")
 os.environ.setdefault("OIDC_JWKS_URL", "https://identity.example.com/.well-known/jwks.json")
 
-from app.auth import Identity, get_identity
-from app.database import Base, get_session
+from app.core.auth import Identity, get_identity
+from app.core.database import Base, get_session
 from app.main import app
 
 

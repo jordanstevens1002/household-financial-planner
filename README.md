@@ -20,6 +20,8 @@ Development is divided into reviewed phases. Each implementation phase is comple
 Tests and evaluation metrics are mandatory in every phase. A phase is not complete unless its automated tests pass and its documented acceptance and quality thresholds are met.
 The consolidated cross-cutting review rules are documented in
 [Architecture principles](docs/architecture-principles.md).
+The backend package map and placement rules are documented in
+[Code organization](docs/code-organization.md).
 
 ## Principles
 

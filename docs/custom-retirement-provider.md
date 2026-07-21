@@ -4,7 +4,7 @@ Retirement accounts and projections use country-neutral models. An optional prov
 jurisdiction or scheme-specific validation, caps, assumptions and warnings without changing the
 shared retirement service.
 
-Implement the `RetirementProvider` protocol from `app.retirement_providers.base`, then register an
+Implement the `RetirementProvider` protocol from `app.retirement.providers.base`, then register an
 instance or class from an external package:
 
 ```toml
@@ -16,5 +16,5 @@ The provider owns its `provider_settings` structure, compatible account types an
 rules. Shared code receives only generic pre-tax and post-tax caps plus human-readable assumptions
 and warnings. Install the reviewed provider package in the API image and restart the service.
 
-Australia is the bundled example at `app/retirement_providers/australia.py`. Adding another country
-must not require edits to `retirement.py`, shared schemas, models or migrations.
+Australia is the bundled example at `app/retirement/providers/australia.py`. Adding another country
+must not require edits to `retirement/router.py`, shared schemas, models or migrations.
