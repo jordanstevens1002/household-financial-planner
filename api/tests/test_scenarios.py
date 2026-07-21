@@ -19,6 +19,7 @@ from app.models import (
     ScenarioOverride,
 )
 from app.scenario_calculations import calculate_scenario
+from app.scenario_templates import TEMPLATES
 from tests.test_households import create_household
 
 
@@ -78,7 +79,6 @@ async def test_custom_template_inheritance_and_comparison(client: AsyncClient) -
     household = await create_household(client)
     templates = await client.get("/api/v1/scenario-templates")
     assert templates.status_code == 200
-    assert all("AUSTRALIA" not in item["code"] for item in templates.json())
 
     base = await client.post(
         f"/api/v1/households/{household['id']}/scenarios",
@@ -136,6 +136,54 @@ async def test_custom_template_inheritance_and_comparison(client: AsyncClient) -
     )
     assert compared.status_code == 200, compared.text
     assert len(compared.json()["scenarios"]) == 2
+
+
+def test_template_definitions_use_only_generic_override_contracts() -> None:
+    assert len({template.code for template in TEMPLATES}) == len(TEMPLATES)
+    for template in TEMPLATES:
+        Decimal(template.default_value)
+        if template.target_entity_type == "METRIC":
+            assert template.operation in {"SET", "ADD", "MULTIPLY_PERCENT"}
+        else:
+            assert template.target_entity_type == "FINANCIAL_EVENT"
+            assert template.operation in {"SET", "ADD", "ENABLE", "DISABLE", "SHIFT_DAYS"}
+
+
+async def test_template_result_does_not_depend_on_currency_or_jurisdiction(
+    client: AsyncClient,
+) -> None:
+    household_specs = (
+        {"display_name": "Australian household", "currency": "AUD", "jurisdiction": "AU"},
+        {"display_name": "Canadian household", "currency": "CAD", "jurisdiction": "CA"},
+    )
+    results: list[dict[str, str]] = []
+    for household_spec in household_specs:
+        household_response = await client.post("/api/v1/households", json=household_spec)
+        assert household_response.status_code == 201
+        household = household_response.json()
+        scenario_response = await client.post(
+            f"/api/v1/households/{household['id']}/scenarios/from-template",
+            json={
+                "display_name": "Income change",
+                "template_code": "LOWER_INCOME",
+                "effective_from": "2027-01-01",
+            },
+        )
+        assert scenario_response.status_code == 201, scenario_response.text
+        calculation = await client.post(
+            f"/api/v1/scenarios/{scenario_response.json()['id']}/calculate",
+            json={
+                "as_of": "2027-06-01",
+                "baseline_metrics": {"annual_net_income": "100000"},
+            },
+        )
+        assert calculation.status_code == 200, calculation.text
+        results.append(calculation.json()["metrics"])
+
+    assert results == [
+        {"annual_net_income": "90000.0"},
+        {"annual_net_income": "90000.0"},
+    ]
 
 
 async def test_template_value_zero_is_respected(client: AsyncClient) -> None:

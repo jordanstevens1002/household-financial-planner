@@ -14,11 +14,13 @@
 
 ## Recorded local results
 
-- Python 3.14.6: 99 tests passed; 92% statement coverage.
+- Python 3.14.6: 101 tests passed; 92% statement coverage.
 - Ruff formatting/lint and strict mypy: no errors.
 - Scenario behaviour: effective dates, metric operations, inheritance, comparison and event
   immutability passed.
 - Isolation: cross-household event targets were rejected and inaccessible scenarios were hidden.
+- Abstraction: all templates passed the generic override-contract check, and identical inputs
+  produced identical results for AU/AUD and CA/CAD households.
 - PostgreSQL 16: forward upgrade through Phase 9 passed; Alembic reported no schema drift.
 - Calculation benchmark: 10 warm-ups then 100 runs with 1,000 overrides; p50 4.36 ms,
   p95 5.29 ms, maximum 6.09 ms; required p95 below 100 ms — **PASS**.
