@@ -1078,22 +1078,17 @@ notes
 
 ## 16. Calculation services
 
-Create isolated calculation modules:
+Keep calculation code isolated inside its owning domain package:
 
 ```text
-calculations/
-  dates.py
-  money.py
-  tax/
-  loans/
-  property_values.py
-  rental.py
-  retirement.py
-  household_cashflow.py
-  purchase_feasibility.py
-  ownership.py
-  scenarios.py
-  timeline.py
+app/
+  events/timeline.py
+  income/tax/
+  loans/calculations.py
+  purchases/calculations.py
+  rental/calculations.py
+  retirement/calculations.py
+  scenarios/calculations.py
 ```
 
 ### General calculation contract
@@ -1843,6 +1838,11 @@ during Phases 1–9. This is a maintenance checkpoint rather than a product phas
 
 Acceptance requires forward migration and drift checks, preservation of existing enum data through
 the neutral rename, full regression tests, architecture boundary tests, and updated measured results.
+
+The post-Phase-9 organisation refactor groups API and test modules by domain without changing HTTP
+paths, database structures, or calculations. `app/main.py`, shared ORM models, and root test fixtures
+remain top-level; placement rules and the maintained package map live in
+`docs/code-organization.md`.
 
 ### Phase 10 — Appsmith user experience
 

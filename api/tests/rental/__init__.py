@@ -1,0 +1,1 @@
+"""Rental-domain tests."""

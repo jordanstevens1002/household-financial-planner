@@ -2,10 +2,10 @@
 
 Tax is an extension point. The income and cash-flow services do not import a country implementation
 or interpret country-specific settings. Australia is included as a working example in
-`api/app/tax/australia.py`.
+`api/app/income/tax/australia.py`.
 
 An external provider implements the `TaxProvider` and `TaxEngine` protocols from
-`app.tax.base`. A provider is responsible for:
+`app.income.tax.base`. A provider is responsible for:
 
 - its jurisdiction code and supported tax years;
 - mapping a calendar date to the jurisdiction's applicable tax year;
