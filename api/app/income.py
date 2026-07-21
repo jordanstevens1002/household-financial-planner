@@ -34,8 +34,8 @@ from app.models import (
     PersonTaxProfile,
 )
 from app.properties import _validate_lookup
-from app.tax.australia import get_australian_engine
-from app.tax.base import TaxInput
+from app.tax.base import TaxCalculationInput
+from app.tax.registry import TaxProviderError, get_tax_engine, tax_year_for_date
 
 router = APIRouter(prefix="/api/v1", tags=["income and tax"])
 logger = get_logger(component="income")
@@ -66,11 +66,6 @@ def _annual_value(
     years = max(as_of.year - effective_from.year, 0)
     growth = Decimal("1") + (growth_rate or Decimal("0")) / Decimal("100")
     return amount * ANNUAL_MULTIPLIERS[frequency] * growth**years
-
-
-def _australian_tax_year(as_of: date) -> str:
-    start_year = as_of.year if as_of.month >= 7 else as_of.year - 1
-    return f"{start_year}-{(start_year + 1) % 100:02d}"
 
 
 async def _person_with_access(
@@ -163,18 +158,18 @@ async def create_tax_profile(
     session: AsyncSession = Depends(get_session),
 ) -> PersonTaxProfile:
     await _person_with_access(person_id, HouseholdRole.EDITOR, user, session)
-    if payload.jurisdiction != "AU":
-        raise HTTPException(422, "Only the AU tax engine is currently available")
+    settings = payload.settings.model_dump(mode="json")
     if payload.settings.calculation_mode == "AUTOMATIC":
         try:
-            get_australian_engine(payload.tax_year)
+            engine = get_tax_engine(payload.jurisdiction, payload.tax_year)
+            settings["parameters"] = engine.validate_parameters(payload.settings.parameters)
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
     record = PersonTaxProfile(
         person_id=person_id,
         jurisdiction=payload.jurisdiction,
         tax_year=payload.tax_year,
-        settings=payload.settings.model_dump(mode="json"),
+        settings=settings,
         effective_from=payload.effective_from,
         effective_to=payload.effective_to,
     )
@@ -187,24 +182,20 @@ async def create_tax_profile(
 def _automatic_tax(
     jurisdiction: str, tax_year: str, gross: Decimal, settings: TaxSettings
 ) -> TaxCalculationRead:
-    if jurisdiction != "AU":
-        raise HTTPException(422, "Unsupported tax jurisdiction")
     try:
-        engine = get_australian_engine(tax_year)
+        engine = get_tax_engine(jurisdiction, tax_year)
+    except TaxProviderError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    try:
+        result = engine.calculate(
+            TaxCalculationInput(
+                gross_taxable_income=gross,
+                parameters=settings.parameters,
+            )
+        )
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
-    result = engine.calculate(
-        TaxInput(
-            gross_taxable_income=gross,
-            deductions=settings.deductions,
-            reportable_super_contributions=settings.reportable_super_contributions,
-            resident=settings.resident,
-            include_medicare_levy=settings.include_medicare_levy,
-            medicare_levy_surcharge_rate=settings.medicare_levy_surcharge_rate,
-            has_study_loan=settings.has_study_loan,
-        )
-    )
-    return TaxCalculationRead(**result.__dict__)
+    return TaxCalculationRead.model_validate(result, from_attributes=True)
 
 
 @router.post("/calculations/tax", response_model=TaxCalculationRead)
@@ -219,12 +210,9 @@ async def calculate_tax(
         return TaxCalculationRead(
             jurisdiction=payload.jurisdiction,
             tax_year=payload.tax_year,
+            ruleset_version="manual",
             taxable_income=payload.gross_taxable_income,
-            income_tax=Decimal("0"),
-            offsets=Decimal("0"),
-            medicare_levy=Decimal("0"),
-            medicare_levy_surcharge=Decimal("0"),
-            study_loan_repayment=Decimal("0"),
+            components=[],
             total=total,
             net_income=net,
             warnings=["Manual net income used; tax components are not calculated."],
@@ -340,7 +328,19 @@ async def _person_projection(
             calculation_mode="MANUAL_NET",
             warnings=["Manual net income used; tax components are not calculated."],
         )
-    expected_tax_year = _australian_tax_year(as_of)
+    try:
+        expected_tax_year = tax_year_for_date(profile.jurisdiction, as_of)
+    except TaxProviderError as exc:
+        return PersonIncomeProjection(
+            person_id=person.id,
+            display_name=person.display_name,
+            gross_taxable_income=_money(taxable),
+            non_taxable_income=_money(non_taxable),
+            net_income=_money(taxable + non_taxable),
+            tax_and_repayments=Decimal("0.00"),
+            calculation_mode="NO_PROFILE",
+            warnings=[f"{exc}; gross taxable income is shown as net."],
+        )
     if profile.tax_year != expected_tax_year:
         return PersonIncomeProjection(
             person_id=person.id,

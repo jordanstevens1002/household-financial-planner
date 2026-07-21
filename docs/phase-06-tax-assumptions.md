@@ -25,6 +25,10 @@ Not yet modelled:
 The engine refuses unsupported years. A future financial year requires a separate implementation
 and boundary tests before it becomes selectable.
 
+Australia is the bundled example for the generic provider interface. Australian-only inputs are
+validated from `settings.parameters`; the shared income service does not know their names. See
+[Adding a tax provider](custom-tax-provider.md) for the external package scaffold.
+
 Official sources consulted:
 
 - [ATO resident tax rates and legislated brackets](https://www.ato.gov.au/law/view/document?DocNum=0000081364&FullDocument=true)

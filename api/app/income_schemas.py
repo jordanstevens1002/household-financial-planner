@@ -3,7 +3,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.models import PaymentFrequency
 
@@ -47,12 +47,7 @@ class IncomeSourceRead(IncomeSourceCreate, ORMModel):
 
 class TaxSettings(BaseModel):
     calculation_mode: Literal["AUTOMATIC", "MANUAL_NET"] = "AUTOMATIC"
-    resident: bool = True
-    deductions: Decimal = Field(default=Decimal("0"), ge=0)
-    reportable_super_contributions: Decimal = Field(default=Decimal("0"), ge=0)
-    include_medicare_levy: bool = True
-    medicare_levy_surcharge_rate: Decimal = Field(default=Decimal("0"), ge=0, le=2)
-    has_study_loan: bool = False
+    parameters: dict[str, object] = Field(default_factory=dict)
     manual_annual_net_income: Decimal | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
@@ -64,8 +59,13 @@ class TaxSettings(BaseModel):
 
 class TaxProfileCreate(DatedRecord):
     jurisdiction: str = Field(min_length=2, max_length=50)
-    tax_year: str = Field(pattern=r"^\d{4}-\d{2}$")
+    tax_year: str = Field(min_length=1, max_length=20)
     settings: TaxSettings
+
+    @field_validator("jurisdiction")
+    @classmethod
+    def normalize_jurisdiction(cls, value: str) -> str:
+        return value.strip().upper()
 
 
 class TaxProfileRead(TaxProfileCreate, ORMModel):
@@ -74,21 +74,29 @@ class TaxProfileRead(TaxProfileCreate, ORMModel):
 
 
 class TaxCalculationRequest(BaseModel):
-    jurisdiction: str
-    tax_year: str
+    jurisdiction: str = Field(min_length=2, max_length=50)
+    tax_year: str = Field(min_length=1, max_length=20)
     gross_taxable_income: Decimal = Field(ge=0)
     settings: TaxSettings = Field(default_factory=TaxSettings)
+
+    @field_validator("jurisdiction")
+    @classmethod
+    def normalize_jurisdiction(cls, value: str) -> str:
+        return value.strip().upper()
+
+
+class TaxComponentRead(BaseModel):
+    code: str
+    display_name: str
+    amount: Decimal
 
 
 class TaxCalculationRead(BaseModel):
     jurisdiction: str
     tax_year: str
+    ruleset_version: str
     taxable_income: Decimal
-    income_tax: Decimal
-    offsets: Decimal
-    medicare_levy: Decimal
-    medicare_levy_surcharge: Decimal
-    study_loan_repayment: Decimal
+    components: list[TaxComponentRead]
     total: Decimal
     net_income: Decimal
     warnings: list[str]

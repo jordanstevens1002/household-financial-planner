@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Household, LookupItem, Person
 from app.tax.australia import AustraliaTaxEngine2025_26
-from app.tax.base import TaxInput
+from app.tax.base import TaxCalculationInput, TaxEstimate
 from tests.test_households import create_household
 
 
@@ -62,27 +62,33 @@ def income_payload(
     }
 
 
+def tax_input(gross: int, **parameters: object) -> TaxCalculationInput:
+    return TaxCalculationInput(gross_taxable_income=gross, parameters=parameters)
+
+
+def components(result: TaxEstimate) -> dict[str, object]:
+    return {item.code: item.amount for item in result.components}
+
+
 def test_australian_2025_26_tax_engine_includes_lito_medicare_and_help() -> None:
     engine = AustraliaTaxEngine2025_26()
-    low = engine.calculate(TaxInput(gross_taxable_income=45_000))
-    assert low.income_tax == 3_963
-    assert low.offsets == 325
-    assert low.medicare_levy == 900
+    low = engine.calculate(tax_input(45_000))
+    assert components(low)["income_tax"] == 4_288
+    assert components(low)["low_income_tax_offset"] == -325
+    assert components(low)["medicare_levy"] == 900
     assert low.total == 4_863
 
-    help_result = engine.calculate(TaxInput(gross_taxable_income=100_000, has_study_loan=True))
-    assert help_result.income_tax == 20_788
-    assert help_result.study_loan_repayment == 4_950
+    help_result = engine.calculate(tax_input(100_000, has_study_loan=True))
+    assert components(help_result)["income_tax"] == 20_788
+    assert components(help_result)["study_loan_repayment"] == 4_950
     assert help_result.total == 27_738
     assert help_result.net_income == 72_262
 
 
 def test_foreign_resident_has_no_tax_free_threshold_or_medicare() -> None:
-    result = AustraliaTaxEngine2025_26().calculate(
-        TaxInput(gross_taxable_income=100_000, resident=False)
-    )
-    assert result.income_tax == 30_000
-    assert result.medicare_levy == 0
+    result = AustraliaTaxEngine2025_26().calculate(tax_input(100_000, resident=False))
+    assert components(result)["income_tax"] == 30_000
+    assert components(result)["medicare_levy"] == 0
     assert result.net_income == 70_000
 
 
@@ -98,13 +104,9 @@ def test_foreign_resident_has_no_tax_free_threshold_or_medicare() -> None:
     ],
 )
 def test_resident_income_tax_bracket_boundaries(income: int, expected_tax: int) -> None:
-    result = AustraliaTaxEngine2025_26().calculate(
-        TaxInput(
-            gross_taxable_income=income,
-            include_medicare_levy=False,
-        )
-    )
-    assert result.income_tax == expected_tax
+    result = AustraliaTaxEngine2025_26().calculate(tax_input(income, include_medicare_levy=False))
+    calculated = components(result)
+    assert calculated["income_tax"] + calculated["low_income_tax_offset"] == expected_tax
 
 
 @pytest.mark.parametrize(
@@ -112,10 +114,8 @@ def test_resident_income_tax_bracket_boundaries(income: int, expected_tax: int) 
     [(135_000, 40_500), (190_000, 60_850), (200_000, 65_350)],
 )
 def test_foreign_resident_tax_bracket_boundaries(income: int, expected_tax: int) -> None:
-    result = AustraliaTaxEngine2025_26().calculate(
-        TaxInput(gross_taxable_income=income, resident=False)
-    )
-    assert result.income_tax == expected_tax
+    result = AustraliaTaxEngine2025_26().calculate(tax_input(income, resident=False))
+    assert components(result)["income_tax"] == expected_tax
 
 
 @pytest.mark.parametrize(
@@ -124,27 +124,23 @@ def test_foreign_resident_tax_bracket_boundaries(income: int, expected_tax: int)
 )
 def test_2025_26_study_loan_marginal_tiers(income: int, expected_repayment: int) -> None:
     result = AustraliaTaxEngine2025_26().calculate(
-        TaxInput(
-            gross_taxable_income=income,
-            include_medicare_levy=False,
-            has_study_loan=True,
-        )
+        tax_input(income, include_medicare_levy=False, has_study_loan=True)
     )
-    assert result.study_loan_repayment == expected_repayment
+    assert components(result)["study_loan_repayment"] == expected_repayment
 
 
 def test_deductions_and_medicare_surcharge_are_explicit_inputs() -> None:
     result = AustraliaTaxEngine2025_26().calculate(
-        TaxInput(
-            gross_taxable_income=100_000,
+        tax_input(
+            100_000,
             deductions=10_000,
             include_medicare_levy=False,
             medicare_levy_surcharge_rate=1,
         )
     )
     assert result.taxable_income == 90_000
-    assert result.medicare_levy == 0
-    assert result.medicare_levy_surcharge == 900
+    assert components(result)["medicare_levy"] == 0
+    assert components(result)["medicare_levy_surcharge"] == 900
 
 
 async def test_multiple_dated_income_sources_and_manual_net_household_cashflow(
@@ -213,7 +209,7 @@ async def test_automatic_tax_profile_drives_income_projection(
             "jurisdiction": "AU",
             "tax_year": "2025-26",
             "effective_from": "2025-07-01",
-            "settings": {"has_study_loan": True},
+            "settings": {"parameters": {"has_study_loan": True}},
         },
     )
     body = (
@@ -265,7 +261,7 @@ async def test_tax_calculation_rejects_unsupported_year_and_accepts_manual_net(
     manual = await client.post(
         "/api/v1/calculations/tax",
         json={
-            "jurisdiction": "AU",
+            "jurisdiction": "NZ",
             "tax_year": "2025-26",
             "gross_taxable_income": 80_000,
             "settings": {
@@ -277,6 +273,23 @@ async def test_tax_calculation_rejects_unsupported_year_and_accepts_manual_net(
     assert manual.status_code == 200
     assert manual.json()["net_income"] == "65000"
     assert "Manual net income" in manual.json()["warnings"][0]
+
+
+async def test_australian_provider_rejects_unknown_country_parameters(
+    client: AsyncClient,
+) -> None:
+    response = await client.post(
+        "/api/v1/calculations/tax",
+        json={
+            "jurisdiction": "au",
+            "tax_year": "2025-26",
+            "gross_taxable_income": 80_000,
+            "settings": {"parameters": {"not_an_australian_parameter": True}},
+        },
+    )
+
+    assert response.status_code == 422
+    assert "not_an_australian_parameter" in response.json()["detail"]
 
 
 async def test_future_and_ended_income_do_not_leak_into_snapshot(

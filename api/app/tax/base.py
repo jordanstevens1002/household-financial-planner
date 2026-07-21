@@ -1,29 +1,33 @@
 from dataclasses import dataclass, field
+from datetime import date
 from decimal import Decimal
 from typing import Protocol
 
 
 @dataclass(frozen=True)
-class TaxInput:
+class TaxCalculationInput:
+    """Jurisdiction-neutral values supplied to a tax engine."""
+
     gross_taxable_income: Decimal
-    deductions: Decimal = Decimal("0")
-    reportable_super_contributions: Decimal = Decimal("0")
-    resident: bool = True
-    include_medicare_levy: bool = True
-    medicare_levy_surcharge_rate: Decimal = Decimal("0")
-    has_study_loan: bool = False
+    parameters: dict[str, object] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class TaxComponent:
+    """One named contribution to a tax estimate; credits use negative amounts."""
+
+    code: str
+    display_name: str
+    amount: Decimal
 
 
 @dataclass(frozen=True)
 class TaxEstimate:
     jurisdiction: str
     tax_year: str
+    ruleset_version: str
     taxable_income: Decimal
-    income_tax: Decimal
-    offsets: Decimal
-    medicare_levy: Decimal
-    medicare_levy_surcharge: Decimal
-    study_loan_repayment: Decimal
+    components: list[TaxComponent]
     total: Decimal
     net_income: Decimal
     warnings: list[str] = field(default_factory=list)
@@ -32,5 +36,18 @@ class TaxEstimate:
 class TaxEngine(Protocol):
     jurisdiction: str
     tax_year: str
+    ruleset_version: str
 
-    def calculate(self, values: TaxInput) -> TaxEstimate: ...
+    def validate_parameters(self, parameters: dict[str, object]) -> dict[str, object]: ...
+
+    def calculate(self, values: TaxCalculationInput) -> TaxEstimate: ...
+
+
+class TaxProvider(Protocol):
+    jurisdiction: str
+    display_name: str
+    supported_tax_years: tuple[str, ...]
+
+    def tax_year_for_date(self, as_of: date) -> str: ...
+
+    def get_engine(self, tax_year: str) -> TaxEngine: ...
