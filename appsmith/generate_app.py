@@ -117,6 +117,7 @@ def input_widget(
         "rightColumn": right,
         "label": label,
         "labelPosition": "Top",
+        "defaultText": "",
         "placeholderText": label,
         "inputType": "TEXT",
         "isRequired": required,
@@ -227,18 +228,18 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
                 31,
                 2,
                 20,
-                disabled="{{!HouseholdName.text || !HouseholdCurrency.text || !HouseholdJurisdiction.text}}",
+                disabled="{{!(HouseholdName.text || '').trim() || !(HouseholdCurrency.text || '').trim() || !(HouseholdJurisdiction.text || '').trim()}}",
             ),
             text("ExistingHouseholdsLabel", "Or continue with an existing household", 38, 42),
             table("ExistingHouseholds", "{{ListHouseholds.data}}", 43, 68),
             button(
                 "UseHouseholdButton",
                 "Use selected household",
-                "{{storeValue('householdId', ExistingHouseholds.selectedRow.id); storeValue('householdName', ExistingHouseholds.selectedRow.display_name); navigateTo('Dashboard')}}",
+                "{{storeValue('householdId', ExistingHouseholds.selectedRow?.id); storeValue('householdName', ExistingHouseholds.selectedRow?.display_name); navigateTo('Dashboard')}}",
                 70,
                 2,
                 22,
-                disabled="{{!ExistingHouseholds.selectedRow.id}}",
+                disabled="{{!ExistingHouseholds.selectedRow?.id}}",
             ),
         ]
     elif name == "Dashboard":
@@ -370,7 +371,7 @@ def actions() -> list[dict[str, Any]]:
     household = "{{appsmith.store.householdId}}"
     return [
         action("Onboarding", "ListHouseholds", "GET", "/api/v1/households", on_load=True),
-        action("Onboarding", "CreateHousehold", "POST", "/api/v1/households", body='{{JSON.stringify({display_name: HouseholdName.text, currency: HouseholdCurrency.text.toUpperCase(), jurisdiction: HouseholdJurisdiction.text.toUpperCase()})}}'),
+        action("Onboarding", "CreateHousehold", "POST", "/api/v1/households", body="{{JSON.stringify({display_name: String(HouseholdName.text || '').trim(), currency: String(HouseholdCurrency.text || '').trim().toUpperCase(), jurisdiction: String(HouseholdJurisdiction.text || '').trim().toUpperCase()})}}"),
         action("Dashboard", "ListPeople", "GET", f"/api/v1/households/{household}/people", on_load=True),
         action("Dashboard", "ListProperties", "GET", f"/api/v1/households/{household}/properties", on_load=True),
         action("Dashboard", "ListTimeline", "GET", f"/api/v1/households/{household}/timeline", on_load=True),

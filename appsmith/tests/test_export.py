@@ -85,6 +85,34 @@ class AppsmithExportTests(unittest.TestCase):
             save["onClick"],
         )
 
+    def test_inputs_have_string_defaults(self) -> None:
+        for page in self.application["pageList"]:
+            widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+            for widget in widgets:
+                if widget["type"] == "INPUT_WIDGET_V2":
+                    self.assertEqual(widget["defaultText"], "")
+
+    def test_onboarding_handles_an_empty_household_selection(self) -> None:
+        onboarding = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Onboarding"
+        )
+        widgets = onboarding["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        use_household = next(
+            widget for widget in widgets if widget["widgetName"] == "UseHouseholdButton"
+        )
+        self.assertIn("selectedRow?.id", use_household["isDisabled"])
+        self.assertIn("selectedRow?.id", use_household["onClick"])
+
+        create_household = next(
+            wrapper["unpublishedAction"]
+            for wrapper in self.application["actionList"]
+            if wrapper["unpublishedAction"]["name"] == "CreateHousehold"
+        )
+        body = create_household["actionConfiguration"]["body"]
+        self.assertIn("String(HouseholdName.text || '')", body)
+
     def test_current_snapshot_debt_cannot_silently_default_to_zero(self) -> None:
         wizard = next(
             page
