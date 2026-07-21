@@ -31,6 +31,11 @@ The application should help a household understand:
 
 The application should prioritise clarity, resilience, flexibility and informed decision-making rather than aggressive wealth maximisation.
 
+The product is a personal and household planning tool, primarily for people considering or
+maintaining a small number of homes (typically two or three). Its language should be casual,
+clear and centred on owners, renters and household decisions. Avoid positioning features for
+large property businesses, professional property management or industry workflows.
+
 ---
 
 ## 2. Product scope
@@ -46,7 +51,7 @@ The initial release should support:
 - a household with no property;
 - a first-home buyer;
 - a current homeowner;
-- a landlord;
+- a homeowner who rents out some or all of a property;
 - someone with both owner-occupied and rented properties;
 - someone entering years of historical data;
 - someone planning future purchases or sales.
@@ -363,7 +368,7 @@ Each status definition should contain behavioural flags:
 generates_rental_income
 applies_vacancy
 applies_management_fee
-applies_landlord_expenses
+applies_rental_expenses
 is_occupied_by_household
 is_active_asset
 ```
@@ -638,6 +643,7 @@ rental_profiles
 ---------------
 id
 property_id
+display_name
 effective_from
 effective_to nullable
 market_rent_amount nullable
@@ -649,6 +655,11 @@ letting_fee nullable
 rental_share_percentage
 notes
 ```
+
+A property may have multiple named rental portions active at once, such as a room, granny flat,
+or the other half of a duplex. Each portion has its own dated rent and rental share. Concurrent
+shares must not exceed 100%. This supports a household occupying one part of a home while renters
+occupy another part without treating the household as a property business.
 
 ### Rental activation
 
@@ -1206,6 +1217,10 @@ POST   /properties/{property_id}/status-events
 POST   /properties/{property_id}/ownership
 GET    /properties/{property_id}/timeline
 GET    /properties/{property_id}/cashflow
+GET    /properties/{property_id}/rental-profiles
+POST   /properties/{property_id}/rental-profiles
+GET    /properties/{property_id}/expenses
+POST   /properties/{property_id}/expenses
 ```
 
 ### Loans

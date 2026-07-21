@@ -27,6 +27,7 @@ from app.models import (
     Person,
 )
 from app.properties import router as properties_router
+from app.rental import router as rental_router
 from app.schemas import (
     HouseholdCreate,
     HouseholdRead,
@@ -44,17 +45,18 @@ logger = get_logger(component="api")
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    logger.info("application_started", version="0.4.0")
+    logger.info("application_started", version="0.5.0")
     try:
         yield
     finally:
         logger.info("application_stopped")
 
 
-app = FastAPI(title="Household Financial Planner API", version="0.4.0", lifespan=lifespan)
+app = FastAPI(title="Household Financial Planner API", version="0.5.0", lifespan=lifespan)
 app.include_router(properties_router)
 app.include_router(events_router)
 app.include_router(loans_router)
+app.include_router(rental_router)
 
 
 @app.middleware("http")
