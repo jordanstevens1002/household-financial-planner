@@ -51,6 +51,12 @@ async def test_historical_purchase_wizard_creates_purchase_valuation(
         json={
             "mode": "HISTORICAL_PURCHASE",
             "property": payload,
+            "baseline": {
+                "baseline_date": "2026-07-16",
+                "property_value": "920000.00",
+                "loan_balance_total": "310000.00",
+                "status_id": property_lookups["status"],
+            },
             "ownership": [
                 {
                     "owner_type": "HOUSEHOLD",
@@ -62,6 +68,7 @@ async def test_historical_purchase_wizard_creates_purchase_valuation(
     )
     assert response.status_code == 201
     assert response.json()["valuation"]["valuation_type"] == "PURCHASE_PRICE"
+    assert response.json()["baseline"]["loan_balance_total"] == "310000.00"
     assert response.json()["warnings"] == []
     assert response.json()["property"]["address_line_1"] is None
 

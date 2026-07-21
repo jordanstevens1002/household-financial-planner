@@ -234,7 +234,7 @@ async def property_wizard(
             property_id=property_record.id, **valuation_payload.model_dump()
         )
         session.add(valuation)
-    elif payload.baseline is not None:
+    if payload.baseline is not None:
         await _validate_lookup(payload.baseline.status_id, "property_status", session)
         baseline = PropertyBaseline(property_id=property_record.id, **payload.baseline.model_dump())
         session.add(baseline)

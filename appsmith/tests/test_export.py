@@ -141,9 +141,17 @@ class AppsmithExportTests(unittest.TestCase):
             if page["unpublishedPage"]["name"] == "Property Wizard"
         )
         widgets = wizard["unpublishedPage"]["layouts"][0]["dsl"]["children"]
-        debt = next(widget for widget in widgets if widget["widgetName"] == "PropertyDebt")
-        self.assertIn("CURRENT_SNAPSHOT", debt["isRequired"])
-        self.assertIn("CURRENT_SNAPSHOT", debt["isVisible"])
+        debt = next(
+            widget for widget in widgets if widget["widgetName"] == "CurrentPropertyDebt"
+        )
+        self.assertTrue(debt["isRequired"])
+        self.assertTrue(debt["isVisible"])
+
+        purchase_date = next(
+            widget for widget in widgets if widget["widgetName"] == "PropertyPurchaseDate"
+        )
+        self.assertIn("HISTORICAL_PURCHASE", purchase_date["isRequired"])
+        self.assertIn("HISTORICAL_PURCHASE", purchase_date["isVisible"])
 
 
 if __name__ == "__main__":

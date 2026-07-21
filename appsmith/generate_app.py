@@ -267,23 +267,17 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
         ]
     elif name == "Property Wizard":
         widgets += [
-            text("PropertyWizardHelp", "Record either a current snapshot or a historical purchase. Values and debt are explicit rather than guessed.", 17, 21),
-            select_widget("SetupMode", "Starting point", "{{[{label: 'Current snapshot', value: 'CURRENT_SNAPSHOT'}, {label: 'Historical purchase', value: 'HISTORICAL_PURCHASE'}]}}", 22, 2, 22, default="CURRENT_SNAPSHOT"),
+            text("PropertyWizardHelp", "Enter the property's current position, with optional purchase history. A past purchase can still have an outstanding loan.", 17, 21),
+            select_widget("SetupMode", "Information to add", "{{[{label: 'Current position only', value: 'CURRENT_SNAPSHOT'}, {label: 'Purchase history and current position', value: 'HISTORICAL_PURCHASE'}]}}", 22, 2, 22, default="CURRENT_SNAPSHOT"),
             input_widget("PropertyName", "Property name", 22, 23, 43, required=True),
             select_widget("PropertyType", "Property type", "{{ListPropertyTypes.data.map(item => ({label: item.display_name, value: item.id}))}}", 22, 44, 62),
             select_widget("PropertyStatus", "Current status", "{{ListPropertyStatuses.data.map(item => ({label: item.display_name, value: item.id}))}}", 31, 2, 22),
-            input_widget("PropertyEffectiveDate", "Snapshot or purchase date (YYYY-MM-DD)", 31, 23, 43, required=True),
-            input_widget("PropertyValue", "Property value or purchase price", 31, 44, 62, required=True),
-            input_widget(
-                "PropertyDebt",
-                "Current loan balance (enter 0 only when there is no debt)",
-                40,
-                2,
-                32,
-                required="{{SetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT'}}",
-                visible="{{SetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT'}}",
-            ),
-            button("CreatePropertyButton", "Create property", "{{CreateProperty.run(() => navigateTo('Properties'), () => showAlert(CreateProperty.data.detail || 'Could not create property', 'error'))}}", 49, 2, 20, disabled="{{!PropertyName.text || !PropertyType.selectedOptionValue || !PropertyStatus.selectedOptionValue || !PropertyEffectiveDate.text || !PropertyValue.text || (SetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT' && !PropertyDebt.text)}}"),
+            input_widget("CurrentPositionDate", "Current position date (YYYY-MM-DD)", 31, 23, 43, required=True),
+            input_widget("CurrentPropertyValue", "Current property value", 31, 44, 62, required=True),
+            input_widget("CurrentPropertyDebt", "Current loan balance (enter 0 only when there is no debt)", 40, 2, 22, required=True),
+            input_widget("PropertyPurchaseDate", "Purchase date (YYYY-MM-DD)", 40, 23, 43, required="{{SetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE'}}", visible="{{SetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE'}}"),
+            input_widget("PropertyPurchasePrice", "Purchase price", 40, 44, 62, required="{{SetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE'}}", visible="{{SetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE'}}"),
+            button("CreatePropertyButton", "Create property", "{{CreateProperty.run(() => navigateTo('Properties'), () => showAlert(JSON.stringify(CreateProperty.data?.detail || 'Could not create property'), 'error'))}}", 49, 2, 20, disabled="{{!SetupMode.selectedOptionValue || !(PropertyName.text || '').trim() || !PropertyType.selectedOptionValue || !PropertyStatus.selectedOptionValue || !(CurrentPositionDate.text || '').trim() || !(CurrentPropertyValue.text || '').trim() || CurrentPropertyDebt.text === undefined || CurrentPropertyDebt.text === '' || (SetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE' && (!(PropertyPurchaseDate.text || '').trim() || !(PropertyPurchasePrice.text || '').trim()))}}"),
         ]
     elif name == "Timeline":
         widgets += [
@@ -383,7 +377,7 @@ def actions() -> list[dict[str, Any]]:
         action("Properties", "ListProperties", "GET", f"/api/v1/households/{household}/properties", on_load=True),
         action("Property Wizard", "ListPropertyTypes", "GET", "/api/v1/lookups/property_type", on_load=True),
         action("Property Wizard", "ListPropertyStatuses", "GET", "/api/v1/lookups/property_status", on_load=True),
-        action("Property Wizard", "CreateProperty", "POST", f"/api/v1/households/{household}/properties/wizard", body="{{({mode: SetupMode.selectedOptionValue, property: {display_name: PropertyName.text, property_type_id: PropertyType.selectedOptionValue, current_status_id: PropertyStatus.selectedOptionValue, purchase_date: SetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE' ? PropertyEffectiveDate.text : null, purchase_price: SetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE' ? Number(PropertyValue.text) : null}, baseline: SetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT' ? {baseline_date: PropertyEffectiveDate.text, property_value: Number(PropertyValue.text), loan_balance_total: Number(PropertyDebt.text), status_id: PropertyStatus.selectedOptionValue} : null, ownership: []})}}"),
+        action("Property Wizard", "CreateProperty", "POST", f"/api/v1/households/{household}/properties/wizard", body="{{({mode: SetupMode.selectedOptionValue, property: {display_name: String(PropertyName.text || '').trim(), property_type_id: PropertyType.selectedOptionValue, current_status_id: PropertyStatus.selectedOptionValue, purchase_date: SetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE' ? PropertyPurchaseDate.text : null, purchase_price: SetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE' ? Number(PropertyPurchasePrice.text) : null}, baseline: {baseline_date: CurrentPositionDate.text, property_value: Number(CurrentPropertyValue.text), loan_balance_total: Number(CurrentPropertyDebt.text), status_id: PropertyStatus.selectedOptionValue}, ownership: []})}}"),
         action("Timeline", "ListTimeline", "GET", f"/api/v1/households/{household}/timeline", on_load=True),
         action("Scenarios", "ListScenarios", "GET", f"/api/v1/households/{household}/scenarios", on_load=True),
         action("Scenarios", "CreateScenario", "POST", f"/api/v1/households/{household}/scenarios", body="{{({display_name: ScenarioName.text})}}"),

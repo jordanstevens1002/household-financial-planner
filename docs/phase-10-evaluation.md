@@ -27,8 +27,8 @@ Compose. Confirm all of the following:
 3. A user can configure local development identity or a bearer token without editing the export.
 4. A new household can be created only after name, currency and jurisdiction are entered.
 5. A person can be added and remains visible after revisiting the page.
-6. The property wizard supports a current snapshot and a historical purchase with friendly lookup
-   labels, never raw lookup IDs.
+6. The property wizard supports a current position alone or purchase history plus the current
+   position, including any outstanding loan, with friendly lookup labels rather than raw IDs.
 7. The dashboard and timeline distinguish absent data from a financial zero.
 8. A custom scenario can be saved and remains visible after revisiting the page.
 9. An existing household can be selected after returning to onboarding.
@@ -41,7 +41,7 @@ performed.
 
 - Appsmith version: v1.93, pinned and reported healthy.
 - Import: passed twice through Appsmith's application import API; all eight pages were created.
-- Appsmith structural tests: 7 passed.
+- Appsmith structural tests: 11 passed.
 - Generated export drift: none.
 - Committed credentials and personal defaults: none.
 - Appsmith-to-FastAPI Docker network check: `/health/ready` returned HTTP 200.
