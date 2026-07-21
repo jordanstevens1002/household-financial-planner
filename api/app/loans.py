@@ -254,13 +254,19 @@ async def loan_schedule(
 ) -> LoanScheduleRead:
     loan = await _loan_with_access(loan_id, HouseholdRole.VIEWER, user, session)
     events = await _loan_events(loan_id, session)
-    schedule = generate_schedule(loan, events, through_date)
+    try:
+        schedule = generate_schedule(loan, events, through_date)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
     if any(code == "LOAN_OFFSET_CHANGED" for _, code in events):
-        no_offset = generate_schedule(
-            loan,
-            [(event, code) for event, code in events if code != "LOAN_OFFSET_CHANGED"],
-            through_date,
-        )
+        try:
+            no_offset = generate_schedule(
+                loan,
+                [(event, code) for event, code in events if code != "LOAN_OFFSET_CHANGED"],
+                through_date,
+            )
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
         schedule.interest_saved_vs_no_offset = max(
             Decimal("0"), no_offset.total_interest - schedule.total_interest
         )
@@ -384,6 +390,8 @@ async def target_calculation(
         or goal.target_amount is None
     ):
         raise HTTPException(422, "MAXIMUM_WEEKLY_REPAYMENT amount goal required")
+    if loan.term_months is None:
+        raise HTTPException(422, "A loan term is required for a target repayment calculation")
     events = await _loan_events(loan_id, session)
     partial_schedule = generate_schedule(loan, events, payload.as_of)
     current_balance = partial_schedule.remaining_balance
@@ -394,7 +402,7 @@ async def target_calculation(
         + payload.as_of.month
         - loan.opening_balance_date.month,
     )
-    remaining_months = max(1, (loan.term_months or 360) - elapsed_months)
+    remaining_months = max(1, loan.term_months - elapsed_months)
     periods = max(1, (remaining_months * payments_per_year(loan.repayment_frequency) + 11) // 12)
     current_rate = (
         partial_schedule.entries[-1].annual_interest_rate

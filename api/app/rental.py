@@ -240,6 +240,8 @@ async def property_cashflow(
     gross = vacancy = management = letting = costs = market = charged = Decimal("0")
     rental_days = 0
     warnings: set[str] = set()
+    if profiles or any(item.frequency != PaymentFrequency.ONCE for item in expenses):
+        warnings.add("Recurring amounts use a 365-day planning year for daily allocation")
     for on_date in inclusive_dates(from_date, to_date):
         baseline = next(
             (item for item in reversed(baselines) if item.baseline_date <= on_date), None

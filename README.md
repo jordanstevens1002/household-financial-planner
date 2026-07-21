@@ -18,6 +18,8 @@ The planned stack is:
 Development is divided into reviewed phases. Each implementation phase is completed on its own branch and pull request, with `main` remaining releasable.
 
 Tests and evaluation metrics are mandatory in every phase. A phase is not complete unless its automated tests pass and its documented acceptance and quality thresholds are met.
+The consolidated cross-cutting review rules are documented in
+[Architecture principles](docs/architecture-principles.md).
 
 ## Principles
 

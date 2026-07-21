@@ -84,10 +84,10 @@ class PurchasePlanRead(BaseModel):
 
 class FeasibilityRequest(BaseModel):
     purchase_price: Decimal = Field(gt=0)
-    maximum_additional_borrowing: Decimal = Field(default=Decimal("0"), ge=0)
-    annual_interest_rate: Decimal = Field(default=Decimal("0"), ge=0, le=100)
-    loan_term_years: int = Field(default=30, gt=0, le=100)
-    current_monthly_surplus: Decimal = Decimal("0")
+    maximum_additional_borrowing: Decimal = Field(ge=0)
+    annual_interest_rate: Decimal = Field(ge=0, le=100)
+    loan_term_years: int = Field(gt=0, le=100)
+    current_monthly_surplus: Decimal
 
 
 class CalculatedCost(BaseModel):

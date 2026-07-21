@@ -466,7 +466,7 @@ PERSON
 HOUSEHOLD
 COMPANY
 TRUST
-SUPER_FUND
+RETIREMENT_FUND
 EXTERNAL_PARTY
 OTHER
 ```
@@ -1787,6 +1787,8 @@ defaults and calculation rules. Shared services must use neutral contracts and p
 Australia remains a bundled example implemented outside shared orchestration. External providers
 must be registerable through Python entry points without editing shared services, schemas or
 database structures. Apply this review to every later phase as part of its completion criteria.
+The consolidated rules are maintained in `docs/architecture-principles.md` and apply to both new
+work and cross-cutting reviews of completed phases.
 
 ### Phase 8 — Purchase planner
 
@@ -1826,6 +1828,21 @@ Acceptance requires tested custom and template creation, effective-date filterin
 base-scenario inheritance, baseline-to-scenario and scenario-to-scenario comparison, non-mutating
 planned-event overrides, household isolation, role enforcement, forward migration and schema-drift
 checks. A 1,000-override calculation must remain below 100 ms p95 over 100 local runs.
+
+### Post-Phase 9 — Cross-cutting architecture alignment
+
+Before frontend implementation, reconcile completed backend work with the priorities established
+during Phases 1–9. This is a maintenance checkpoint rather than a product phase. It must:
+
+- maintain the consolidated architecture principles;
+- remove country-specific terminology from shared ownership types;
+- route every bundled country example through the same neutral provider boundary as extensions;
+- require financially material purchase assumptions instead of silently defaulting them;
+- remove the implicit 30-year term from open-ended loan projections; and
+- disclose day-count assumptions used by current loan and rental calculations.
+
+Acceptance requires forward migration and drift checks, preservation of existing enum data through
+the neutral rename, full regression tests, architecture boundary tests, and updated measured results.
 
 ### Phase 10 — Appsmith user experience
 

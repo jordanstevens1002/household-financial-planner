@@ -1,5 +1,11 @@
 from httpx import AsyncClient
 
+from app.main import app
+
+
+def test_api_patch_version_records_alignment_release() -> None:
+    assert app.version == "0.9.1"
+
 
 async def test_liveness_does_not_require_database(client: AsyncClient) -> None:
     response = await client.get("/health/live")

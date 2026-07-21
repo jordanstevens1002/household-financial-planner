@@ -201,7 +201,18 @@ async def calculate_purchase_plan(
     assumptions.extend(
         [
             "Only funding available by the target date is included.",
-            "Loan repayment uses a constant principal-and-interest rate.",
+            (
+                "Loan repayment uses a constant principal-and-interest rate of "
+                f"{payload.annual_interest_rate}% over {payload.loan_term_years} years."
+            ),
+            (
+                "Affordability starts from the explicitly supplied monthly surplus of "
+                f"{payload.current_monthly_surplus} {plan.currency}."
+            ),
+            (
+                "Additional borrowing is limited to the explicitly supplied maximum of "
+                f"{payload.maximum_additional_borrowing} {plan.currency}."
+            ),
         ]
     )
     return FeasibilityRead(

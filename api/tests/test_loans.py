@@ -230,10 +230,28 @@ async def test_full_amortisation_daily_interest_and_interest_only(
     partial = await client.get(
         f"/api/v1/loans/{daily['id']}/schedule", params={"through_date": "2020-02-01"}
     )
+    assert "DAILY_INTEREST_USES_ACTUAL_365_BASIS" in partial.json()["data_quality_flags"]
     first = partial.json()["entries"][0]
     assert first["interest"] == "2268.49"
     assert first["repayment"] == first["interest"]
     assert first["principal"] == "0.00"
+
+
+async def test_schedule_does_not_assume_a_term_for_open_ended_loans(
+    client: AsyncClient, loan_setup: dict[str, str]
+) -> None:
+    loan = await create_loan(client, loan_setup, term_months=None)
+    undated = await client.get(f"/api/v1/loans/{loan['id']}/schedule")
+    assert undated.status_code == 422
+    assert (
+        undated.json()["detail"] == "A loan term or through_date is required to generate a schedule"
+    )
+
+    dated = await client.get(
+        f"/api/v1/loans/{loan['id']}/schedule", params={"through_date": "2020-04-01"}
+    )
+    assert dated.status_code == 200, dated.text
+    assert len(dated.json()["entries"]) == 3
 
 
 async def test_repayment_term_interest_only_and_closure_events(
