@@ -909,6 +909,11 @@ tax/
 
 The Australian tax implementation should be versioned by financial year.
 
+Tax outputs are planning estimates, not tax advice. Each implementation must identify its source
+financial year, reject unsupported years rather than silently reuse old rules, expose material
+limitations, and allow a person to replace automatic tax with an explicit manual net-income
+amount.
+
 A household must be able to disable automatic tax calculation and enter net income manually.
 
 ### Tax profile
@@ -1240,10 +1245,13 @@ POST   /loans/{loan_id}/target-calculation
 ```text
 GET    /people/{person_id}/income-sources
 POST   /people/{person_id}/income-sources
+GET    /people/{person_id}/tax-profiles
+POST   /people/{person_id}/tax-profiles
 GET    /households/{household_id}/expenses
 POST   /households/{household_id}/expenses
 POST   /calculations/tax
 GET    /households/{household_id}/income-projection
+GET    /households/{household_id}/cashflow
 ```
 
 ### Retirement accounts

@@ -363,6 +363,77 @@ class PropertyExpense(Base):
     notes: Mapped[str | None] = mapped_column(String(2000))
 
 
+class IncomeSource(Base):
+    __tablename__ = "income_sources"
+    __table_args__ = (
+        CheckConstraint("gross_amount >= 0"),
+        CheckConstraint("salary_sacrifice_amount IS NULL OR salary_sacrifice_amount >= 0"),
+        CheckConstraint(
+            "annual_growth_rate IS NULL OR "
+            "(annual_growth_rate >= -100 AND annual_growth_rate <= 100)"
+        ),
+        CheckConstraint("effective_to IS NULL OR effective_to >= effective_from"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    person_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("people.id", ondelete="CASCADE"), index=True
+    )
+    income_type_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lookup_items.id"))
+    display_name: Mapped[str] = mapped_column(String(200))
+    gross_amount: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    frequency: Mapped[PaymentFrequency] = mapped_column(
+        Enum(PaymentFrequency, name="payment_frequency", create_type=False)
+    )
+    salary_sacrifice_amount: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
+    annual_growth_rate: Mapped[Decimal | None] = mapped_column(Numeric(7, 4))
+    effective_from: Mapped[date] = mapped_column(Date, index=True)
+    effective_to: Mapped[date | None] = mapped_column(Date)
+    taxable: Mapped[bool] = mapped_column(Boolean)
+    notes: Mapped[str | None] = mapped_column(String(2000))
+
+
+class PersonTaxProfile(Base):
+    __tablename__ = "person_tax_profiles"
+    __table_args__ = (CheckConstraint("effective_to IS NULL OR effective_to >= effective_from"),)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    person_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("people.id", ondelete="CASCADE"), index=True
+    )
+    jurisdiction: Mapped[str] = mapped_column(String(50))
+    tax_year: Mapped[str] = mapped_column(String(20))
+    settings: Mapped[dict[str, object]] = mapped_column(JSON().with_variant(JSONB, "postgresql"))
+    effective_from: Mapped[date] = mapped_column(Date, index=True)
+    effective_to: Mapped[date | None] = mapped_column(Date)
+
+
+class HouseholdExpense(Base):
+    __tablename__ = "household_expenses"
+    __table_args__ = (
+        CheckConstraint("amount >= 0"),
+        CheckConstraint(
+            "annual_growth_rate IS NULL OR "
+            "(annual_growth_rate >= -100 AND annual_growth_rate <= 100)"
+        ),
+        CheckConstraint("effective_to IS NULL OR effective_to >= effective_from"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    household_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("households.id", ondelete="CASCADE"), index=True
+    )
+    person_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("people.id", ondelete="CASCADE"))
+    category_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lookup_items.id"))
+    display_name: Mapped[str] = mapped_column(String(200))
+    amount: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    frequency: Mapped[PaymentFrequency] = mapped_column(
+        Enum(PaymentFrequency, name="payment_frequency", create_type=False)
+    )
+    annual_growth_rate: Mapped[Decimal | None] = mapped_column(Numeric(7, 4))
+    effective_from: Mapped[date] = mapped_column(Date, index=True)
+    effective_to: Mapped[date | None] = mapped_column(Date)
+    is_essential: Mapped[bool] = mapped_column(Boolean)
+    notes: Mapped[str | None] = mapped_column(String(2000))
+
+
 class EventType(Base):
     __tablename__ = "event_types"
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)

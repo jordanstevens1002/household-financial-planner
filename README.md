@@ -59,6 +59,11 @@ A household can model a whole rented home or named portions such as a room, gran
 of a duplex while still living in the rest of the property. The product remains focused on clear
 personal decisions for a small household property setup, not professional property management.
 
+Phase 6 adds multiple dated income sources per person, dated household expenses, manual or
+automatic net-income planning, and annual/monthly household cash flow. The initial Australian
+tax estimator is explicitly versioned for 2025–26, rejects unsupported years, and reports its
+limitations; estimates are for planning and are not tax advice.
+
 ## Contributing
 
 Contribution guidance, security reporting and the full development workflow will be added as the implementation foundation is established.
