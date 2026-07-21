@@ -512,6 +512,83 @@ class RetirementAccountEvent(Base):
     notes: Mapped[str | None] = mapped_column(String(2000))
 
 
+class PurchasePlan(Base):
+    __tablename__ = "purchase_plans"
+    __table_args__ = (
+        CheckConstraint("target_price_min >= 0"),
+        CheckConstraint("target_price_max >= target_price_min"),
+        CheckConstraint("desired_buffer >= 0"),
+        CheckConstraint("max_lvr IS NULL OR (max_lvr >= 0 AND max_lvr <= 100)"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    household_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("households.id", ondelete="CASCADE"), index=True
+    )
+    display_name: Mapped[str] = mapped_column(String(200))
+    purchase_type_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lookup_items.id"))
+    target_location: Mapped[dict[str, object]] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql")
+    )
+    intended_use: Mapped[str] = mapped_column(String(100))
+    target_price_min: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    target_price_max: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    target_date: Mapped[date] = mapped_column(Date)
+    currency: Mapped[str] = mapped_column(String(3))
+    desired_buffer: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    max_lvr: Mapped[Decimal | None] = mapped_column(Numeric(7, 4))
+    minimum_monthly_surplus: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
+    provider_code: Mapped[str | None] = mapped_column(String(80))
+    provider_settings: Mapped[dict[str, object]] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql"), default=dict
+    )
+    notes: Mapped[str | None] = mapped_column(String(2000))
+
+
+class PurchaseFundingSource(Base):
+    __tablename__ = "purchase_funding_sources"
+    __table_args__ = (CheckConstraint("amount >= 0"),)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    purchase_plan_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("purchase_plans.id", ondelete="CASCADE"), index=True
+    )
+    display_name: Mapped[str] = mapped_column(String(200))
+    source_type: Mapped[str] = mapped_column(String(80))
+    amount: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    available_date: Mapped[date] = mapped_column(Date)
+    is_borrowed: Mapped[bool] = mapped_column(Boolean)
+    notes: Mapped[str | None] = mapped_column(String(2000))
+
+
+class PurchaseCost(Base):
+    __tablename__ = "purchase_costs"
+    __table_args__ = (CheckConstraint("amount >= 0"),)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    purchase_plan_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("purchase_plans.id", ondelete="CASCADE"), index=True
+    )
+    code: Mapped[str] = mapped_column(String(80))
+    display_name: Mapped[str] = mapped_column(String(200))
+    amount: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    is_estimate: Mapped[bool] = mapped_column(Boolean)
+
+
+class PurchaseOwnershipAllocation(Base):
+    __tablename__ = "purchase_ownership_allocations"
+    __table_args__ = (CheckConstraint("ownership_percentage > 0 AND ownership_percentage <= 100"),)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    purchase_plan_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("purchase_plans.id", ondelete="CASCADE"), index=True
+    )
+    owner_type: Mapped[OwnerType] = mapped_column(
+        Enum(OwnerType, name="owner_type", create_type=False)
+    )
+    person_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("people.id", ondelete="RESTRICT")
+    )
+    external_owner_name: Mapped[str | None] = mapped_column(String(200))
+    ownership_percentage: Mapped[Decimal] = mapped_column(Numeric(7, 4))
+
+
 class EventType(Base):
     __tablename__ = "event_types"
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)

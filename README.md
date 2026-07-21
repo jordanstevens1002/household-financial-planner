@@ -72,6 +72,10 @@ warnings remain explicit. Jurisdiction-specific rules use installable retirement
 Australia as the bundled example. See [Adding a retirement provider](docs/custom-retirement-provider.md).
 Retirement drawdown is planned for a later phase.
 
+Phase 8 adds configurable purchase plans, dated funding sources, cost components, proposed
+ownership and household-defined comfort thresholds. Country-specific cost estimates use installable
+providers; Australia is a bundled user-configured example rather than a shared-code default.
+
 ## Contributing
 
 Contribution guidance, security reporting and the full development workflow will be added as the implementation foundation is established.

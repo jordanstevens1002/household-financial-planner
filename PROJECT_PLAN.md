@@ -1798,6 +1798,11 @@ Deliver:
 - comfort thresholds;
 - feasibility projection.
 
+Purchase costs that vary by country or scheme must use the generic purchase-provider registry.
+Shared models store only provider code/settings and generic named cost components. Australia is a
+bundled user-configured example and must never be inferred from currency, household jurisdiction
+or location. A non-Australian provider contract test is required for completion.
+
 ### Phase 9 — Scenarios and comparison
 
 Deliver:
