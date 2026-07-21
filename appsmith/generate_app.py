@@ -224,7 +224,7 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
             button(
                 "CreateHouseholdButton",
                 "Create household",
-                "{{CreateHousehold.run(() => { storeValue('householdId', CreateHousehold.data.id); storeValue('householdName', CreateHousehold.data.display_name); navigateTo('People'); }, () => showAlert(CreateHousehold.data.detail || 'Could not create household', 'error'))}}",
+                "{{CreateHousehold.run(() => { storeValue('householdId', CreateHousehold.data.id); storeValue('householdName', CreateHousehold.data.display_name); navigateTo('People'); }, () => showAlert(JSON.stringify(CreateHousehold.data?.detail || 'Could not create household'), 'error'))}}",
                 31,
                 2,
                 20,
@@ -371,20 +371,20 @@ def actions() -> list[dict[str, Any]]:
     household = "{{appsmith.store.householdId}}"
     return [
         action("Onboarding", "ListHouseholds", "GET", "/api/v1/households", on_load=True),
-        action("Onboarding", "CreateHousehold", "POST", "/api/v1/households", body="{{JSON.stringify({display_name: String(HouseholdName.text || '').trim(), currency: String(HouseholdCurrency.text || '').trim().toUpperCase(), jurisdiction: String(HouseholdJurisdiction.text || '').trim().toUpperCase()})}}"),
+        action("Onboarding", "CreateHousehold", "POST", "/api/v1/households", body="{{({display_name: String(HouseholdName.text || '').trim(), currency: String(HouseholdCurrency.text || '').trim().toUpperCase(), jurisdiction: String(HouseholdJurisdiction.text || '').trim().toUpperCase()})}}"),
         action("Dashboard", "ListPeople", "GET", f"/api/v1/households/{household}/people", on_load=True),
         action("Dashboard", "ListProperties", "GET", f"/api/v1/households/{household}/properties", on_load=True),
         action("Dashboard", "ListTimeline", "GET", f"/api/v1/households/{household}/timeline", on_load=True),
         action("Dashboard", "ListScenarios", "GET", f"/api/v1/households/{household}/scenarios", on_load=True),
         action("People", "ListPeople", "GET", f"/api/v1/households/{household}/people", on_load=True),
-        action("People", "CreatePerson", "POST", f"/api/v1/households/{household}/people", body="{{JSON.stringify({display_name: PersonName.text, effective_from: new Date().toISOString().slice(0, 10)})}}"),
+        action("People", "CreatePerson", "POST", f"/api/v1/households/{household}/people", body="{{({display_name: PersonName.text, effective_from: new Date().toISOString().slice(0, 10)})}}"),
         action("Properties", "ListProperties", "GET", f"/api/v1/households/{household}/properties", on_load=True),
         action("Property Wizard", "ListPropertyTypes", "GET", "/api/v1/lookups/property_type", on_load=True),
         action("Property Wizard", "ListPropertyStatuses", "GET", "/api/v1/lookups/property_status", on_load=True),
-        action("Property Wizard", "CreateProperty", "POST", f"/api/v1/households/{household}/properties/wizard", body="{{JSON.stringify({mode: SetupMode.selectedOptionValue, property: {display_name: PropertyName.text, property_type_id: PropertyType.selectedOptionValue, current_status_id: PropertyStatus.selectedOptionValue, purchase_date: SetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE' ? PropertyEffectiveDate.text : null, purchase_price: SetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE' ? Number(PropertyValue.text) : null}, baseline: SetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT' ? {baseline_date: PropertyEffectiveDate.text, property_value: Number(PropertyValue.text), loan_balance_total: Number(PropertyDebt.text), status_id: PropertyStatus.selectedOptionValue} : null, ownership: []})}}"),
+        action("Property Wizard", "CreateProperty", "POST", f"/api/v1/households/{household}/properties/wizard", body="{{({mode: SetupMode.selectedOptionValue, property: {display_name: PropertyName.text, property_type_id: PropertyType.selectedOptionValue, current_status_id: PropertyStatus.selectedOptionValue, purchase_date: SetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE' ? PropertyEffectiveDate.text : null, purchase_price: SetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE' ? Number(PropertyValue.text) : null}, baseline: SetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT' ? {baseline_date: PropertyEffectiveDate.text, property_value: Number(PropertyValue.text), loan_balance_total: Number(PropertyDebt.text), status_id: PropertyStatus.selectedOptionValue} : null, ownership: []})}}"),
         action("Timeline", "ListTimeline", "GET", f"/api/v1/households/{household}/timeline", on_load=True),
         action("Scenarios", "ListScenarios", "GET", f"/api/v1/households/{household}/scenarios", on_load=True),
-        action("Scenarios", "CreateScenario", "POST", f"/api/v1/households/{household}/scenarios", body='{{JSON.stringify({display_name: ScenarioName.text})}}'),
+        action("Scenarios", "CreateScenario", "POST", f"/api/v1/households/{household}/scenarios", body="{{({display_name: ScenarioName.text})}}"),
         action("Settings", "ListPropertyTypes", "GET", "/api/v1/lookups/property_type", on_load=True),
         action("Settings", "ListPropertyStatuses", "GET", "/api/v1/lookups/property_status", on_load=True),
     ]

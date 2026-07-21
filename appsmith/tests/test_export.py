@@ -113,6 +113,14 @@ class AppsmithExportTests(unittest.TestCase):
         body = create_household["actionConfiguration"]["body"]
         self.assertIn("String(HouseholdName.text || '')", body)
 
+    def test_json_request_bodies_are_not_double_encoded(self) -> None:
+        for wrapper in self.application["actionList"]:
+            action = wrapper["unpublishedAction"]
+            body = action["actionConfiguration"].get("body")
+            if body:
+                self.assertNotIn("JSON.stringify", body)
+                self.assertTrue(body.startswith("{{("))
+
     def test_current_snapshot_debt_cannot_silently_default_to_zero(self) -> None:
         wizard = next(
             page
