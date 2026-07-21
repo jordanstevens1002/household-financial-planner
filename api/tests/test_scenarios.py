@@ -113,6 +113,23 @@ async def test_custom_template_inheritance_and_comparison(client: AsyncClient) -
         },
     )
     assert child.status_code == 201, child.text
+    saved = await client.get(f"/api/v1/scenarios/{child.json()['id']}")
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["display_name"] == "And higher expenses"
+    assert saved.json()["base_scenario_id"] == base.json()["id"]
+    assert saved.json()["overrides"] == [
+        {
+            "id": saved.json()["overrides"][0]["id"],
+            "scenario_id": child.json()["id"],
+            "target_entity_type": "METRIC",
+            "target_entity_id": None,
+            "effective_from": "2026-01-01",
+            "effective_to": None,
+            "override_key": "annual_expenses",
+            "operation": "MULTIPLY_PERCENT",
+            "value_json": {"value": "20"},
+        }
+    ]
     calculation = await client.post(
         f"/api/v1/scenarios/{child.json()['id']}/calculate",
         json={
@@ -307,6 +324,8 @@ async def test_scenario_access_roles_and_cross_household_bases(
         json={"as_of": "2027-01-01", "baseline_metrics": {}},
     )
     assert hidden_calculation.status_code == 404
+    hidden_detail = await client.get(f"/api/v1/scenarios/{hidden.id}")
+    assert hidden_detail.status_code == 404
 
     membership.role = HouseholdRole.VIEWER
     await session.commit()

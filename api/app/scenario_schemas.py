@@ -77,6 +77,10 @@ class OverrideRead(OverrideCreate):
     scenario_id: uuid.UUID
 
 
+class ScenarioDetailRead(ScenarioRead):
+    overrides: list[OverrideRead]
+
+
 class TemplateRead(BaseModel):
     code: str
     display_name: str

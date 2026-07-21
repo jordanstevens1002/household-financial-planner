@@ -27,6 +27,7 @@ from app.scenario_schemas import (
     ScenarioCompareRequest,
     ScenarioComparisonRead,
     ScenarioCreate,
+    ScenarioDetailRead,
     ScenarioRead,
     ScenarioUpdate,
     TemplateRead,
@@ -246,6 +247,26 @@ async def create_from_template(
     await session.commit()
     await session.refresh(scenario)
     return scenario
+
+
+@router.get("/scenarios/{scenario_id}", response_model=ScenarioDetailRead)
+async def get_scenario(
+    scenario_id: uuid.UUID,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> ScenarioDetailRead:
+    scenario = await _scenario_with_access(scenario_id, HouseholdRole.VIEWER, user, session)
+    overrides = list(
+        await session.scalars(
+            select(ScenarioOverride)
+            .where(ScenarioOverride.scenario_id == scenario.id)
+            .order_by(ScenarioOverride.effective_from, ScenarioOverride.id)
+        )
+    )
+    return ScenarioDetailRead(
+        **ScenarioRead.model_validate(scenario).model_dump(),
+        overrides=[OverrideRead.model_validate(item) for item in overrides],
+    )
 
 
 @router.put("/scenarios/{scenario_id}", response_model=ScenarioRead)

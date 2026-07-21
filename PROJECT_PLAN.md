@@ -1285,6 +1285,7 @@ GET /households/{household_id}/timeline
 ```text
 GET    /households/{household_id}/scenarios
 POST   /households/{household_id}/scenarios
+GET    /scenarios/{scenario_id}
 PUT    /scenarios/{scenario_id}
 DELETE /scenarios/{scenario_id}
 POST   /scenarios/{scenario_id}/calculate
