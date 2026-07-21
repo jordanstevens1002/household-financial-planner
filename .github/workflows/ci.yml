@@ -9,6 +9,17 @@ permissions:
   contents: read
 
 jobs:
+  appsmith-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: python3 appsmith/generate_app.py
+      - run: git diff --exit-code -- appsmith/household-financial-planner.json
+      - run: python3 -m unittest discover -s appsmith/tests -v
+
   api-quality:
     runs-on: ubuntu-latest
     services:

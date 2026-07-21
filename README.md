@@ -85,6 +85,12 @@ base-scenario inheritance and side-by-side comparisons. The shared scenario engi
 country-neutral: templates are editable starting points, calculations receive explicit baseline
 metrics, and event changes are returned as a scenario layer without modifying recorded events.
 
+Phase 10 adds the importable Appsmith user interface for onboarding, household selection, the
+dashboard, people, properties, the property wizard, timeline, scenarios and connection settings.
+The generated export and local import instructions are in [appsmith/README.md](appsmith/README.md).
+Appsmith is pinned through `APPSMITH_VERSION` so an upstream `latest` image cannot silently change
+the committed application schema.
+
 ## Contributing
 
 Contribution guidance, security reporting and the full development workflow will be added as the implementation foundation is established.
