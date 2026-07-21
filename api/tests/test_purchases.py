@@ -114,6 +114,9 @@ async def test_purchase_plan_with_australian_example_and_feasibility(
     assert body["is_feasible"] is False
     assert body["failed_thresholds"] == ["max_lvr"]
     assert {item["source"] for item in body["costs"]} == {"USER", "AU_PURCHASE"}
+    assert any("6% over 30 years" in item for item in body["assumptions_used"])
+    assert any("6000 AUD" in item for item in body["assumptions_used"])
+    assert any("450000 AUD" in item for item in body["assumptions_used"])
     listed = await client.get(f"/api/v1/households/{household['id']}/purchase-plans")
     assert listed.status_code == 200
     assert listed.json()[0]["id"] == plan["id"]
@@ -178,6 +181,42 @@ async def test_purchase_plan_rejects_invalid_provider_ownership_and_hidden_acces
     await session.commit()
     hidden = await client.post(
         f"/api/v1/purchase-plans/{hidden_plan.id}/calculate",
-        json={"purchase_price": 150},
+        json={
+            "purchase_price": 150,
+            "maximum_additional_borrowing": 0,
+            "annual_interest_rate": 5,
+            "loan_term_years": 10,
+            "current_monthly_surplus": 0,
+        },
     )
     assert hidden.status_code == 404
+
+
+async def test_purchase_calculation_requires_material_assumptions(
+    client: AsyncClient, purchase_type: LookupItem
+) -> None:
+    household = await create_household(client)
+    response = await client.post(
+        f"/api/v1/households/{household['id']}/purchase-plans",
+        json={
+            "display_name": "Explicit assumptions",
+            "purchase_type_id": str(purchase_type.id),
+            "intended_use": "PERSONAL",
+            "target_price_min": 100000,
+            "target_price_max": 200000,
+            "target_date": "2028-01-01",
+        },
+    )
+    assert response.status_code == 201, response.text
+    calculation = await client.post(
+        f"/api/v1/purchase-plans/{response.json()['id']}/calculate",
+        json={"purchase_price": 150000},
+    )
+    assert calculation.status_code == 422
+    missing = {item["loc"][-1] for item in calculation.json()["detail"]}
+    assert missing == {
+        "maximum_additional_borrowing",
+        "annual_interest_rate",
+        "loan_term_years",
+        "current_monthly_surplus",
+    }

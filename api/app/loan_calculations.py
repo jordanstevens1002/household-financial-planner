@@ -99,14 +99,32 @@ def generate_schedule(
         term_months=loan.term_months,
     )
     per_year = payments_per_year(loan.repayment_frequency)
-    periods = max(1, ((loan.term_months or 360) * per_year + 11) // 12)
+    if loan.term_months is None:
+        if through_date is None:
+            raise ValueError("A loan term or through_date is required to generate a schedule")
+        if loan.scheduled_repayment is None:
+            raise ValueError(
+                "A scheduled repayment is required when projecting a loan without a term"
+            )
+        period_cursor = add_payment_period(loan.opening_balance_date, loan.repayment_frequency)
+        periods = 0
+        while period_cursor <= through_date:
+            periods += 1
+            period_cursor = add_payment_period(period_cursor, loan.repayment_frequency)
+        periods = max(1, periods)
+    else:
+        periods = max(1, (loan.term_months * per_year + 11) // 12)
     payment_date = add_payment_period(loan.opening_balance_date, loan.repayment_frequency)
     previous_date = loan.opening_balance_date
     event_index = 0
     entries: list[ScheduleEntry] = []
     total_interest = Decimal("0")
     total_repayments = Decimal("0")
-    flags: list[str] = []
+    flags: list[str] = (
+        ["DAILY_INTEREST_USES_ACTUAL_365_BASIS"]
+        if loan.interest_calculation_method == InterestCalculationMethod.DAILY
+        else []
+    )
     payment_number = 1
     while payment_number <= periods:
         if through_date is not None and payment_date > through_date:

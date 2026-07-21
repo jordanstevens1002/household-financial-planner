@@ -187,6 +187,7 @@ async def test_standard_whole_property_rental_applies_vacancy_and_management_fee
     assert body["charged_rent_equivalent"] == "26000.00"
     assert body["rent_difference"] == "-2600.00"
     assert body["rental_days"] == 365
+    assert "Recurring amounts use a 365-day planning year for daily allocation" in body["warnings"]
 
 
 async def test_concurrent_rental_shares_cannot_exceed_whole_property(

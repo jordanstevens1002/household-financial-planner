@@ -3,8 +3,8 @@ from datetime import date
 from functools import lru_cache
 from importlib.metadata import entry_points
 
-from app.tax.australia import provider as australia_provider
 from app.tax.base import TaxEngine, TaxProvider
+from app.tax.builtins import BUILTIN_PROVIDERS
 
 ENTRY_POINT_GROUP = "household_financial_planner.tax_providers"
 
@@ -51,7 +51,7 @@ def _external_providers() -> list[TaxProvider]:
 
 @lru_cache
 def get_registry() -> TaxProviderRegistry:
-    return TaxProviderRegistry([australia_provider, *_external_providers()])
+    return TaxProviderRegistry([*BUILTIN_PROVIDERS, *_external_providers()])
 
 
 def get_tax_engine(jurisdiction: str, tax_year: str) -> TaxEngine:
