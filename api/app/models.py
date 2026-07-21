@@ -75,6 +75,10 @@ class PaymentFrequency(StrEnum):
     ONCE = "ONCE"
 
 
+class RetirementEventType(StrEnum):
+    BALANCE_ADJUSTMENT = "BALANCE_ADJUSTMENT"
+
+
 class ApplicationUser(Base):
     __tablename__ = "application_users"
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
@@ -431,6 +435,80 @@ class HouseholdExpense(Base):
     effective_from: Mapped[date] = mapped_column(Date, index=True)
     effective_to: Mapped[date | None] = mapped_column(Date)
     is_essential: Mapped[bool] = mapped_column(Boolean)
+    notes: Mapped[str | None] = mapped_column(String(2000))
+
+
+class RetirementAccount(Base):
+    __tablename__ = "retirement_accounts"
+    __table_args__ = (
+        CheckConstraint("opening_balance >= 0"),
+        CheckConstraint("expected_return_rate >= -100 AND expected_return_rate <= 100"),
+        CheckConstraint("annual_fees >= 0"),
+        CheckConstraint(
+            "retirement_age IS NULL OR (retirement_age >= 0 AND retirement_age <= 120)"
+        ),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    household_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("households.id", ondelete="CASCADE"), index=True
+    )
+    person_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("people.id", ondelete="SET NULL"), index=True
+    )
+    display_name: Mapped[str] = mapped_column(String(200))
+    account_type_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lookup_items.id"))
+    currency: Mapped[str] = mapped_column(String(3))
+    opening_balance: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    opening_balance_date: Mapped[date] = mapped_column(Date)
+    expected_return_rate: Mapped[Decimal] = mapped_column(Numeric(7, 4))
+    annual_fees: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    retirement_age: Mapped[int | None] = mapped_column()
+    provider_code: Mapped[str | None] = mapped_column(String(80))
+    provider_settings: Mapped[dict[str, object]] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql"), default=dict
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    notes: Mapped[str | None] = mapped_column(String(2000))
+
+
+class RetirementContributionProfile(Base):
+    __tablename__ = "retirement_contribution_profiles"
+    __table_args__ = (
+        CheckConstraint("effective_to IS NULL OR effective_to >= effective_from"),
+        CheckConstraint("employer_rate IS NULL OR (employer_rate >= 0 AND employer_rate <= 100)"),
+        CheckConstraint("employer_amount IS NULL OR employer_amount >= 0"),
+        CheckConstraint("voluntary_pre_tax_amount >= 0"),
+        CheckConstraint("voluntary_post_tax_amount >= 0"),
+        CheckConstraint("contribution_tax_rate >= 0 AND contribution_tax_rate <= 100"),
+        CheckConstraint("annual_pre_tax_cap IS NULL OR annual_pre_tax_cap >= 0"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    retirement_account_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("retirement_accounts.id", ondelete="CASCADE"), index=True
+    )
+    effective_from: Mapped[date] = mapped_column(Date, index=True)
+    effective_to: Mapped[date | None] = mapped_column(Date)
+    employer_rate: Mapped[Decimal | None] = mapped_column(Numeric(7, 4))
+    employer_amount: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
+    voluntary_pre_tax_amount: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    voluntary_post_tax_amount: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    contribution_tax_rate: Mapped[Decimal] = mapped_column(Numeric(7, 4))
+    annual_pre_tax_cap: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
+
+
+class RetirementAccountEvent(Base):
+    __tablename__ = "retirement_account_events"
+    __table_args__ = (UniqueConstraint("retirement_account_id", "idempotency_key"),)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    retirement_account_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("retirement_accounts.id", ondelete="CASCADE"), index=True
+    )
+    event_type: Mapped[RetirementEventType] = mapped_column(
+        Enum(RetirementEventType, name="retirement_event_type")
+    )
+    effective_date: Mapped[date] = mapped_column(Date, index=True)
+    amount: Mapped[Decimal] = mapped_column(Numeric(18, 2))
+    idempotency_key: Mapped[str | None] = mapped_column(String(100))
     notes: Mapped[str | None] = mapped_column(String(2000))
 
 

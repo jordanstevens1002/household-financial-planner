@@ -66,6 +66,12 @@ bundled Australian example is explicitly versioned for 2025–26, rejects unsupp
 reports its limitations; estimates are for planning and are not tax advice. See
 [Adding a tax provider](docs/custom-tax-provider.md) for the extension scaffold.
 
+Phase 7 adds generic retirement accounts, dated contribution profiles and balance corrections,
+monthly projections, and optional jurisdiction providers. Assumptions and contribution-cap
+warnings remain explicit. Jurisdiction-specific rules use installable retirement providers, with
+Australia as the bundled example. See [Adding a retirement provider](docs/custom-retirement-provider.md).
+Retirement drawdown is planned for a later phase.
+
 ## Contributing
 
 Contribution guidance, security reporting and the full development workflow will be added as the implementation foundation is established.
