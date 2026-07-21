@@ -1857,6 +1857,16 @@ Deliver:
 - scenarios;
 - settings.
 
+The Appsmith application must be stored as a deterministic, importable export in the repository;
+UI configuration that exists only inside a local Docker volume is not complete. The application
+must keep financial calculations in FastAPI, store no credentials or personal defaults in its
+export, and support bearer-token authentication plus explicitly enabled local development auth.
+
+Acceptance requires automated export-regeneration and structure tests, all backend regression
+tests, successful import into the pinned Appsmith container, responsive desktop/mobile review,
+and a manual happy-path review covering household setup, a person, a property snapshot, timeline
+display, a saved scenario and returning to the same household.
+
 ### Phase 11 — Open-source release readiness
 
 Deliver:

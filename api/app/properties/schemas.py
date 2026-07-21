@@ -121,8 +121,8 @@ class PropertyWizardCreate(BaseModel):
         if self.mode == PropertySetupMode.HISTORICAL_PURCHASE:
             if self.property.purchase_date is None or self.property.purchase_price is None:
                 raise ValueError("historical purchase requires purchase_date and purchase_price")
-        elif self.baseline is None:
-            raise ValueError("current snapshot requires a baseline")
+        if self.baseline is None:
+            raise ValueError("property setup requires a current-position baseline")
         return self
 
 

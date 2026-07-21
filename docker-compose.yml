@@ -39,7 +39,7 @@ services:
     restart: unless-stopped
 
   appsmith:
-    image: index.docker.io/appsmith/appsmith-ce:latest
+    image: index.docker.io/appsmith/appsmith-ce:${APPSMITH_VERSION:-v1.93}
     ports:
       - "8080:80"
     volumes:
