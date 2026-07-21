@@ -121,6 +121,19 @@ class AppsmithExportTests(unittest.TestCase):
                 self.assertNotIn("JSON.stringify", body)
                 self.assertTrue(body.startswith("{{("))
 
+    def test_select_widgets_map_array_source_data(self) -> None:
+        for page in self.application["pageList"]:
+            widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+            for widget in widgets:
+                if widget["type"] == "SELECT_WIDGET":
+                    self.assertIn("sourceData", widget)
+                    self.assertNotIn("options", widget)
+                    self.assertEqual(widget["optionLabel"], "label")
+                    self.assertEqual(widget["optionValue"], "value")
+                    self.assertIn(
+                        {"key": "sourceData"}, widget["dynamicBindingPathList"]
+                    )
+
     def test_current_snapshot_debt_cannot_silently_default_to_zero(self) -> None:
         wizard = next(
             page

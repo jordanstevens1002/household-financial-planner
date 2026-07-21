@@ -153,7 +153,9 @@ def select_widget(
         "leftColumn": left,
         "rightColumn": right,
         "labelText": label,
-        "options": options,
+        "sourceData": options,
+        "optionLabel": "label",
+        "optionValue": "value",
         "defaultOptionValue": default,
         "placeholderText": f"Choose {label.lower()}",
         "isVisible": True,
@@ -161,7 +163,7 @@ def select_widget(
         "isLoading": False,
         "renderMode": "CANVAS",
         "version": 1,
-        "dynamicBindingPathList": [{"key": "options"}, {"key": "defaultOptionValue"}],
+        "dynamicBindingPathList": [{"key": "sourceData"}],
         "dynamicTriggerPathList": [],
     }
 

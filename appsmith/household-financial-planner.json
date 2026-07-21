@@ -5077,7 +5077,9 @@
                   "leftColumn": 2,
                   "rightColumn": 22,
                   "labelText": "Starting point",
-                  "options": "{{[{label: 'Current snapshot', value: 'CURRENT_SNAPSHOT'}, {label: 'Historical purchase', value: 'HISTORICAL_PURCHASE'}]}}",
+                  "sourceData": "{{[{label: 'Current snapshot', value: 'CURRENT_SNAPSHOT'}, {label: 'Historical purchase', value: 'HISTORICAL_PURCHASE'}]}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
                   "defaultOptionValue": "CURRENT_SNAPSHOT",
                   "placeholderText": "Choose starting point",
                   "isVisible": true,
@@ -5087,10 +5089,7 @@
                   "version": 1,
                   "dynamicBindingPathList": [
                     {
-                      "key": "options"
-                    },
-                    {
-                      "key": "defaultOptionValue"
+                      "key": "sourceData"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -5135,7 +5134,9 @@
                   "leftColumn": 44,
                   "rightColumn": 62,
                   "labelText": "Property type",
-                  "options": "{{ListPropertyTypes.data.map(item => ({label: item.display_name, value: item.id}))}}",
+                  "sourceData": "{{ListPropertyTypes.data.map(item => ({label: item.display_name, value: item.id}))}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
                   "defaultOptionValue": "",
                   "placeholderText": "Choose property type",
                   "isVisible": true,
@@ -5145,10 +5146,7 @@
                   "version": 1,
                   "dynamicBindingPathList": [
                     {
-                      "key": "options"
-                    },
-                    {
-                      "key": "defaultOptionValue"
+                      "key": "sourceData"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -5164,7 +5162,9 @@
                   "leftColumn": 2,
                   "rightColumn": 22,
                   "labelText": "Current status",
-                  "options": "{{ListPropertyStatuses.data.map(item => ({label: item.display_name, value: item.id}))}}",
+                  "sourceData": "{{ListPropertyStatuses.data.map(item => ({label: item.display_name, value: item.id}))}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
                   "defaultOptionValue": "",
                   "placeholderText": "Choose current status",
                   "isVisible": true,
@@ -5174,10 +5174,7 @@
                   "version": 1,
                   "dynamicBindingPathList": [
                     {
-                      "key": "options"
-                    },
-                    {
-                      "key": "defaultOptionValue"
+                      "key": "sourceData"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -5772,7 +5769,9 @@
                   "leftColumn": 2,
                   "rightColumn": 22,
                   "labelText": "Starting point",
-                  "options": "{{[{label: 'Current snapshot', value: 'CURRENT_SNAPSHOT'}, {label: 'Historical purchase', value: 'HISTORICAL_PURCHASE'}]}}",
+                  "sourceData": "{{[{label: 'Current snapshot', value: 'CURRENT_SNAPSHOT'}, {label: 'Historical purchase', value: 'HISTORICAL_PURCHASE'}]}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
                   "defaultOptionValue": "CURRENT_SNAPSHOT",
                   "placeholderText": "Choose starting point",
                   "isVisible": true,
@@ -5782,10 +5781,7 @@
                   "version": 1,
                   "dynamicBindingPathList": [
                     {
-                      "key": "options"
-                    },
-                    {
-                      "key": "defaultOptionValue"
+                      "key": "sourceData"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -5830,7 +5826,9 @@
                   "leftColumn": 44,
                   "rightColumn": 62,
                   "labelText": "Property type",
-                  "options": "{{ListPropertyTypes.data.map(item => ({label: item.display_name, value: item.id}))}}",
+                  "sourceData": "{{ListPropertyTypes.data.map(item => ({label: item.display_name, value: item.id}))}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
                   "defaultOptionValue": "",
                   "placeholderText": "Choose property type",
                   "isVisible": true,
@@ -5840,10 +5838,7 @@
                   "version": 1,
                   "dynamicBindingPathList": [
                     {
-                      "key": "options"
-                    },
-                    {
-                      "key": "defaultOptionValue"
+                      "key": "sourceData"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -5859,7 +5854,9 @@
                   "leftColumn": 2,
                   "rightColumn": 22,
                   "labelText": "Current status",
-                  "options": "{{ListPropertyStatuses.data.map(item => ({label: item.display_name, value: item.id}))}}",
+                  "sourceData": "{{ListPropertyStatuses.data.map(item => ({label: item.display_name, value: item.id}))}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
                   "defaultOptionValue": "",
                   "placeholderText": "Choose current status",
                   "isVisible": true,
@@ -5869,10 +5866,7 @@
                   "version": 1,
                   "dynamicBindingPathList": [
                     {
-                      "key": "options"
-                    },
-                    {
-                      "key": "defaultOptionValue"
+                      "key": "sourceData"
                     }
                   ],
                   "dynamicTriggerPathList": []
