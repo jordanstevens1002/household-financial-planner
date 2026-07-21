@@ -1812,6 +1812,20 @@ Deliver:
 - side-by-side comparison;
 - event overrides.
 
+Scenarios are household-owned, dated layers over caller-supplied baseline metrics and planned
+events. A scenario may inherit from another scenario in the same household, with a maximum depth
+and cycle protection. Overrides use neutral target, key, operation and JSON value fields; shared
+scenario orchestration must not infer a country from currency, jurisdiction or location.
+
+The bundled template library provides editable starting points for common personal-finance
+questions. Templates contain no country-specific rules. Future jurisdiction-specific template
+packages must use an extension boundary rather than branches in the shared scenario engine.
+
+Acceptance requires tested custom and template creation, effective-date filtering, deterministic
+base-scenario inheritance, baseline-to-scenario and scenario-to-scenario comparison, non-mutating
+planned-event overrides, household isolation, role enforcement, forward migration and schema-drift
+checks. A 1,000-override calculation must remain below 100 ms p95 over 100 local runs.
+
 ### Phase 10 — Appsmith user experience
 
 Deliver:

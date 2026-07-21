@@ -31,6 +31,7 @@ from app.properties import router as properties_router
 from app.purchases import router as purchases_router
 from app.rental import router as rental_router
 from app.retirement import router as retirement_router
+from app.scenarios import router as scenarios_router
 from app.schemas import (
     HouseholdCreate,
     HouseholdRead,
@@ -48,14 +49,14 @@ logger = get_logger(component="api")
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    logger.info("application_started", version="0.8.0")
+    logger.info("application_started", version="0.9.0")
     try:
         yield
     finally:
         logger.info("application_stopped")
 
 
-app = FastAPI(title="Household Financial Planner API", version="0.8.0", lifespan=lifespan)
+app = FastAPI(title="Household Financial Planner API", version="0.9.0", lifespan=lifespan)
 app.include_router(properties_router)
 app.include_router(events_router)
 app.include_router(loans_router)
@@ -63,6 +64,7 @@ app.include_router(rental_router)
 app.include_router(income_router)
 app.include_router(retirement_router)
 app.include_router(purchases_router)
+app.include_router(scenarios_router)
 
 
 @app.middleware("http")

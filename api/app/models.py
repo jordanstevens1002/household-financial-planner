@@ -589,6 +589,41 @@ class PurchaseOwnershipAllocation(Base):
     ownership_percentage: Mapped[Decimal] = mapped_column(Numeric(7, 4))
 
 
+class Scenario(Base):
+    __tablename__ = "scenarios"
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    household_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("households.id", ondelete="CASCADE"), index=True
+    )
+    display_name: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str | None] = mapped_column(String(2000))
+    template_code: Mapped[str | None] = mapped_column(String(80))
+    base_scenario_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("scenarios.id", ondelete="SET NULL"), index=True
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class ScenarioOverride(Base):
+    __tablename__ = "scenario_overrides"
+    __table_args__ = (CheckConstraint("effective_to IS NULL OR effective_to >= effective_from"),)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    scenario_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("scenarios.id", ondelete="CASCADE"), index=True
+    )
+    target_entity_type: Mapped[str] = mapped_column(String(80))
+    target_entity_id: Mapped[uuid.UUID | None] = mapped_column(index=True)
+    effective_from: Mapped[date] = mapped_column(Date, index=True)
+    effective_to: Mapped[date | None] = mapped_column(Date)
+    override_key: Mapped[str] = mapped_column(String(120))
+    operation: Mapped[str] = mapped_column(String(30))
+    value_json: Mapped[dict[str, object]] = mapped_column(JSON().with_variant(JSONB, "postgresql"))
+
+
 class EventType(Base):
     __tablename__ = "event_types"
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
