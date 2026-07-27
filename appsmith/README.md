@@ -4,8 +4,9 @@
 10D adds person selection, dated recurring income sources, and provider-backed or manual tax
 settings to the tested household and people foundation. Installed tax providers and their supported
 years come from the backend registry; the frontend does not assume Australia or any other country.
-The application is generated deterministically by `generate_app.py`; edit the generator rather
-than the JSON.
+Phase 10D.1 removes duplicate person selection, separates the income and tax workflows, and places
+raw provider JSON behind an explicit Advanced mode. The application is generated deterministically
+by `generate_app.py`; edit the generator rather than the JSON.
 
 ## Import locally
 

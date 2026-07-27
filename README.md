@@ -91,8 +91,10 @@ adds country-neutral household creation, listing, selection and browser restorat
 adds people identity records without presenting them as completed financial profiles. Phase 10D
 adds dated recurring income sources plus automatic provider-backed or manual net-income tax
 settings. Installed providers and supported tax years are discovered through the neutral registry;
-Australia remains a bundled example rather than a frontend assumption. Local import instructions are in
-[appsmith/README.md](appsmith/README.md). Appsmith is pinned through `APPSMITH_VERSION` so an
+Australia remains a bundled example rather than a frontend assumption. Phase 10D.1 simplifies this
+flow with progressive income and tax sections and keeps raw provider JSON behind an explicit
+Advanced mode. Local import instructions are in [appsmith/README.md](appsmith/README.md). Appsmith
+is pinned through `APPSMITH_VERSION` so an
 upstream `latest` image cannot silently change the committed application schema.
 
 ## Contributing

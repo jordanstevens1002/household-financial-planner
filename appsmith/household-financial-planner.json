@@ -4627,146 +4627,127 @@
                   "dynamicTriggerPathList": []
                 },
                 {
-                  "widgetName": "FinancePeople",
-                  "displayName": "Table",
-                  "type": "TABLE_WIDGET_V2",
-                  "widgetId": "financepeople",
-                  "parentId": "0",
-                  "topRow": 30,
-                  "bottomRow": 48,
-                  "leftColumn": 2,
-                  "rightColumn": 62,
-                  "tableData": "{{Array.isArray(ListFinancePeople.data) ? ListFinancePeople.data : []}}",
-                  "isVisible": true,
-                  "isLoading": false,
-                  "renderMode": "CANVAS",
-                  "version": 3,
-                  "defaultPageSize": 0,
-                  "isVisibleDownload": true,
-                  "isVisibleFilters": true,
-                  "isVisibleSearch": true,
-                  "isVisiblePagination": true,
-                  "label": "Choose a person",
-                  "searchKey": "",
-                  "columnOrder": [
-                    "id",
-                    "display_name",
-                    "tax_residency_country",
-                    "tax_jurisdiction"
-                  ],
-                  "primaryColumns": {
-                    "id": {
-                      "index": 0,
-                      "width": 150,
-                      "originalId": "id",
-                      "id": "id",
-                      "alias": "id",
-                      "horizontalAlignment": "LEFT",
-                      "verticalAlignment": "CENTER",
-                      "columnType": "text",
-                      "textSize": "PARAGRAPH",
-                      "enableFilter": true,
-                      "enableSort": true,
-                      "isVisible": false,
-                      "isDisabled": false,
-                      "isCellVisible": true,
-                      "isDerived": false,
-                      "label": "ID",
-                      "computedValue": "{{(FinancePeople.tableData || []).map((currentRow) => currentRow[\"id\"])}}"
-                    },
-                    "display_name": {
-                      "index": 1,
-                      "width": 150,
-                      "originalId": "display_name",
-                      "id": "display_name",
-                      "alias": "display_name",
-                      "horizontalAlignment": "LEFT",
-                      "verticalAlignment": "CENTER",
-                      "columnType": "text",
-                      "textSize": "PARAGRAPH",
-                      "enableFilter": true,
-                      "enableSort": true,
-                      "isVisible": true,
-                      "isDisabled": false,
-                      "isCellVisible": true,
-                      "isDerived": false,
-                      "label": "Person",
-                      "computedValue": "{{(FinancePeople.tableData || []).map((currentRow) => currentRow[\"display_name\"])}}"
-                    },
-                    "tax_residency_country": {
-                      "index": 2,
-                      "width": 150,
-                      "originalId": "tax_residency_country",
-                      "id": "tax_residency_country",
-                      "alias": "tax_residency_country",
-                      "horizontalAlignment": "LEFT",
-                      "verticalAlignment": "CENTER",
-                      "columnType": "text",
-                      "textSize": "PARAGRAPH",
-                      "enableFilter": true,
-                      "enableSort": true,
-                      "isVisible": true,
-                      "isDisabled": false,
-                      "isCellVisible": true,
-                      "isDerived": false,
-                      "label": "Tax residency",
-                      "computedValue": "{{(FinancePeople.tableData || []).map((currentRow) => currentRow[\"tax_residency_country\"])}}"
-                    },
-                    "tax_jurisdiction": {
-                      "index": 3,
-                      "width": 150,
-                      "originalId": "tax_jurisdiction",
-                      "id": "tax_jurisdiction",
-                      "alias": "tax_jurisdiction",
-                      "horizontalAlignment": "LEFT",
-                      "verticalAlignment": "CENTER",
-                      "columnType": "text",
-                      "textSize": "PARAGRAPH",
-                      "enableFilter": true,
-                      "enableSort": true,
-                      "isVisible": true,
-                      "isDisabled": false,
-                      "isCellVisible": true,
-                      "isDerived": false,
-                      "label": "Tax jurisdiction",
-                      "computedValue": "{{(FinancePeople.tableData || []).map((currentRow) => currentRow[\"tax_jurisdiction\"])}}"
-                    }
-                  },
-                  "derivedColumns": {},
-                  "columnSizeMap": {},
-                  "dynamicBindingPathList": [
-                    {
-                      "key": "tableData"
-                    },
-                    {
-                      "key": "primaryColumns.id.computedValue"
-                    },
-                    {
-                      "key": "primaryColumns.display_name.computedValue"
-                    },
-                    {
-                      "key": "primaryColumns.tax_residency_country.computedValue"
-                    },
-                    {
-                      "key": "primaryColumns.tax_jurisdiction.computedValue"
-                    }
-                  ],
-                  "dynamicTriggerPathList": []
-                },
-                {
-                  "widgetName": "UseFinancePersonButton",
+                  "widgetName": "ChangeFinancePersonButton",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
-                  "widgetId": "usefinancepersonbutton",
+                  "widgetId": "changefinancepersonbutton",
                   "parentId": "0",
-                  "topRow": 50,
-                  "bottomRow": 54,
+                  "topRow": 30,
+                  "bottomRow": 34,
                   "leftColumn": 2,
-                  "rightColumn": 20,
-                  "text": "Use selected person",
-                  "onClick": "{{storeValue('personId', FinancePeople.selectedRow.id, true); storeValue('personName', FinancePeople.selectedRow.display_name, true); ListIncomeSources.run(); ListTaxProfiles.run(); showAlert('Person selected', 'success')}}",
+                  "rightColumn": 14,
+                  "text": "Change person",
+                  "onClick": "{{navigateTo('People')}}",
                   "isVisible": true,
-                  "isDisabled": "{{!FinancePeople.selectedRow || !FinancePeople.selectedRow.id}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "ShowIncomeSectionButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "showincomesectionbutton",
+                  "parentId": "0",
+                  "topRow": 30,
+                  "bottomRow": 34,
+                  "leftColumn": 16,
+                  "rightColumn": 28,
+                  "text": "Income",
+                  "onClick": "{{storeValue('financeSection', 'INCOME', false)}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "ShowTaxSectionButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "showtaxsectionbutton",
+                  "parentId": "0",
+                  "topRow": 30,
+                  "bottomRow": 34,
+                  "leftColumn": 30,
+                  "rightColumn": 44,
+                  "text": "Tax settings",
+                  "onClick": "{{storeValue('financeSection', 'TAX', false)}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "ToggleAdvancedModeButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "toggleadvancedmodebutton",
+                  "parentId": "0",
+                  "topRow": 30,
+                  "bottomRow": 34,
+                  "leftColumn": 46,
+                  "rightColumn": 62,
+                  "text": "{{appsmith.store.financeAdvancedMode ? 'Leave advanced mode' : 'Advanced mode'}}",
+                  "onClick": "{{storeValue('financeAdvancedMode', !appsmith.store.financeAdvancedMode, false)}}",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX'}}",
+                  "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
                   "version": 1,
@@ -4783,7 +4764,10 @@
                       "key": "borderRadius"
                     },
                     {
-                      "key": "isDisabled"
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": [
@@ -4793,17 +4777,17 @@
                   ]
                 },
                 {
-                  "widgetName": "IncomeHeading",
+                  "widgetName": "AdvancedModeHelp",
                   "displayName": "Text",
                   "type": "TEXT_WIDGET",
-                  "widgetId": "incomeheading",
+                  "widgetId": "advancedmodehelp",
                   "parentId": "0",
-                  "topRow": 57,
-                  "bottomRow": 61,
+                  "topRow": 38,
+                  "bottomRow": 44,
                   "leftColumn": 2,
                   "rightColumn": 62,
-                  "text": "Income sources",
-                  "isVisible": true,
+                  "text": "Advanced mode exposes raw provider JSON for specialist settings. Most people can leave it off and use the provider defaults.",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX' && appsmith.store.financeAdvancedMode}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
                   "version": 1,
@@ -4821,6 +4805,81 @@
                     },
                     {
                       "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "IncomeHeading",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "incomeheading",
+                  "parentId": "0",
+                  "topRow": 47,
+                  "bottomRow": 51,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Income sources",
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "IncomeEmptyState",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "incomeemptystate",
+                  "parentId": "0",
+                  "topRow": 52,
+                  "bottomRow": 56,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "{{Array.isArray(ListIncomeSources.data) && ListIncomeSources.data.length ? '' : 'No income sources yet. Add the first recurring income below.'}}",
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -4841,7 +4900,7 @@
                   "optionValue": "value",
                   "defaultOptionValue": "",
                   "placeholderText": "Choose income type",
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -4849,6 +4908,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "sourceData"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -4869,7 +4931,7 @@
                   "placeholderText": "Income name",
                   "inputType": "TEXT",
                   "isRequired": true,
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -4878,6 +4940,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -4898,7 +4963,7 @@
                   "placeholderText": "Gross amount",
                   "inputType": "TEXT",
                   "isRequired": true,
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -4907,6 +4972,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -4927,7 +4995,7 @@
                   "optionValue": "value",
                   "defaultOptionValue": "",
                   "placeholderText": "Choose frequency",
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -4935,6 +5003,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "sourceData"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -4955,7 +5026,7 @@
                   "optionValue": "value",
                   "defaultOptionValue": "true",
                   "placeholderText": "Choose tax treatment",
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -4963,6 +5034,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "sourceData"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -4983,7 +5057,7 @@
                   "placeholderText": "Effective from (YYYY-MM-DD)",
                   "inputType": "TEXT",
                   "isRequired": true,
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -4992,6 +5066,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -5012,7 +5089,7 @@
                   "placeholderText": "Effective to (optional, YYYY-MM-DD)",
                   "inputType": "TEXT",
                   "isRequired": false,
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -5021,6 +5098,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -5041,7 +5121,7 @@
                   "placeholderText": "Annual growth % (optional)",
                   "inputType": "TEXT",
                   "isRequired": false,
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -5050,6 +5130,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -5070,7 +5153,7 @@
                   "placeholderText": "Pre-tax contribution (optional)",
                   "inputType": "TEXT",
                   "isRequired": false,
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -5079,6 +5162,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -5099,7 +5185,7 @@
                   "placeholderText": "Notes (optional)",
                   "inputType": "TEXT",
                   "isRequired": false,
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -5108,6 +5194,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -5123,8 +5212,8 @@
                   "leftColumn": 2,
                   "rightColumn": 20,
                   "text": "Add income source",
-                  "onClick": "{{CreateIncome.run(() => { showAlert('Income source added', 'success'); ListIncomeSources.run(); }, () => showAlert(JSON.stringify(CreateIncome.data?.detail || 'Could not add income source'), 'error'))}}",
-                  "isVisible": true,
+                  "onClick": "{{CreateIncome.run(() => { showAlert('Income source added', 'success'); ListIncomeSources.run(); resetWidget('IncomeType', true); resetWidget('IncomeName', true); resetWidget('IncomeAmount', true); resetWidget('IncomeFrequency', true); resetWidget('IncomeTaxable', true); resetWidget('IncomeEffectiveFrom', true); resetWidget('IncomeEffectiveTo', true); resetWidget('IncomeGrowthRate', true); resetWidget('IncomeSalarySacrifice', true); resetWidget('IncomeNotes', true); }, () => showAlert(JSON.stringify(CreateIncome.data?.detail || 'Could not add income source'), 'error'))}}",
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": "{{!appsmith.store.personId || !IncomeType.selectedOptionValue || !(IncomeName.text || '').trim() || !/^\\d+(\\.\\d{1,2})?$/.test((IncomeAmount.text || '').trim()) || !IncomeFrequency.selectedOptionValue || !IncomeTaxable.selectedOptionValue || !/^\\d{4}-\\d{2}-\\d{2}$/.test((IncomeEffectiveFrom.text || '').trim()) || ((IncomeEffectiveTo.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(IncomeEffectiveTo.text.trim())) || ((IncomeGrowthRate.text || '').trim() && !/^-?\\d+(\\.\\d{1,4})?$/.test(IncomeGrowthRate.text.trim())) || ((IncomeSalarySacrifice.text || '').trim() && !/^\\d+(\\.\\d{1,2})?$/.test(IncomeSalarySacrifice.text.trim()))}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -5143,6 +5232,9 @@
                     },
                     {
                       "key": "isDisabled"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": [
@@ -5161,8 +5253,8 @@
                   "bottomRow": 119,
                   "leftColumn": 2,
                   "rightColumn": 62,
-                  "tableData": "{{Array.isArray(ListIncomeSources.data) ? ListIncomeSources.data : []}}",
-                  "isVisible": true,
+                  "tableData": "{{Array.isArray(ListIncomeSources.data) ? ListIncomeSources.data.map((item) => ({...item, frequency: ({WEEKLY: 'Weekly', FORTNIGHTLY: 'Fortnightly', MONTHLY: 'Monthly', QUARTERLY: 'Quarterly', ANNUAL: 'Annual'})[item.frequency] || item.frequency, taxable: item.taxable ? 'Yes' : 'No'})) : []}}",
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
                   "version": 3,
@@ -5344,6 +5436,9 @@
                       "key": "tableData"
                     },
                     {
+                      "key": "isVisible"
+                    },
+                    {
                       "key": "primaryColumns.id.computedValue"
                     },
                     {
@@ -5376,12 +5471,12 @@
                   "type": "TEXT_WIDGET",
                   "widgetId": "taxheading",
                   "parentId": "0",
-                  "topRow": 122,
-                  "bottomRow": 126,
+                  "topRow": 47,
+                  "bottomRow": 51,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "text": "Tax settings",
-                  "isVisible": true,
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX'}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
                   "version": 1,
@@ -5399,6 +5494,45 @@
                     },
                     {
                       "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "TaxEmptyState",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "taxemptystate",
+                  "parentId": "0",
+                  "topRow": 52,
+                  "bottomRow": 56,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "{{Array.isArray(ListTaxProfiles.data) && ListTaxProfiles.data.length ? '' : 'No tax settings yet. Choose an installed provider or enter a manual annual net income.'}}",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -5409,8 +5543,8 @@
                   "type": "SELECT_WIDGET",
                   "widgetId": "taxcalculationmode",
                   "parentId": "0",
-                  "topRow": 127,
-                  "bottomRow": 134,
+                  "topRow": 62,
+                  "bottomRow": 69,
                   "leftColumn": 2,
                   "rightColumn": 24,
                   "labelText": "Calculation method",
@@ -5419,7 +5553,7 @@
                   "optionValue": "value",
                   "defaultOptionValue": "AUTOMATIC",
                   "placeholderText": "Choose calculation method",
-                  "isVisible": true,
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -5427,6 +5561,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "sourceData"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -5437,8 +5574,8 @@
                   "type": "SELECT_WIDGET",
                   "widgetId": "taxprovideryear",
                   "parentId": "0",
-                  "topRow": 127,
-                  "bottomRow": 134,
+                  "topRow": 62,
+                  "bottomRow": 69,
                   "leftColumn": 25,
                   "rightColumn": 48,
                   "labelText": "Provider and tax year",
@@ -5447,7 +5584,7 @@
                   "optionValue": "value",
                   "defaultOptionValue": "",
                   "placeholderText": "Choose provider and tax year",
-                  "isVisible": "{{TaxCalculationMode.selectedOptionValue === 'AUTOMATIC'}}",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX' && TaxCalculationMode.selectedOptionValue === 'AUTOMATIC'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -5468,8 +5605,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "taxparameters",
                   "parentId": "0",
-                  "topRow": 127,
-                  "bottomRow": 134,
+                  "topRow": 71,
+                  "bottomRow": 78,
                   "leftColumn": 49,
                   "rightColumn": 62,
                   "label": "Provider settings as JSON (use {} for defaults)",
@@ -5478,7 +5615,7 @@
                   "placeholderText": "Provider settings as JSON (use {} for defaults)",
                   "inputType": "TEXT",
                   "isRequired": false,
-                  "isVisible": "{{TaxCalculationMode.selectedOptionValue === 'AUTOMATIC'}}",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX' && TaxCalculationMode.selectedOptionValue === 'AUTOMATIC' && appsmith.store.financeAdvancedMode}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -5500,8 +5637,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "manualtaxjurisdiction",
                   "parentId": "0",
-                  "topRow": 136,
-                  "bottomRow": 143,
+                  "topRow": 71,
+                  "bottomRow": 78,
                   "leftColumn": 2,
                   "rightColumn": 20,
                   "label": "Jurisdiction",
@@ -5510,7 +5647,7 @@
                   "placeholderText": "Jurisdiction",
                   "inputType": "TEXT",
                   "isRequired": false,
-                  "isVisible": "{{TaxCalculationMode.selectedOptionValue === 'MANUAL_NET'}}",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX' && TaxCalculationMode.selectedOptionValue === 'MANUAL_NET'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -5532,8 +5669,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "manualtaxyear",
                   "parentId": "0",
-                  "topRow": 136,
-                  "bottomRow": 143,
+                  "topRow": 71,
+                  "bottomRow": 78,
                   "leftColumn": 21,
                   "rightColumn": 40,
                   "label": "Tax year",
@@ -5542,7 +5679,7 @@
                   "placeholderText": "Tax year",
                   "inputType": "TEXT",
                   "isRequired": false,
-                  "isVisible": "{{TaxCalculationMode.selectedOptionValue === 'MANUAL_NET'}}",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX' && TaxCalculationMode.selectedOptionValue === 'MANUAL_NET'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -5564,8 +5701,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "manualannualnetincome",
                   "parentId": "0",
-                  "topRow": 136,
-                  "bottomRow": 143,
+                  "topRow": 71,
+                  "bottomRow": 78,
                   "leftColumn": 41,
                   "rightColumn": 62,
                   "label": "Annual net income",
@@ -5574,7 +5711,7 @@
                   "placeholderText": "Annual net income",
                   "inputType": "TEXT",
                   "isRequired": false,
-                  "isVisible": "{{TaxCalculationMode.selectedOptionValue === 'MANUAL_NET'}}",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX' && TaxCalculationMode.selectedOptionValue === 'MANUAL_NET'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -5596,8 +5733,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "taxeffectivefrom",
                   "parentId": "0",
-                  "topRow": 145,
-                  "bottomRow": 152,
+                  "topRow": 80,
+                  "bottomRow": 87,
                   "leftColumn": 2,
                   "rightColumn": 24,
                   "label": "Effective from (YYYY-MM-DD)",
@@ -5606,7 +5743,7 @@
                   "placeholderText": "Effective from (YYYY-MM-DD)",
                   "inputType": "TEXT",
                   "isRequired": true,
-                  "isVisible": true,
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -5615,6 +5752,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -5625,8 +5765,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "taxeffectiveto",
                   "parentId": "0",
-                  "topRow": 145,
-                  "bottomRow": 152,
+                  "topRow": 80,
+                  "bottomRow": 87,
                   "leftColumn": 25,
                   "rightColumn": 48,
                   "label": "Effective to (optional, YYYY-MM-DD)",
@@ -5635,7 +5775,7 @@
                   "placeholderText": "Effective to (optional, YYYY-MM-DD)",
                   "inputType": "TEXT",
                   "isRequired": false,
-                  "isVisible": true,
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -5644,6 +5784,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -5654,14 +5797,14 @@
                   "type": "BUTTON_WIDGET",
                   "widgetId": "createtaxprofilebutton",
                   "parentId": "0",
-                  "topRow": 154,
-                  "bottomRow": 158,
+                  "topRow": 89,
+                  "bottomRow": 93,
                   "leftColumn": 2,
                   "rightColumn": 20,
                   "text": "Save tax settings",
-                  "onClick": "{{CreateTaxProfile.run(() => { showAlert('Tax settings saved', 'success'); ListTaxProfiles.run(); }, () => showAlert(JSON.stringify(CreateTaxProfile.data?.detail || 'Could not save tax settings'), 'error'))}}",
-                  "isVisible": true,
-                  "isDisabled": "{{!appsmith.store.personId || !TaxCalculationMode.selectedOptionValue || !/^\\d{4}-\\d{2}-\\d{2}$/.test((TaxEffectiveFrom.text || '').trim()) || ((TaxEffectiveTo.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(TaxEffectiveTo.text.trim())) || (TaxCalculationMode.selectedOptionValue === 'AUTOMATIC' && (!TaxProviderYear.selectedOptionValue || !(TaxParameters.text || '').trim() || (() => { try { JSON.parse(TaxParameters.text); return false; } catch (error) { return true; } })())) || (TaxCalculationMode.selectedOptionValue === 'MANUAL_NET' && (!(ManualTaxJurisdiction.text || '').trim() || !(ManualTaxYear.text || '').trim() || !/^\\d+(\\.\\d{1,2})?$/.test((ManualAnnualNetIncome.text || '').trim())))}}",
+                  "onClick": "{{CreateTaxProfile.run(() => { showAlert('Tax settings saved', 'success'); ListTaxProfiles.run(); resetWidget('TaxProviderYear', true); resetWidget('TaxParameters', true); resetWidget('ManualTaxJurisdiction', true); resetWidget('ManualTaxYear', true); resetWidget('ManualAnnualNetIncome', true); resetWidget('TaxEffectiveFrom', true); resetWidget('TaxEffectiveTo', true); }, () => showAlert(JSON.stringify(CreateTaxProfile.data?.detail || 'Could not save tax settings'), 'error'))}}",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX'}}",
+                  "isDisabled": "{{!appsmith.store.personId || !TaxCalculationMode.selectedOptionValue || !/^\\d{4}-\\d{2}-\\d{2}$/.test((TaxEffectiveFrom.text || '').trim()) || ((TaxEffectiveTo.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(TaxEffectiveTo.text.trim())) || (TaxCalculationMode.selectedOptionValue === 'AUTOMATIC' && (!TaxProviderYear.selectedOptionValue || (appsmith.store.financeAdvancedMode && (TaxParameters.text || '').trim() && (() => { try { JSON.parse(TaxParameters.text); return false; } catch (error) { return true; } })()))) || (TaxCalculationMode.selectedOptionValue === 'MANUAL_NET' && (!(ManualTaxJurisdiction.text || '').trim() || !(ManualTaxYear.text || '').trim() || !/^\\d+(\\.\\d{1,2})?$/.test((ManualAnnualNetIncome.text || '').trim())))}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
                   "version": 1,
@@ -5679,6 +5822,9 @@
                     },
                     {
                       "key": "isDisabled"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": [
@@ -5693,12 +5839,12 @@
                   "type": "TABLE_WIDGET_V2",
                   "widgetId": "taxprofiles",
                   "parentId": "0",
-                  "topRow": 160,
-                  "bottomRow": 184,
+                  "topRow": 95,
+                  "bottomRow": 119,
                   "leftColumn": 2,
                   "rightColumn": 62,
-                  "tableData": "{{Array.isArray(ListTaxProfiles.data) ? ListTaxProfiles.data.map((item) => ({...item, calculation_mode: item.settings?.calculation_mode || 'AUTOMATIC', manual_annual_net_income: item.settings?.manual_annual_net_income || ''})) : []}}",
-                  "isVisible": true,
+                  "tableData": "{{Array.isArray(ListTaxProfiles.data) ? ListTaxProfiles.data.map((item) => ({...item, calculation_mode: (item.settings?.calculation_mode || 'AUTOMATIC') === 'MANUAL_NET' ? 'Manual annual net income' : 'Installed provider', manual_annual_net_income: item.settings?.manual_annual_net_income || ''})) : []}}",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX'}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
                   "version": 3,
@@ -5860,6 +6006,9 @@
                       "key": "tableData"
                     },
                     {
+                      "key": "isVisible"
+                    },
+                    {
                       "key": "primaryColumns.id.computedValue"
                     },
                     {
@@ -5886,16 +6035,6 @@
               ]
             },
             "layoutOnLoadActions": [
-              [
-                {
-                  "id": "Personfinances_ListFinancePeople",
-                  "name": "ListFinancePeople",
-                  "pluginType": "API",
-                  "confirmBeforeExecute": false,
-                  "jsonPathKeys": [],
-                  "timeoutInMillisecond": 10000
-                }
-              ],
               [
                 {
                   "id": "Personfinances_ListIncomeTypes",
@@ -6289,146 +6428,127 @@
                   "dynamicTriggerPathList": []
                 },
                 {
-                  "widgetName": "FinancePeople",
-                  "displayName": "Table",
-                  "type": "TABLE_WIDGET_V2",
-                  "widgetId": "financepeople",
-                  "parentId": "0",
-                  "topRow": 30,
-                  "bottomRow": 48,
-                  "leftColumn": 2,
-                  "rightColumn": 62,
-                  "tableData": "{{Array.isArray(ListFinancePeople.data) ? ListFinancePeople.data : []}}",
-                  "isVisible": true,
-                  "isLoading": false,
-                  "renderMode": "CANVAS",
-                  "version": 3,
-                  "defaultPageSize": 0,
-                  "isVisibleDownload": true,
-                  "isVisibleFilters": true,
-                  "isVisibleSearch": true,
-                  "isVisiblePagination": true,
-                  "label": "Choose a person",
-                  "searchKey": "",
-                  "columnOrder": [
-                    "id",
-                    "display_name",
-                    "tax_residency_country",
-                    "tax_jurisdiction"
-                  ],
-                  "primaryColumns": {
-                    "id": {
-                      "index": 0,
-                      "width": 150,
-                      "originalId": "id",
-                      "id": "id",
-                      "alias": "id",
-                      "horizontalAlignment": "LEFT",
-                      "verticalAlignment": "CENTER",
-                      "columnType": "text",
-                      "textSize": "PARAGRAPH",
-                      "enableFilter": true,
-                      "enableSort": true,
-                      "isVisible": false,
-                      "isDisabled": false,
-                      "isCellVisible": true,
-                      "isDerived": false,
-                      "label": "ID",
-                      "computedValue": "{{(FinancePeople.tableData || []).map((currentRow) => currentRow[\"id\"])}}"
-                    },
-                    "display_name": {
-                      "index": 1,
-                      "width": 150,
-                      "originalId": "display_name",
-                      "id": "display_name",
-                      "alias": "display_name",
-                      "horizontalAlignment": "LEFT",
-                      "verticalAlignment": "CENTER",
-                      "columnType": "text",
-                      "textSize": "PARAGRAPH",
-                      "enableFilter": true,
-                      "enableSort": true,
-                      "isVisible": true,
-                      "isDisabled": false,
-                      "isCellVisible": true,
-                      "isDerived": false,
-                      "label": "Person",
-                      "computedValue": "{{(FinancePeople.tableData || []).map((currentRow) => currentRow[\"display_name\"])}}"
-                    },
-                    "tax_residency_country": {
-                      "index": 2,
-                      "width": 150,
-                      "originalId": "tax_residency_country",
-                      "id": "tax_residency_country",
-                      "alias": "tax_residency_country",
-                      "horizontalAlignment": "LEFT",
-                      "verticalAlignment": "CENTER",
-                      "columnType": "text",
-                      "textSize": "PARAGRAPH",
-                      "enableFilter": true,
-                      "enableSort": true,
-                      "isVisible": true,
-                      "isDisabled": false,
-                      "isCellVisible": true,
-                      "isDerived": false,
-                      "label": "Tax residency",
-                      "computedValue": "{{(FinancePeople.tableData || []).map((currentRow) => currentRow[\"tax_residency_country\"])}}"
-                    },
-                    "tax_jurisdiction": {
-                      "index": 3,
-                      "width": 150,
-                      "originalId": "tax_jurisdiction",
-                      "id": "tax_jurisdiction",
-                      "alias": "tax_jurisdiction",
-                      "horizontalAlignment": "LEFT",
-                      "verticalAlignment": "CENTER",
-                      "columnType": "text",
-                      "textSize": "PARAGRAPH",
-                      "enableFilter": true,
-                      "enableSort": true,
-                      "isVisible": true,
-                      "isDisabled": false,
-                      "isCellVisible": true,
-                      "isDerived": false,
-                      "label": "Tax jurisdiction",
-                      "computedValue": "{{(FinancePeople.tableData || []).map((currentRow) => currentRow[\"tax_jurisdiction\"])}}"
-                    }
-                  },
-                  "derivedColumns": {},
-                  "columnSizeMap": {},
-                  "dynamicBindingPathList": [
-                    {
-                      "key": "tableData"
-                    },
-                    {
-                      "key": "primaryColumns.id.computedValue"
-                    },
-                    {
-                      "key": "primaryColumns.display_name.computedValue"
-                    },
-                    {
-                      "key": "primaryColumns.tax_residency_country.computedValue"
-                    },
-                    {
-                      "key": "primaryColumns.tax_jurisdiction.computedValue"
-                    }
-                  ],
-                  "dynamicTriggerPathList": []
-                },
-                {
-                  "widgetName": "UseFinancePersonButton",
+                  "widgetName": "ChangeFinancePersonButton",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
-                  "widgetId": "usefinancepersonbutton",
+                  "widgetId": "changefinancepersonbutton",
                   "parentId": "0",
-                  "topRow": 50,
-                  "bottomRow": 54,
+                  "topRow": 30,
+                  "bottomRow": 34,
                   "leftColumn": 2,
-                  "rightColumn": 20,
-                  "text": "Use selected person",
-                  "onClick": "{{storeValue('personId', FinancePeople.selectedRow.id, true); storeValue('personName', FinancePeople.selectedRow.display_name, true); ListIncomeSources.run(); ListTaxProfiles.run(); showAlert('Person selected', 'success')}}",
+                  "rightColumn": 14,
+                  "text": "Change person",
+                  "onClick": "{{navigateTo('People')}}",
                   "isVisible": true,
-                  "isDisabled": "{{!FinancePeople.selectedRow || !FinancePeople.selectedRow.id}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "ShowIncomeSectionButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "showincomesectionbutton",
+                  "parentId": "0",
+                  "topRow": 30,
+                  "bottomRow": 34,
+                  "leftColumn": 16,
+                  "rightColumn": 28,
+                  "text": "Income",
+                  "onClick": "{{storeValue('financeSection', 'INCOME', false)}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "ShowTaxSectionButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "showtaxsectionbutton",
+                  "parentId": "0",
+                  "topRow": 30,
+                  "bottomRow": 34,
+                  "leftColumn": 30,
+                  "rightColumn": 44,
+                  "text": "Tax settings",
+                  "onClick": "{{storeValue('financeSection', 'TAX', false)}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "ToggleAdvancedModeButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "toggleadvancedmodebutton",
+                  "parentId": "0",
+                  "topRow": 30,
+                  "bottomRow": 34,
+                  "leftColumn": 46,
+                  "rightColumn": 62,
+                  "text": "{{appsmith.store.financeAdvancedMode ? 'Leave advanced mode' : 'Advanced mode'}}",
+                  "onClick": "{{storeValue('financeAdvancedMode', !appsmith.store.financeAdvancedMode, false)}}",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX'}}",
+                  "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
                   "version": 1,
@@ -6445,7 +6565,10 @@
                       "key": "borderRadius"
                     },
                     {
-                      "key": "isDisabled"
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": [
@@ -6455,17 +6578,17 @@
                   ]
                 },
                 {
-                  "widgetName": "IncomeHeading",
+                  "widgetName": "AdvancedModeHelp",
                   "displayName": "Text",
                   "type": "TEXT_WIDGET",
-                  "widgetId": "incomeheading",
+                  "widgetId": "advancedmodehelp",
                   "parentId": "0",
-                  "topRow": 57,
-                  "bottomRow": 61,
+                  "topRow": 38,
+                  "bottomRow": 44,
                   "leftColumn": 2,
                   "rightColumn": 62,
-                  "text": "Income sources",
-                  "isVisible": true,
+                  "text": "Advanced mode exposes raw provider JSON for specialist settings. Most people can leave it off and use the provider defaults.",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX' && appsmith.store.financeAdvancedMode}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
                   "version": 1,
@@ -6483,6 +6606,81 @@
                     },
                     {
                       "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "IncomeHeading",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "incomeheading",
+                  "parentId": "0",
+                  "topRow": 47,
+                  "bottomRow": 51,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Income sources",
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "IncomeEmptyState",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "incomeemptystate",
+                  "parentId": "0",
+                  "topRow": 52,
+                  "bottomRow": 56,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "{{Array.isArray(ListIncomeSources.data) && ListIncomeSources.data.length ? '' : 'No income sources yet. Add the first recurring income below.'}}",
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -6503,7 +6701,7 @@
                   "optionValue": "value",
                   "defaultOptionValue": "",
                   "placeholderText": "Choose income type",
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -6511,6 +6709,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "sourceData"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -6531,7 +6732,7 @@
                   "placeholderText": "Income name",
                   "inputType": "TEXT",
                   "isRequired": true,
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -6540,6 +6741,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -6560,7 +6764,7 @@
                   "placeholderText": "Gross amount",
                   "inputType": "TEXT",
                   "isRequired": true,
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -6569,6 +6773,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -6589,7 +6796,7 @@
                   "optionValue": "value",
                   "defaultOptionValue": "",
                   "placeholderText": "Choose frequency",
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -6597,6 +6804,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "sourceData"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -6617,7 +6827,7 @@
                   "optionValue": "value",
                   "defaultOptionValue": "true",
                   "placeholderText": "Choose tax treatment",
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -6625,6 +6835,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "sourceData"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -6645,7 +6858,7 @@
                   "placeholderText": "Effective from (YYYY-MM-DD)",
                   "inputType": "TEXT",
                   "isRequired": true,
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -6654,6 +6867,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -6674,7 +6890,7 @@
                   "placeholderText": "Effective to (optional, YYYY-MM-DD)",
                   "inputType": "TEXT",
                   "isRequired": false,
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -6683,6 +6899,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -6703,7 +6922,7 @@
                   "placeholderText": "Annual growth % (optional)",
                   "inputType": "TEXT",
                   "isRequired": false,
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -6712,6 +6931,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -6732,7 +6954,7 @@
                   "placeholderText": "Pre-tax contribution (optional)",
                   "inputType": "TEXT",
                   "isRequired": false,
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -6741,6 +6963,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -6761,7 +6986,7 @@
                   "placeholderText": "Notes (optional)",
                   "inputType": "TEXT",
                   "isRequired": false,
-                  "isVisible": true,
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -6770,6 +6995,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -6785,8 +7013,8 @@
                   "leftColumn": 2,
                   "rightColumn": 20,
                   "text": "Add income source",
-                  "onClick": "{{CreateIncome.run(() => { showAlert('Income source added', 'success'); ListIncomeSources.run(); }, () => showAlert(JSON.stringify(CreateIncome.data?.detail || 'Could not add income source'), 'error'))}}",
-                  "isVisible": true,
+                  "onClick": "{{CreateIncome.run(() => { showAlert('Income source added', 'success'); ListIncomeSources.run(); resetWidget('IncomeType', true); resetWidget('IncomeName', true); resetWidget('IncomeAmount', true); resetWidget('IncomeFrequency', true); resetWidget('IncomeTaxable', true); resetWidget('IncomeEffectiveFrom', true); resetWidget('IncomeEffectiveTo', true); resetWidget('IncomeGrowthRate', true); resetWidget('IncomeSalarySacrifice', true); resetWidget('IncomeNotes', true); }, () => showAlert(JSON.stringify(CreateIncome.data?.detail || 'Could not add income source'), 'error'))}}",
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isDisabled": "{{!appsmith.store.personId || !IncomeType.selectedOptionValue || !(IncomeName.text || '').trim() || !/^\\d+(\\.\\d{1,2})?$/.test((IncomeAmount.text || '').trim()) || !IncomeFrequency.selectedOptionValue || !IncomeTaxable.selectedOptionValue || !/^\\d{4}-\\d{2}-\\d{2}$/.test((IncomeEffectiveFrom.text || '').trim()) || ((IncomeEffectiveTo.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(IncomeEffectiveTo.text.trim())) || ((IncomeGrowthRate.text || '').trim() && !/^-?\\d+(\\.\\d{1,4})?$/.test(IncomeGrowthRate.text.trim())) || ((IncomeSalarySacrifice.text || '').trim() && !/^\\d+(\\.\\d{1,2})?$/.test(IncomeSalarySacrifice.text.trim()))}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -6805,6 +7033,9 @@
                     },
                     {
                       "key": "isDisabled"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": [
@@ -6823,8 +7054,8 @@
                   "bottomRow": 119,
                   "leftColumn": 2,
                   "rightColumn": 62,
-                  "tableData": "{{Array.isArray(ListIncomeSources.data) ? ListIncomeSources.data : []}}",
-                  "isVisible": true,
+                  "tableData": "{{Array.isArray(ListIncomeSources.data) ? ListIncomeSources.data.map((item) => ({...item, frequency: ({WEEKLY: 'Weekly', FORTNIGHTLY: 'Fortnightly', MONTHLY: 'Monthly', QUARTERLY: 'Quarterly', ANNUAL: 'Annual'})[item.frequency] || item.frequency, taxable: item.taxable ? 'Yes' : 'No'})) : []}}",
+                  "isVisible": "{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
                   "version": 3,
@@ -7006,6 +7237,9 @@
                       "key": "tableData"
                     },
                     {
+                      "key": "isVisible"
+                    },
+                    {
                       "key": "primaryColumns.id.computedValue"
                     },
                     {
@@ -7038,12 +7272,12 @@
                   "type": "TEXT_WIDGET",
                   "widgetId": "taxheading",
                   "parentId": "0",
-                  "topRow": 122,
-                  "bottomRow": 126,
+                  "topRow": 47,
+                  "bottomRow": 51,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "text": "Tax settings",
-                  "isVisible": true,
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX'}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
                   "version": 1,
@@ -7061,6 +7295,45 @@
                     },
                     {
                       "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "TaxEmptyState",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "taxemptystate",
+                  "parentId": "0",
+                  "topRow": 52,
+                  "bottomRow": 56,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "{{Array.isArray(ListTaxProfiles.data) && ListTaxProfiles.data.length ? '' : 'No tax settings yet. Choose an installed provider or enter a manual annual net income.'}}",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -7071,8 +7344,8 @@
                   "type": "SELECT_WIDGET",
                   "widgetId": "taxcalculationmode",
                   "parentId": "0",
-                  "topRow": 127,
-                  "bottomRow": 134,
+                  "topRow": 62,
+                  "bottomRow": 69,
                   "leftColumn": 2,
                   "rightColumn": 24,
                   "labelText": "Calculation method",
@@ -7081,7 +7354,7 @@
                   "optionValue": "value",
                   "defaultOptionValue": "AUTOMATIC",
                   "placeholderText": "Choose calculation method",
-                  "isVisible": true,
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -7089,6 +7362,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "sourceData"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -7099,8 +7375,8 @@
                   "type": "SELECT_WIDGET",
                   "widgetId": "taxprovideryear",
                   "parentId": "0",
-                  "topRow": 127,
-                  "bottomRow": 134,
+                  "topRow": 62,
+                  "bottomRow": 69,
                   "leftColumn": 25,
                   "rightColumn": 48,
                   "labelText": "Provider and tax year",
@@ -7109,7 +7385,7 @@
                   "optionValue": "value",
                   "defaultOptionValue": "",
                   "placeholderText": "Choose provider and tax year",
-                  "isVisible": "{{TaxCalculationMode.selectedOptionValue === 'AUTOMATIC'}}",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX' && TaxCalculationMode.selectedOptionValue === 'AUTOMATIC'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -7130,8 +7406,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "taxparameters",
                   "parentId": "0",
-                  "topRow": 127,
-                  "bottomRow": 134,
+                  "topRow": 71,
+                  "bottomRow": 78,
                   "leftColumn": 49,
                   "rightColumn": 62,
                   "label": "Provider settings as JSON (use {} for defaults)",
@@ -7140,7 +7416,7 @@
                   "placeholderText": "Provider settings as JSON (use {} for defaults)",
                   "inputType": "TEXT",
                   "isRequired": false,
-                  "isVisible": "{{TaxCalculationMode.selectedOptionValue === 'AUTOMATIC'}}",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX' && TaxCalculationMode.selectedOptionValue === 'AUTOMATIC' && appsmith.store.financeAdvancedMode}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -7162,8 +7438,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "manualtaxjurisdiction",
                   "parentId": "0",
-                  "topRow": 136,
-                  "bottomRow": 143,
+                  "topRow": 71,
+                  "bottomRow": 78,
                   "leftColumn": 2,
                   "rightColumn": 20,
                   "label": "Jurisdiction",
@@ -7172,7 +7448,7 @@
                   "placeholderText": "Jurisdiction",
                   "inputType": "TEXT",
                   "isRequired": false,
-                  "isVisible": "{{TaxCalculationMode.selectedOptionValue === 'MANUAL_NET'}}",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX' && TaxCalculationMode.selectedOptionValue === 'MANUAL_NET'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -7194,8 +7470,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "manualtaxyear",
                   "parentId": "0",
-                  "topRow": 136,
-                  "bottomRow": 143,
+                  "topRow": 71,
+                  "bottomRow": 78,
                   "leftColumn": 21,
                   "rightColumn": 40,
                   "label": "Tax year",
@@ -7204,7 +7480,7 @@
                   "placeholderText": "Tax year",
                   "inputType": "TEXT",
                   "isRequired": false,
-                  "isVisible": "{{TaxCalculationMode.selectedOptionValue === 'MANUAL_NET'}}",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX' && TaxCalculationMode.selectedOptionValue === 'MANUAL_NET'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -7226,8 +7502,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "manualannualnetincome",
                   "parentId": "0",
-                  "topRow": 136,
-                  "bottomRow": 143,
+                  "topRow": 71,
+                  "bottomRow": 78,
                   "leftColumn": 41,
                   "rightColumn": 62,
                   "label": "Annual net income",
@@ -7236,7 +7512,7 @@
                   "placeholderText": "Annual net income",
                   "inputType": "TEXT",
                   "isRequired": false,
-                  "isVisible": "{{TaxCalculationMode.selectedOptionValue === 'MANUAL_NET'}}",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX' && TaxCalculationMode.selectedOptionValue === 'MANUAL_NET'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -7258,8 +7534,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "taxeffectivefrom",
                   "parentId": "0",
-                  "topRow": 145,
-                  "bottomRow": 152,
+                  "topRow": 80,
+                  "bottomRow": 87,
                   "leftColumn": 2,
                   "rightColumn": 24,
                   "label": "Effective from (YYYY-MM-DD)",
@@ -7268,7 +7544,7 @@
                   "placeholderText": "Effective from (YYYY-MM-DD)",
                   "inputType": "TEXT",
                   "isRequired": true,
-                  "isVisible": true,
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -7277,6 +7553,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -7287,8 +7566,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "taxeffectiveto",
                   "parentId": "0",
-                  "topRow": 145,
-                  "bottomRow": 152,
+                  "topRow": 80,
+                  "bottomRow": 87,
                   "leftColumn": 25,
                   "rightColumn": 48,
                   "label": "Effective to (optional, YYYY-MM-DD)",
@@ -7297,7 +7576,7 @@
                   "placeholderText": "Effective to (optional, YYYY-MM-DD)",
                   "inputType": "TEXT",
                   "isRequired": false,
-                  "isVisible": true,
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX'}}",
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -7306,6 +7585,9 @@
                   "dynamicBindingPathList": [
                     {
                       "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -7316,14 +7598,14 @@
                   "type": "BUTTON_WIDGET",
                   "widgetId": "createtaxprofilebutton",
                   "parentId": "0",
-                  "topRow": 154,
-                  "bottomRow": 158,
+                  "topRow": 89,
+                  "bottomRow": 93,
                   "leftColumn": 2,
                   "rightColumn": 20,
                   "text": "Save tax settings",
-                  "onClick": "{{CreateTaxProfile.run(() => { showAlert('Tax settings saved', 'success'); ListTaxProfiles.run(); }, () => showAlert(JSON.stringify(CreateTaxProfile.data?.detail || 'Could not save tax settings'), 'error'))}}",
-                  "isVisible": true,
-                  "isDisabled": "{{!appsmith.store.personId || !TaxCalculationMode.selectedOptionValue || !/^\\d{4}-\\d{2}-\\d{2}$/.test((TaxEffectiveFrom.text || '').trim()) || ((TaxEffectiveTo.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(TaxEffectiveTo.text.trim())) || (TaxCalculationMode.selectedOptionValue === 'AUTOMATIC' && (!TaxProviderYear.selectedOptionValue || !(TaxParameters.text || '').trim() || (() => { try { JSON.parse(TaxParameters.text); return false; } catch (error) { return true; } })())) || (TaxCalculationMode.selectedOptionValue === 'MANUAL_NET' && (!(ManualTaxJurisdiction.text || '').trim() || !(ManualTaxYear.text || '').trim() || !/^\\d+(\\.\\d{1,2})?$/.test((ManualAnnualNetIncome.text || '').trim())))}}",
+                  "onClick": "{{CreateTaxProfile.run(() => { showAlert('Tax settings saved', 'success'); ListTaxProfiles.run(); resetWidget('TaxProviderYear', true); resetWidget('TaxParameters', true); resetWidget('ManualTaxJurisdiction', true); resetWidget('ManualTaxYear', true); resetWidget('ManualAnnualNetIncome', true); resetWidget('TaxEffectiveFrom', true); resetWidget('TaxEffectiveTo', true); }, () => showAlert(JSON.stringify(CreateTaxProfile.data?.detail || 'Could not save tax settings'), 'error'))}}",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX'}}",
+                  "isDisabled": "{{!appsmith.store.personId || !TaxCalculationMode.selectedOptionValue || !/^\\d{4}-\\d{2}-\\d{2}$/.test((TaxEffectiveFrom.text || '').trim()) || ((TaxEffectiveTo.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(TaxEffectiveTo.text.trim())) || (TaxCalculationMode.selectedOptionValue === 'AUTOMATIC' && (!TaxProviderYear.selectedOptionValue || (appsmith.store.financeAdvancedMode && (TaxParameters.text || '').trim() && (() => { try { JSON.parse(TaxParameters.text); return false; } catch (error) { return true; } })()))) || (TaxCalculationMode.selectedOptionValue === 'MANUAL_NET' && (!(ManualTaxJurisdiction.text || '').trim() || !(ManualTaxYear.text || '').trim() || !/^\\d+(\\.\\d{1,2})?$/.test((ManualAnnualNetIncome.text || '').trim())))}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
                   "version": 1,
@@ -7341,6 +7623,9 @@
                     },
                     {
                       "key": "isDisabled"
+                    },
+                    {
+                      "key": "isVisible"
                     }
                   ],
                   "dynamicTriggerPathList": [
@@ -7355,12 +7640,12 @@
                   "type": "TABLE_WIDGET_V2",
                   "widgetId": "taxprofiles",
                   "parentId": "0",
-                  "topRow": 160,
-                  "bottomRow": 184,
+                  "topRow": 95,
+                  "bottomRow": 119,
                   "leftColumn": 2,
                   "rightColumn": 62,
-                  "tableData": "{{Array.isArray(ListTaxProfiles.data) ? ListTaxProfiles.data.map((item) => ({...item, calculation_mode: item.settings?.calculation_mode || 'AUTOMATIC', manual_annual_net_income: item.settings?.manual_annual_net_income || ''})) : []}}",
-                  "isVisible": true,
+                  "tableData": "{{Array.isArray(ListTaxProfiles.data) ? ListTaxProfiles.data.map((item) => ({...item, calculation_mode: (item.settings?.calculation_mode || 'AUTOMATIC') === 'MANUAL_NET' ? 'Manual annual net income' : 'Installed provider', manual_annual_net_income: item.settings?.manual_annual_net_income || ''})) : []}}",
+                  "isVisible": "{{appsmith.store.financeSection === 'TAX'}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
                   "version": 3,
@@ -7522,6 +7807,9 @@
                       "key": "tableData"
                     },
                     {
+                      "key": "isVisible"
+                    },
+                    {
                       "key": "primaryColumns.id.computedValue"
                     },
                     {
@@ -7548,16 +7836,6 @@
               ]
             },
             "layoutOnLoadActions": [
-              [
-                {
-                  "id": "Personfinances_ListFinancePeople",
-                  "name": "ListFinancePeople",
-                  "pluginType": "API",
-                  "confirmBeforeExecute": false,
-                  "jsonPathKeys": [],
-                  "timeoutInMillisecond": 10000
-                }
-              ],
               [
                 {
                   "id": "Personfinances_ListIncomeTypes",
@@ -9111,123 +9389,6 @@
       ]
     },
     {
-      "id": "Personfinances_ListFinancePeople",
-      "pluginType": "API",
-      "pluginId": "restapi-plugin",
-      "unpublishedAction": {
-        "name": "ListFinancePeople",
-        "validName": "ListFinancePeople",
-        "datasource": {
-          "name": "HouseholdPlannerAPI",
-          "pluginId": "restapi-plugin",
-          "datasourceConfiguration": {
-            "url": "http://api:8000"
-          },
-          "isValid": true,
-          "invalids": [],
-          "messages": [],
-          "new": true,
-          "userPermissions": []
-        },
-        "pageId": "Person finances",
-        "actionConfiguration": {
-          "timeoutInMillisecond": 10000,
-          "paginationType": "NONE",
-          "path": "/api/v1/households/{{appsmith.store.householdId}}/people",
-          "headers": [
-            {
-              "key": "Authorization",
-              "value": "Bearer {{appsmith.store.apiToken || ''}}"
-            },
-            {
-              "key": "X-Development-Subject",
-              "value": "{{appsmith.store.developmentSubject || ''}}"
-            },
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "encodeParamsToggle": true,
-          "queryParameters": [],
-          "bodyFormData": [],
-          "httpMethod": "GET",
-          "formData": {
-            "apiContentType": "none"
-          }
-        },
-        "runBehaviour": "ON_PAGE_LOAD",
-        "dynamicBindingPathList": [],
-        "isValid": true,
-        "invalids": [],
-        "messages": [],
-        "jsonPathKeys": [
-          "appsmith.store.householdId"
-        ],
-        "confirmBeforeExecute": false,
-        "userPermissions": []
-      },
-      "publishedAction": {
-        "name": "ListFinancePeople",
-        "validName": "ListFinancePeople",
-        "datasource": {
-          "name": "HouseholdPlannerAPI",
-          "pluginId": "restapi-plugin",
-          "datasourceConfiguration": {
-            "url": "http://api:8000"
-          },
-          "isValid": true,
-          "invalids": [],
-          "messages": [],
-          "new": true,
-          "userPermissions": []
-        },
-        "pageId": "Person finances",
-        "actionConfiguration": {
-          "timeoutInMillisecond": 10000,
-          "paginationType": "NONE",
-          "path": "/api/v1/households/{{appsmith.store.householdId}}/people",
-          "headers": [
-            {
-              "key": "Authorization",
-              "value": "Bearer {{appsmith.store.apiToken || ''}}"
-            },
-            {
-              "key": "X-Development-Subject",
-              "value": "{{appsmith.store.developmentSubject || ''}}"
-            },
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "encodeParamsToggle": true,
-          "queryParameters": [],
-          "bodyFormData": [],
-          "httpMethod": "GET",
-          "formData": {
-            "apiContentType": "none"
-          }
-        },
-        "runBehaviour": "ON_PAGE_LOAD",
-        "dynamicBindingPathList": [],
-        "isValid": true,
-        "invalids": [],
-        "messages": [],
-        "jsonPathKeys": [
-          "appsmith.store.householdId"
-        ],
-        "confirmBeforeExecute": false,
-        "userPermissions": []
-      },
-      "new": false,
-      "userPermissions": [
-        "read:actions",
-        "execute:actions",
-        "manage:actions"
-      ]
-    },
-    {
       "id": "Personfinances_ListIncomeTypes",
       "pluginType": "API",
       "pluginId": "restapi-plugin",
@@ -9861,7 +10022,7 @@
           "formData": {
             "apiContentType": "application/json"
           },
-          "body": "{{TaxCalculationMode.selectedOptionValue === 'AUTOMATIC' ? ({ jurisdiction: TaxProviderYear.selectedOptionValue.split('|')[0], tax_year: TaxProviderYear.selectedOptionValue.split('|')[1], settings: { calculation_mode: 'AUTOMATIC', parameters: JSON.parse(TaxParameters.text || '{}') }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null }) : ({ jurisdiction: String(ManualTaxJurisdiction.text || '').trim().toUpperCase(), tax_year: String(ManualTaxYear.text || '').trim(), settings: { calculation_mode: 'MANUAL_NET', manual_annual_net_income: Number(ManualAnnualNetIncome.text) }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null })}}"
+          "body": "{{TaxCalculationMode.selectedOptionValue === 'AUTOMATIC' ? ({ jurisdiction: TaxProviderYear.selectedOptionValue.split('|')[0], tax_year: TaxProviderYear.selectedOptionValue.split('|')[1], settings: { calculation_mode: 'AUTOMATIC', parameters: appsmith.store.financeAdvancedMode ? JSON.parse(TaxParameters.text || '{}') : {} }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null }) : ({ jurisdiction: String(ManualTaxJurisdiction.text || '').trim().toUpperCase(), tax_year: String(ManualTaxYear.text || '').trim(), settings: { calculation_mode: 'MANUAL_NET', manual_annual_net_income: Number(ManualAnnualNetIncome.text) }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null })}}"
         },
         "runBehaviour": "MANUAL",
         "dynamicBindingPathList": [
@@ -9874,7 +10035,7 @@
         "messages": [],
         "jsonPathKeys": [
           "appsmith.store.personId",
-          "TaxCalculationMode.selectedOptionValue === 'AUTOMATIC' ? ({ jurisdiction: TaxProviderYear.selectedOptionValue.split('|')[0], tax_year: TaxProviderYear.selectedOptionValue.split('|')[1], settings: { calculation_mode: 'AUTOMATIC', parameters: JSON.parse(TaxParameters.text || '{}') }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null }) : ({ jurisdiction: String(ManualTaxJurisdiction.text || '').trim().toUpperCase(), tax_year: String(ManualTaxYear.text || '').trim(), settings: { calculation_mode: 'MANUAL_NET', manual_annual_net_income: Number(ManualAnnualNetIncome.text) }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null })"
+          "TaxCalculationMode.selectedOptionValue === 'AUTOMATIC' ? ({ jurisdiction: TaxProviderYear.selectedOptionValue.split('|')[0], tax_year: TaxProviderYear.selectedOptionValue.split('|')[1], settings: { calculation_mode: 'AUTOMATIC', parameters: appsmith.store.financeAdvancedMode ? JSON.parse(TaxParameters.text || '{}') : {} }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null }) : ({ jurisdiction: String(ManualTaxJurisdiction.text || '').trim().toUpperCase(), tax_year: String(ManualTaxYear.text || '').trim(), settings: { calculation_mode: 'MANUAL_NET', manual_annual_net_income: Number(ManualAnnualNetIncome.text) }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null })"
         ],
         "confirmBeforeExecute": false,
         "userPermissions": []
@@ -9920,7 +10081,7 @@
           "formData": {
             "apiContentType": "application/json"
           },
-          "body": "{{TaxCalculationMode.selectedOptionValue === 'AUTOMATIC' ? ({ jurisdiction: TaxProviderYear.selectedOptionValue.split('|')[0], tax_year: TaxProviderYear.selectedOptionValue.split('|')[1], settings: { calculation_mode: 'AUTOMATIC', parameters: JSON.parse(TaxParameters.text || '{}') }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null }) : ({ jurisdiction: String(ManualTaxJurisdiction.text || '').trim().toUpperCase(), tax_year: String(ManualTaxYear.text || '').trim(), settings: { calculation_mode: 'MANUAL_NET', manual_annual_net_income: Number(ManualAnnualNetIncome.text) }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null })}}"
+          "body": "{{TaxCalculationMode.selectedOptionValue === 'AUTOMATIC' ? ({ jurisdiction: TaxProviderYear.selectedOptionValue.split('|')[0], tax_year: TaxProviderYear.selectedOptionValue.split('|')[1], settings: { calculation_mode: 'AUTOMATIC', parameters: appsmith.store.financeAdvancedMode ? JSON.parse(TaxParameters.text || '{}') : {} }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null }) : ({ jurisdiction: String(ManualTaxJurisdiction.text || '').trim().toUpperCase(), tax_year: String(ManualTaxYear.text || '').trim(), settings: { calculation_mode: 'MANUAL_NET', manual_annual_net_income: Number(ManualAnnualNetIncome.text) }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null })}}"
         },
         "runBehaviour": "MANUAL",
         "dynamicBindingPathList": [
@@ -9933,7 +10094,7 @@
         "messages": [],
         "jsonPathKeys": [
           "appsmith.store.personId",
-          "TaxCalculationMode.selectedOptionValue === 'AUTOMATIC' ? ({ jurisdiction: TaxProviderYear.selectedOptionValue.split('|')[0], tax_year: TaxProviderYear.selectedOptionValue.split('|')[1], settings: { calculation_mode: 'AUTOMATIC', parameters: JSON.parse(TaxParameters.text || '{}') }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null }) : ({ jurisdiction: String(ManualTaxJurisdiction.text || '').trim().toUpperCase(), tax_year: String(ManualTaxYear.text || '').trim(), settings: { calculation_mode: 'MANUAL_NET', manual_annual_net_income: Number(ManualAnnualNetIncome.text) }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null })"
+          "TaxCalculationMode.selectedOptionValue === 'AUTOMATIC' ? ({ jurisdiction: TaxProviderYear.selectedOptionValue.split('|')[0], tax_year: TaxProviderYear.selectedOptionValue.split('|')[1], settings: { calculation_mode: 'AUTOMATIC', parameters: appsmith.store.financeAdvancedMode ? JSON.parse(TaxParameters.text || '{}') : {} }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null }) : ({ jurisdiction: String(ManualTaxJurisdiction.text || '').trim().toUpperCase(), tax_year: String(ManualTaxYear.text || '').trim(), settings: { calculation_mode: 'MANUAL_NET', manual_annual_net_income: Number(ManualAnnualNetIncome.text) }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null })"
         ],
         "confirmBeforeExecute": false,
         "userPermissions": []
@@ -10179,7 +10340,6 @@
       "Households_CreateHousehold",
       "People_ListPeople",
       "People_CreatePerson",
-      "Personfinances_ListFinancePeople",
       "Personfinances_ListIncomeTypes",
       "Personfinances_ListTaxProviders",
       "Personfinances_ListIncomeSources",
