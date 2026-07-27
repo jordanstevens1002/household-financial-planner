@@ -267,7 +267,12 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
     elif name == "Properties":
         widgets += [
             text("PropertiesHelp", "Homes and other properties can be owned, rented in part, vacant, planned or historical.", 17, 21),
-            table("PropertiesTable", "{{ListProperties.data}}", 22, 55),
+            table(
+                "PropertiesTable",
+                "{{JSON.parse(JSON.stringify((ListProperties.data || []).map(item => ({'Property': item.display_name, 'Type': item.property_type, 'Status': item.current_status, 'As of': item.current_position_date, 'Current value': item.current_value, 'Current debt': item.current_debt, 'Currency': item.currency, 'Purchase date': item.purchase_date, 'Purchase price': item.purchase_price}))))}}",
+                22,
+                55,
+            ),
             button("OpenPropertyWizard", "Add a property", "{{navigateTo('Property Wizard')}}", 57, 2, 18),
         ]
     elif name == "Property Wizard":

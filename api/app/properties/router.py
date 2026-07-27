@@ -8,6 +8,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
 from app.core.database import get_session
 from app.core.dependencies import ROLE_LEVEL, current_user, require_household_role
@@ -34,6 +35,7 @@ from app.properties.schemas import (
     OwnershipResult,
     PropertyCreate,
     PropertyRead,
+    PropertySummaryRead,
     PropertySetupMode,
     PropertyWizardCreate,
     PropertyWizardRead,
@@ -120,15 +122,50 @@ async def _create_property(
     return record
 
 
-@router.get("/households/{household_id}/properties", response_model=list[PropertyRead])
+@router.get("/households/{household_id}/properties", response_model=list[PropertySummaryRead])
 async def list_properties(
     household_id: uuid.UUID,
     _: Annotated[HouseholdMembership, Depends(require_household_role(HouseholdRole.VIEWER))],
     session: AsyncSession = Depends(get_session),
-) -> list[Property]:
-    return list(
-        await session.scalars(select(Property).where(Property.household_id == household_id))
+) -> list[PropertySummaryRead]:
+    property_type = aliased(LookupItem)
+    property_status = aliased(LookupItem)
+    latest_baseline_id = (
+        select(PropertyBaseline.id)
+        .where(PropertyBaseline.property_id == Property.id)
+        .order_by(PropertyBaseline.baseline_date.desc(), PropertyBaseline.id.desc())
+        .limit(1)
+        .correlate(Property)
+        .scalar_subquery()
     )
+    rows = await session.execute(
+        select(
+            Property,
+            property_type.display_name,
+            property_status.display_name,
+            PropertyBaseline,
+        )
+        .join(property_type, property_type.id == Property.property_type_id)
+        .join(property_status, property_status.id == Property.current_status_id)
+        .outerjoin(PropertyBaseline, PropertyBaseline.id == latest_baseline_id)
+        .where(Property.household_id == household_id)
+        .order_by(Property.display_name, Property.id)
+    )
+    return [
+        PropertySummaryRead(
+            id=property_record.id,
+            display_name=property_record.display_name,
+            property_type=type_name,
+            current_status=status_name,
+            current_position_date=baseline.baseline_date if baseline else None,
+            current_value=baseline.property_value if baseline else None,
+            current_debt=baseline.loan_balance_total if baseline else None,
+            currency=property_record.default_currency,
+            purchase_date=property_record.purchase_date,
+            purchase_price=property_record.purchase_price,
+        )
+        for property_record, type_name, status_name, baseline in rows.all()
+    ]
 
 
 @router.post("/households/{household_id}/properties", response_model=PropertyRead, status_code=201)

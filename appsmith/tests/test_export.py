@@ -161,6 +161,21 @@ class AppsmithExportTests(unittest.TestCase):
         self.assertIn("HISTORICAL_PURCHASE", purchase_date["isRequired"])
         self.assertIn("HISTORICAL_PURCHASE", purchase_date["isVisible"])
 
+    def test_properties_table_shows_current_position_without_internal_ids(self) -> None:
+        properties = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Properties"
+        )
+        widgets = properties["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        table = next(widget for widget in widgets if widget["widgetName"] == "PropertiesTable")
+        data = table["tableData"]
+        self.assertIn("'Current value': item.current_value", data)
+        self.assertIn("'Current debt': item.current_debt", data)
+        self.assertIn("'Type': item.property_type", data)
+        self.assertNotIn("property_type_id", data)
+        self.assertNotIn("current_status_id", data)
+
 
 if __name__ == "__main__":
     unittest.main()

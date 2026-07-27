@@ -43,6 +43,19 @@ class PropertyRead(PropertyCreate, ORMModel):
     default_currency: str
 
 
+class PropertySummaryRead(BaseModel):
+    id: uuid.UUID
+    display_name: str
+    property_type: str
+    current_status: str
+    current_position_date: date | None
+    current_value: Decimal | None
+    current_debt: Decimal | None
+    currency: str
+    purchase_date: date | None
+    purchase_price: Decimal | None
+
+
 class ValuationCreate(BaseModel):
     valuation_date: date
     value: Decimal = Field(gt=0, max_digits=18, decimal_places=2)

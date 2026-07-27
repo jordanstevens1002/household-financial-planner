@@ -103,6 +103,23 @@ async def test_current_snapshot_wizard_accepts_no_loan_and_warns_on_incomplete_o
     assert body["baseline"]["loan_balance_total"] == "0.00"
     assert "40.00% rather than 100.00%" in body["warnings"][0]
 
+    listed = await client.get(f"/api/v1/households/{household['id']}/properties")
+    assert listed.status_code == 200
+    assert listed.json() == [
+        {
+            "id": body["property"]["id"],
+            "display_name": "Flexible property",
+            "property_type": "Custom",
+            "current_status": "Owner occupied",
+            "current_position_date": "2026-07-16",
+            "current_value": "900000.00",
+            "current_debt": "0.00",
+            "currency": "AUD",
+            "purchase_date": None,
+            "purchase_price": None,
+        }
+    ]
+
 
 async def test_property_inherits_household_currency_when_omitted(
     client: AsyncClient, property_lookups: dict[str, str]
