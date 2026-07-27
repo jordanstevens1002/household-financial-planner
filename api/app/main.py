@@ -31,14 +31,14 @@ logger = get_logger(component="api")
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    logger.info("application_started", version="0.9.2")
+    logger.info("application_started", version="0.10.0")
     try:
         yield
     finally:
         logger.info("application_stopped")
 
 
-app = FastAPI(title="Household Financial Planner API", version="0.9.2", lifespan=lifespan)
+app = FastAPI(title="Household Financial Planner API", version="0.10.0", lifespan=lifespan)
 app.include_router(households_router)
 app.include_router(properties_router)
 app.include_router(events_router)

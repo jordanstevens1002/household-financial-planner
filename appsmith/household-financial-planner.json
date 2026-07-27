@@ -1,0 +1,1458 @@
+{
+  "clientSchemaVersion": 1,
+  "serverSchemaVersion": 6,
+  "exportedApplication": {
+    "name": "Household Financial Planner",
+    "isPublic": false,
+    "pages": [
+      {
+        "id": "Home",
+        "isDefault": true
+      },
+      {
+        "id": "Settings",
+        "isDefault": false
+      }
+    ],
+    "publishedPages": [
+      {
+        "id": "Home",
+        "isDefault": true
+      },
+      {
+        "id": "Settings",
+        "isDefault": false
+      }
+    ],
+    "viewMode": false,
+    "appIsExample": false,
+    "color": "#36B37E",
+    "icon": "home",
+    "slug": "household-financial-planner",
+    "evaluationVersion": 2,
+    "applicationVersion": 2,
+    "collapseInvisibleWidgets": true,
+    "isManualUpdate": false,
+    "deleted": false
+  },
+  "datasourceList": [],
+  "customJSLibList": [],
+  "pageList": [
+    {
+      "unpublishedPage": {
+        "name": "Home",
+        "slug": "home",
+        "layouts": [
+          {
+            "id": "Home",
+            "viewMode": false,
+            "dsl": {
+              "widgetName": "MainContainer",
+              "backgroundColor": "#F7F8FA",
+              "rightColumn": 1224,
+              "snapColumns": 64,
+              "detachFromLayout": true,
+              "widgetId": "0",
+              "topRow": 0,
+              "bottomRow": 1100,
+              "containerStyle": "none",
+              "snapRows": 110,
+              "parentRowSpace": 1,
+              "type": "CANVAS_WIDGET",
+              "canExtend": true,
+              "version": 77,
+              "minHeight": 1100,
+              "parentColumnSpace": 1,
+              "dynamicBindingPathList": [],
+              "children": [
+                {
+                  "widgetName": "PageTitle",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "pagetitle",
+                  "parentId": "0",
+                  "topRow": 1,
+                  "bottomRow": 6,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Home",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "FoundationNotice",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "foundationnotice",
+                  "parentId": "0",
+                  "topRow": 6,
+                  "bottomRow": 10,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Phase 10A provides the tested application shell and connection settings. Household workflows arrive in the next focused PR.",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "NavHome",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhome",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 0,
+                  "rightColumn": 8,
+                  "text": "Home",
+                  "onClick": "{{navigateTo('Home', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavSettings",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navsettings",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 8,
+                  "rightColumn": 16,
+                  "text": "Settings",
+                  "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "Welcome",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "welcome",
+                  "parentId": "0",
+                  "topRow": 17,
+                  "bottomRow": 24,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Open Settings to configure a local development identity or production bearer token, then verify the API connection.",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "OpenSettings",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "opensettings",
+                  "parentId": "0",
+                  "topRow": 26,
+                  "bottomRow": 30,
+                  "leftColumn": 2,
+                  "rightColumn": 18,
+                  "text": "Open settings",
+                  "onClick": "{{navigateTo('Settings')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                }
+              ]
+            },
+            "layoutOnLoadActions": [],
+            "layoutOnLoadActionErrors": [],
+            "validOnPageLoadActions": true,
+            "deleted": false,
+            "policies": [],
+            "userPermissions": []
+          }
+        ],
+        "userPermissions": [],
+        "policies": []
+      },
+      "publishedPage": {
+        "name": "Home",
+        "slug": "home",
+        "layouts": [
+          {
+            "id": "Home",
+            "viewMode": false,
+            "dsl": {
+              "widgetName": "MainContainer",
+              "backgroundColor": "#F7F8FA",
+              "rightColumn": 1224,
+              "snapColumns": 64,
+              "detachFromLayout": true,
+              "widgetId": "0",
+              "topRow": 0,
+              "bottomRow": 1100,
+              "containerStyle": "none",
+              "snapRows": 110,
+              "parentRowSpace": 1,
+              "type": "CANVAS_WIDGET",
+              "canExtend": true,
+              "version": 77,
+              "minHeight": 1100,
+              "parentColumnSpace": 1,
+              "dynamicBindingPathList": [],
+              "children": [
+                {
+                  "widgetName": "PageTitle",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "pagetitle",
+                  "parentId": "0",
+                  "topRow": 1,
+                  "bottomRow": 6,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Home",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "FoundationNotice",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "foundationnotice",
+                  "parentId": "0",
+                  "topRow": 6,
+                  "bottomRow": 10,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Phase 10A provides the tested application shell and connection settings. Household workflows arrive in the next focused PR.",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "NavHome",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhome",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 0,
+                  "rightColumn": 8,
+                  "text": "Home",
+                  "onClick": "{{navigateTo('Home', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavSettings",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navsettings",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 8,
+                  "rightColumn": 16,
+                  "text": "Settings",
+                  "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "Welcome",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "welcome",
+                  "parentId": "0",
+                  "topRow": 17,
+                  "bottomRow": 24,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Open Settings to configure a local development identity or production bearer token, then verify the API connection.",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "OpenSettings",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "opensettings",
+                  "parentId": "0",
+                  "topRow": 26,
+                  "bottomRow": 30,
+                  "leftColumn": 2,
+                  "rightColumn": 18,
+                  "text": "Open settings",
+                  "onClick": "{{navigateTo('Settings')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                }
+              ]
+            },
+            "layoutOnLoadActions": [],
+            "layoutOnLoadActionErrors": [],
+            "validOnPageLoadActions": true,
+            "deleted": false,
+            "policies": [],
+            "userPermissions": []
+          }
+        ],
+        "userPermissions": [],
+        "policies": []
+      },
+      "deleted": false,
+      "gitSyncId": "phase10_0"
+    },
+    {
+      "unpublishedPage": {
+        "name": "Settings",
+        "slug": "settings",
+        "layouts": [
+          {
+            "id": "Settings",
+            "viewMode": false,
+            "dsl": {
+              "widgetName": "MainContainer",
+              "backgroundColor": "#F7F8FA",
+              "rightColumn": 1224,
+              "snapColumns": 64,
+              "detachFromLayout": true,
+              "widgetId": "0",
+              "topRow": 0,
+              "bottomRow": 1100,
+              "containerStyle": "none",
+              "snapRows": 110,
+              "parentRowSpace": 1,
+              "type": "CANVAS_WIDGET",
+              "canExtend": true,
+              "version": 77,
+              "minHeight": 1100,
+              "parentColumnSpace": 1,
+              "dynamicBindingPathList": [],
+              "children": [
+                {
+                  "widgetName": "PageTitle",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "pagetitle",
+                  "parentId": "0",
+                  "topRow": 1,
+                  "bottomRow": 6,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Settings",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "FoundationNotice",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "foundationnotice",
+                  "parentId": "0",
+                  "topRow": 6,
+                  "bottomRow": 10,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Phase 10A provides the tested application shell and connection settings. Household workflows arrive in the next focused PR.",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "NavHome",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhome",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 0,
+                  "rightColumn": 8,
+                  "text": "Home",
+                  "onClick": "{{navigateTo('Home', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavSettings",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navsettings",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 8,
+                  "rightColumn": 16,
+                  "text": "Settings",
+                  "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "SettingsHelp",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "settingshelp",
+                  "parentId": "0",
+                  "topRow": 17,
+                  "bottomRow": 21,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Connection details stay in the current browser session and are never included in the export.",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "BearerToken",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "bearertoken",
+                  "parentId": "0",
+                  "topRow": 22,
+                  "bottomRow": 29,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "label": "Bearer token (production)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Bearer token (production)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "DevelopmentSubject",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "developmentsubject",
+                  "parentId": "0",
+                  "topRow": 30,
+                  "bottomRow": 37,
+                  "leftColumn": 2,
+                  "rightColumn": 32,
+                  "label": "Development subject (local testing only)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Development subject (local testing only)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "SaveSettings",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "savesettings",
+                  "parentId": "0",
+                  "topRow": 39,
+                  "bottomRow": 43,
+                  "leftColumn": 2,
+                  "rightColumn": 20,
+                  "text": "Save connection",
+                  "onClick": "{{storeValue('apiToken', BearerToken.text || '', false); storeValue('developmentSubject', DevelopmentSubject.text || '', false); showAlert('Connection saved for this session', 'success')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "TestConnection",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "testconnection",
+                  "parentId": "0",
+                  "topRow": 39,
+                  "bottomRow": 43,
+                  "leftColumn": 22,
+                  "rightColumn": 42,
+                  "text": "Test API connection",
+                  "onClick": "{{HealthCheck.run(() => showAlert('API connection is ready', 'success'), () => showAlert('Could not reach the API', 'error'))}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "ConnectionStatus",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "connectionstatus",
+                  "parentId": "0",
+                  "topRow": 46,
+                  "bottomRow": 51,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "API status: {{HealthCheck.data.status || 'not checked'}}",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                }
+              ]
+            },
+            "layoutOnLoadActions": [
+              [
+                {
+                  "id": "Settings_HealthCheck",
+                  "name": "HealthCheck",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ]
+            ],
+            "layoutOnLoadActionErrors": [],
+            "validOnPageLoadActions": true,
+            "deleted": false,
+            "policies": [],
+            "userPermissions": []
+          }
+        ],
+        "userPermissions": [],
+        "policies": []
+      },
+      "publishedPage": {
+        "name": "Settings",
+        "slug": "settings",
+        "layouts": [
+          {
+            "id": "Settings",
+            "viewMode": false,
+            "dsl": {
+              "widgetName": "MainContainer",
+              "backgroundColor": "#F7F8FA",
+              "rightColumn": 1224,
+              "snapColumns": 64,
+              "detachFromLayout": true,
+              "widgetId": "0",
+              "topRow": 0,
+              "bottomRow": 1100,
+              "containerStyle": "none",
+              "snapRows": 110,
+              "parentRowSpace": 1,
+              "type": "CANVAS_WIDGET",
+              "canExtend": true,
+              "version": 77,
+              "minHeight": 1100,
+              "parentColumnSpace": 1,
+              "dynamicBindingPathList": [],
+              "children": [
+                {
+                  "widgetName": "PageTitle",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "pagetitle",
+                  "parentId": "0",
+                  "topRow": 1,
+                  "bottomRow": 6,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Settings",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "FoundationNotice",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "foundationnotice",
+                  "parentId": "0",
+                  "topRow": 6,
+                  "bottomRow": 10,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Phase 10A provides the tested application shell and connection settings. Household workflows arrive in the next focused PR.",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "NavHome",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhome",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 0,
+                  "rightColumn": 8,
+                  "text": "Home",
+                  "onClick": "{{navigateTo('Home', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavSettings",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navsettings",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 8,
+                  "rightColumn": 16,
+                  "text": "Settings",
+                  "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "SettingsHelp",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "settingshelp",
+                  "parentId": "0",
+                  "topRow": 17,
+                  "bottomRow": 21,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Connection details stay in the current browser session and are never included in the export.",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "BearerToken",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "bearertoken",
+                  "parentId": "0",
+                  "topRow": 22,
+                  "bottomRow": 29,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "label": "Bearer token (production)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Bearer token (production)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "DevelopmentSubject",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "developmentsubject",
+                  "parentId": "0",
+                  "topRow": 30,
+                  "bottomRow": 37,
+                  "leftColumn": 2,
+                  "rightColumn": 32,
+                  "label": "Development subject (local testing only)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Development subject (local testing only)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "SaveSettings",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "savesettings",
+                  "parentId": "0",
+                  "topRow": 39,
+                  "bottomRow": 43,
+                  "leftColumn": 2,
+                  "rightColumn": 20,
+                  "text": "Save connection",
+                  "onClick": "{{storeValue('apiToken', BearerToken.text || '', false); storeValue('developmentSubject', DevelopmentSubject.text || '', false); showAlert('Connection saved for this session', 'success')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "TestConnection",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "testconnection",
+                  "parentId": "0",
+                  "topRow": 39,
+                  "bottomRow": 43,
+                  "leftColumn": 22,
+                  "rightColumn": 42,
+                  "text": "Test API connection",
+                  "onClick": "{{HealthCheck.run(() => showAlert('API connection is ready', 'success'), () => showAlert('Could not reach the API', 'error'))}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "ConnectionStatus",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "connectionstatus",
+                  "parentId": "0",
+                  "topRow": 46,
+                  "bottomRow": 51,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "API status: {{HealthCheck.data.status || 'not checked'}}",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                }
+              ]
+            },
+            "layoutOnLoadActions": [
+              [
+                {
+                  "id": "Settings_HealthCheck",
+                  "name": "HealthCheck",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ]
+            ],
+            "layoutOnLoadActionErrors": [],
+            "validOnPageLoadActions": true,
+            "deleted": false,
+            "policies": [],
+            "userPermissions": []
+          }
+        ],
+        "userPermissions": [],
+        "policies": []
+      },
+      "deleted": false,
+      "gitSyncId": "phase10_1"
+    }
+  ],
+  "pageOrder": [
+    "Home",
+    "Settings"
+  ],
+  "publishedPageOrder": [
+    "Home",
+    "Settings"
+  ],
+  "publishedDefaultPageName": "Home",
+  "unpublishedDefaultPageName": "Home",
+  "actionList": [
+    {
+      "id": "Settings_HealthCheck",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "HealthCheck",
+        "validName": "HealthCheck",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Settings",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/health/ready",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "HealthCheck",
+        "validName": "HealthCheck",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Settings",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/health/ready",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
+    }
+  ],
+  "actionCollectionList": [],
+  "updatedResources": {
+    "actionList": [
+      "Settings_HealthCheck"
+    ],
+    "pageList": [
+      "Home",
+      "Settings"
+    ],
+    "actionCollectionList": []
+  },
+  "editModeTheme": {
+    "name": "Default",
+    "displayName": "Modern",
+    "isSystemTheme": true,
+    "deleted": false
+  },
+  "publishedTheme": {
+    "name": "Default",
+    "displayName": "Modern",
+    "isSystemTheme": true,
+    "deleted": false
+  }
+}
