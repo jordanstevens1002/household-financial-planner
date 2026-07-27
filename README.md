@@ -93,8 +93,9 @@ adds dated recurring income sources plus automatic provider-backed or manual net
 settings. Installed providers and supported tax years are discovered through the neutral registry;
 Australia remains a bundled example rather than a frontend assumption. Phase 10D.1 simplifies this
 flow with progressive income and tax sections and keeps raw provider JSON behind an explicit
-Advanced mode. Local import instructions are in [appsmith/README.md](appsmith/README.md). Appsmith
-is pinned through `APPSMITH_VERSION` so an
+Advanced mode. Phase 10E adds household expenses and an explicitly dated, backend-calculated
+cash-flow summary with annual and monthly planning figures. Local import instructions are in
+[appsmith/README.md](appsmith/README.md). Appsmith is pinned through `APPSMITH_VERSION` so an
 upstream `latest` image cannot silently change the committed application schema.
 
 ## Contributing

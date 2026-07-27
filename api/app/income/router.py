@@ -30,7 +30,7 @@ from app.income.tax.registry import (
     TaxProviderError,
     get_registry,
     get_tax_engine,
-    tax_year_for_date,
+    get_tax_engine_for_date,
 )
 from app.models import (
     ApplicationUser,
@@ -351,8 +351,18 @@ async def _person_projection(
             warnings=["Manual net income used; tax components are not calculated."],
         )
     try:
-        expected_tax_year = tax_year_for_date(profile.jurisdiction, as_of)
-    except TaxProviderError as exc:
+        engine, expected_tax_year, uses_fallback = get_tax_engine_for_date(
+            profile.jurisdiction, as_of
+        )
+        parameters = engine.validate_parameters(settings.parameters)
+        tax_result = engine.calculate(
+            TaxCalculationInput(
+                gross_taxable_income=taxable,
+                parameters=parameters,
+            )
+        )
+        tax = TaxCalculationRead.model_validate(tax_result, from_attributes=True)
+    except (TaxProviderError, ValueError) as exc:
         return PersonIncomeProjection(
             person_id=person.id,
             display_name=person.display_name,
@@ -363,21 +373,13 @@ async def _person_projection(
             calculation_mode="NO_PROFILE",
             warnings=[f"{exc}; gross taxable income is shown as net."],
         )
-    if profile.tax_year != expected_tax_year:
-        return PersonIncomeProjection(
-            person_id=person.id,
-            display_name=person.display_name,
-            gross_taxable_income=_money(taxable),
-            non_taxable_income=_money(non_taxable),
-            net_income=_money(taxable + non_taxable),
-            tax_and_repayments=Decimal("0.00"),
-            calculation_mode="NO_PROFILE",
-            warnings=[
-                f"No automatic tax profile for {expected_tax_year}; gross taxable income "
-                "is shown as net."
-            ],
+    warnings = list(tax.warnings)
+    if uses_fallback:
+        warnings.insert(
+            0,
+            f"No {expected_tax_year} tax rules are installed for {profile.jurisdiction}; "
+            f"using {tax.tax_year} rules as the latest available planning fallback.",
         )
-    tax = _automatic_tax(profile.jurisdiction, profile.tax_year, taxable, settings)
     return PersonIncomeProjection(
         person_id=person.id,
         display_name=person.display_name,
@@ -386,7 +388,7 @@ async def _person_projection(
         net_income=_money(tax.net_income + non_taxable),
         tax_and_repayments=tax.total,
         calculation_mode="AUTOMATIC",
-        warnings=tax.warnings,
+        warnings=warnings,
     )
 
 

@@ -6,7 +6,11 @@ from decimal import Decimal
 import pytest
 
 from app.income.tax.base import TaxCalculationInput, TaxComponent, TaxEstimate
-from app.income.tax.registry import TaxProviderError, TaxProviderRegistry
+from app.income.tax.registry import (
+    TaxProviderError,
+    TaxProviderRegistry,
+    get_tax_engine_for_date,
+)
 
 
 class ExampleEngine:
@@ -64,3 +68,16 @@ def test_registry_rejects_missing_and_duplicate_providers() -> None:
         registry.get_provider("missing")
     with pytest.raises(TaxProviderError, match="Duplicate tax provider"):
         registry.register(ExampleProvider())
+
+
+def test_date_selection_uses_newest_provider_year_as_explicit_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    registry = TaxProviderRegistry([ExampleProvider()])
+    monkeypatch.setattr("app.income.tax.registry.get_registry", lambda: registry)
+
+    engine, expected_year, uses_fallback = get_tax_engine_for_date("EX", date(2027, 7, 1))
+
+    assert engine.tax_year == "2026"
+    assert expected_year == "2027"
+    assert uses_fallback is True

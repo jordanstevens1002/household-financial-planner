@@ -1,6 +1,7 @@
 """Income and tax API tests."""
 
 from datetime import date
+from decimal import ROUND_HALF_UP, Decimal
 
 import pytest
 from httpx import AsyncClient
@@ -238,7 +239,7 @@ async def test_automatic_tax_profile_drives_income_projection(
     assert body["people"][0]["calculation_mode"] == "AUTOMATIC"
 
 
-async def test_automatic_tax_profile_is_not_reused_for_a_later_financial_year(
+async def test_latest_tax_rules_are_used_as_future_planning_fallback(
     client: AsyncClient, finance_lookups: dict[str, LookupItem]
 ) -> None:
     household, person = await create_person(client)
@@ -261,8 +262,11 @@ async def test_automatic_tax_profile_is_not_reused_for_a_later_financial_year(
             params={"as_of": "2026-07-01"},
         )
     ).json()
-    assert body["people"][0]["calculation_mode"] == "NO_PROFILE"
+    assert body["people"][0]["calculation_mode"] == "AUTOMATIC"
+    assert body["people"][0]["tax_and_repayments"] == "22788.00"
     assert "2026-27" in body["people"][0]["warnings"][0]
+    assert "2025-26 rules" in body["people"][0]["warnings"][0]
+    assert "latest available planning fallback" in body["people"][0]["warnings"][0]
 
 
 async def test_tax_calculation_rejects_unsupported_year_and_accepts_manual_net(
@@ -360,6 +364,57 @@ async def test_income_and_expense_growth_apply_to_future_snapshots(
     assert body["annual_gross_income"] == "1100.00"
     assert body["annual_expenses"] == "1320.00"
     assert body["annual_surplus"] == "-220.00"
+
+
+async def test_future_tax_fallback_and_monthly_surplus_reconcile(
+    client: AsyncClient, finance_lookups: dict[str, LookupItem]
+) -> None:
+    household, person = await create_person(client)
+    await client.post(
+        f"/api/v1/people/{person['id']}/income-sources",
+        json=income_payload(finance_lookups["salary"], "Growing salary", 98_000, "ANNUAL")
+        | {"annual_growth_rate": 2.5, "effective_from": "2025-06-27"},
+    )
+    await client.post(
+        f"/api/v1/people/{person['id']}/tax-profiles",
+        json={
+            "jurisdiction": "AU",
+            "tax_year": "2025-26",
+            "effective_from": "2025-07-01",
+            "settings": {},
+        },
+    )
+    await client.post(
+        f"/api/v1/households/{household['id']}/expenses",
+        json={
+            "category_id": str(finance_lookups["expense"].id),
+            "display_name": "Mortgage",
+            "amount": 3_000,
+            "frequency": "MONTHLY",
+            "effective_from": "2026-11-29",
+            "is_essential": True,
+        },
+    )
+
+    body = (
+        await client.get(
+            f"/api/v1/households/{household['id']}/cashflow",
+            params={"as_of": "2027-07-27"},
+        )
+    ).json()
+
+    assert body["annual_gross_income"] == "102961.25"
+    assert body["annual_net_income"] == "79225.64"
+    assert body["annual_expenses"] == "36000.00"
+    assert body["annual_surplus"] == "43225.64"
+    assert body["monthly_net_income"] == "6602.14"
+    assert body["monthly_expenses"] == "3000.00"
+    assert body["monthly_surplus"] == "3602.14"
+    assert Decimal(body["monthly_surplus"]) == (
+        Decimal(body["annual_surplus"]) / Decimal("12")
+    ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    assert body["people"][0]["tax_and_repayments"] == "23735.61"
+    assert "latest available planning fallback" in body["warnings"][0]
 
 
 async def test_zero_person_household_has_zero_cashflow(client: AsyncClient) -> None:
