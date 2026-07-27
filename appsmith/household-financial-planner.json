@@ -2263,7 +2263,7 @@
                   "leftColumn": 2,
                   "rightColumn": 20,
                   "text": "Save connection",
-                  "onClick": "{{storeValue('apiToken', BearerToken.text || '', false); storeValue('developmentSubject', DevelopmentSubject.text || '', false); showAlert('Connection saved for this session', 'success')}}",
+                  "onClick": "{{(async () => { await storeValue('apiToken', BearerToken.text || '', false); await storeValue('developmentSubject', DevelopmentSubject.text || '', false); if (!appsmith.store.householdId) { showAlert('Connection saved for this session', 'success'); return; } RestoreSelectedHousehold.run(async () => { const household = Array.isArray(RestoreSelectedHousehold.data) ? RestoreSelectedHousehold.data.find((item) => item.id === appsmith.store.householdId) : undefined; if (household) { await storeValue('householdName', household.display_name, true); showAlert('Connection saved and household restored', 'success'); } else { await removeValue('householdId'); await removeValue('householdName'); showAlert('The saved household is no longer available. Choose another household.', 'error'); navigateTo('Households'); } }, () => showAlert('Connection saved, but the saved household could not be verified', 'error')); })()}}",
                   "isVisible": true,
                   "isDisabled": false,
                   "isLoading": false,
@@ -2683,7 +2683,7 @@
                   "leftColumn": 2,
                   "rightColumn": 20,
                   "text": "Save connection",
-                  "onClick": "{{storeValue('apiToken', BearerToken.text || '', false); storeValue('developmentSubject', DevelopmentSubject.text || '', false); showAlert('Connection saved for this session', 'success')}}",
+                  "onClick": "{{(async () => { await storeValue('apiToken', BearerToken.text || '', false); await storeValue('developmentSubject', DevelopmentSubject.text || '', false); if (!appsmith.store.householdId) { showAlert('Connection saved for this session', 'success'); return; } RestoreSelectedHousehold.run(async () => { const household = Array.isArray(RestoreSelectedHousehold.data) ? RestoreSelectedHousehold.data.find((item) => item.id === appsmith.store.householdId) : undefined; if (household) { await storeValue('householdName', household.display_name, true); showAlert('Connection saved and household restored', 'success'); } else { await removeValue('householdId'); await removeValue('householdName'); showAlert('The saved household is no longer available. Choose another household.', 'error'); navigateTo('Households'); } }, () => showAlert('Connection saved, but the saved household could not be verified', 'error')); })()}}",
                   "isVisible": true,
                   "isDisabled": false,
                   "isLoading": false,
@@ -3158,6 +3158,119 @@
         "execute:actions",
         "manage:actions"
       ]
+    },
+    {
+      "id": "Settings_RestoreSelectedHousehold",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "RestoreSelectedHousehold",
+        "validName": "RestoreSelectedHousehold",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Settings",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/households",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "MANUAL",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "RestoreSelectedHousehold",
+        "validName": "RestoreSelectedHousehold",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Settings",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/households",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "MANUAL",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
     }
   ],
   "actionCollectionList": [],
@@ -3165,7 +3278,8 @@
     "actionList": [
       "Households_ListHouseholds",
       "Households_CreateHousehold",
-      "Settings_HealthCheck"
+      "Settings_HealthCheck",
+      "Settings_RestoreSelectedHousehold"
     ],
     "pageList": [
       "Home",

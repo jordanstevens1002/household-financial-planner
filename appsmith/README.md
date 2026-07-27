@@ -21,7 +21,10 @@ the JSON.
 No bearer token, development identity, email address, household ID or financial value is stored in
 the committed export. Appsmith stores bearer tokens and development identities for the current
 browser session only. The selected household ID and display name are persisted in that browser so
-the same household can be restored later; no household data itself is copied into the export.
+the same household can be restored later. After connection details are saved in a new session, the
+application verifies that the authenticated user can still access that household and refreshes its
+display name. An unavailable selection is cleared; no household data itself is copied into the
+export.
 
 Regenerate and test the export with:
 

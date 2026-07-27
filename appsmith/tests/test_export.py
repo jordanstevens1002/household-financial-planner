@@ -47,7 +47,7 @@ class AppsmithExportTests(unittest.TestCase):
 
     def test_api_actions_use_runtime_auth_and_docker_service_url(self) -> None:
         actions = self.application["actionList"]
-        self.assertEqual(len(actions), 3)
+        self.assertEqual(len(actions), 4)
         for wrapper in actions:
             action = wrapper["unpublishedAction"]
             self.assertEqual(
@@ -123,6 +123,29 @@ class AppsmithExportTests(unittest.TestCase):
             self.assertIn("storeValue('householdId'", widget["onClick"])
             self.assertIn("storeValue('householdName'", widget["onClick"])
             self.assertIn(", true)", widget["onClick"])
+
+    def test_saved_household_is_verified_after_authentication(self) -> None:
+        actions = {
+            item["unpublishedAction"]["name"]: item["unpublishedAction"]
+            for item in self.application["actionList"]
+        }
+        restore = actions["RestoreSelectedHousehold"]
+        self.assertEqual(restore["actionConfiguration"]["path"], "/api/v1/households")
+        self.assertEqual(restore["actionConfiguration"]["httpMethod"], "GET")
+        self.assertEqual(restore["runBehaviour"], "MANUAL")
+
+        settings = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Settings"
+        )
+        widgets = settings["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        save = next(widget for widget in widgets if widget["widgetName"] == "SaveSettings")
+        self.assertIn("await storeValue('apiToken'", save["onClick"])
+        self.assertIn("RestoreSelectedHousehold.run", save["onClick"])
+        self.assertIn("item.id === appsmith.store.householdId", save["onClick"])
+        self.assertIn("removeValue('householdId')", save["onClick"])
+        self.assertIn("removeValue('householdName')", save["onClick"])
 
     def test_household_table_guards_non_array_responses(self) -> None:
         households = next(

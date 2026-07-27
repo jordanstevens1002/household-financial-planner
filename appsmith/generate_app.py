@@ -305,7 +305,7 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
             button(
                 "SaveSettings",
                 "Save connection",
-                "{{storeValue('apiToken', BearerToken.text || '', false); storeValue('developmentSubject', DevelopmentSubject.text || '', false); showAlert('Connection saved for this session', 'success')}}",
+                "{{(async () => { await storeValue('apiToken', BearerToken.text || '', false); await storeValue('developmentSubject', DevelopmentSubject.text || '', false); if (!appsmith.store.householdId) { showAlert('Connection saved for this session', 'success'); return; } RestoreSelectedHousehold.run(async () => { const household = Array.isArray(RestoreSelectedHousehold.data) ? RestoreSelectedHousehold.data.find((item) => item.id === appsmith.store.householdId) : undefined; if (household) { await storeValue('householdName', household.display_name, true); showAlert('Connection saved and household restored', 'success'); } else { await removeValue('householdId'); await removeValue('householdName'); showAlert('The saved household is no longer available. Choose another household.', 'error'); navigateTo('Households'); } }, () => showAlert('Connection saved, but the saved household could not be verified', 'error')); })()}}",
                 39,
                 2,
                 20,
@@ -392,6 +392,12 @@ def actions() -> list[dict[str, Any]]:
             body="{{({ display_name: String(HouseholdName.text || '').trim(), currency: String(HouseholdCurrency.text || '').trim().toUpperCase(), jurisdiction: String(HouseholdJurisdiction.text || '').trim().toUpperCase() || null })}}",
         ),
         action("Settings", "HealthCheck", "GET", "/health/ready", on_load=True),
+        action(
+            "Settings",
+            "RestoreSelectedHousehold",
+            "GET",
+            "/api/v1/households",
+        ),
     ]
 
 
