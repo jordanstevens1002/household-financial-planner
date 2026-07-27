@@ -72,6 +72,19 @@ def components(result: TaxEstimate) -> dict[str, object]:
     return {item.code: item.amount for item in result.components}
 
 
+async def test_tax_provider_discovery_uses_neutral_registry(client: AsyncClient) -> None:
+    response = await client.get("/api/v1/tax-providers")
+
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            "jurisdiction": "AU",
+            "display_name": "Australia",
+            "supported_tax_years": ["2025-26"],
+        }
+    ]
+
+
 def test_australian_2025_26_tax_engine_includes_lito_medicare_and_help() -> None:
     engine = AustraliaTaxEngine2025_26()
     low = engine.calculate(tax_input(45_000))

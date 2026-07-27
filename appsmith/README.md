@@ -1,10 +1,12 @@
 # Appsmith application
 
 `household-financial-planner.json` is the importable Appsmith Community Edition application. Phase
-10C adds country-neutral people identity creation and listing to the tested household onboarding
-foundation. It deliberately does not imply that a person's income, tax or other financial setup is
-complete. The application is generated deterministically by `generate_app.py`; edit the generator
-rather than the JSON.
+10D adds person selection, dated recurring income sources, and provider-backed or manual tax
+settings to the tested household and people foundation. Installed tax providers and their supported
+years come from the backend registry; the frontend does not assume Australia or any other country.
+Phase 10D.1 removes duplicate person selection, separates the income and tax workflows, and places
+raw provider JSON behind an explicit Advanced mode. The application is generated deterministically
+by `generate_app.py`; edit the generator rather than the JSON.
 
 ## Import locally
 
@@ -17,7 +19,8 @@ rather than the JSON.
 5. Save the settings and select **Test API connection**.
 6. Open **Households** to create a household or select an existing one.
 7. Open **People** to add and list identity records for the selected household.
-8. Click **Deploy** before checking the normal launched application; edit mode and published mode
+8. Select a person and open **Person finances** to record income and tax settings.
+9. Click **Deploy** before checking the normal launched application; edit mode and published mode
    use different Appsmith snapshots.
 
 No bearer token, development identity, email address, household ID or financial value is stored in
@@ -25,8 +28,8 @@ the committed export. Appsmith stores bearer tokens and development identities f
 browser session only. The selected household ID and display name are persisted in that browser so
 the same household can be restored later. After connection details are saved in a new session, the
 application verifies that the authenticated user can still access that household and refreshes its
-display name. An unavailable selection is cleared; no household data itself is copied into the
-export.
+display name. The selected person is also remembered until the household changes. An unavailable
+household selection is cleared; no household or person data itself is copied into the export.
 
 Regenerate and test the export with:
 

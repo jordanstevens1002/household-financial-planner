@@ -14,11 +14,24 @@ PAGES = (
     ("Home", "home"),
     ("Households", "households"),
     ("People", "people"),
+    ("Person finances", "person-finances"),
     ("Settings", "settings"),
 )
 
 
-def text(name: str, value: str, top: int, bottom: int, left: int = 2, right: int = 62) -> dict[str, Any]:
+def text(
+    name: str,
+    value: str,
+    top: int,
+    bottom: int,
+    left: int = 2,
+    right: int = 62,
+    *,
+    visible: bool | str = True,
+) -> dict[str, Any]:
+    bindings = [{"key": "fontFamily"}, {"key": "text"}]
+    if isinstance(visible, str):
+        bindings.append({"key": "isVisible"})
     return {
         "widgetName": name,
         "displayName": "Text",
@@ -30,7 +43,7 @@ def text(name: str, value: str, top: int, bottom: int, left: int = 2, right: int
         "leftColumn": left,
         "rightColumn": right,
         "text": value,
-        "isVisible": True,
+        "isVisible": visible,
         "isLoading": False,
         "renderMode": "CANVAS",
         "version": 1,
@@ -42,7 +55,7 @@ def text(name: str, value: str, top: int, bottom: int, left: int = 2, right: int
         "overflow": "NONE",
         "shouldTruncate": False,
         "animateLoading": True,
-        "dynamicBindingPathList": [{"key": "fontFamily"}, {"key": "text"}],
+        "dynamicBindingPathList": bindings,
         "dynamicTriggerPathList": [],
     }
 
@@ -56,10 +69,15 @@ def button(
     right: int,
     *,
     disabled: bool | str = False,
+    visible: bool | str = True,
 ) -> dict[str, Any]:
     bindings = [{"key": "buttonColor"}, {"key": "borderRadius"}]
+    if label.startswith("{{"):
+        bindings.append({"key": "text"})
     if isinstance(disabled, str):
         bindings.append({"key": "isDisabled"})
+    if isinstance(visible, str):
+        bindings.append({"key": "isVisible"})
     return {
         "widgetName": name,
         "displayName": "Button",
@@ -72,7 +90,7 @@ def button(
         "rightColumn": right,
         "text": label,
         "onClick": on_click,
-        "isVisible": True,
+        "isVisible": visible,
         "isDisabled": disabled,
         "isLoading": False,
         "renderMode": "CANVAS",
@@ -129,6 +147,48 @@ def input_widget(
     }
 
 
+def select_widget(
+    name: str,
+    label: str,
+    options: str,
+    top: int,
+    left: int,
+    right: int,
+    *,
+    default: str = "",
+    visible: bool | str = True,
+) -> dict[str, Any]:
+    bindings = [{"key": "sourceData"}]
+    if isinstance(visible, str):
+        bindings.append({"key": "isVisible"})
+    if default.startswith("{{"):
+        bindings.append({"key": "defaultOptionValue"})
+    return {
+        "widgetName": name,
+        "displayName": "Select",
+        "type": "SELECT_WIDGET",
+        "widgetId": name.lower(),
+        "parentId": "0",
+        "topRow": top,
+        "bottomRow": top + 7,
+        "leftColumn": left,
+        "rightColumn": right,
+        "labelText": label,
+        "sourceData": options,
+        "optionLabel": "label",
+        "optionValue": "value",
+        "defaultOptionValue": default,
+        "placeholderText": f"Choose {label.lower()}",
+        "isVisible": visible,
+        "isDisabled": False,
+        "isLoading": False,
+        "renderMode": "CANVAS",
+        "version": 1,
+        "dynamicBindingPathList": bindings,
+        "dynamicTriggerPathList": [],
+    }
+
+
 def table(
     name: str,
     data: str,
@@ -137,6 +197,7 @@ def table(
     bottom: int,
     *,
     label: str,
+    visible: bool | str = True,
 ) -> dict[str, Any]:
     primary_columns = {
         key: {
@@ -173,7 +234,7 @@ def table(
         "leftColumn": 2,
         "rightColumn": 62,
         "tableData": data,
-        "isVisible": True,
+        "isVisible": visible,
         "isLoading": False,
         "renderMode": "CANVAS",
         "version": 3,
@@ -190,6 +251,7 @@ def table(
         "columnSizeMap": {},
         "dynamicBindingPathList": [
             {"key": "tableData"},
+            *([{"key": "isVisible"}] if isinstance(visible, str) else []),
             *[{"key": f"primaryColumns.{key}.computedValue"} for key, _, _ in columns],
         ],
         "dynamicTriggerPathList": [],
@@ -215,6 +277,11 @@ def common_widgets(page_name: str) -> list[dict[str, Any]]:
                 11,
                 index * 8,
                 (index + 1) * 8,
+                disabled=(
+                    "{{!appsmith.store.personId}}"
+                    if name == "Person finances"
+                    else False
+                ),
             )
         )
     return widgets
@@ -237,23 +304,13 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
                 30,
             ),
             button(
-                "OpenHouseholds",
-                "Choose a household",
-                "{{navigateTo('Households')}}",
+                "ContinueSetup",
+                "{{appsmith.store.personId ? 'Continue with ' + appsmith.store.personName : appsmith.store.householdId ? 'Add or choose a person' : 'Choose a household'}}",
+                "{{navigateTo(appsmith.store.personId ? 'Person finances' : appsmith.store.householdId ? 'People' : 'Households')}}",
                 32,
                 2,
-                20,
+                26,
             ),
-            button(
-                "OpenPeople",
-                "People",
-                "{{navigateTo('People')}}",
-                32,
-                22,
-                32,
-                disabled="{{!appsmith.store.householdId}}",
-            ),
-            button("OpenSettings", "Connection settings", "{{navigateTo('Settings')}}", 32, 34, 54),
         ]
     elif name == "Households":
         widgets += [
@@ -276,7 +333,7 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
             button(
                 "CreateHouseholdButton",
                 "Create household",
-                "{{CreateHousehold.run(() => { storeValue('householdId', CreateHousehold.data.id, true); storeValue('householdName', CreateHousehold.data.display_name, true); showAlert('Household created and selected', 'success'); ListHouseholds.run(); navigateTo('Home'); }, () => showAlert(JSON.stringify(CreateHousehold.data?.detail || 'Could not create household'), 'error'))}}",
+                "{{CreateHousehold.run(async () => { await storeValue('householdId', CreateHousehold.data.id, true); await storeValue('householdName', CreateHousehold.data.display_name, true); await removeValue('personId'); await removeValue('personName'); showAlert('Household created and selected', 'success'); ListHouseholds.run(); navigateTo('Home'); }, () => showAlert(JSON.stringify(CreateHousehold.data?.detail || 'Could not create household'), 'error'))}}",
                 31,
                 2,
                 20,
@@ -299,7 +356,7 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
             button(
                 "UseHouseholdButton",
                 "Use selected household",
-                "{{storeValue('householdId', ExistingHouseholds.selectedRow.id, true); storeValue('householdName', ExistingHouseholds.selectedRow.display_name, true); showAlert('Household selected', 'success'); navigateTo('Home')}}",
+                "{{(async () => { await storeValue('householdId', ExistingHouseholds.selectedRow.id, true); await storeValue('householdName', ExistingHouseholds.selectedRow.display_name, true); await removeValue('personId'); await removeValue('personName'); showAlert('Household selected', 'success'); navigateTo('Home'); })()}}",
                 70,
                 2,
                 22,
@@ -388,6 +445,308 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
                 59,
                 88,
                 label="People",
+            ),
+            button(
+                "ManagePersonFinancesButton",
+                "Manage selected person's finances",
+                "{{storeValue('personId', ExistingPeople.selectedRow.id, true); storeValue('personName', ExistingPeople.selectedRow.display_name, true); navigateTo('Person finances')}}",
+                90,
+                2,
+                28,
+                disabled="{{!ExistingPeople.selectedRow || !ExistingPeople.selectedRow.id}}",
+            ),
+        ]
+    elif name == "Person finances":
+        widgets += [
+            text(
+                "PersonFinanceHelp",
+                "Record income and choose either an installed tax provider or a manual annual net-income estimate. Provider-specific settings stay explicit JSON so extensions do not require changes to this page.",
+                17,
+                24,
+            ),
+            text(
+                "PersonFinanceContext",
+                "Person: {{appsmith.store.personName || 'choose a person below'}}",
+                25,
+                29,
+            ),
+            button(
+                "ChangeFinancePersonButton",
+                "Change person",
+                "{{navigateTo('People')}}",
+                30,
+                2,
+                14,
+            ),
+            button(
+                "ShowIncomeSectionButton",
+                "Income",
+                "{{storeValue('financeSection', 'INCOME', false)}}",
+                30,
+                16,
+                28,
+            ),
+            button(
+                "ShowTaxSectionButton",
+                "Tax settings",
+                "{{storeValue('financeSection', 'TAX', false)}}",
+                30,
+                30,
+                44,
+            ),
+            button(
+                "ToggleAdvancedModeButton",
+                "{{appsmith.store.financeAdvancedMode ? 'Leave advanced mode' : 'Advanced mode'}}",
+                "{{storeValue('financeAdvancedMode', !appsmith.store.financeAdvancedMode, false)}}",
+                30,
+                46,
+                62,
+                visible="{{appsmith.store.financeSection === 'TAX'}}",
+            ),
+            text(
+                "AdvancedModeHelp",
+                "Advanced mode exposes raw provider JSON for specialist settings. Most people can leave it off and use the provider defaults.",
+                38,
+                44,
+                visible="{{appsmith.store.financeSection === 'TAX' && appsmith.store.financeAdvancedMode}}",
+            ),
+            text(
+                "IncomeHeading",
+                "Income sources",
+                47,
+                51,
+                visible="{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
+            ),
+            text(
+                "IncomeEmptyState",
+                "{{Array.isArray(ListIncomeSources.data) && ListIncomeSources.data.length ? '' : 'No income sources yet. Add the first recurring income below.'}}",
+                52,
+                56,
+                visible="{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
+            ),
+            select_widget(
+                "IncomeType",
+                "Income type",
+                "{{Array.isArray(ListIncomeTypes.data) ? ListIncomeTypes.data.map((item) => ({label: item.display_name, value: item.id})) : []}}",
+                62,
+                2,
+                20,
+                visible="{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
+            ),
+            input_widget(
+                "IncomeName",
+                "Income name",
+                62,
+                21,
+                40,
+                required=True,
+                visible="{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
+            ),
+            input_widget(
+                "IncomeAmount",
+                "Gross amount",
+                62,
+                41,
+                52,
+                required=True,
+                visible="{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
+            ),
+            select_widget(
+                "IncomeFrequency",
+                "Frequency",
+                "{{[{label: 'Weekly', value: 'WEEKLY'}, {label: 'Fortnightly', value: 'FORTNIGHTLY'}, {label: 'Monthly', value: 'MONTHLY'}, {label: 'Quarterly', value: 'QUARTERLY'}, {label: 'Annual', value: 'ANNUAL'}]}}",
+                62,
+                53,
+                62,
+                visible="{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
+            ),
+            select_widget(
+                "IncomeTaxable",
+                "Tax treatment",
+                "{{[{label: 'Taxable', value: 'true'}, {label: 'Not taxable', value: 'false'}]}}",
+                71,
+                2,
+                20,
+                default="true",
+                visible="{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
+            ),
+            input_widget(
+                "IncomeEffectiveFrom",
+                "Effective from (YYYY-MM-DD)",
+                71,
+                21,
+                40,
+                required=True,
+                visible="{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
+            ),
+            input_widget(
+                "IncomeEffectiveTo",
+                "Effective to (optional, YYYY-MM-DD)",
+                71,
+                41,
+                62,
+                visible="{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
+            ),
+            input_widget(
+                "IncomeGrowthRate",
+                "Annual growth % (optional)",
+                80,
+                2,
+                20,
+                visible="{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
+            ),
+            input_widget(
+                "IncomeSalarySacrifice",
+                "Pre-tax contribution (optional)",
+                80,
+                21,
+                40,
+                visible="{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
+            ),
+            input_widget(
+                "IncomeNotes",
+                "Notes (optional)",
+                80,
+                41,
+                62,
+                visible="{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
+            ),
+            button(
+                "CreateIncomeButton",
+                "Add income source",
+                "{{CreateIncome.run(() => { showAlert('Income source added', 'success'); ListIncomeSources.run(); resetWidget('IncomeType', true); resetWidget('IncomeName', true); resetWidget('IncomeAmount', true); resetWidget('IncomeFrequency', true); resetWidget('IncomeTaxable', true); resetWidget('IncomeEffectiveFrom', true); resetWidget('IncomeEffectiveTo', true); resetWidget('IncomeGrowthRate', true); resetWidget('IncomeSalarySacrifice', true); resetWidget('IncomeNotes', true); }, () => showAlert(JSON.stringify(CreateIncome.data?.detail || 'Could not add income source'), 'error'))}}",
+                89,
+                2,
+                20,
+                disabled="{{!appsmith.store.personId || !IncomeType.selectedOptionValue || !(IncomeName.text || '').trim() || !/^\\d+(\\.\\d{1,2})?$/.test((IncomeAmount.text || '').trim()) || !IncomeFrequency.selectedOptionValue || !IncomeTaxable.selectedOptionValue || !/^\\d{4}-\\d{2}-\\d{2}$/.test((IncomeEffectiveFrom.text || '').trim()) || ((IncomeEffectiveTo.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(IncomeEffectiveTo.text.trim())) || ((IncomeGrowthRate.text || '').trim() && !/^-?\\d+(\\.\\d{1,4})?$/.test(IncomeGrowthRate.text.trim())) || ((IncomeSalarySacrifice.text || '').trim() && !/^\\d+(\\.\\d{1,2})?$/.test(IncomeSalarySacrifice.text.trim()))}}",
+                visible="{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
+            ),
+            table(
+                "IncomeSources",
+                "{{Array.isArray(ListIncomeSources.data) ? ListIncomeSources.data.map((item) => ({...item, frequency: ({WEEKLY: 'Weekly', FORTNIGHTLY: 'Fortnightly', MONTHLY: 'Monthly', QUARTERLY: 'Quarterly', ANNUAL: 'Annual'})[item.frequency] || item.frequency, taxable: item.taxable ? 'Yes' : 'No'})) : []}}",
+                (
+                    ("id", "ID", False),
+                    ("display_name", "Income", True),
+                    ("gross_amount", "Gross amount", True),
+                    ("frequency", "Frequency", True),
+                    ("taxable", "Taxable", True),
+                    ("annual_growth_rate", "Annual growth %", True),
+                    ("effective_from", "Effective from", True),
+                    ("effective_to", "Effective to", True),
+                ),
+                95,
+                119,
+                label="Income sources",
+                visible="{{(appsmith.store.financeSection || 'INCOME') === 'INCOME'}}",
+            ),
+            text(
+                "TaxHeading",
+                "Tax settings",
+                122,
+                126,
+                visible="{{appsmith.store.financeSection === 'TAX'}}",
+            ),
+            text(
+                "TaxEmptyState",
+                "{{Array.isArray(ListTaxProfiles.data) && ListTaxProfiles.data.length ? '' : 'No tax settings yet. Choose an installed provider or enter a manual annual net income.'}}",
+                127,
+                131,
+                visible="{{appsmith.store.financeSection === 'TAX'}}",
+            ),
+            select_widget(
+                "TaxCalculationMode",
+                "Calculation method",
+                "{{[{label: 'Installed tax provider', value: 'AUTOMATIC'}, {label: 'Manual annual net income', value: 'MANUAL_NET'}]}}",
+                137,
+                2,
+                24,
+                default="AUTOMATIC",
+                visible="{{appsmith.store.financeSection === 'TAX'}}",
+            ),
+            select_widget(
+                "TaxProviderYear",
+                "Provider and tax year",
+                "{{Array.isArray(ListTaxProviders.data) ? ListTaxProviders.data.flatMap((provider) => provider.supported_tax_years.map((year) => ({label: provider.display_name + ' — ' + year, value: provider.jurisdiction + '|' + year}))) : []}}",
+                137,
+                25,
+                48,
+                visible="{{appsmith.store.financeSection === 'TAX' && TaxCalculationMode.selectedOptionValue === 'AUTOMATIC'}}",
+            ),
+            input_widget(
+                "TaxParameters",
+                "Provider settings as JSON (use {} for defaults)",
+                146,
+                49,
+                62,
+                visible="{{appsmith.store.financeSection === 'TAX' && TaxCalculationMode.selectedOptionValue === 'AUTOMATIC' && appsmith.store.financeAdvancedMode}}",
+            ),
+            input_widget(
+                "ManualTaxJurisdiction",
+                "Jurisdiction",
+                146,
+                2,
+                20,
+                visible="{{appsmith.store.financeSection === 'TAX' && TaxCalculationMode.selectedOptionValue === 'MANUAL_NET'}}",
+            ),
+            input_widget(
+                "ManualTaxYear",
+                "Tax year",
+                146,
+                21,
+                40,
+                visible="{{appsmith.store.financeSection === 'TAX' && TaxCalculationMode.selectedOptionValue === 'MANUAL_NET'}}",
+            ),
+            input_widget(
+                "ManualAnnualNetIncome",
+                "Annual net income",
+                146,
+                41,
+                62,
+                visible="{{appsmith.store.financeSection === 'TAX' && TaxCalculationMode.selectedOptionValue === 'MANUAL_NET'}}",
+            ),
+            input_widget(
+                "TaxEffectiveFrom",
+                "Effective from (YYYY-MM-DD)",
+                155,
+                2,
+                24,
+                required=True,
+                visible="{{appsmith.store.financeSection === 'TAX'}}",
+            ),
+            input_widget(
+                "TaxEffectiveTo",
+                "Effective to (optional, YYYY-MM-DD)",
+                155,
+                25,
+                48,
+                visible="{{appsmith.store.financeSection === 'TAX'}}",
+            ),
+            button(
+                "CreateTaxProfileButton",
+                "Save tax settings",
+                "{{CreateTaxProfile.run(() => { showAlert('Tax settings saved', 'success'); ListTaxProfiles.run(); resetWidget('TaxProviderYear', true); resetWidget('TaxParameters', true); resetWidget('ManualTaxJurisdiction', true); resetWidget('ManualTaxYear', true); resetWidget('ManualAnnualNetIncome', true); resetWidget('TaxEffectiveFrom', true); resetWidget('TaxEffectiveTo', true); }, () => showAlert(JSON.stringify(CreateTaxProfile.data?.detail || 'Could not save tax settings'), 'error'))}}",
+                164,
+                2,
+                20,
+                disabled="{{!appsmith.store.personId || !TaxCalculationMode.selectedOptionValue || !/^\\d{4}-\\d{2}-\\d{2}$/.test((TaxEffectiveFrom.text || '').trim()) || ((TaxEffectiveTo.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(TaxEffectiveTo.text.trim())) || (TaxCalculationMode.selectedOptionValue === 'AUTOMATIC' && (!TaxProviderYear.selectedOptionValue || (appsmith.store.financeAdvancedMode && (TaxParameters.text || '').trim() && (() => { try { JSON.parse(TaxParameters.text); return false; } catch (error) { return true; } })()))) || (TaxCalculationMode.selectedOptionValue === 'MANUAL_NET' && (!(ManualTaxJurisdiction.text || '').trim() || !(ManualTaxYear.text || '').trim() || !/^\\d+(\\.\\d{1,2})?$/.test((ManualAnnualNetIncome.text || '').trim())))}}",
+                visible="{{appsmith.store.financeSection === 'TAX'}}",
+            ),
+            table(
+                "TaxProfiles",
+                "{{Array.isArray(ListTaxProfiles.data) ? ListTaxProfiles.data.map((item) => ({...item, calculation_mode: (item.settings?.calculation_mode || 'AUTOMATIC') === 'MANUAL_NET' ? 'Manual annual net income' : 'Installed provider', manual_annual_net_income: item.settings?.manual_annual_net_income || ''})) : []}}",
+                (
+                    ("id", "ID", False),
+                    ("jurisdiction", "Jurisdiction", True),
+                    ("tax_year", "Tax year", True),
+                    ("calculation_mode", "Method", True),
+                    ("manual_annual_net_income", "Manual annual net", True),
+                    ("effective_from", "Effective from", True),
+                    ("effective_to", "Effective to", True),
+                ),
+                170,
+                194,
+                label="Tax profiles",
+                visible="{{appsmith.store.financeSection === 'TAX'}}",
             ),
         ]
     else:
@@ -516,6 +875,48 @@ def actions() -> list[dict[str, Any]]:
             "POST",
             f"/api/v1/households/{household}/people",
             body="{{({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: String(PersonResidencyCountry.text || '').trim().toUpperCase() || null, tax_jurisdiction: String(PersonTaxJurisdiction.text || '').trim() || null, effective_from: String(PersonEffectiveFrom.text || '').trim() })}}",
+        ),
+        action(
+            "Person finances",
+            "ListIncomeTypes",
+            "GET",
+            "/api/v1/lookups/income_type",
+            on_load=True,
+        ),
+        action(
+            "Person finances",
+            "ListTaxProviders",
+            "GET",
+            "/api/v1/tax-providers",
+            on_load=True,
+        ),
+        action(
+            "Person finances",
+            "ListIncomeSources",
+            "GET",
+            "/api/v1/people/{{appsmith.store.personId}}/income-sources",
+            on_load=True,
+        ),
+        action(
+            "Person finances",
+            "CreateIncome",
+            "POST",
+            "/api/v1/people/{{appsmith.store.personId}}/income-sources",
+            body="{{({ income_type_id: IncomeType.selectedOptionValue, display_name: String(IncomeName.text || '').trim(), gross_amount: Number(IncomeAmount.text), frequency: IncomeFrequency.selectedOptionValue, salary_sacrifice_amount: String(IncomeSalarySacrifice.text || '').trim() ? Number(IncomeSalarySacrifice.text) : null, annual_growth_rate: String(IncomeGrowthRate.text || '').trim() ? Number(IncomeGrowthRate.text) : null, taxable: IncomeTaxable.selectedOptionValue === 'true', notes: String(IncomeNotes.text || '').trim() || null, effective_from: String(IncomeEffectiveFrom.text || '').trim(), effective_to: String(IncomeEffectiveTo.text || '').trim() || null })}}",
+        ),
+        action(
+            "Person finances",
+            "ListTaxProfiles",
+            "GET",
+            "/api/v1/people/{{appsmith.store.personId}}/tax-profiles",
+            on_load=True,
+        ),
+        action(
+            "Person finances",
+            "CreateTaxProfile",
+            "POST",
+            "/api/v1/people/{{appsmith.store.personId}}/tax-profiles",
+            body="{{TaxCalculationMode.selectedOptionValue === 'AUTOMATIC' ? ({ jurisdiction: TaxProviderYear.selectedOptionValue.split('|')[0], tax_year: TaxProviderYear.selectedOptionValue.split('|')[1], settings: { calculation_mode: 'AUTOMATIC', parameters: appsmith.store.financeAdvancedMode ? JSON.parse(TaxParameters.text || '{}') : {} }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null }) : ({ jurisdiction: String(ManualTaxJurisdiction.text || '').trim().toUpperCase(), tax_year: String(ManualTaxYear.text || '').trim(), settings: { calculation_mode: 'MANUAL_NET', manual_annual_net_income: Number(ManualAnnualNetIncome.text) }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null })}}",
         ),
         action("Settings", "HealthCheck", "GET", "/health/ready", on_load=True),
         action(

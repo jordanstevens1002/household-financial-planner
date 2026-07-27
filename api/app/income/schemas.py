@@ -75,6 +75,12 @@ class TaxProfileRead(TaxProfileCreate, ORMModel):
     person_id: uuid.UUID
 
 
+class TaxProviderRead(BaseModel):
+    jurisdiction: str
+    display_name: str
+    supported_tax_years: list[str]
+
+
 class TaxCalculationRequest(BaseModel):
     jurisdiction: str = Field(min_length=2, max_length=50)
     tax_year: str = Field(min_length=1, max_length=20)
