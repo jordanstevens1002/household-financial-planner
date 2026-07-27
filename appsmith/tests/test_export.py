@@ -15,10 +15,13 @@ class AppsmithExportTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.application = json.loads(EXPORT.read_text(encoding="utf-8"))
 
-    def test_export_has_supported_schema_and_household_slice_pages(self) -> None:
+    def test_export_has_supported_schema_and_people_slice_pages(self) -> None:
         self.assertEqual(self.application["clientSchemaVersion"], 1)
         self.assertEqual(self.application["serverSchemaVersion"], 6)
-        self.assertEqual(self.application["pageOrder"], ["Home", "Households", "Settings"])
+        self.assertEqual(
+            self.application["pageOrder"],
+            ["Home", "Households", "People", "Settings"],
+        )
         self.assertEqual(self.application["publishedDefaultPageName"], "Home")
 
     def test_export_contains_no_credentials_or_identity_defaults(self) -> None:
@@ -47,7 +50,7 @@ class AppsmithExportTests(unittest.TestCase):
 
     def test_api_actions_use_runtime_auth_and_docker_service_url(self) -> None:
         actions = self.application["actionList"]
-        self.assertEqual(len(actions), 4)
+        self.assertEqual(len(actions), 6)
         for wrapper in actions:
             action = wrapper["unpublishedAction"]
             self.assertEqual(
@@ -113,8 +116,12 @@ class AppsmithExportTests(unittest.TestCase):
             actions["CreateHousehold"]["dynamicBindingPathList"],
             [{"key": "body"}],
         )
-        self.assertEqual(len(actions["CreateHousehold"]["jsonPathKeys"]), 1)
-        self.assertIn("HouseholdName.text", actions["CreateHousehold"]["jsonPathKeys"][0])
+        self.assertTrue(
+            any(
+                "HouseholdName.text" in key
+                for key in actions["CreateHousehold"]["jsonPathKeys"]
+            )
+        )
 
     def test_household_selection_is_persistent_but_credentials_are_not(self) -> None:
         households = next(
@@ -216,10 +223,89 @@ class AppsmithExportTests(unittest.TestCase):
         self.assertNotIn("currency: '", body)
         self.assertNotIn("jurisdiction: '", body)
 
-    def test_household_slice_does_not_include_later_workflows(self) -> None:
+    def test_people_slice_has_list_and_create_actions(self) -> None:
+        actions = {
+            item["unpublishedAction"]["name"]: item["unpublishedAction"]
+            for item in self.application["actionList"]
+        }
+        for name, method in (("ListPeople", "GET"), ("CreatePerson", "POST")):
+            action = actions[name]
+            self.assertEqual(action["actionConfiguration"]["httpMethod"], method)
+            self.assertEqual(
+                action["actionConfiguration"]["path"],
+                "/api/v1/households/{{appsmith.store.householdId}}/people",
+            )
+            self.assertIn("appsmith.store.householdId", action["jsonPathKeys"])
+        self.assertEqual(actions["ListPeople"]["runBehaviour"], "ON_PAGE_LOAD")
+        self.assertEqual(actions["CreatePerson"]["runBehaviour"], "MANUAL")
+        self.assertEqual(
+            actions["CreatePerson"]["dynamicBindingPathList"],
+            [{"key": "body"}],
+        )
+
+    def test_people_create_is_country_neutral_and_identity_only(self) -> None:
+        action = next(
+            item["unpublishedAction"]
+            for item in self.application["actionList"]
+            if item["unpublishedAction"]["name"] == "CreatePerson"
+        )
+        body = action["actionConfiguration"]["body"]
+        for widget_name in (
+            "PersonDisplayName",
+            "PersonLegalName",
+            "PersonDateOfBirth",
+            "PersonResidencyCountry",
+            "PersonTaxJurisdiction",
+            "PersonEffectiveFrom",
+        ):
+            self.assertIn(f"{widget_name}.text", body)
+        self.assertNotIn("tax_residency_country: '", body)
+        self.assertNotIn("tax_jurisdiction: '", body)
+        for financial_field in ("income", "salary", "tax_rate", "retirement", "expense"):
+            self.assertNotIn(financial_field, body.lower())
+
+    def test_people_page_requires_household_and_disclaims_financial_completeness(self) -> None:
+        people = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "People"
+        )
+        widgets = people["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        help_text = next(widget for widget in widgets if widget["widgetName"] == "PeopleHelp")
+        self.assertIn("identity only", help_text["text"])
+        self.assertIn("financial details are not complete", help_text["text"])
+        create = next(widget for widget in widgets if widget["widgetName"] == "CreatePersonButton")
+        self.assertIn("!appsmith.store.householdId", create["isDisabled"])
+        self.assertIn("PersonDisplayName.text", create["isDisabled"])
+        self.assertIn("PersonEffectiveFrom.text", create["isDisabled"])
+
+    def test_people_table_has_distinct_v193_column_identity(self) -> None:
+        people = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "People"
+        )
+        widgets = people["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        table = next(widget for widget in widgets if widget["widgetName"] == "ExistingPeople")
+        self.assertEqual(table["version"], 3)
+        self.assertEqual(table["label"], "People")
+        self.assertIn("Array.isArray(ListPeople.data)", table["tableData"])
+        aliases = []
+        for key in table["columnOrder"]:
+            column = table["primaryColumns"][key]
+            self.assertEqual(column["id"], key)
+            self.assertEqual(column["originalId"], key)
+            self.assertEqual(column["alias"], key)
+            self.assertIn("ExistingPeople.tableData || []", column["computedValue"])
+            self.assertIn(f'currentRow["{key}"]', column["computedValue"])
+            aliases.append(column["alias"])
+        self.assertEqual(len(aliases), len(set(aliases)))
+
+    def test_people_slice_does_not_include_later_workflows(self) -> None:
         source = EXPORT.read_text(encoding="utf-8")
         for deferred_name in (
-            "CreatePerson",
+            "CreateIncome",
+            "CreateExpense",
             "CreateProperty",
             "CreateScenario",
             "ListTimeline",

@@ -14,6 +14,10 @@
         "isDefault": false
       },
       {
+        "id": "People",
+        "isDefault": false
+      },
+      {
         "id": "Settings",
         "isDefault": false
       }
@@ -25,6 +29,10 @@
       },
       {
         "id": "Households",
+        "isDefault": false
+      },
+      {
+        "id": "People",
         "isDefault": false
       },
       {
@@ -212,6 +220,42 @@
                   ]
                 },
                 {
+                  "widgetName": "NavPeople",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navpeople",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 16,
+                  "rightColumn": 24,
+                  "text": "People",
+                  "onClick": "{{navigateTo('People', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -219,8 +263,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 16,
-                  "rightColumn": 24,
+                  "leftColumn": 24,
+                  "rightColumn": 32,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -350,6 +394,45 @@
                   ]
                 },
                 {
+                  "widgetName": "OpenPeople",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "openpeople",
+                  "parentId": "0",
+                  "topRow": 32,
+                  "bottomRow": 36,
+                  "leftColumn": 22,
+                  "rightColumn": 32,
+                  "text": "People",
+                  "onClick": "{{navigateTo('People')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "OpenSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -357,8 +440,8 @@
                   "parentId": "0",
                   "topRow": 32,
                   "bottomRow": 36,
-                  "leftColumn": 22,
-                  "rightColumn": 42,
+                  "leftColumn": 34,
+                  "rightColumn": 54,
                   "text": "Connection settings",
                   "onClick": "{{navigateTo('Settings')}}",
                   "isVisible": true,
@@ -563,6 +646,42 @@
                   ]
                 },
                 {
+                  "widgetName": "NavPeople",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navpeople",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 16,
+                  "rightColumn": 24,
+                  "text": "People",
+                  "onClick": "{{navigateTo('People', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -570,8 +689,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 16,
-                  "rightColumn": 24,
+                  "leftColumn": 24,
+                  "rightColumn": 32,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -701,6 +820,45 @@
                   ]
                 },
                 {
+                  "widgetName": "OpenPeople",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "openpeople",
+                  "parentId": "0",
+                  "topRow": 32,
+                  "bottomRow": 36,
+                  "leftColumn": 22,
+                  "rightColumn": 32,
+                  "text": "People",
+                  "onClick": "{{navigateTo('People')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "OpenSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -708,8 +866,8 @@
                   "parentId": "0",
                   "topRow": 32,
                   "bottomRow": 36,
-                  "leftColumn": 22,
-                  "rightColumn": 42,
+                  "leftColumn": 34,
+                  "rightColumn": 54,
                   "text": "Connection settings",
                   "onClick": "{{navigateTo('Settings')}}",
                   "isVisible": true,
@@ -918,6 +1076,42 @@
                   ]
                 },
                 {
+                  "widgetName": "NavPeople",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navpeople",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 16,
+                  "rightColumn": 24,
+                  "text": "People",
+                  "onClick": "{{navigateTo('People', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -925,8 +1119,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 16,
-                  "rightColumn": 24,
+                  "leftColumn": 24,
+                  "rightColumn": 32,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -1536,6 +1730,42 @@
                   ]
                 },
                 {
+                  "widgetName": "NavPeople",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navpeople",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 16,
+                  "rightColumn": 24,
+                  "text": "People",
+                  "onClick": "{{navigateTo('People', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -1543,8 +1773,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 16,
-                  "rightColumn": 24,
+                  "leftColumn": 24,
+                  "rightColumn": 32,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -1994,6 +2224,1670 @@
     },
     {
       "unpublishedPage": {
+        "name": "People",
+        "slug": "people",
+        "layouts": [
+          {
+            "id": "People",
+            "viewMode": false,
+            "dsl": {
+              "widgetName": "MainContainer",
+              "backgroundColor": "#F7F8FA",
+              "rightColumn": 1224,
+              "snapColumns": 64,
+              "detachFromLayout": true,
+              "widgetId": "0",
+              "topRow": 0,
+              "bottomRow": 1100,
+              "containerStyle": "none",
+              "snapRows": 110,
+              "parentRowSpace": 1,
+              "type": "CANVAS_WIDGET",
+              "canExtend": true,
+              "version": 77,
+              "minHeight": 1100,
+              "parentColumnSpace": 1,
+              "dynamicBindingPathList": [],
+              "children": [
+                {
+                  "widgetName": "PageTitle",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "pagetitle",
+                  "parentId": "0",
+                  "topRow": 1,
+                  "bottomRow": 6,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "People",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "HouseholdContext",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "householdcontext",
+                  "parentId": "0",
+                  "topRow": 6,
+                  "bottomRow": 10,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "{{appsmith.store.householdName || 'No household selected'}}",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "NavHome",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhome",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 0,
+                  "rightColumn": 8,
+                  "text": "Home",
+                  "onClick": "{{navigateTo('Home', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavHouseholds",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhouseholds",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 8,
+                  "rightColumn": 16,
+                  "text": "Households",
+                  "onClick": "{{navigateTo('Households', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavPeople",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navpeople",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 16,
+                  "rightColumn": 24,
+                  "text": "People",
+                  "onClick": "{{navigateTo('People', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavSettings",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navsettings",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 24,
+                  "rightColumn": 32,
+                  "text": "Settings",
+                  "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "PeopleHelp",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "peoplehelp",
+                  "parentId": "0",
+                  "topRow": 17,
+                  "bottomRow": 23,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Add the people whose finances may later form part of this household. This records identity only; income, tax and other financial details are not complete yet.",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PeopleHouseholdRequired",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "peoplehouseholdrequired",
+                  "parentId": "0",
+                  "topRow": 24,
+                  "bottomRow": 28,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "{{appsmith.store.householdId ? 'Adding people to ' + appsmith.store.householdName : 'Choose a household before adding people'}}",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PersonDisplayName",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "persondisplayname",
+                  "parentId": "0",
+                  "topRow": 29,
+                  "bottomRow": 36,
+                  "leftColumn": 2,
+                  "rightColumn": 24,
+                  "label": "Display name",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Display name",
+                  "inputType": "TEXT",
+                  "isRequired": true,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PersonLegalName",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "personlegalname",
+                  "parentId": "0",
+                  "topRow": 29,
+                  "bottomRow": 36,
+                  "leftColumn": 25,
+                  "rightColumn": 47,
+                  "label": "Legal name (optional)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Legal name (optional)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PersonDateOfBirth",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "persondateofbirth",
+                  "parentId": "0",
+                  "topRow": 29,
+                  "bottomRow": 36,
+                  "leftColumn": 48,
+                  "rightColumn": 62,
+                  "label": "Date of birth (optional, YYYY-MM-DD)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Date of birth (optional, YYYY-MM-DD)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PersonResidencyCountry",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "personresidencycountry",
+                  "parentId": "0",
+                  "topRow": 38,
+                  "bottomRow": 45,
+                  "leftColumn": 2,
+                  "rightColumn": 24,
+                  "label": "Tax residency country (optional, two-letter code)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Tax residency country (optional, two-letter code)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PersonTaxJurisdiction",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "persontaxjurisdiction",
+                  "parentId": "0",
+                  "topRow": 38,
+                  "bottomRow": 45,
+                  "leftColumn": 25,
+                  "rightColumn": 47,
+                  "label": "Tax jurisdiction (optional)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Tax jurisdiction (optional)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PersonEffectiveFrom",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "personeffectivefrom",
+                  "parentId": "0",
+                  "topRow": 38,
+                  "bottomRow": 45,
+                  "leftColumn": 48,
+                  "rightColumn": 62,
+                  "label": "Effective from (YYYY-MM-DD)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Effective from (YYYY-MM-DD)",
+                  "inputType": "TEXT",
+                  "isRequired": true,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "CreatePersonButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "createpersonbutton",
+                  "parentId": "0",
+                  "topRow": 47,
+                  "bottomRow": 51,
+                  "leftColumn": 2,
+                  "rightColumn": 18,
+                  "text": "Add person",
+                  "onClick": "{{CreatePerson.run(() => { showAlert('Person added', 'success'); ListPeople.run(); }, () => showAlert(JSON.stringify(CreatePerson.data?.detail || 'Could not add person'), 'error'))}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId || !(PersonDisplayName.text || '').trim() || !/^\\d{4}-\\d{2}-\\d{2}$/.test((PersonEffectiveFrom.text || '').trim()) || ((PersonDateOfBirth.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(PersonDateOfBirth.text.trim())) || ((PersonResidencyCountry.text || '').trim() && !/^[A-Za-z]{2}$/.test(PersonResidencyCountry.text.trim()))}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "RefreshPeopleButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "refreshpeoplebutton",
+                  "parentId": "0",
+                  "topRow": 47,
+                  "bottomRow": 51,
+                  "leftColumn": 20,
+                  "rightColumn": 36,
+                  "text": "Refresh people",
+                  "onClick": "{{ListPeople.run()}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "PeopleListLabel",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "peoplelistlabel",
+                  "parentId": "0",
+                  "topRow": 54,
+                  "bottomRow": 58,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "People in this household",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "ExistingPeople",
+                  "displayName": "Table",
+                  "type": "TABLE_WIDGET_V2",
+                  "widgetId": "existingpeople",
+                  "parentId": "0",
+                  "topRow": 59,
+                  "bottomRow": 88,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "tableData": "{{Array.isArray(ListPeople.data) ? ListPeople.data : []}}",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 3,
+                  "defaultPageSize": 0,
+                  "isVisibleDownload": true,
+                  "isVisibleFilters": true,
+                  "isVisibleSearch": true,
+                  "isVisiblePagination": true,
+                  "label": "People",
+                  "searchKey": "",
+                  "columnOrder": [
+                    "id",
+                    "display_name",
+                    "legal_name",
+                    "date_of_birth",
+                    "tax_residency_country",
+                    "tax_jurisdiction",
+                    "is_active",
+                    "effective_from"
+                  ],
+                  "primaryColumns": {
+                    "id": {
+                      "index": 0,
+                      "width": 150,
+                      "originalId": "id",
+                      "id": "id",
+                      "alias": "id",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": false,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "ID",
+                      "computedValue": "{{(ExistingPeople.tableData || []).map((currentRow) => currentRow[\"id\"])}}"
+                    },
+                    "display_name": {
+                      "index": 1,
+                      "width": 150,
+                      "originalId": "display_name",
+                      "id": "display_name",
+                      "alias": "display_name",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Display name",
+                      "computedValue": "{{(ExistingPeople.tableData || []).map((currentRow) => currentRow[\"display_name\"])}}"
+                    },
+                    "legal_name": {
+                      "index": 2,
+                      "width": 150,
+                      "originalId": "legal_name",
+                      "id": "legal_name",
+                      "alias": "legal_name",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Legal name",
+                      "computedValue": "{{(ExistingPeople.tableData || []).map((currentRow) => currentRow[\"legal_name\"])}}"
+                    },
+                    "date_of_birth": {
+                      "index": 3,
+                      "width": 150,
+                      "originalId": "date_of_birth",
+                      "id": "date_of_birth",
+                      "alias": "date_of_birth",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Date of birth",
+                      "computedValue": "{{(ExistingPeople.tableData || []).map((currentRow) => currentRow[\"date_of_birth\"])}}"
+                    },
+                    "tax_residency_country": {
+                      "index": 4,
+                      "width": 150,
+                      "originalId": "tax_residency_country",
+                      "id": "tax_residency_country",
+                      "alias": "tax_residency_country",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Tax residency",
+                      "computedValue": "{{(ExistingPeople.tableData || []).map((currentRow) => currentRow[\"tax_residency_country\"])}}"
+                    },
+                    "tax_jurisdiction": {
+                      "index": 5,
+                      "width": 150,
+                      "originalId": "tax_jurisdiction",
+                      "id": "tax_jurisdiction",
+                      "alias": "tax_jurisdiction",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Tax jurisdiction",
+                      "computedValue": "{{(ExistingPeople.tableData || []).map((currentRow) => currentRow[\"tax_jurisdiction\"])}}"
+                    },
+                    "is_active": {
+                      "index": 6,
+                      "width": 150,
+                      "originalId": "is_active",
+                      "id": "is_active",
+                      "alias": "is_active",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Active",
+                      "computedValue": "{{(ExistingPeople.tableData || []).map((currentRow) => currentRow[\"is_active\"])}}"
+                    },
+                    "effective_from": {
+                      "index": 7,
+                      "width": 150,
+                      "originalId": "effective_from",
+                      "id": "effective_from",
+                      "alias": "effective_from",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Effective from",
+                      "computedValue": "{{(ExistingPeople.tableData || []).map((currentRow) => currentRow[\"effective_from\"])}}"
+                    }
+                  },
+                  "derivedColumns": {},
+                  "columnSizeMap": {},
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "tableData"
+                    },
+                    {
+                      "key": "primaryColumns.id.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.display_name.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.legal_name.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.date_of_birth.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.tax_residency_country.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.tax_jurisdiction.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.is_active.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.effective_from.computedValue"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                }
+              ]
+            },
+            "layoutOnLoadActions": [
+              [
+                {
+                  "id": "People_ListPeople",
+                  "name": "ListPeople",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ]
+            ],
+            "layoutOnLoadActionErrors": [],
+            "validOnPageLoadActions": true,
+            "deleted": false,
+            "policies": [],
+            "userPermissions": []
+          }
+        ],
+        "userPermissions": [],
+        "policies": []
+      },
+      "publishedPage": {
+        "name": "People",
+        "slug": "people",
+        "layouts": [
+          {
+            "id": "People",
+            "viewMode": false,
+            "dsl": {
+              "widgetName": "MainContainer",
+              "backgroundColor": "#F7F8FA",
+              "rightColumn": 1224,
+              "snapColumns": 64,
+              "detachFromLayout": true,
+              "widgetId": "0",
+              "topRow": 0,
+              "bottomRow": 1100,
+              "containerStyle": "none",
+              "snapRows": 110,
+              "parentRowSpace": 1,
+              "type": "CANVAS_WIDGET",
+              "canExtend": true,
+              "version": 77,
+              "minHeight": 1100,
+              "parentColumnSpace": 1,
+              "dynamicBindingPathList": [],
+              "children": [
+                {
+                  "widgetName": "PageTitle",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "pagetitle",
+                  "parentId": "0",
+                  "topRow": 1,
+                  "bottomRow": 6,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "People",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "HouseholdContext",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "householdcontext",
+                  "parentId": "0",
+                  "topRow": 6,
+                  "bottomRow": 10,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "{{appsmith.store.householdName || 'No household selected'}}",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "NavHome",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhome",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 0,
+                  "rightColumn": 8,
+                  "text": "Home",
+                  "onClick": "{{navigateTo('Home', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavHouseholds",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhouseholds",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 8,
+                  "rightColumn": 16,
+                  "text": "Households",
+                  "onClick": "{{navigateTo('Households', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavPeople",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navpeople",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 16,
+                  "rightColumn": 24,
+                  "text": "People",
+                  "onClick": "{{navigateTo('People', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavSettings",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navsettings",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 24,
+                  "rightColumn": 32,
+                  "text": "Settings",
+                  "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "PeopleHelp",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "peoplehelp",
+                  "parentId": "0",
+                  "topRow": 17,
+                  "bottomRow": 23,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Add the people whose finances may later form part of this household. This records identity only; income, tax and other financial details are not complete yet.",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PeopleHouseholdRequired",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "peoplehouseholdrequired",
+                  "parentId": "0",
+                  "topRow": 24,
+                  "bottomRow": 28,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "{{appsmith.store.householdId ? 'Adding people to ' + appsmith.store.householdName : 'Choose a household before adding people'}}",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PersonDisplayName",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "persondisplayname",
+                  "parentId": "0",
+                  "topRow": 29,
+                  "bottomRow": 36,
+                  "leftColumn": 2,
+                  "rightColumn": 24,
+                  "label": "Display name",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Display name",
+                  "inputType": "TEXT",
+                  "isRequired": true,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PersonLegalName",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "personlegalname",
+                  "parentId": "0",
+                  "topRow": 29,
+                  "bottomRow": 36,
+                  "leftColumn": 25,
+                  "rightColumn": 47,
+                  "label": "Legal name (optional)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Legal name (optional)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PersonDateOfBirth",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "persondateofbirth",
+                  "parentId": "0",
+                  "topRow": 29,
+                  "bottomRow": 36,
+                  "leftColumn": 48,
+                  "rightColumn": 62,
+                  "label": "Date of birth (optional, YYYY-MM-DD)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Date of birth (optional, YYYY-MM-DD)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PersonResidencyCountry",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "personresidencycountry",
+                  "parentId": "0",
+                  "topRow": 38,
+                  "bottomRow": 45,
+                  "leftColumn": 2,
+                  "rightColumn": 24,
+                  "label": "Tax residency country (optional, two-letter code)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Tax residency country (optional, two-letter code)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PersonTaxJurisdiction",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "persontaxjurisdiction",
+                  "parentId": "0",
+                  "topRow": 38,
+                  "bottomRow": 45,
+                  "leftColumn": 25,
+                  "rightColumn": 47,
+                  "label": "Tax jurisdiction (optional)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Tax jurisdiction (optional)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PersonEffectiveFrom",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "personeffectivefrom",
+                  "parentId": "0",
+                  "topRow": 38,
+                  "bottomRow": 45,
+                  "leftColumn": 48,
+                  "rightColumn": 62,
+                  "label": "Effective from (YYYY-MM-DD)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Effective from (YYYY-MM-DD)",
+                  "inputType": "TEXT",
+                  "isRequired": true,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "CreatePersonButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "createpersonbutton",
+                  "parentId": "0",
+                  "topRow": 47,
+                  "bottomRow": 51,
+                  "leftColumn": 2,
+                  "rightColumn": 18,
+                  "text": "Add person",
+                  "onClick": "{{CreatePerson.run(() => { showAlert('Person added', 'success'); ListPeople.run(); }, () => showAlert(JSON.stringify(CreatePerson.data?.detail || 'Could not add person'), 'error'))}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId || !(PersonDisplayName.text || '').trim() || !/^\\d{4}-\\d{2}-\\d{2}$/.test((PersonEffectiveFrom.text || '').trim()) || ((PersonDateOfBirth.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(PersonDateOfBirth.text.trim())) || ((PersonResidencyCountry.text || '').trim() && !/^[A-Za-z]{2}$/.test(PersonResidencyCountry.text.trim()))}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "RefreshPeopleButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "refreshpeoplebutton",
+                  "parentId": "0",
+                  "topRow": 47,
+                  "bottomRow": 51,
+                  "leftColumn": 20,
+                  "rightColumn": 36,
+                  "text": "Refresh people",
+                  "onClick": "{{ListPeople.run()}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "PeopleListLabel",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "peoplelistlabel",
+                  "parentId": "0",
+                  "topRow": 54,
+                  "bottomRow": 58,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "People in this household",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "ExistingPeople",
+                  "displayName": "Table",
+                  "type": "TABLE_WIDGET_V2",
+                  "widgetId": "existingpeople",
+                  "parentId": "0",
+                  "topRow": 59,
+                  "bottomRow": 88,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "tableData": "{{Array.isArray(ListPeople.data) ? ListPeople.data : []}}",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 3,
+                  "defaultPageSize": 0,
+                  "isVisibleDownload": true,
+                  "isVisibleFilters": true,
+                  "isVisibleSearch": true,
+                  "isVisiblePagination": true,
+                  "label": "People",
+                  "searchKey": "",
+                  "columnOrder": [
+                    "id",
+                    "display_name",
+                    "legal_name",
+                    "date_of_birth",
+                    "tax_residency_country",
+                    "tax_jurisdiction",
+                    "is_active",
+                    "effective_from"
+                  ],
+                  "primaryColumns": {
+                    "id": {
+                      "index": 0,
+                      "width": 150,
+                      "originalId": "id",
+                      "id": "id",
+                      "alias": "id",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": false,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "ID",
+                      "computedValue": "{{(ExistingPeople.tableData || []).map((currentRow) => currentRow[\"id\"])}}"
+                    },
+                    "display_name": {
+                      "index": 1,
+                      "width": 150,
+                      "originalId": "display_name",
+                      "id": "display_name",
+                      "alias": "display_name",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Display name",
+                      "computedValue": "{{(ExistingPeople.tableData || []).map((currentRow) => currentRow[\"display_name\"])}}"
+                    },
+                    "legal_name": {
+                      "index": 2,
+                      "width": 150,
+                      "originalId": "legal_name",
+                      "id": "legal_name",
+                      "alias": "legal_name",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Legal name",
+                      "computedValue": "{{(ExistingPeople.tableData || []).map((currentRow) => currentRow[\"legal_name\"])}}"
+                    },
+                    "date_of_birth": {
+                      "index": 3,
+                      "width": 150,
+                      "originalId": "date_of_birth",
+                      "id": "date_of_birth",
+                      "alias": "date_of_birth",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Date of birth",
+                      "computedValue": "{{(ExistingPeople.tableData || []).map((currentRow) => currentRow[\"date_of_birth\"])}}"
+                    },
+                    "tax_residency_country": {
+                      "index": 4,
+                      "width": 150,
+                      "originalId": "tax_residency_country",
+                      "id": "tax_residency_country",
+                      "alias": "tax_residency_country",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Tax residency",
+                      "computedValue": "{{(ExistingPeople.tableData || []).map((currentRow) => currentRow[\"tax_residency_country\"])}}"
+                    },
+                    "tax_jurisdiction": {
+                      "index": 5,
+                      "width": 150,
+                      "originalId": "tax_jurisdiction",
+                      "id": "tax_jurisdiction",
+                      "alias": "tax_jurisdiction",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Tax jurisdiction",
+                      "computedValue": "{{(ExistingPeople.tableData || []).map((currentRow) => currentRow[\"tax_jurisdiction\"])}}"
+                    },
+                    "is_active": {
+                      "index": 6,
+                      "width": 150,
+                      "originalId": "is_active",
+                      "id": "is_active",
+                      "alias": "is_active",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Active",
+                      "computedValue": "{{(ExistingPeople.tableData || []).map((currentRow) => currentRow[\"is_active\"])}}"
+                    },
+                    "effective_from": {
+                      "index": 7,
+                      "width": 150,
+                      "originalId": "effective_from",
+                      "id": "effective_from",
+                      "alias": "effective_from",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Effective from",
+                      "computedValue": "{{(ExistingPeople.tableData || []).map((currentRow) => currentRow[\"effective_from\"])}}"
+                    }
+                  },
+                  "derivedColumns": {},
+                  "columnSizeMap": {},
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "tableData"
+                    },
+                    {
+                      "key": "primaryColumns.id.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.display_name.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.legal_name.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.date_of_birth.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.tax_residency_country.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.tax_jurisdiction.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.is_active.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.effective_from.computedValue"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                }
+              ]
+            },
+            "layoutOnLoadActions": [
+              [
+                {
+                  "id": "People_ListPeople",
+                  "name": "ListPeople",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ]
+            ],
+            "layoutOnLoadActionErrors": [],
+            "validOnPageLoadActions": true,
+            "deleted": false,
+            "policies": [],
+            "userPermissions": []
+          }
+        ],
+        "userPermissions": [],
+        "policies": []
+      },
+      "deleted": false,
+      "gitSyncId": "phase10_2"
+    },
+    {
+      "unpublishedPage": {
         "name": "Settings",
         "slug": "settings",
         "layouts": [
@@ -2158,6 +4052,42 @@
                   ]
                 },
                 {
+                  "widgetName": "NavPeople",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navpeople",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 16,
+                  "rightColumn": 24,
+                  "text": "People",
+                  "onClick": "{{navigateTo('People', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -2165,8 +4095,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 16,
-                  "rightColumn": 24,
+                  "leftColumn": 24,
+                  "rightColumn": 32,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -2578,6 +4508,42 @@
                   ]
                 },
                 {
+                  "widgetName": "NavPeople",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navpeople",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 16,
+                  "rightColumn": 24,
+                  "text": "People",
+                  "onClick": "{{navigateTo('People', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -2585,8 +4551,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 16,
-                  "rightColumn": 24,
+                  "leftColumn": 24,
+                  "rightColumn": 32,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -2834,17 +4800,19 @@
         "policies": []
       },
       "deleted": false,
-      "gitSyncId": "phase10_2"
+      "gitSyncId": "phase10_3"
     }
   ],
   "pageOrder": [
     "Home",
     "Households",
+    "People",
     "Settings"
   ],
   "publishedPageOrder": [
     "Home",
     "Households",
+    "People",
     "Settings"
   ],
   "publishedDefaultPageName": "Home",
@@ -3091,6 +5059,252 @@
       ]
     },
     {
+      "id": "People_ListPeople",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "ListPeople",
+        "validName": "ListPeople",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "People",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/households/{{appsmith.store.householdId}}/people",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "ListPeople",
+        "validName": "ListPeople",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "People",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/households/{{appsmith.store.householdId}}/people",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
+    },
+    {
+      "id": "People_CreatePerson",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "CreatePerson",
+        "validName": "CreatePerson",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "People",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/households/{{appsmith.store.householdId}}/people",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "POST",
+          "formData": {
+            "apiContentType": "application/json"
+          },
+          "body": "{{({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: String(PersonResidencyCountry.text || '').trim().toUpperCase() || null, tax_jurisdiction: String(PersonTaxJurisdiction.text || '').trim() || null, effective_from: String(PersonEffectiveFrom.text || '').trim() })}}"
+        },
+        "runBehaviour": "MANUAL",
+        "dynamicBindingPathList": [
+          {
+            "key": "body"
+          }
+        ],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId",
+          "({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: String(PersonResidencyCountry.text || '').trim().toUpperCase() || null, tax_jurisdiction: String(PersonTaxJurisdiction.text || '').trim() || null, effective_from: String(PersonEffectiveFrom.text || '').trim() })"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "CreatePerson",
+        "validName": "CreatePerson",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "People",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/households/{{appsmith.store.householdId}}/people",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "POST",
+          "formData": {
+            "apiContentType": "application/json"
+          },
+          "body": "{{({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: String(PersonResidencyCountry.text || '').trim().toUpperCase() || null, tax_jurisdiction: String(PersonTaxJurisdiction.text || '').trim() || null, effective_from: String(PersonEffectiveFrom.text || '').trim() })}}"
+        },
+        "runBehaviour": "MANUAL",
+        "dynamicBindingPathList": [
+          {
+            "key": "body"
+          }
+        ],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId",
+          "({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: String(PersonResidencyCountry.text || '').trim().toUpperCase() || null, tax_jurisdiction: String(PersonTaxJurisdiction.text || '').trim() || null, effective_from: String(PersonEffectiveFrom.text || '').trim() })"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
+    },
+    {
       "id": "Settings_HealthCheck",
       "pluginType": "API",
       "pluginId": "restapi-plugin",
@@ -3322,12 +5536,15 @@
     "actionList": [
       "Households_ListHouseholds",
       "Households_CreateHousehold",
+      "People_ListPeople",
+      "People_CreatePerson",
       "Settings_HealthCheck",
       "Settings_RestoreSelectedHousehold"
     ],
     "pageList": [
       "Home",
       "Households",
+      "People",
       "Settings"
     ],
     "actionCollectionList": []

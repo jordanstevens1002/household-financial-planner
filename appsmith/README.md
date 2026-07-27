@@ -1,9 +1,10 @@
 # Appsmith application
 
 `household-financial-planner.json` is the importable Appsmith Community Edition application. Phase
-10B adds household creation, listing, selection and browser restoration to the tested Phase 10A
-foundation. It is generated deterministically by `generate_app.py`; edit the generator rather than
-the JSON.
+10C adds country-neutral people identity creation and listing to the tested household onboarding
+foundation. It deliberately does not imply that a person's income, tax or other financial setup is
+complete. The application is generated deterministically by `generate_app.py`; edit the generator
+rather than the JSON.
 
 ## Import locally
 
@@ -15,7 +16,8 @@ the JSON.
    API bearer token instead.
 5. Save the settings and select **Test API connection**.
 6. Open **Households** to create a household or select an existing one.
-7. Click **Deploy** before checking the normal launched application; edit mode and published mode
+7. Open **People** to add and list identity records for the selected household.
+8. Click **Deploy** before checking the normal launched application; edit mode and published mode
    use different Appsmith snapshots.
 
 No bearer token, development identity, email address, household ID or financial value is stored in

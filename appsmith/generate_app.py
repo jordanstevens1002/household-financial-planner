@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 import json
+import re
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 OUTPUT = Path(__file__).with_name("household-financial-planner.json")
 API_URL = "http://api:8000"
-PAGES = (("Home", "home"), ("Households", "households"), ("Settings", "settings"))
+PAGES = (
+    ("Home", "home"),
+    ("Households", "households"),
+    ("People", "people"),
+    ("Settings", "settings"),
+)
 
 
 def text(name: str, value: str, top: int, bottom: int, left: int = 2, right: int = 62) -> dict[str, Any]:
@@ -129,6 +135,8 @@ def table(
     columns: tuple[tuple[str, str, bool], ...],
     top: int,
     bottom: int,
+    *,
+    label: str,
 ) -> dict[str, Any]:
     primary_columns = {
         key: {
@@ -174,7 +182,7 @@ def table(
         "isVisibleFilters": True,
         "isVisibleSearch": True,
         "isVisiblePagination": True,
-        "label": "Households",
+        "label": label,
         "searchKey": "",
         "columnOrder": [key for key, _, _ in columns],
         "primaryColumns": primary_columns,
@@ -236,7 +244,16 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
                 2,
                 20,
             ),
-            button("OpenSettings", "Connection settings", "{{navigateTo('Settings')}}", 32, 22, 42),
+            button(
+                "OpenPeople",
+                "People",
+                "{{navigateTo('People')}}",
+                32,
+                22,
+                32,
+                disabled="{{!appsmith.store.householdId}}",
+            ),
+            button("OpenSettings", "Connection settings", "{{navigateTo('Settings')}}", 32, 34, 54),
         ]
     elif name == "Households":
         widgets += [
@@ -277,6 +294,7 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
                 ),
                 43,
                 68,
+                label="Households",
             ),
             button(
                 "UseHouseholdButton",
@@ -294,6 +312,82 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
                 70,
                 24,
                 40,
+            ),
+        ]
+    elif name == "People":
+        widgets += [
+            text(
+                "PeopleHelp",
+                "Add the people whose finances may later form part of this household. This records identity only; income, tax and other financial details are not complete yet.",
+                17,
+                23,
+            ),
+            text(
+                "PeopleHouseholdRequired",
+                "{{appsmith.store.householdId ? 'Adding people to ' + appsmith.store.householdName : 'Choose a household before adding people'}}",
+                24,
+                28,
+            ),
+            input_widget("PersonDisplayName", "Display name", 29, 2, 24, required=True),
+            input_widget("PersonLegalName", "Legal name (optional)", 29, 25, 47),
+            input_widget("PersonDateOfBirth", "Date of birth (optional, YYYY-MM-DD)", 29, 48, 62),
+            input_widget(
+                "PersonResidencyCountry",
+                "Tax residency country (optional, two-letter code)",
+                38,
+                2,
+                24,
+            ),
+            input_widget(
+                "PersonTaxJurisdiction",
+                "Tax jurisdiction (optional)",
+                38,
+                25,
+                47,
+            ),
+            input_widget(
+                "PersonEffectiveFrom",
+                "Effective from (YYYY-MM-DD)",
+                38,
+                48,
+                62,
+                required=True,
+            ),
+            button(
+                "CreatePersonButton",
+                "Add person",
+                "{{CreatePerson.run(() => { showAlert('Person added', 'success'); ListPeople.run(); }, () => showAlert(JSON.stringify(CreatePerson.data?.detail || 'Could not add person'), 'error'))}}",
+                47,
+                2,
+                18,
+                disabled="{{!appsmith.store.householdId || !(PersonDisplayName.text || '').trim() || !/^\\d{4}-\\d{2}-\\d{2}$/.test((PersonEffectiveFrom.text || '').trim()) || ((PersonDateOfBirth.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(PersonDateOfBirth.text.trim())) || ((PersonResidencyCountry.text || '').trim() && !/^[A-Za-z]{2}$/.test(PersonResidencyCountry.text.trim()))}}",
+            ),
+            button(
+                "RefreshPeopleButton",
+                "Refresh people",
+                "{{ListPeople.run()}}",
+                47,
+                20,
+                36,
+                disabled="{{!appsmith.store.householdId}}",
+            ),
+            text("PeopleListLabel", "People in this household", 54, 58),
+            table(
+                "ExistingPeople",
+                "{{Array.isArray(ListPeople.data) ? ListPeople.data : []}}",
+                (
+                    ("id", "ID", False),
+                    ("display_name", "Display name", True),
+                    ("legal_name", "Legal name", True),
+                    ("date_of_birth", "Date of birth", True),
+                    ("tax_residency_country", "Tax residency", True),
+                    ("tax_jurisdiction", "Tax jurisdiction", True),
+                    ("is_active", "Active", True),
+                    ("effective_from", "Effective from", True),
+                ),
+                59,
+                88,
+                label="People",
             ),
         ]
     else:
@@ -366,7 +460,12 @@ def action(page: str, name: str, method: str, path: str, *, body: str = "", on_l
     if body:
         configuration["body"] = body
     dynamic_binding_paths = [{"key": "body"}] if body.startswith("{{") else []
-    json_path_keys = [body[2:-2]] if body.startswith("{{") and body.endswith("}}") else []
+    dynamic_sources = [path, body]
+    json_path_keys = [
+        match.group(1).strip()
+        for source in dynamic_sources
+        for match in re.finditer(r"\{\{(.*?)\}\}", source)
+    ]
     entity = {
         "name": name,
         "validName": name,
@@ -394,6 +493,7 @@ def action(page: str, name: str, method: str, path: str, *, body: str = "", on_l
 
 
 def actions() -> list[dict[str, Any]]:
+    household = "{{appsmith.store.householdId}}"
     return [
         action("Households", "ListHouseholds", "GET", "/api/v1/households", on_load=True),
         action(
@@ -402,6 +502,20 @@ def actions() -> list[dict[str, Any]]:
             "POST",
             "/api/v1/households",
             body="{{({ display_name: String(HouseholdName.text || '').trim(), currency: String(HouseholdCurrency.text || '').trim().toUpperCase(), jurisdiction: String(HouseholdJurisdiction.text || '').trim().toUpperCase() || null })}}",
+        ),
+        action(
+            "People",
+            "ListPeople",
+            "GET",
+            f"/api/v1/households/{household}/people",
+            on_load=True,
+        ),
+        action(
+            "People",
+            "CreatePerson",
+            "POST",
+            f"/api/v1/households/{household}/people",
+            body="{{({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: String(PersonResidencyCountry.text || '').trim().toUpperCase() || null, tax_jurisdiction: String(PersonTaxJurisdiction.text || '').trim() || null, effective_from: String(PersonEffectiveFrom.text || '').trim() })}}",
         ),
         action("Settings", "HealthCheck", "GET", "/health/ready", on_load=True),
         action(
