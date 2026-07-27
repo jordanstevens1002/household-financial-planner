@@ -9,7 +9,7 @@ from typing import Any
 
 OUTPUT = Path(__file__).with_name("household-financial-planner.json")
 API_URL = "http://api:8000"
-PAGES = (("Home", "home"), ("Settings", "settings"))
+PAGES = (("Home", "home"), ("Households", "households"), ("Settings", "settings"))
 
 
 def text(name: str, value: str, top: int, bottom: int, left: int = 2, right: int = 62) -> dict[str, Any]:
@@ -123,12 +123,77 @@ def input_widget(
     }
 
 
+def table(
+    name: str,
+    data: str,
+    columns: tuple[tuple[str, str, bool], ...],
+    top: int,
+    bottom: int,
+) -> dict[str, Any]:
+    primary_columns = {
+        key: {
+            "index": index,
+            "width": 150,
+            "originalId": key,
+            "id": key,
+            "alias": key,
+            "horizontalAlignment": "LEFT",
+            "verticalAlignment": "CENTER",
+            "columnType": "text",
+            "textSize": "PARAGRAPH",
+            "enableFilter": True,
+            "enableSort": True,
+            "isVisible": visible,
+            "isDisabled": False,
+            "isCellVisible": True,
+            "isDerived": False,
+            "label": label,
+            "computedValue": (
+                f'{{{{({name}.tableData || []).map((currentRow) => currentRow["{key}"])}}}}'
+            ),
+        }
+        for index, (key, label, visible) in enumerate(columns)
+    }
+    return {
+        "widgetName": name,
+        "displayName": "Table",
+        "type": "TABLE_WIDGET_V2",
+        "widgetId": name.lower(),
+        "parentId": "0",
+        "topRow": top,
+        "bottomRow": bottom,
+        "leftColumn": 2,
+        "rightColumn": 62,
+        "tableData": data,
+        "isVisible": True,
+        "isLoading": False,
+        "renderMode": "CANVAS",
+        "version": 3,
+        "defaultPageSize": 0,
+        "isVisibleDownload": True,
+        "isVisibleFilters": True,
+        "isVisibleSearch": True,
+        "isVisiblePagination": True,
+        "label": "Households",
+        "searchKey": "",
+        "columnOrder": [key for key, _, _ in columns],
+        "primaryColumns": primary_columns,
+        "derivedColumns": {},
+        "columnSizeMap": {},
+        "dynamicBindingPathList": [
+            {"key": "tableData"},
+            *[{"key": f"primaryColumns.{key}.computedValue"} for key, _, _ in columns],
+        ],
+        "dynamicTriggerPathList": [],
+    }
+
+
 def common_widgets(page_name: str) -> list[dict[str, Any]]:
     widgets = [
         text("PageTitle", page_name, 1, 6),
         text(
-            "FoundationNotice",
-            "Phase 10A provides the tested application shell and connection settings. Household workflows arrive in the next focused PR.",
+            "HouseholdContext",
+            "{{appsmith.store.householdName || 'No household selected'}}",
             6,
             10,
         ),
@@ -151,16 +216,118 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
     widgets = common_widgets(name)
     if name == "Home":
         widgets += [
-            text("Welcome", "Open Settings to configure a local development identity or production bearer token, then verify the API connection.", 17, 24),
-            button("OpenSettings", "Open settings", "{{navigateTo('Settings')}}", 26, 2, 18),
+            text(
+                "Welcome",
+                "Connect to the API, then create or choose the household you want to explore.",
+                17,
+                24,
+            ),
+            text(
+                "SelectedHousehold",
+                "Current household: {{appsmith.store.householdName || 'none selected'}}",
+                25,
+                30,
+            ),
+            button(
+                "OpenHouseholds",
+                "Choose a household",
+                "{{navigateTo('Households')}}",
+                32,
+                2,
+                20,
+            ),
+            button("OpenSettings", "Connection settings", "{{navigateTo('Settings')}}", 32, 22, 42),
+        ]
+    elif name == "Households":
+        widgets += [
+            text(
+                "HouseholdHelp",
+                "Create a household or select one you already use. Currency is always explicit.",
+                17,
+                21,
+            ),
+            input_widget("HouseholdName", "Household name", 22, 2, 30, required=True),
+            input_widget(
+                "HouseholdCurrency",
+                "Currency code (for example AUD or USD)",
+                22,
+                31,
+                47,
+                required=True,
+            ),
+            input_widget("HouseholdJurisdiction", "Jurisdiction (optional)", 22, 48, 62),
+            button(
+                "CreateHouseholdButton",
+                "Create household",
+                "{{CreateHousehold.run(() => { storeValue('householdId', CreateHousehold.data.id, true); storeValue('householdName', CreateHousehold.data.display_name, true); showAlert('Household created and selected', 'success'); ListHouseholds.run(); navigateTo('Home'); }, () => showAlert(JSON.stringify(CreateHousehold.data?.detail || 'Could not create household'), 'error'))}}",
+                31,
+                2,
+                20,
+                disabled="{{!(HouseholdName.text || '').trim() || !/^[A-Za-z]{3}$/.test((HouseholdCurrency.text || '').trim())}}",
+            ),
+            text("ExistingHouseholdsLabel", "Your households", 38, 42),
+            table(
+                "ExistingHouseholds",
+                "{{Array.isArray(ListHouseholds.data) ? ListHouseholds.data : []}}",
+                (
+                    ("id", "ID", False),
+                    ("display_name", "Household", True),
+                    ("currency", "Currency", True),
+                    ("jurisdiction", "Jurisdiction", True),
+                ),
+                43,
+                68,
+            ),
+            button(
+                "UseHouseholdButton",
+                "Use selected household",
+                "{{storeValue('householdId', ExistingHouseholds.selectedRow.id, true); storeValue('householdName', ExistingHouseholds.selectedRow.display_name, true); showAlert('Household selected', 'success'); navigateTo('Home')}}",
+                70,
+                2,
+                22,
+                disabled="{{!ExistingHouseholds.selectedRow || !ExistingHouseholds.selectedRow.id}}",
+            ),
+            button(
+                "RefreshHouseholdsButton",
+                "Refresh list",
+                "{{ListHouseholds.run()}}",
+                70,
+                24,
+                40,
+            ),
         ]
     else:
         widgets += [
-            text("SettingsHelp", "Connection details stay in the current browser session and are never included in the export.", 17, 21),
+            text(
+                "SettingsHelp",
+                "Connection details stay in the current browser session and are never included in the export.",
+                17,
+                21,
+            ),
             input_widget("BearerToken", "Bearer token (production)", 22, 2, 62),
-            input_widget("DevelopmentSubject", "Development subject (local testing only)", 30, 2, 32),
-            button("SaveSettings", "Save connection", "{{storeValue('apiToken', BearerToken.text || '', false); storeValue('developmentSubject', DevelopmentSubject.text || '', false); showAlert('Connection saved for this session', 'success')}}", 39, 2, 20),
-            button("TestConnection", "Test API connection", "{{HealthCheck.run(() => showAlert('API connection is ready', 'success'), () => showAlert('Could not reach the API', 'error'))}}", 39, 22, 42),
+            input_widget(
+                "DevelopmentSubject",
+                "Development subject (local testing only)",
+                30,
+                2,
+                32,
+            ),
+            button(
+                "SaveSettings",
+                "Save connection",
+                "{{(async () => { await storeValue('apiToken', BearerToken.text || '', false); await storeValue('developmentSubject', DevelopmentSubject.text || '', false); if (!appsmith.store.householdId) { showAlert('Connection saved for this session', 'success'); return; } RestoreSelectedHousehold.run(async () => { const household = Array.isArray(RestoreSelectedHousehold.data) ? RestoreSelectedHousehold.data.find((item) => item.id === appsmith.store.householdId) : undefined; if (household) { await storeValue('householdName', household.display_name, true); showAlert('Connection saved and household restored', 'success'); } else { await removeValue('householdId'); await removeValue('householdName'); showAlert('The saved household is no longer available. Choose another household.', 'error'); navigateTo('Households'); } }, () => showAlert('Connection saved, but the saved household could not be verified', 'error')); })()}}",
+                39,
+                2,
+                20,
+            ),
+            button(
+                "TestConnection",
+                "Test API connection",
+                "{{HealthCheck.run(() => showAlert('API connection is ready', 'success'), () => showAlert('Could not reach the API', 'error'))}}",
+                39,
+                22,
+                42,
+            ),
             text("ConnectionStatus", "API status: {{HealthCheck.data.status || 'not checked'}}", 46, 51),
         ]
     return widgets
@@ -198,6 +365,8 @@ def action(page: str, name: str, method: str, path: str, *, body: str = "", on_l
     }
     if body:
         configuration["body"] = body
+    dynamic_binding_paths = [{"key": "body"}] if body.startswith("{{") else []
+    json_path_keys = [body[2:-2]] if body.startswith("{{") and body.endswith("}}") else []
     entity = {
         "name": name,
         "validName": name,
@@ -205,11 +374,11 @@ def action(page: str, name: str, method: str, path: str, *, body: str = "", on_l
         "pageId": page,
         "actionConfiguration": configuration,
         "runBehaviour": "ON_PAGE_LOAD" if on_load else "MANUAL",
-        "dynamicBindingPathList": [],
+        "dynamicBindingPathList": dynamic_binding_paths,
         "isValid": True,
         "invalids": [],
         "messages": [],
-        "jsonPathKeys": [],
+        "jsonPathKeys": json_path_keys,
         "confirmBeforeExecute": False,
         "userPermissions": [],
     }
@@ -225,7 +394,23 @@ def action(page: str, name: str, method: str, path: str, *, body: str = "", on_l
 
 
 def actions() -> list[dict[str, Any]]:
-    return [action("Settings", "HealthCheck", "GET", "/health/ready", on_load=True)]
+    return [
+        action("Households", "ListHouseholds", "GET", "/api/v1/households", on_load=True),
+        action(
+            "Households",
+            "CreateHousehold",
+            "POST",
+            "/api/v1/households",
+            body="{{({ display_name: String(HouseholdName.text || '').trim(), currency: String(HouseholdCurrency.text || '').trim().toUpperCase(), jurisdiction: String(HouseholdJurisdiction.text || '').trim().toUpperCase() || null })}}",
+        ),
+        action("Settings", "HealthCheck", "GET", "/health/ready", on_load=True),
+        action(
+            "Settings",
+            "RestoreSelectedHousehold",
+            "GET",
+            "/api/v1/households",
+        ),
+    ]
 
 
 def build() -> dict[str, Any]:

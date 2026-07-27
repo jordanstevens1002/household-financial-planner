@@ -1,8 +1,9 @@
 # Appsmith application
 
 `household-financial-planner.json` is the importable Appsmith Community Edition application. Phase
-10A intentionally contains only the application shell, Settings and API connection health check.
-It is generated deterministically by `generate_app.py`; edit the generator rather than the JSON.
+10B adds household creation, listing, selection and browser restoration to the tested Phase 10A
+foundation. It is generated deterministically by `generate_app.py`; edit the generator rather than
+the JSON.
 
 ## Import locally
 
@@ -13,12 +14,17 @@ It is generated deterministically by `generate_app.py`; edit the generator rathe
    only when the API has `ALLOW_DEVELOPMENT_AUTH=true`. For a production-style test, enter a valid
    API bearer token instead.
 5. Save the settings and select **Test API connection**.
-6. Click **Deploy** before checking the normal launched application; edit mode and published mode
+6. Open **Households** to create a household or select an existing one.
+7. Click **Deploy** before checking the normal launched application; edit mode and published mode
    use different Appsmith snapshots.
 
 No bearer token, development identity, email address, household ID or financial value is stored in
 the committed export. Appsmith stores bearer tokens and development identities for the current
-browser session only. Household selection is added in Phase 10B.
+browser session only. The selected household ID and display name are persisted in that browser so
+the same household can be restored later. After connection details are saved in a new session, the
+application verifies that the authenticated user can still access that household and refreshes its
+display name. An unavailable selection is cleared; no household data itself is copied into the
+export.
 
 Regenerate and test the export with:
 

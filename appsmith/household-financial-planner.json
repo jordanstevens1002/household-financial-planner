@@ -10,6 +10,10 @@
         "isDefault": true
       },
       {
+        "id": "Households",
+        "isDefault": false
+      },
+      {
         "id": "Settings",
         "isDefault": false
       }
@@ -18,6 +22,10 @@
       {
         "id": "Home",
         "isDefault": true
+      },
+      {
+        "id": "Households",
+        "isDefault": false
       },
       {
         "id": "Settings",
@@ -99,16 +107,16 @@
                   "dynamicTriggerPathList": []
                 },
                 {
-                  "widgetName": "FoundationNotice",
+                  "widgetName": "HouseholdContext",
                   "displayName": "Text",
                   "type": "TEXT_WIDGET",
-                  "widgetId": "foundationnotice",
+                  "widgetId": "householdcontext",
                   "parentId": "0",
                   "topRow": 6,
                   "bottomRow": 10,
                   "leftColumn": 2,
                   "rightColumn": 62,
-                  "text": "Phase 10A provides the tested application shell and connection settings. Household workflows arrive in the next focused PR.",
+                  "text": "{{appsmith.store.householdName || 'No household selected'}}",
                   "isVisible": true,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -168,6 +176,42 @@
                   ]
                 },
                 {
+                  "widgetName": "NavHouseholds",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhouseholds",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 8,
+                  "rightColumn": 16,
+                  "text": "Households",
+                  "onClick": "{{navigateTo('Households', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -175,8 +219,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 8,
-                  "rightColumn": 16,
+                  "leftColumn": 16,
+                  "rightColumn": 24,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -213,7 +257,7 @@
                   "bottomRow": 24,
                   "leftColumn": 2,
                   "rightColumn": 62,
-                  "text": "Open Settings to configure a local development identity or production bearer token, then verify the API connection.",
+                  "text": "Connect to the API, then create or choose the household you want to explore.",
                   "isVisible": true,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -237,16 +281,85 @@
                   "dynamicTriggerPathList": []
                 },
                 {
+                  "widgetName": "SelectedHousehold",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "selectedhousehold",
+                  "parentId": "0",
+                  "topRow": 25,
+                  "bottomRow": 30,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Current household: {{appsmith.store.householdName || 'none selected'}}",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "OpenHouseholds",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "openhouseholds",
+                  "parentId": "0",
+                  "topRow": 32,
+                  "bottomRow": 36,
+                  "leftColumn": 2,
+                  "rightColumn": 20,
+                  "text": "Choose a household",
+                  "onClick": "{{navigateTo('Households')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "OpenSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
                   "widgetId": "opensettings",
                   "parentId": "0",
-                  "topRow": 26,
-                  "bottomRow": 30,
-                  "leftColumn": 2,
-                  "rightColumn": 18,
-                  "text": "Open settings",
+                  "topRow": 32,
+                  "bottomRow": 36,
+                  "leftColumn": 22,
+                  "rightColumn": 42,
+                  "text": "Connection settings",
                   "onClick": "{{navigateTo('Settings')}}",
                   "isVisible": true,
                   "isDisabled": false,
@@ -345,16 +458,16 @@
                   "dynamicTriggerPathList": []
                 },
                 {
-                  "widgetName": "FoundationNotice",
+                  "widgetName": "HouseholdContext",
                   "displayName": "Text",
                   "type": "TEXT_WIDGET",
-                  "widgetId": "foundationnotice",
+                  "widgetId": "householdcontext",
                   "parentId": "0",
                   "topRow": 6,
                   "bottomRow": 10,
                   "leftColumn": 2,
                   "rightColumn": 62,
-                  "text": "Phase 10A provides the tested application shell and connection settings. Household workflows arrive in the next focused PR.",
+                  "text": "{{appsmith.store.householdName || 'No household selected'}}",
                   "isVisible": true,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -414,6 +527,42 @@
                   ]
                 },
                 {
+                  "widgetName": "NavHouseholds",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhouseholds",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 8,
+                  "rightColumn": 16,
+                  "text": "Households",
+                  "onClick": "{{navigateTo('Households', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -421,8 +570,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 8,
-                  "rightColumn": 16,
+                  "leftColumn": 16,
+                  "rightColumn": 24,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -459,7 +608,7 @@
                   "bottomRow": 24,
                   "leftColumn": 2,
                   "rightColumn": 62,
-                  "text": "Open Settings to configure a local development identity or production bearer token, then verify the API connection.",
+                  "text": "Connect to the API, then create or choose the household you want to explore.",
                   "isVisible": true,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -483,16 +632,85 @@
                   "dynamicTriggerPathList": []
                 },
                 {
+                  "widgetName": "SelectedHousehold",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "selectedhousehold",
+                  "parentId": "0",
+                  "topRow": 25,
+                  "bottomRow": 30,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Current household: {{appsmith.store.householdName || 'none selected'}}",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "OpenHouseholds",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "openhouseholds",
+                  "parentId": "0",
+                  "topRow": 32,
+                  "bottomRow": 36,
+                  "leftColumn": 2,
+                  "rightColumn": 20,
+                  "text": "Choose a household",
+                  "onClick": "{{navigateTo('Households')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "OpenSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
                   "widgetId": "opensettings",
                   "parentId": "0",
-                  "topRow": 26,
-                  "bottomRow": 30,
-                  "leftColumn": 2,
-                  "rightColumn": 18,
-                  "text": "Open settings",
+                  "topRow": 32,
+                  "bottomRow": 36,
+                  "leftColumn": 22,
+                  "rightColumn": 42,
+                  "text": "Connection settings",
                   "onClick": "{{navigateTo('Settings')}}",
                   "isVisible": true,
                   "isDisabled": false,
@@ -533,6 +751,1246 @@
       },
       "deleted": false,
       "gitSyncId": "phase10_0"
+    },
+    {
+      "unpublishedPage": {
+        "name": "Households",
+        "slug": "households",
+        "layouts": [
+          {
+            "id": "Households",
+            "viewMode": false,
+            "dsl": {
+              "widgetName": "MainContainer",
+              "backgroundColor": "#F7F8FA",
+              "rightColumn": 1224,
+              "snapColumns": 64,
+              "detachFromLayout": true,
+              "widgetId": "0",
+              "topRow": 0,
+              "bottomRow": 1100,
+              "containerStyle": "none",
+              "snapRows": 110,
+              "parentRowSpace": 1,
+              "type": "CANVAS_WIDGET",
+              "canExtend": true,
+              "version": 77,
+              "minHeight": 1100,
+              "parentColumnSpace": 1,
+              "dynamicBindingPathList": [],
+              "children": [
+                {
+                  "widgetName": "PageTitle",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "pagetitle",
+                  "parentId": "0",
+                  "topRow": 1,
+                  "bottomRow": 6,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Households",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "HouseholdContext",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "householdcontext",
+                  "parentId": "0",
+                  "topRow": 6,
+                  "bottomRow": 10,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "{{appsmith.store.householdName || 'No household selected'}}",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "NavHome",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhome",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 0,
+                  "rightColumn": 8,
+                  "text": "Home",
+                  "onClick": "{{navigateTo('Home', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavHouseholds",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhouseholds",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 8,
+                  "rightColumn": 16,
+                  "text": "Households",
+                  "onClick": "{{navigateTo('Households', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavSettings",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navsettings",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 16,
+                  "rightColumn": 24,
+                  "text": "Settings",
+                  "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "HouseholdHelp",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "householdhelp",
+                  "parentId": "0",
+                  "topRow": 17,
+                  "bottomRow": 21,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Create a household or select one you already use. Currency is always explicit.",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "HouseholdName",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "householdname",
+                  "parentId": "0",
+                  "topRow": 22,
+                  "bottomRow": 29,
+                  "leftColumn": 2,
+                  "rightColumn": 30,
+                  "label": "Household name",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Household name",
+                  "inputType": "TEXT",
+                  "isRequired": true,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "HouseholdCurrency",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "householdcurrency",
+                  "parentId": "0",
+                  "topRow": 22,
+                  "bottomRow": 29,
+                  "leftColumn": 31,
+                  "rightColumn": 47,
+                  "label": "Currency code (for example AUD or USD)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Currency code (for example AUD or USD)",
+                  "inputType": "TEXT",
+                  "isRequired": true,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "HouseholdJurisdiction",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "householdjurisdiction",
+                  "parentId": "0",
+                  "topRow": 22,
+                  "bottomRow": 29,
+                  "leftColumn": 48,
+                  "rightColumn": 62,
+                  "label": "Jurisdiction (optional)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Jurisdiction (optional)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "CreateHouseholdButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "createhouseholdbutton",
+                  "parentId": "0",
+                  "topRow": 31,
+                  "bottomRow": 35,
+                  "leftColumn": 2,
+                  "rightColumn": 20,
+                  "text": "Create household",
+                  "onClick": "{{CreateHousehold.run(() => { storeValue('householdId', CreateHousehold.data.id, true); storeValue('householdName', CreateHousehold.data.display_name, true); showAlert('Household created and selected', 'success'); ListHouseholds.run(); navigateTo('Home'); }, () => showAlert(JSON.stringify(CreateHousehold.data?.detail || 'Could not create household'), 'error'))}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!(HouseholdName.text || '').trim() || !/^[A-Za-z]{3}$/.test((HouseholdCurrency.text || '').trim())}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "ExistingHouseholdsLabel",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "existinghouseholdslabel",
+                  "parentId": "0",
+                  "topRow": 38,
+                  "bottomRow": 42,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Your households",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "ExistingHouseholds",
+                  "displayName": "Table",
+                  "type": "TABLE_WIDGET_V2",
+                  "widgetId": "existinghouseholds",
+                  "parentId": "0",
+                  "topRow": 43,
+                  "bottomRow": 68,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "tableData": "{{Array.isArray(ListHouseholds.data) ? ListHouseholds.data : []}}",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 3,
+                  "defaultPageSize": 0,
+                  "isVisibleDownload": true,
+                  "isVisibleFilters": true,
+                  "isVisibleSearch": true,
+                  "isVisiblePagination": true,
+                  "label": "Households",
+                  "searchKey": "",
+                  "columnOrder": [
+                    "id",
+                    "display_name",
+                    "currency",
+                    "jurisdiction"
+                  ],
+                  "primaryColumns": {
+                    "id": {
+                      "index": 0,
+                      "width": 150,
+                      "originalId": "id",
+                      "id": "id",
+                      "alias": "id",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": false,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "ID",
+                      "computedValue": "{{(ExistingHouseholds.tableData || []).map((currentRow) => currentRow[\"id\"])}}"
+                    },
+                    "display_name": {
+                      "index": 1,
+                      "width": 150,
+                      "originalId": "display_name",
+                      "id": "display_name",
+                      "alias": "display_name",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Household",
+                      "computedValue": "{{(ExistingHouseholds.tableData || []).map((currentRow) => currentRow[\"display_name\"])}}"
+                    },
+                    "currency": {
+                      "index": 2,
+                      "width": 150,
+                      "originalId": "currency",
+                      "id": "currency",
+                      "alias": "currency",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Currency",
+                      "computedValue": "{{(ExistingHouseholds.tableData || []).map((currentRow) => currentRow[\"currency\"])}}"
+                    },
+                    "jurisdiction": {
+                      "index": 3,
+                      "width": 150,
+                      "originalId": "jurisdiction",
+                      "id": "jurisdiction",
+                      "alias": "jurisdiction",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Jurisdiction",
+                      "computedValue": "{{(ExistingHouseholds.tableData || []).map((currentRow) => currentRow[\"jurisdiction\"])}}"
+                    }
+                  },
+                  "derivedColumns": {},
+                  "columnSizeMap": {},
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "tableData"
+                    },
+                    {
+                      "key": "primaryColumns.id.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.display_name.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.currency.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.jurisdiction.computedValue"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "UseHouseholdButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "usehouseholdbutton",
+                  "parentId": "0",
+                  "topRow": 70,
+                  "bottomRow": 74,
+                  "leftColumn": 2,
+                  "rightColumn": 22,
+                  "text": "Use selected household",
+                  "onClick": "{{storeValue('householdId', ExistingHouseholds.selectedRow.id, true); storeValue('householdName', ExistingHouseholds.selectedRow.display_name, true); showAlert('Household selected', 'success'); navigateTo('Home')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!ExistingHouseholds.selectedRow || !ExistingHouseholds.selectedRow.id}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "RefreshHouseholdsButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "refreshhouseholdsbutton",
+                  "parentId": "0",
+                  "topRow": 70,
+                  "bottomRow": 74,
+                  "leftColumn": 24,
+                  "rightColumn": 40,
+                  "text": "Refresh list",
+                  "onClick": "{{ListHouseholds.run()}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                }
+              ]
+            },
+            "layoutOnLoadActions": [
+              [
+                {
+                  "id": "Households_ListHouseholds",
+                  "name": "ListHouseholds",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ]
+            ],
+            "layoutOnLoadActionErrors": [],
+            "validOnPageLoadActions": true,
+            "deleted": false,
+            "policies": [],
+            "userPermissions": []
+          }
+        ],
+        "userPermissions": [],
+        "policies": []
+      },
+      "publishedPage": {
+        "name": "Households",
+        "slug": "households",
+        "layouts": [
+          {
+            "id": "Households",
+            "viewMode": false,
+            "dsl": {
+              "widgetName": "MainContainer",
+              "backgroundColor": "#F7F8FA",
+              "rightColumn": 1224,
+              "snapColumns": 64,
+              "detachFromLayout": true,
+              "widgetId": "0",
+              "topRow": 0,
+              "bottomRow": 1100,
+              "containerStyle": "none",
+              "snapRows": 110,
+              "parentRowSpace": 1,
+              "type": "CANVAS_WIDGET",
+              "canExtend": true,
+              "version": 77,
+              "minHeight": 1100,
+              "parentColumnSpace": 1,
+              "dynamicBindingPathList": [],
+              "children": [
+                {
+                  "widgetName": "PageTitle",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "pagetitle",
+                  "parentId": "0",
+                  "topRow": 1,
+                  "bottomRow": 6,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Households",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "HouseholdContext",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "householdcontext",
+                  "parentId": "0",
+                  "topRow": 6,
+                  "bottomRow": 10,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "{{appsmith.store.householdName || 'No household selected'}}",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "NavHome",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhome",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 0,
+                  "rightColumn": 8,
+                  "text": "Home",
+                  "onClick": "{{navigateTo('Home', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavHouseholds",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhouseholds",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 8,
+                  "rightColumn": 16,
+                  "text": "Households",
+                  "onClick": "{{navigateTo('Households', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavSettings",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navsettings",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 16,
+                  "rightColumn": 24,
+                  "text": "Settings",
+                  "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "HouseholdHelp",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "householdhelp",
+                  "parentId": "0",
+                  "topRow": 17,
+                  "bottomRow": 21,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Create a household or select one you already use. Currency is always explicit.",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "HouseholdName",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "householdname",
+                  "parentId": "0",
+                  "topRow": 22,
+                  "bottomRow": 29,
+                  "leftColumn": 2,
+                  "rightColumn": 30,
+                  "label": "Household name",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Household name",
+                  "inputType": "TEXT",
+                  "isRequired": true,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "HouseholdCurrency",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "householdcurrency",
+                  "parentId": "0",
+                  "topRow": 22,
+                  "bottomRow": 29,
+                  "leftColumn": 31,
+                  "rightColumn": 47,
+                  "label": "Currency code (for example AUD or USD)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Currency code (for example AUD or USD)",
+                  "inputType": "TEXT",
+                  "isRequired": true,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "HouseholdJurisdiction",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "householdjurisdiction",
+                  "parentId": "0",
+                  "topRow": 22,
+                  "bottomRow": 29,
+                  "leftColumn": 48,
+                  "rightColumn": 62,
+                  "label": "Jurisdiction (optional)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Jurisdiction (optional)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "CreateHouseholdButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "createhouseholdbutton",
+                  "parentId": "0",
+                  "topRow": 31,
+                  "bottomRow": 35,
+                  "leftColumn": 2,
+                  "rightColumn": 20,
+                  "text": "Create household",
+                  "onClick": "{{CreateHousehold.run(() => { storeValue('householdId', CreateHousehold.data.id, true); storeValue('householdName', CreateHousehold.data.display_name, true); showAlert('Household created and selected', 'success'); ListHouseholds.run(); navigateTo('Home'); }, () => showAlert(JSON.stringify(CreateHousehold.data?.detail || 'Could not create household'), 'error'))}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!(HouseholdName.text || '').trim() || !/^[A-Za-z]{3}$/.test((HouseholdCurrency.text || '').trim())}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "ExistingHouseholdsLabel",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "existinghouseholdslabel",
+                  "parentId": "0",
+                  "topRow": 38,
+                  "bottomRow": 42,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Your households",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "ExistingHouseholds",
+                  "displayName": "Table",
+                  "type": "TABLE_WIDGET_V2",
+                  "widgetId": "existinghouseholds",
+                  "parentId": "0",
+                  "topRow": 43,
+                  "bottomRow": 68,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "tableData": "{{Array.isArray(ListHouseholds.data) ? ListHouseholds.data : []}}",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 3,
+                  "defaultPageSize": 0,
+                  "isVisibleDownload": true,
+                  "isVisibleFilters": true,
+                  "isVisibleSearch": true,
+                  "isVisiblePagination": true,
+                  "label": "Households",
+                  "searchKey": "",
+                  "columnOrder": [
+                    "id",
+                    "display_name",
+                    "currency",
+                    "jurisdiction"
+                  ],
+                  "primaryColumns": {
+                    "id": {
+                      "index": 0,
+                      "width": 150,
+                      "originalId": "id",
+                      "id": "id",
+                      "alias": "id",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": false,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "ID",
+                      "computedValue": "{{(ExistingHouseholds.tableData || []).map((currentRow) => currentRow[\"id\"])}}"
+                    },
+                    "display_name": {
+                      "index": 1,
+                      "width": 150,
+                      "originalId": "display_name",
+                      "id": "display_name",
+                      "alias": "display_name",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Household",
+                      "computedValue": "{{(ExistingHouseholds.tableData || []).map((currentRow) => currentRow[\"display_name\"])}}"
+                    },
+                    "currency": {
+                      "index": 2,
+                      "width": 150,
+                      "originalId": "currency",
+                      "id": "currency",
+                      "alias": "currency",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Currency",
+                      "computedValue": "{{(ExistingHouseholds.tableData || []).map((currentRow) => currentRow[\"currency\"])}}"
+                    },
+                    "jurisdiction": {
+                      "index": 3,
+                      "width": 150,
+                      "originalId": "jurisdiction",
+                      "id": "jurisdiction",
+                      "alias": "jurisdiction",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Jurisdiction",
+                      "computedValue": "{{(ExistingHouseholds.tableData || []).map((currentRow) => currentRow[\"jurisdiction\"])}}"
+                    }
+                  },
+                  "derivedColumns": {},
+                  "columnSizeMap": {},
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "tableData"
+                    },
+                    {
+                      "key": "primaryColumns.id.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.display_name.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.currency.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.jurisdiction.computedValue"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "UseHouseholdButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "usehouseholdbutton",
+                  "parentId": "0",
+                  "topRow": 70,
+                  "bottomRow": 74,
+                  "leftColumn": 2,
+                  "rightColumn": 22,
+                  "text": "Use selected household",
+                  "onClick": "{{storeValue('householdId', ExistingHouseholds.selectedRow.id, true); storeValue('householdName', ExistingHouseholds.selectedRow.display_name, true); showAlert('Household selected', 'success'); navigateTo('Home')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!ExistingHouseholds.selectedRow || !ExistingHouseholds.selectedRow.id}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "RefreshHouseholdsButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "refreshhouseholdsbutton",
+                  "parentId": "0",
+                  "topRow": 70,
+                  "bottomRow": 74,
+                  "leftColumn": 24,
+                  "rightColumn": 40,
+                  "text": "Refresh list",
+                  "onClick": "{{ListHouseholds.run()}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                }
+              ]
+            },
+            "layoutOnLoadActions": [
+              [
+                {
+                  "id": "Households_ListHouseholds",
+                  "name": "ListHouseholds",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ]
+            ],
+            "layoutOnLoadActionErrors": [],
+            "validOnPageLoadActions": true,
+            "deleted": false,
+            "policies": [],
+            "userPermissions": []
+          }
+        ],
+        "userPermissions": [],
+        "policies": []
+      },
+      "deleted": false,
+      "gitSyncId": "phase10_1"
     },
     {
       "unpublishedPage": {
@@ -595,16 +2053,16 @@
                   "dynamicTriggerPathList": []
                 },
                 {
-                  "widgetName": "FoundationNotice",
+                  "widgetName": "HouseholdContext",
                   "displayName": "Text",
                   "type": "TEXT_WIDGET",
-                  "widgetId": "foundationnotice",
+                  "widgetId": "householdcontext",
                   "parentId": "0",
                   "topRow": 6,
                   "bottomRow": 10,
                   "leftColumn": 2,
                   "rightColumn": 62,
-                  "text": "Phase 10A provides the tested application shell and connection settings. Household workflows arrive in the next focused PR.",
+                  "text": "{{appsmith.store.householdName || 'No household selected'}}",
                   "isVisible": true,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -664,6 +2122,42 @@
                   ]
                 },
                 {
+                  "widgetName": "NavHouseholds",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhouseholds",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 8,
+                  "rightColumn": 16,
+                  "text": "Households",
+                  "onClick": "{{navigateTo('Households', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -671,8 +2165,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 8,
-                  "rightColumn": 16,
+                  "leftColumn": 16,
+                  "rightColumn": 24,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -801,7 +2295,7 @@
                   "leftColumn": 2,
                   "rightColumn": 20,
                   "text": "Save connection",
-                  "onClick": "{{storeValue('apiToken', BearerToken.text || '', false); storeValue('developmentSubject', DevelopmentSubject.text || '', false); showAlert('Connection saved for this session', 'success')}}",
+                  "onClick": "{{(async () => { await storeValue('apiToken', BearerToken.text || '', false); await storeValue('developmentSubject', DevelopmentSubject.text || '', false); if (!appsmith.store.householdId) { showAlert('Connection saved for this session', 'success'); return; } RestoreSelectedHousehold.run(async () => { const household = Array.isArray(RestoreSelectedHousehold.data) ? RestoreSelectedHousehold.data.find((item) => item.id === appsmith.store.householdId) : undefined; if (household) { await storeValue('householdName', household.display_name, true); showAlert('Connection saved and household restored', 'success'); } else { await removeValue('householdId'); await removeValue('householdName'); showAlert('The saved household is no longer available. Choose another household.', 'error'); navigateTo('Households'); } }, () => showAlert('Connection saved, but the saved household could not be verified', 'error')); })()}}",
                   "isVisible": true,
                   "isDisabled": false,
                   "isLoading": false,
@@ -979,16 +2473,16 @@
                   "dynamicTriggerPathList": []
                 },
                 {
-                  "widgetName": "FoundationNotice",
+                  "widgetName": "HouseholdContext",
                   "displayName": "Text",
                   "type": "TEXT_WIDGET",
-                  "widgetId": "foundationnotice",
+                  "widgetId": "householdcontext",
                   "parentId": "0",
                   "topRow": 6,
                   "bottomRow": 10,
                   "leftColumn": 2,
                   "rightColumn": 62,
-                  "text": "Phase 10A provides the tested application shell and connection settings. Household workflows arrive in the next focused PR.",
+                  "text": "{{appsmith.store.householdName || 'No household selected'}}",
                   "isVisible": true,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -1048,6 +2542,42 @@
                   ]
                 },
                 {
+                  "widgetName": "NavHouseholds",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhouseholds",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 8,
+                  "rightColumn": 16,
+                  "text": "Households",
+                  "onClick": "{{navigateTo('Households', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -1055,8 +2585,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 8,
-                  "rightColumn": 16,
+                  "leftColumn": 16,
+                  "rightColumn": 24,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -1185,7 +2715,7 @@
                   "leftColumn": 2,
                   "rightColumn": 20,
                   "text": "Save connection",
-                  "onClick": "{{storeValue('apiToken', BearerToken.text || '', false); storeValue('developmentSubject', DevelopmentSubject.text || '', false); showAlert('Connection saved for this session', 'success')}}",
+                  "onClick": "{{(async () => { await storeValue('apiToken', BearerToken.text || '', false); await storeValue('developmentSubject', DevelopmentSubject.text || '', false); if (!appsmith.store.householdId) { showAlert('Connection saved for this session', 'success'); return; } RestoreSelectedHousehold.run(async () => { const household = Array.isArray(RestoreSelectedHousehold.data) ? RestoreSelectedHousehold.data.find((item) => item.id === appsmith.store.householdId) : undefined; if (household) { await storeValue('householdName', household.display_name, true); showAlert('Connection saved and household restored', 'success'); } else { await removeValue('householdId'); await removeValue('householdName'); showAlert('The saved household is no longer available. Choose another household.', 'error'); navigateTo('Households'); } }, () => showAlert('Connection saved, but the saved household could not be verified', 'error')); })()}}",
                   "isVisible": true,
                   "isDisabled": false,
                   "isLoading": false,
@@ -1304,20 +2834,262 @@
         "policies": []
       },
       "deleted": false,
-      "gitSyncId": "phase10_1"
+      "gitSyncId": "phase10_2"
     }
   ],
   "pageOrder": [
     "Home",
+    "Households",
     "Settings"
   ],
   "publishedPageOrder": [
     "Home",
+    "Households",
     "Settings"
   ],
   "publishedDefaultPageName": "Home",
   "unpublishedDefaultPageName": "Home",
   "actionList": [
+    {
+      "id": "Households_ListHouseholds",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "ListHouseholds",
+        "validName": "ListHouseholds",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Households",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/households",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "ListHouseholds",
+        "validName": "ListHouseholds",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Households",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/households",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
+    },
+    {
+      "id": "Households_CreateHousehold",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "CreateHousehold",
+        "validName": "CreateHousehold",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Households",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/households",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "POST",
+          "formData": {
+            "apiContentType": "application/json"
+          },
+          "body": "{{({ display_name: String(HouseholdName.text || '').trim(), currency: String(HouseholdCurrency.text || '').trim().toUpperCase(), jurisdiction: String(HouseholdJurisdiction.text || '').trim().toUpperCase() || null })}}"
+        },
+        "runBehaviour": "MANUAL",
+        "dynamicBindingPathList": [
+          {
+            "key": "body"
+          }
+        ],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "({ display_name: String(HouseholdName.text || '').trim(), currency: String(HouseholdCurrency.text || '').trim().toUpperCase(), jurisdiction: String(HouseholdJurisdiction.text || '').trim().toUpperCase() || null })"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "CreateHousehold",
+        "validName": "CreateHousehold",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Households",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/households",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "POST",
+          "formData": {
+            "apiContentType": "application/json"
+          },
+          "body": "{{({ display_name: String(HouseholdName.text || '').trim(), currency: String(HouseholdCurrency.text || '').trim().toUpperCase(), jurisdiction: String(HouseholdJurisdiction.text || '').trim().toUpperCase() || null })}}"
+        },
+        "runBehaviour": "MANUAL",
+        "dynamicBindingPathList": [
+          {
+            "key": "body"
+          }
+        ],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "({ display_name: String(HouseholdName.text || '').trim(), currency: String(HouseholdCurrency.text || '').trim().toUpperCase(), jurisdiction: String(HouseholdJurisdiction.text || '').trim().toUpperCase() || null })"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
+    },
     {
       "id": "Settings_HealthCheck",
       "pluginType": "API",
@@ -1430,15 +3202,132 @@
         "execute:actions",
         "manage:actions"
       ]
+    },
+    {
+      "id": "Settings_RestoreSelectedHousehold",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "RestoreSelectedHousehold",
+        "validName": "RestoreSelectedHousehold",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Settings",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/households",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "MANUAL",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "RestoreSelectedHousehold",
+        "validName": "RestoreSelectedHousehold",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Settings",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/households",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "MANUAL",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
     }
   ],
   "actionCollectionList": [],
   "updatedResources": {
     "actionList": [
-      "Settings_HealthCheck"
+      "Households_ListHouseholds",
+      "Households_CreateHousehold",
+      "Settings_HealthCheck",
+      "Settings_RestoreSelectedHousehold"
     ],
     "pageList": [
       "Home",
+      "Households",
       "Settings"
     ],
     "actionCollectionList": []

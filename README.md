@@ -86,8 +86,9 @@ country-neutral: templates are editable starting points, calculations receive ex
 metrics, and event changes are returned as a scenario layer without modifying recorded events.
 
 Phase 10 is split into focused Appsmith vertical slices. Phase 10A provides the deterministic,
-importable application shell, session-only connection settings and API health check; household and
-financial workflows follow in separately reviewed PRs. Local import instructions are in
+importable application shell, session-only connection settings and API health check. Phase 10B
+adds country-neutral household creation, listing, selection and browser restoration; financial
+workflows follow in separately reviewed PRs. Local import instructions are in
 [appsmith/README.md](appsmith/README.md). Appsmith is pinned through `APPSMITH_VERSION` so an
 upstream `latest` image cannot silently change the committed application schema.
 
