@@ -1846,16 +1846,37 @@ remain top-level; placement rules and the maintained package map live in
 
 ### Phase 10 — Appsmith user experience
 
-Deliver:
+Phase 10 is delivered through sequential, independently reviewable vertical-slice PRs. Each slice
+must be merged before the next begins, include automated tests and a short edit-mode and deployed-
+mode manual review, and keep generated Appsmith JSON outside the handwritten review budget.
 
-- onboarding;
-- responsive dashboard;
-- people;
-- properties;
-- property wizard;
-- timeline;
-- scenarios;
-- settings.
+- **10A — foundation:** pinned Appsmith, deterministic generator/export, shared API datasource,
+  session-only authentication settings, navigation shell and connection health check.
+- **10B — household onboarding:** create, list, select and restore a household.
+- **10C — people identity:** create and list configurable people without implying that their
+  finances are complete.
+- **10D — person finances:** income sources and tax settings with country-neutral provider use.
+- **10E — household cash flow:** expenses and backend-calculated household cash-flow summaries.
+- **10F — property setup:** current position and purchase-history workflows with friendly summary
+  fields and explicit total property debt.
+- **10G — ownership and loans:** ownership allocation and zero, one or multiple actual loans.
+- **10H — retirement:** configurable accounts, contributions and provider-backed projections.
+- **10I — timeline:** unified historical, current, planned and projected provenance.
+- **10J — scenarios:** saved custom scenarios, templates and comparisons.
+- **10K — dashboard and polish:** useful financial summaries, responsive review and cross-flow
+  integration.
+
+No slice is done when its edit-mode behaviour differs from its deployed application behaviour.
+
+The Appsmith application must be stored as a deterministic, importable export in the repository;
+UI configuration that exists only inside a local Docker volume is not complete. The application
+must keep financial calculations in FastAPI, store no credentials or personal defaults in its
+export, and support bearer-token authentication plus explicitly enabled local development auth.
+
+Acceptance requires automated export-regeneration and structure tests, all backend regression
+tests, successful import into the pinned Appsmith container, responsive desktop/mobile review,
+and a manual happy-path review covering household setup, a person, a property snapshot, timeline
+display, a saved scenario and returning to the same household.
 
 ### Phase 11 — Open-source release readiness
 
