@@ -51,6 +51,8 @@ Record the Appsmith version, browser, viewport sizes and results before merging.
   empty, failed and refreshed responses.
 - Household cells: computed independently from raw `tableData`; columns do not read derived or
   processed values from one another.
+- Household column identity: every column has a unique v1.93 `id`, `originalId` and `alias`, with
+  a structural test mirroring Appsmith's computed-value injection.
 - Dynamic create body: dependency metadata present in both edit and published snapshots.
 - Restored selection: verified after authentication and cleared when no longer accessible.
 - Backend regression suite: 107 passed with 92% coverage.

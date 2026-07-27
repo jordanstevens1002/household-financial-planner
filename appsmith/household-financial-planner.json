@@ -1177,7 +1177,9 @@
                     "id": {
                       "index": 0,
                       "width": 150,
+                      "originalId": "id",
                       "id": "id",
+                      "alias": "id",
                       "horizontalAlignment": "LEFT",
                       "verticalAlignment": "CENTER",
                       "columnType": "text",
@@ -1194,7 +1196,9 @@
                     "display_name": {
                       "index": 1,
                       "width": 150,
+                      "originalId": "display_name",
                       "id": "display_name",
+                      "alias": "display_name",
                       "horizontalAlignment": "LEFT",
                       "verticalAlignment": "CENTER",
                       "columnType": "text",
@@ -1211,7 +1215,9 @@
                     "currency": {
                       "index": 2,
                       "width": 150,
+                      "originalId": "currency",
                       "id": "currency",
+                      "alias": "currency",
                       "horizontalAlignment": "LEFT",
                       "verticalAlignment": "CENTER",
                       "columnType": "text",
@@ -1228,7 +1234,9 @@
                     "jurisdiction": {
                       "index": 3,
                       "width": 150,
+                      "originalId": "jurisdiction",
                       "id": "jurisdiction",
+                      "alias": "jurisdiction",
                       "horizontalAlignment": "LEFT",
                       "verticalAlignment": "CENTER",
                       "columnType": "text",
@@ -1787,7 +1795,9 @@
                     "id": {
                       "index": 0,
                       "width": 150,
+                      "originalId": "id",
                       "id": "id",
+                      "alias": "id",
                       "horizontalAlignment": "LEFT",
                       "verticalAlignment": "CENTER",
                       "columnType": "text",
@@ -1804,7 +1814,9 @@
                     "display_name": {
                       "index": 1,
                       "width": 150,
+                      "originalId": "display_name",
                       "id": "display_name",
+                      "alias": "display_name",
                       "horizontalAlignment": "LEFT",
                       "verticalAlignment": "CENTER",
                       "columnType": "text",
@@ -1821,7 +1833,9 @@
                     "currency": {
                       "index": 2,
                       "width": 150,
+                      "originalId": "currency",
                       "id": "currency",
+                      "alias": "currency",
                       "horizontalAlignment": "LEFT",
                       "verticalAlignment": "CENTER",
                       "columnType": "text",
@@ -1838,7 +1852,9 @@
                     "jurisdiction": {
                       "index": 3,
                       "width": 150,
+                      "originalId": "jurisdiction",
                       "id": "jurisdiction",
+                      "alias": "jurisdiction",
                       "horizontalAlignment": "LEFT",
                       "verticalAlignment": "CENTER",
                       "columnType": "text",

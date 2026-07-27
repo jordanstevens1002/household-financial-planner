@@ -134,7 +134,9 @@ def table(
         key: {
             "index": index,
             "width": 150,
+            "originalId": key,
             "id": key,
+            "alias": key,
             "horizontalAlignment": "LEFT",
             "verticalAlignment": "CENTER",
             "columnType": "text",

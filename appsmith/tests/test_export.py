@@ -169,13 +169,38 @@ class AppsmithExportTests(unittest.TestCase):
             table["columnOrder"],
             ["id", "display_name", "currency", "jurisdiction"],
         )
+        aliases = []
         for key in table["columnOrder"]:
             column = table["primaryColumns"][key]
+            self.assertEqual(column["id"], key)
+            self.assertEqual(column["originalId"], key)
+            self.assertEqual(column["alias"], key)
+            aliases.append(column["alias"])
             self.assertIn("ExistingHouseholds.tableData || []", column["computedValue"])
             self.assertIn(f'currentRow["{key}"]', column["computedValue"])
             self.assertNotIn("processedTableData", column["computedValue"])
             self.assertNotIn("sanitizedTableData", column["computedValue"])
             self.assertNotEqual(column["computedValue"], f"{{{{{key}}}}}")
+        self.assertEqual(len(aliases), len(set(aliases)))
+
+        # Mirror Appsmith v1.93's getFilteredTableData column injection. A missing
+        # alias makes every column overwrite the same row key with the final value.
+        source_rows = [
+            {
+                "id": "household-id",
+                "display_name": "Example home",
+                "currency": "NZD",
+                "jurisdiction": "NZ",
+            }
+        ]
+        processed_rows = [dict(row) for row in source_rows]
+        for key in table["columnOrder"]:
+            column = table["primaryColumns"][key]
+            computed_values = [row[column["originalId"]] for row in source_rows]
+            for index, value in enumerate(computed_values):
+                processed_rows[index][column["alias"]] = value
+        self.assertEqual(processed_rows, source_rows)
+
         use = next(widget for widget in widgets if widget["widgetName"] == "UseHouseholdButton")
         self.assertIn("!ExistingHouseholds.selectedRow", use["isDisabled"])
 
