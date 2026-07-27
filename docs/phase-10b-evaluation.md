@@ -48,6 +48,7 @@ Record the Appsmith version, browser, viewport sizes and results before merging.
 - Country or currency defaults in household creation: none.
 - Persistent credentials or personal defaults: none.
 - Household table columns: explicit and safe for empty, failed and refreshed responses.
+- Dynamic create body: dependency metadata present in both edit and published snapshots.
 - Restored selection: verified after authentication and cleared when no longer accessible.
 - Backend regression suite: 107 passed with 92% coverage.
 - Ruff, formatting and Mypy: passed in the Python 3.14 test container.

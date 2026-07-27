@@ -355,6 +355,8 @@ def action(page: str, name: str, method: str, path: str, *, body: str = "", on_l
     }
     if body:
         configuration["body"] = body
+    dynamic_binding_paths = [{"key": "body"}] if body.startswith("{{") else []
+    json_path_keys = [body[2:-2]] if body.startswith("{{") and body.endswith("}}") else []
     entity = {
         "name": name,
         "validName": name,
@@ -362,11 +364,11 @@ def action(page: str, name: str, method: str, path: str, *, body: str = "", on_l
         "pageId": page,
         "actionConfiguration": configuration,
         "runBehaviour": "ON_PAGE_LOAD" if on_load else "MANUAL",
-        "dynamicBindingPathList": [],
+        "dynamicBindingPathList": dynamic_binding_paths,
         "isValid": True,
         "invalids": [],
         "messages": [],
-        "jsonPathKeys": [],
+        "jsonPathKeys": json_path_keys,
         "confirmBeforeExecute": False,
         "userPermissions": [],
     }

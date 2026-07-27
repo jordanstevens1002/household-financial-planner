@@ -109,6 +109,12 @@ class AppsmithExportTests(unittest.TestCase):
             "/api/v1/households",
         )
         self.assertEqual(actions["CreateHousehold"]["actionConfiguration"]["httpMethod"], "POST")
+        self.assertEqual(
+            actions["CreateHousehold"]["dynamicBindingPathList"],
+            [{"key": "body"}],
+        )
+        self.assertEqual(len(actions["CreateHousehold"]["jsonPathKeys"]), 1)
+        self.assertIn("HouseholdName.text", actions["CreateHousehold"]["jsonPathKeys"][0])
 
     def test_household_selection_is_persistent_but_credentials_are_not(self) -> None:
         households = next(
