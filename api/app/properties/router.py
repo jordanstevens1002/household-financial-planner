@@ -35,6 +35,7 @@ from app.properties.schemas import (
     PropertyCreate,
     PropertyRead,
     PropertySetupMode,
+    PropertySummaryRead,
     PropertyWizardCreate,
     PropertyWizardRead,
     ValuationCreate,
@@ -129,6 +130,54 @@ async def list_properties(
     return list(
         await session.scalars(select(Property).where(Property.household_id == household_id))
     )
+
+
+@router.get(
+    "/households/{household_id}/property-summaries",
+    response_model=list[PropertySummaryRead],
+)
+async def list_property_summaries(
+    household_id: uuid.UUID,
+    _: Annotated[HouseholdMembership, Depends(require_household_role(HouseholdRole.VIEWER))],
+    session: AsyncSession = Depends(get_session),
+) -> list[PropertySummaryRead]:
+    properties = list(
+        await session.scalars(
+            select(Property)
+            .where(Property.household_id == household_id)
+            .order_by(Property.display_name, Property.id)
+        )
+    )
+    summaries: list[PropertySummaryRead] = []
+    for property_record in properties:
+        baseline = await session.scalar(
+            select(PropertyBaseline)
+            .where(PropertyBaseline.property_id == property_record.id)
+            .order_by(PropertyBaseline.baseline_date.desc(), PropertyBaseline.id.desc())
+            .limit(1)
+        )
+        if baseline is not None:
+            setup_mode = PropertySetupMode.CURRENT_SNAPSHOT
+        elif property_record.purchase_date is not None:
+            setup_mode = PropertySetupMode.HISTORICAL_PURCHASE
+        else:
+            setup_mode = None
+        summaries.append(
+            PropertySummaryRead(
+                id=property_record.id,
+                display_name=property_record.display_name,
+                property_type_id=property_record.property_type_id,
+                current_status_id=property_record.current_status_id,
+                currency=property_record.default_currency,
+                purchase_date=property_record.purchase_date,
+                purchase_price=property_record.purchase_price,
+                setup_mode=setup_mode,
+                position_date=baseline.baseline_date if baseline else None,
+                current_value=baseline.property_value if baseline else None,
+                total_property_debt=baseline.loan_balance_total if baseline else None,
+            )
+        )
+    return summaries
 
 
 @router.post("/households/{household_id}/properties", response_model=PropertyRead, status_code=201)

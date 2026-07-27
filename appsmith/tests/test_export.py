@@ -15,12 +15,20 @@ class AppsmithExportTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.application = json.loads(EXPORT.read_text(encoding="utf-8"))
 
-    def test_export_has_supported_schema_and_cashflow_slice_pages(self) -> None:
+    def test_export_has_supported_schema_and_property_slice_pages(self) -> None:
         self.assertEqual(self.application["clientSchemaVersion"], 1)
         self.assertEqual(self.application["serverSchemaVersion"], 6)
         self.assertEqual(
             self.application["pageOrder"],
-            ["Home", "Households", "People", "Person finances", "Cash flow", "Settings"],
+            [
+                "Home",
+                "Households",
+                "People",
+                "Person finances",
+                "Cash flow",
+                "Properties",
+                "Settings",
+            ],
         )
         self.assertEqual(self.application["publishedDefaultPageName"], "Home")
 
@@ -50,7 +58,7 @@ class AppsmithExportTests(unittest.TestCase):
 
     def test_api_actions_use_runtime_auth_and_docker_service_url(self) -> None:
         actions = self.application["actionList"]
-        self.assertEqual(len(actions), 17)
+        self.assertEqual(len(actions), 21)
         for wrapper in actions:
             action = wrapper["unpublishedAction"]
             self.assertEqual(
@@ -304,10 +312,9 @@ class AppsmithExportTests(unittest.TestCase):
             aliases.append(column["alias"])
         self.assertEqual(len(aliases), len(set(aliases)))
 
-    def test_person_finance_slice_does_not_include_later_workflows(self) -> None:
+    def test_export_does_not_include_workflows_after_phase_10f(self) -> None:
         source = EXPORT.read_text(encoding="utf-8")
         for deferred_name in (
-            "CreateProperty",
             "CreateScenario",
             "ListTimeline",
         ):
@@ -743,7 +750,11 @@ class AppsmithExportTests(unittest.TestCase):
         for page in self.application["pageList"]:
             widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
             cashflow = next(widget for widget in widgets if widget["widgetName"] == "NavCashflow")
+            properties = next(
+                widget for widget in widgets if widget["widgetName"] == "NavProperties"
+            )
             self.assertIn("!appsmith.store.householdId", cashflow["isDisabled"])
+            self.assertIn("!appsmith.store.householdId", properties["isDisabled"])
             navigation = [widget for widget in widgets if widget["widgetName"].startswith("Nav")]
             self.assertEqual(
                 [widget["widgetName"] for widget in navigation],
@@ -753,9 +764,104 @@ class AppsmithExportTests(unittest.TestCase):
                     "NavPeople",
                     "NavPersonfinances",
                     "NavCashflow",
+                    "NavProperties",
                     "NavSettings",
                 ],
             )
+
+    def test_property_actions_use_lookups_and_household_scoped_wizard(self) -> None:
+        actions = {
+            item["unpublishedAction"]["name"]: item["unpublishedAction"]
+            for item in self.application["actionList"]
+        }
+        self.assertEqual(
+            actions["ListPropertyTypes"]["actionConfiguration"]["path"],
+            "/api/v1/lookups/property_type",
+        )
+        self.assertEqual(
+            actions["ListPropertyStatuses"]["actionConfiguration"]["path"],
+            "/api/v1/lookups/property_status",
+        )
+        self.assertEqual(
+            actions["ListPropertySummaries"]["actionConfiguration"]["path"],
+            "/api/v1/households/{{appsmith.store.householdId}}/property-summaries",
+        )
+        create = actions["CreatePropertySetup"]
+        self.assertEqual(
+            create["actionConfiguration"]["path"],
+            "/api/v1/households/{{appsmith.store.householdId}}/properties/wizard",
+        )
+        body = create["actionConfiguration"]["body"]
+        for value in (
+            "CURRENT_SNAPSHOT",
+            "HISTORICAL_PURCHASE",
+            "PropertyCurrentValue.text",
+            "PropertyTotalDebt.text",
+            "PropertyPurchaseDate.text",
+            "PropertyPurchasePrice.text",
+        ):
+            self.assertIn(value, body)
+        self.assertNotIn("default_currency", body)
+        self.assertNotIn("loan_balance_total: 0", body)
+
+    def test_property_setup_is_progressive_and_material_values_are_explicit(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Properties"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        by_name = {widget["widgetName"]: widget for widget in widgets}
+        self.assertIn("ShowPropertyListButton", by_name)
+        self.assertIn("ShowPropertySetupButton", by_name)
+        self.assertNotIn("SelectHousehold", by_name)
+        self.assertIn("does not mean the property is debt-free", by_name["PropertySetupHelp"]["text"])
+        disabled = by_name["CreatePropertyButton"]["isDisabled"]
+        for required in (
+            "appsmith.store.householdId",
+            "PropertySetupMode.selectedOptionValue",
+            "PropertyName.text",
+            "PropertyType.selectedOptionValue",
+            "PropertyStatus.selectedOptionValue",
+            "PropertyCurrentValue.text",
+            "PropertyTotalDebt.text",
+            "PropertyPurchaseDate.text",
+            "PropertyPurchasePrice.text",
+        ):
+            self.assertIn(required, disabled)
+        list_widgets = [
+            widget
+            for widget in widgets
+            if "propertySection || 'LIST'" in str(widget.get("isVisible", ""))
+        ]
+        setup_widgets = [
+            widget
+            for widget in widgets
+            if "propertySection === 'SETUP'" in str(widget.get("isVisible", ""))
+        ]
+        self.assertLess(
+            max(widget["bottomRow"] for widget in list_widgets),
+            min(widget["topRow"] for widget in setup_widgets),
+        )
+
+    def test_property_summary_exposes_debt_without_inventing_missing_values(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Properties"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        table = next(widget for widget in widgets if widget["widgetName"] == "PropertiesTable")
+        self.assertIn("total_property_debt", table["tableData"])
+        self.assertIn("Not recorded", table["tableData"])
+        self.assertEqual(
+            table["primaryColumns"]["total_debt_display"]["label"],
+            "Total property debt",
+        )
+        aliases = [
+            table["primaryColumns"][key]["alias"] for key in table["columnOrder"]
+        ]
+        self.assertEqual(len(aliases), len(set(aliases)))
 
 
 if __name__ == "__main__":

@@ -26,6 +26,10 @@
         "isDefault": false
       },
       {
+        "id": "Properties",
+        "isDefault": false
+      },
+      {
         "id": "Settings",
         "isDefault": false
       }
@@ -49,6 +53,10 @@
       },
       {
         "id": "Cash flow",
+        "isDefault": false
+      },
+      {
+        "id": "Properties",
         "isDefault": false
       },
       {
@@ -350,6 +358,45 @@
                   ]
                 },
                 {
+                  "widgetName": "NavProperties",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navproperties",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 40,
+                  "rightColumn": 48,
+                  "text": "Properties",
+                  "onClick": "{{navigateTo('Properties', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -357,8 +404,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 40,
-                  "rightColumn": 48,
+                  "leftColumn": 48,
+                  "rightColumn": 56,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -782,6 +829,45 @@
                   ]
                 },
                 {
+                  "widgetName": "NavProperties",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navproperties",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 40,
+                  "rightColumn": 48,
+                  "text": "Properties",
+                  "onClick": "{{navigateTo('Properties', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -789,8 +875,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 40,
-                  "rightColumn": 48,
+                  "leftColumn": 48,
+                  "rightColumn": 56,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -1218,6 +1304,45 @@
                   ]
                 },
                 {
+                  "widgetName": "NavProperties",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navproperties",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 40,
+                  "rightColumn": 48,
+                  "text": "Properties",
+                  "onClick": "{{navigateTo('Properties', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -1225,8 +1350,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 40,
-                  "rightColumn": 48,
+                  "leftColumn": 48,
+                  "rightColumn": 56,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -1950,6 +2075,45 @@
                   ]
                 },
                 {
+                  "widgetName": "NavProperties",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navproperties",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 40,
+                  "rightColumn": 48,
+                  "text": "Properties",
+                  "onClick": "{{navigateTo('Properties', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -1957,8 +2121,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 40,
-                  "rightColumn": 48,
+                  "leftColumn": 48,
+                  "rightColumn": 56,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -2686,6 +2850,45 @@
                   ]
                 },
                 {
+                  "widgetName": "NavProperties",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navproperties",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 40,
+                  "rightColumn": 48,
+                  "text": "Properties",
+                  "onClick": "{{navigateTo('Properties', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -2693,8 +2896,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 40,
-                  "rightColumn": 48,
+                  "leftColumn": 48,
+                  "rightColumn": 56,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -3633,6 +3836,45 @@
                   ]
                 },
                 {
+                  "widgetName": "NavProperties",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navproperties",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 40,
+                  "rightColumn": 48,
+                  "text": "Properties",
+                  "onClick": "{{navigateTo('Properties', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -3640,8 +3882,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 40,
-                  "rightColumn": 48,
+                  "leftColumn": 48,
+                  "rightColumn": 56,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -4584,6 +4826,45 @@
                   ]
                 },
                 {
+                  "widgetName": "NavProperties",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navproperties",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 40,
+                  "rightColumn": 48,
+                  "text": "Properties",
+                  "onClick": "{{navigateTo('Properties', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -4591,8 +4872,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 40,
-                  "rightColumn": 48,
+                  "leftColumn": 48,
+                  "rightColumn": 56,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -6424,6 +6705,45 @@
                   ]
                 },
                 {
+                  "widgetName": "NavProperties",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navproperties",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 40,
+                  "rightColumn": 48,
+                  "text": "Properties",
+                  "onClick": "{{navigateTo('Properties', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -6431,8 +6751,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 40,
-                  "rightColumn": 48,
+                  "leftColumn": 48,
+                  "rightColumn": 56,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -8268,6 +8588,45 @@
                   ]
                 },
                 {
+                  "widgetName": "NavProperties",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navproperties",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 40,
+                  "rightColumn": 48,
+                  "text": "Properties",
+                  "onClick": "{{navigateTo('Properties', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -8275,8 +8634,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 40,
-                  "rightColumn": 48,
+                  "leftColumn": 48,
+                  "rightColumn": 56,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -10082,6 +10441,45 @@
                   ]
                 },
                 {
+                  "widgetName": "NavProperties",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navproperties",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 40,
+                  "rightColumn": 48,
+                  "text": "Properties",
+                  "onClick": "{{navigateTo('Properties', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -10089,8 +10487,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 40,
-                  "rightColumn": 48,
+                  "leftColumn": 48,
+                  "rightColumn": 56,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -11622,6 +12020,2862 @@
     },
     {
       "unpublishedPage": {
+        "name": "Properties",
+        "slug": "properties",
+        "layouts": [
+          {
+            "id": "Properties",
+            "viewMode": false,
+            "dsl": {
+              "widgetName": "MainContainer",
+              "backgroundColor": "#F7F8FA",
+              "rightColumn": 1224,
+              "snapColumns": 64,
+              "detachFromLayout": true,
+              "widgetId": "0",
+              "topRow": 0,
+              "bottomRow": 1100,
+              "containerStyle": "none",
+              "snapRows": 110,
+              "parentRowSpace": 1,
+              "type": "CANVAS_WIDGET",
+              "canExtend": true,
+              "version": 77,
+              "minHeight": 1100,
+              "parentColumnSpace": 1,
+              "dynamicBindingPathList": [],
+              "children": [
+                {
+                  "widgetName": "PageTitle",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "pagetitle",
+                  "parentId": "0",
+                  "topRow": 1,
+                  "bottomRow": 6,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Properties",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "HouseholdContext",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "householdcontext",
+                  "parentId": "0",
+                  "topRow": 6,
+                  "bottomRow": 10,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "{{appsmith.store.householdName || 'No household selected'}}",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "NavHome",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhome",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 0,
+                  "rightColumn": 8,
+                  "text": "Home",
+                  "onClick": "{{navigateTo('Home', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavHouseholds",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhouseholds",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 8,
+                  "rightColumn": 16,
+                  "text": "Households",
+                  "onClick": "{{navigateTo('Households', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavPeople",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navpeople",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 16,
+                  "rightColumn": 24,
+                  "text": "People",
+                  "onClick": "{{navigateTo('People', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavPersonfinances",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navpersonfinances",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 24,
+                  "rightColumn": 32,
+                  "text": "Person finances",
+                  "onClick": "{{navigateTo('Person finances', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.personId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavCashflow",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navcashflow",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 32,
+                  "rightColumn": 40,
+                  "text": "Cash flow",
+                  "onClick": "{{navigateTo('Cash flow', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavProperties",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navproperties",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 40,
+                  "rightColumn": 48,
+                  "text": "Properties",
+                  "onClick": "{{navigateTo('Properties', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavSettings",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navsettings",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 48,
+                  "rightColumn": 56,
+                  "text": "Settings",
+                  "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "PropertyHelp",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "propertyhelp",
+                  "parentId": "0",
+                  "topRow": 17,
+                  "bottomRow": 24,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Keep a simple picture of the household's properties. Start from a known current position, or record purchase history when current value and debt are not yet known.",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "ShowPropertyListButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "showpropertylistbutton",
+                  "parentId": "0",
+                  "topRow": 25,
+                  "bottomRow": 29,
+                  "leftColumn": 2,
+                  "rightColumn": 20,
+                  "text": "Your properties",
+                  "onClick": "{{storeValue('propertySection', 'LIST', false)}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "ShowPropertySetupButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "showpropertysetupbutton",
+                  "parentId": "0",
+                  "topRow": 25,
+                  "bottomRow": 29,
+                  "leftColumn": 22,
+                  "rightColumn": 40,
+                  "text": "Add a property",
+                  "onClick": "{{storeValue('propertySection', 'SETUP', false)}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "PropertyListHeading",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "propertylistheading",
+                  "parentId": "0",
+                  "topRow": 34,
+                  "bottomRow": 38,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Your property position",
+                  "isVisible": "{{(appsmith.store.propertySection || 'LIST') === 'LIST'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyEmptyState",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "propertyemptystate",
+                  "parentId": "0",
+                  "topRow": 39,
+                  "bottomRow": 44,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "{{Array.isArray(ListPropertySummaries.data) && ListPropertySummaries.data.length ? '' : 'No properties yet. Add the first property from a current position or its purchase history.'}}",
+                  "isVisible": "{{(appsmith.store.propertySection || 'LIST') === 'LIST'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertiesTable",
+                  "displayName": "Table",
+                  "type": "TABLE_WIDGET_V2",
+                  "widgetId": "propertiestable",
+                  "parentId": "0",
+                  "topRow": 45,
+                  "bottomRow": 74,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "tableData": "{{Array.isArray(ListPropertySummaries.data) ? ListPropertySummaries.data.map((item) => ({...item, property_type: (Array.isArray(ListPropertyTypes.data) ? ListPropertyTypes.data.find((entry) => entry.id === item.property_type_id)?.display_name : '') || 'Unknown', status: (Array.isArray(ListPropertyStatuses.data) ? ListPropertyStatuses.data.find((entry) => entry.id === item.current_status_id)?.display_name : '') || 'Unknown', setup: ({CURRENT_SNAPSHOT: 'Current position', HISTORICAL_PURCHASE: 'Purchase history'})[item.setup_mode] || 'Basic details only', purchase_price_display: item.purchase_price == null ? 'Not recorded' : item.currency + ' ' + item.purchase_price, current_value_display: item.current_value == null ? 'Not recorded' : item.currency + ' ' + item.current_value, total_debt_display: item.total_property_debt == null ? 'Not recorded' : item.currency + ' ' + item.total_property_debt})) : []}}",
+                  "isVisible": "{{(appsmith.store.propertySection || 'LIST') === 'LIST'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 3,
+                  "defaultPageSize": 0,
+                  "isVisibleDownload": true,
+                  "isVisibleFilters": true,
+                  "isVisibleSearch": true,
+                  "isVisiblePagination": true,
+                  "label": "Properties",
+                  "searchKey": "",
+                  "columnOrder": [
+                    "id",
+                    "display_name",
+                    "property_type",
+                    "status",
+                    "setup",
+                    "position_date",
+                    "current_value_display",
+                    "total_debt_display",
+                    "purchase_date",
+                    "purchase_price_display"
+                  ],
+                  "primaryColumns": {
+                    "id": {
+                      "index": 0,
+                      "width": 150,
+                      "originalId": "id",
+                      "id": "id",
+                      "alias": "id",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": false,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "ID",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"id\"])}}"
+                    },
+                    "display_name": {
+                      "index": 1,
+                      "width": 150,
+                      "originalId": "display_name",
+                      "id": "display_name",
+                      "alias": "display_name",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Property",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"display_name\"])}}"
+                    },
+                    "property_type": {
+                      "index": 2,
+                      "width": 150,
+                      "originalId": "property_type",
+                      "id": "property_type",
+                      "alias": "property_type",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Type",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"property_type\"])}}"
+                    },
+                    "status": {
+                      "index": 3,
+                      "width": 150,
+                      "originalId": "status",
+                      "id": "status",
+                      "alias": "status",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Current use",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"status\"])}}"
+                    },
+                    "setup": {
+                      "index": 4,
+                      "width": 150,
+                      "originalId": "setup",
+                      "id": "setup",
+                      "alias": "setup",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Starting information",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"setup\"])}}"
+                    },
+                    "position_date": {
+                      "index": 5,
+                      "width": 150,
+                      "originalId": "position_date",
+                      "id": "position_date",
+                      "alias": "position_date",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Position date",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"position_date\"])}}"
+                    },
+                    "current_value_display": {
+                      "index": 6,
+                      "width": 150,
+                      "originalId": "current_value_display",
+                      "id": "current_value_display",
+                      "alias": "current_value_display",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Current value",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"current_value_display\"])}}"
+                    },
+                    "total_debt_display": {
+                      "index": 7,
+                      "width": 150,
+                      "originalId": "total_debt_display",
+                      "id": "total_debt_display",
+                      "alias": "total_debt_display",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Total property debt",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"total_debt_display\"])}}"
+                    },
+                    "purchase_date": {
+                      "index": 8,
+                      "width": 150,
+                      "originalId": "purchase_date",
+                      "id": "purchase_date",
+                      "alias": "purchase_date",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Purchase date",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"purchase_date\"])}}"
+                    },
+                    "purchase_price_display": {
+                      "index": 9,
+                      "width": 150,
+                      "originalId": "purchase_price_display",
+                      "id": "purchase_price_display",
+                      "alias": "purchase_price_display",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Purchase price",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"purchase_price_display\"])}}"
+                    }
+                  },
+                  "derivedColumns": {},
+                  "columnSizeMap": {},
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "tableData"
+                    },
+                    {
+                      "key": "isVisible"
+                    },
+                    {
+                      "key": "primaryColumns.id.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.display_name.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.property_type.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.status.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.setup.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.position_date.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.current_value_display.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.total_debt_display.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.purchase_date.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.purchase_price_display.computedValue"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "RefreshPropertiesButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "refreshpropertiesbutton",
+                  "parentId": "0",
+                  "topRow": 76,
+                  "bottomRow": 80,
+                  "leftColumn": 2,
+                  "rightColumn": 20,
+                  "text": "Refresh properties",
+                  "onClick": "{{ListPropertySummaries.run()}}",
+                  "isVisible": "{{(appsmith.store.propertySection || 'LIST') === 'LIST'}}",
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "PropertySetupHeading",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "propertysetupheading",
+                  "parentId": "0",
+                  "topRow": 84,
+                  "bottomRow": 88,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Add a property",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertySetupHelp",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "propertysetuphelp",
+                  "parentId": "0",
+                  "topRow": 89,
+                  "bottomRow": 95,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Current position records a dated value and total debt. Purchase history records what was paid and does not mean the property is debt-free.",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertySetupMode",
+                  "displayName": "Select",
+                  "type": "SELECT_WIDGET",
+                  "widgetId": "propertysetupmode",
+                  "parentId": "0",
+                  "topRow": 96,
+                  "bottomRow": 103,
+                  "leftColumn": 2,
+                  "rightColumn": 30,
+                  "labelText": "How would you like to start?",
+                  "sourceData": "{{[{label: \"Start from today's position\", value: 'CURRENT_SNAPSHOT'}, {label: 'Record purchase history', value: 'HISTORICAL_PURCHASE'}]}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
+                  "defaultOptionValue": "",
+                  "placeholderText": "Choose how would you like to start?",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "sourceData"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyName",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertyname",
+                  "parentId": "0",
+                  "topRow": 96,
+                  "bottomRow": 103,
+                  "leftColumn": 31,
+                  "rightColumn": 62,
+                  "label": "Property name",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Property name",
+                  "inputType": "TEXT",
+                  "isRequired": true,
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyType",
+                  "displayName": "Select",
+                  "type": "SELECT_WIDGET",
+                  "widgetId": "propertytype",
+                  "parentId": "0",
+                  "topRow": 105,
+                  "bottomRow": 112,
+                  "leftColumn": 2,
+                  "rightColumn": 30,
+                  "labelText": "Property type",
+                  "sourceData": "{{Array.isArray(ListPropertyTypes.data) ? ListPropertyTypes.data.map((item) => ({label: item.display_name, value: item.id})) : []}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
+                  "defaultOptionValue": "",
+                  "placeholderText": "Choose property type",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "sourceData"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyStatus",
+                  "displayName": "Select",
+                  "type": "SELECT_WIDGET",
+                  "widgetId": "propertystatus",
+                  "parentId": "0",
+                  "topRow": 105,
+                  "bottomRow": 112,
+                  "leftColumn": 31,
+                  "rightColumn": 62,
+                  "labelText": "Current use",
+                  "sourceData": "{{Array.isArray(ListPropertyStatuses.data) ? ListPropertyStatuses.data.map((item) => ({label: item.display_name, value: item.id})) : []}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
+                  "defaultOptionValue": "",
+                  "placeholderText": "Choose current use",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "sourceData"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyAddress",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertyaddress",
+                  "parentId": "0",
+                  "topRow": 114,
+                  "bottomRow": 121,
+                  "leftColumn": 2,
+                  "rightColumn": 30,
+                  "label": "Street address (optional)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Street address (optional)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyLocality",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertylocality",
+                  "parentId": "0",
+                  "topRow": 114,
+                  "bottomRow": 121,
+                  "leftColumn": 31,
+                  "rightColumn": 46,
+                  "label": "Suburb or locality (optional)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Suburb or locality (optional)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyRegion",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertyregion",
+                  "parentId": "0",
+                  "topRow": 114,
+                  "bottomRow": 121,
+                  "leftColumn": 47,
+                  "rightColumn": 62,
+                  "label": "State or region (optional)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "State or region (optional)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyPositionDate",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertypositiondate",
+                  "parentId": "0",
+                  "topRow": 123,
+                  "bottomRow": 130,
+                  "leftColumn": 2,
+                  "rightColumn": 22,
+                  "label": "Position date (YYYY-MM-DD)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Position date (YYYY-MM-DD)",
+                  "inputType": "TEXT",
+                  "isRequired": "{{PropertySetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT'}}",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP' && PropertySetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isRequired"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyCurrentValue",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertycurrentvalue",
+                  "parentId": "0",
+                  "topRow": 123,
+                  "bottomRow": 130,
+                  "leftColumn": 23,
+                  "rightColumn": 42,
+                  "label": "Current value",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Current value",
+                  "inputType": "TEXT",
+                  "isRequired": "{{PropertySetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT'}}",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP' && PropertySetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isRequired"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyTotalDebt",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertytotaldebt",
+                  "parentId": "0",
+                  "topRow": 123,
+                  "bottomRow": 130,
+                  "leftColumn": 43,
+                  "rightColumn": 62,
+                  "label": "Total property debt (enter 0 if none)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Total property debt (enter 0 if none)",
+                  "inputType": "TEXT",
+                  "isRequired": "{{PropertySetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT'}}",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP' && PropertySetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isRequired"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyPurchaseDate",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertypurchasedate",
+                  "parentId": "0",
+                  "topRow": 132,
+                  "bottomRow": 139,
+                  "leftColumn": 2,
+                  "rightColumn": 30,
+                  "label": "Purchase date (YYYY-MM-DD)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Purchase date (YYYY-MM-DD)",
+                  "inputType": "TEXT",
+                  "isRequired": "{{PropertySetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE'}}",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP' && PropertySetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isRequired"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyPurchasePrice",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertypurchaseprice",
+                  "parentId": "0",
+                  "topRow": 132,
+                  "bottomRow": 139,
+                  "leftColumn": 31,
+                  "rightColumn": 62,
+                  "label": "Purchase price",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Purchase price",
+                  "inputType": "TEXT",
+                  "isRequired": "{{PropertySetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE'}}",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP' && PropertySetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isRequired"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyNotes",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertynotes",
+                  "parentId": "0",
+                  "topRow": 141,
+                  "bottomRow": 148,
+                  "leftColumn": 2,
+                  "rightColumn": 46,
+                  "label": "Notes (optional)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Notes (optional)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "CreatePropertyButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "createpropertybutton",
+                  "parentId": "0",
+                  "topRow": 150,
+                  "bottomRow": 154,
+                  "leftColumn": 2,
+                  "rightColumn": 20,
+                  "text": "Save property",
+                  "onClick": "{{CreatePropertySetup.run(() => { showAlert('Property saved', 'success'); ListPropertySummaries.run(); resetWidget('PropertySetupMode', true); resetWidget('PropertyName', true); resetWidget('PropertyType', true); resetWidget('PropertyStatus', true); resetWidget('PropertyAddress', true); resetWidget('PropertyLocality', true); resetWidget('PropertyRegion', true); resetWidget('PropertyPositionDate', true); resetWidget('PropertyCurrentValue', true); resetWidget('PropertyTotalDebt', true); resetWidget('PropertyPurchaseDate', true); resetWidget('PropertyPurchasePrice', true); resetWidget('PropertyNotes', true); storeValue('propertySection', 'LIST', false); }, () => showAlert(JSON.stringify(CreatePropertySetup.data?.detail || 'Could not save property'), 'error'))}}",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isDisabled": "{{!appsmith.store.householdId || !PropertySetupMode.selectedOptionValue || !(PropertyName.text || '').trim() || !PropertyType.selectedOptionValue || !PropertyStatus.selectedOptionValue || (PropertySetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT' && (!/^\\d{4}-\\d{2}-\\d{2}$/.test((PropertyPositionDate.text || '').trim()) || !/^\\d+(\\.\\d{1,2})?$/.test((PropertyCurrentValue.text || '').trim()) || !/^\\d+(\\.\\d{1,2})?$/.test((PropertyTotalDebt.text || '').trim()))) || (PropertySetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE' && (!/^\\d{4}-\\d{2}-\\d{2}$/.test((PropertyPurchaseDate.text || '').trim()) || !/^\\d+(\\.\\d{1,2})?$/.test((PropertyPurchasePrice.text || '').trim())))}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                }
+              ]
+            },
+            "layoutOnLoadActions": [
+              [
+                {
+                  "id": "Properties_ListPropertyTypes",
+                  "name": "ListPropertyTypes",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
+              [
+                {
+                  "id": "Properties_ListPropertyStatuses",
+                  "name": "ListPropertyStatuses",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
+              [
+                {
+                  "id": "Properties_ListPropertySummaries",
+                  "name": "ListPropertySummaries",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ]
+            ],
+            "layoutOnLoadActionErrors": [],
+            "validOnPageLoadActions": true,
+            "deleted": false,
+            "policies": [],
+            "userPermissions": []
+          }
+        ],
+        "userPermissions": [],
+        "policies": []
+      },
+      "publishedPage": {
+        "name": "Properties",
+        "slug": "properties",
+        "layouts": [
+          {
+            "id": "Properties",
+            "viewMode": false,
+            "dsl": {
+              "widgetName": "MainContainer",
+              "backgroundColor": "#F7F8FA",
+              "rightColumn": 1224,
+              "snapColumns": 64,
+              "detachFromLayout": true,
+              "widgetId": "0",
+              "topRow": 0,
+              "bottomRow": 1100,
+              "containerStyle": "none",
+              "snapRows": 110,
+              "parentRowSpace": 1,
+              "type": "CANVAS_WIDGET",
+              "canExtend": true,
+              "version": 77,
+              "minHeight": 1100,
+              "parentColumnSpace": 1,
+              "dynamicBindingPathList": [],
+              "children": [
+                {
+                  "widgetName": "PageTitle",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "pagetitle",
+                  "parentId": "0",
+                  "topRow": 1,
+                  "bottomRow": 6,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Properties",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "HouseholdContext",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "householdcontext",
+                  "parentId": "0",
+                  "topRow": 6,
+                  "bottomRow": 10,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "{{appsmith.store.householdName || 'No household selected'}}",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "NavHome",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhome",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 0,
+                  "rightColumn": 8,
+                  "text": "Home",
+                  "onClick": "{{navigateTo('Home', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavHouseholds",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navhouseholds",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 8,
+                  "rightColumn": 16,
+                  "text": "Households",
+                  "onClick": "{{navigateTo('Households', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavPeople",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navpeople",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 16,
+                  "rightColumn": 24,
+                  "text": "People",
+                  "onClick": "{{navigateTo('People', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavPersonfinances",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navpersonfinances",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 24,
+                  "rightColumn": 32,
+                  "text": "Person finances",
+                  "onClick": "{{navigateTo('Person finances', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.personId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavCashflow",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navcashflow",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 32,
+                  "rightColumn": 40,
+                  "text": "Cash flow",
+                  "onClick": "{{navigateTo('Cash flow', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavProperties",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navproperties",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 40,
+                  "rightColumn": 48,
+                  "text": "Properties",
+                  "onClick": "{{navigateTo('Properties', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "NavSettings",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navsettings",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 48,
+                  "rightColumn": 56,
+                  "text": "Settings",
+                  "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "PropertyHelp",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "propertyhelp",
+                  "parentId": "0",
+                  "topRow": 17,
+                  "bottomRow": 24,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Keep a simple picture of the household's properties. Start from a known current position, or record purchase history when current value and debt are not yet known.",
+                  "isVisible": true,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "ShowPropertyListButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "showpropertylistbutton",
+                  "parentId": "0",
+                  "topRow": 25,
+                  "bottomRow": 29,
+                  "leftColumn": 2,
+                  "rightColumn": 20,
+                  "text": "Your properties",
+                  "onClick": "{{storeValue('propertySection', 'LIST', false)}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "ShowPropertySetupButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "showpropertysetupbutton",
+                  "parentId": "0",
+                  "topRow": 25,
+                  "bottomRow": 29,
+                  "leftColumn": 22,
+                  "rightColumn": 40,
+                  "text": "Add a property",
+                  "onClick": "{{storeValue('propertySection', 'SETUP', false)}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "PropertyListHeading",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "propertylistheading",
+                  "parentId": "0",
+                  "topRow": 34,
+                  "bottomRow": 38,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Your property position",
+                  "isVisible": "{{(appsmith.store.propertySection || 'LIST') === 'LIST'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyEmptyState",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "propertyemptystate",
+                  "parentId": "0",
+                  "topRow": 39,
+                  "bottomRow": 44,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "{{Array.isArray(ListPropertySummaries.data) && ListPropertySummaries.data.length ? '' : 'No properties yet. Add the first property from a current position or its purchase history.'}}",
+                  "isVisible": "{{(appsmith.store.propertySection || 'LIST') === 'LIST'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertiesTable",
+                  "displayName": "Table",
+                  "type": "TABLE_WIDGET_V2",
+                  "widgetId": "propertiestable",
+                  "parentId": "0",
+                  "topRow": 45,
+                  "bottomRow": 74,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "tableData": "{{Array.isArray(ListPropertySummaries.data) ? ListPropertySummaries.data.map((item) => ({...item, property_type: (Array.isArray(ListPropertyTypes.data) ? ListPropertyTypes.data.find((entry) => entry.id === item.property_type_id)?.display_name : '') || 'Unknown', status: (Array.isArray(ListPropertyStatuses.data) ? ListPropertyStatuses.data.find((entry) => entry.id === item.current_status_id)?.display_name : '') || 'Unknown', setup: ({CURRENT_SNAPSHOT: 'Current position', HISTORICAL_PURCHASE: 'Purchase history'})[item.setup_mode] || 'Basic details only', purchase_price_display: item.purchase_price == null ? 'Not recorded' : item.currency + ' ' + item.purchase_price, current_value_display: item.current_value == null ? 'Not recorded' : item.currency + ' ' + item.current_value, total_debt_display: item.total_property_debt == null ? 'Not recorded' : item.currency + ' ' + item.total_property_debt})) : []}}",
+                  "isVisible": "{{(appsmith.store.propertySection || 'LIST') === 'LIST'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 3,
+                  "defaultPageSize": 0,
+                  "isVisibleDownload": true,
+                  "isVisibleFilters": true,
+                  "isVisibleSearch": true,
+                  "isVisiblePagination": true,
+                  "label": "Properties",
+                  "searchKey": "",
+                  "columnOrder": [
+                    "id",
+                    "display_name",
+                    "property_type",
+                    "status",
+                    "setup",
+                    "position_date",
+                    "current_value_display",
+                    "total_debt_display",
+                    "purchase_date",
+                    "purchase_price_display"
+                  ],
+                  "primaryColumns": {
+                    "id": {
+                      "index": 0,
+                      "width": 150,
+                      "originalId": "id",
+                      "id": "id",
+                      "alias": "id",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": false,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "ID",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"id\"])}}"
+                    },
+                    "display_name": {
+                      "index": 1,
+                      "width": 150,
+                      "originalId": "display_name",
+                      "id": "display_name",
+                      "alias": "display_name",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Property",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"display_name\"])}}"
+                    },
+                    "property_type": {
+                      "index": 2,
+                      "width": 150,
+                      "originalId": "property_type",
+                      "id": "property_type",
+                      "alias": "property_type",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Type",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"property_type\"])}}"
+                    },
+                    "status": {
+                      "index": 3,
+                      "width": 150,
+                      "originalId": "status",
+                      "id": "status",
+                      "alias": "status",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Current use",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"status\"])}}"
+                    },
+                    "setup": {
+                      "index": 4,
+                      "width": 150,
+                      "originalId": "setup",
+                      "id": "setup",
+                      "alias": "setup",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Starting information",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"setup\"])}}"
+                    },
+                    "position_date": {
+                      "index": 5,
+                      "width": 150,
+                      "originalId": "position_date",
+                      "id": "position_date",
+                      "alias": "position_date",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Position date",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"position_date\"])}}"
+                    },
+                    "current_value_display": {
+                      "index": 6,
+                      "width": 150,
+                      "originalId": "current_value_display",
+                      "id": "current_value_display",
+                      "alias": "current_value_display",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Current value",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"current_value_display\"])}}"
+                    },
+                    "total_debt_display": {
+                      "index": 7,
+                      "width": 150,
+                      "originalId": "total_debt_display",
+                      "id": "total_debt_display",
+                      "alias": "total_debt_display",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Total property debt",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"total_debt_display\"])}}"
+                    },
+                    "purchase_date": {
+                      "index": 8,
+                      "width": 150,
+                      "originalId": "purchase_date",
+                      "id": "purchase_date",
+                      "alias": "purchase_date",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Purchase date",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"purchase_date\"])}}"
+                    },
+                    "purchase_price_display": {
+                      "index": 9,
+                      "width": 150,
+                      "originalId": "purchase_price_display",
+                      "id": "purchase_price_display",
+                      "alias": "purchase_price_display",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Purchase price",
+                      "computedValue": "{{(PropertiesTable.tableData || []).map((currentRow) => currentRow[\"purchase_price_display\"])}}"
+                    }
+                  },
+                  "derivedColumns": {},
+                  "columnSizeMap": {},
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "tableData"
+                    },
+                    {
+                      "key": "isVisible"
+                    },
+                    {
+                      "key": "primaryColumns.id.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.display_name.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.property_type.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.status.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.setup.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.position_date.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.current_value_display.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.total_debt_display.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.purchase_date.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.purchase_price_display.computedValue"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "RefreshPropertiesButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "refreshpropertiesbutton",
+                  "parentId": "0",
+                  "topRow": 76,
+                  "bottomRow": 80,
+                  "leftColumn": 2,
+                  "rightColumn": 20,
+                  "text": "Refresh properties",
+                  "onClick": "{{ListPropertySummaries.run()}}",
+                  "isVisible": "{{(appsmith.store.propertySection || 'LIST') === 'LIST'}}",
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "PropertySetupHeading",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "propertysetupheading",
+                  "parentId": "0",
+                  "topRow": 84,
+                  "bottomRow": 88,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Add a property",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertySetupHelp",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "propertysetuphelp",
+                  "parentId": "0",
+                  "topRow": 89,
+                  "bottomRow": 95,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Current position records a dated value and total debt. Purchase history records what was paid and does not mean the property is debt-free.",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertySetupMode",
+                  "displayName": "Select",
+                  "type": "SELECT_WIDGET",
+                  "widgetId": "propertysetupmode",
+                  "parentId": "0",
+                  "topRow": 96,
+                  "bottomRow": 103,
+                  "leftColumn": 2,
+                  "rightColumn": 30,
+                  "labelText": "How would you like to start?",
+                  "sourceData": "{{[{label: \"Start from today's position\", value: 'CURRENT_SNAPSHOT'}, {label: 'Record purchase history', value: 'HISTORICAL_PURCHASE'}]}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
+                  "defaultOptionValue": "",
+                  "placeholderText": "Choose how would you like to start?",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "sourceData"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyName",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertyname",
+                  "parentId": "0",
+                  "topRow": 96,
+                  "bottomRow": 103,
+                  "leftColumn": 31,
+                  "rightColumn": 62,
+                  "label": "Property name",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Property name",
+                  "inputType": "TEXT",
+                  "isRequired": true,
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyType",
+                  "displayName": "Select",
+                  "type": "SELECT_WIDGET",
+                  "widgetId": "propertytype",
+                  "parentId": "0",
+                  "topRow": 105,
+                  "bottomRow": 112,
+                  "leftColumn": 2,
+                  "rightColumn": 30,
+                  "labelText": "Property type",
+                  "sourceData": "{{Array.isArray(ListPropertyTypes.data) ? ListPropertyTypes.data.map((item) => ({label: item.display_name, value: item.id})) : []}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
+                  "defaultOptionValue": "",
+                  "placeholderText": "Choose property type",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "sourceData"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyStatus",
+                  "displayName": "Select",
+                  "type": "SELECT_WIDGET",
+                  "widgetId": "propertystatus",
+                  "parentId": "0",
+                  "topRow": 105,
+                  "bottomRow": 112,
+                  "leftColumn": 31,
+                  "rightColumn": 62,
+                  "labelText": "Current use",
+                  "sourceData": "{{Array.isArray(ListPropertyStatuses.data) ? ListPropertyStatuses.data.map((item) => ({label: item.display_name, value: item.id})) : []}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
+                  "defaultOptionValue": "",
+                  "placeholderText": "Choose current use",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "sourceData"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyAddress",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertyaddress",
+                  "parentId": "0",
+                  "topRow": 114,
+                  "bottomRow": 121,
+                  "leftColumn": 2,
+                  "rightColumn": 30,
+                  "label": "Street address (optional)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Street address (optional)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyLocality",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertylocality",
+                  "parentId": "0",
+                  "topRow": 114,
+                  "bottomRow": 121,
+                  "leftColumn": 31,
+                  "rightColumn": 46,
+                  "label": "Suburb or locality (optional)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Suburb or locality (optional)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyRegion",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertyregion",
+                  "parentId": "0",
+                  "topRow": 114,
+                  "bottomRow": 121,
+                  "leftColumn": 47,
+                  "rightColumn": 62,
+                  "label": "State or region (optional)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "State or region (optional)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyPositionDate",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertypositiondate",
+                  "parentId": "0",
+                  "topRow": 123,
+                  "bottomRow": 130,
+                  "leftColumn": 2,
+                  "rightColumn": 22,
+                  "label": "Position date (YYYY-MM-DD)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Position date (YYYY-MM-DD)",
+                  "inputType": "TEXT",
+                  "isRequired": "{{PropertySetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT'}}",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP' && PropertySetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isRequired"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyCurrentValue",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertycurrentvalue",
+                  "parentId": "0",
+                  "topRow": 123,
+                  "bottomRow": 130,
+                  "leftColumn": 23,
+                  "rightColumn": 42,
+                  "label": "Current value",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Current value",
+                  "inputType": "TEXT",
+                  "isRequired": "{{PropertySetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT'}}",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP' && PropertySetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isRequired"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyTotalDebt",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertytotaldebt",
+                  "parentId": "0",
+                  "topRow": 123,
+                  "bottomRow": 130,
+                  "leftColumn": 43,
+                  "rightColumn": 62,
+                  "label": "Total property debt (enter 0 if none)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Total property debt (enter 0 if none)",
+                  "inputType": "TEXT",
+                  "isRequired": "{{PropertySetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT'}}",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP' && PropertySetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isRequired"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyPurchaseDate",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertypurchasedate",
+                  "parentId": "0",
+                  "topRow": 132,
+                  "bottomRow": 139,
+                  "leftColumn": 2,
+                  "rightColumn": 30,
+                  "label": "Purchase date (YYYY-MM-DD)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Purchase date (YYYY-MM-DD)",
+                  "inputType": "TEXT",
+                  "isRequired": "{{PropertySetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE'}}",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP' && PropertySetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isRequired"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyPurchasePrice",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertypurchaseprice",
+                  "parentId": "0",
+                  "topRow": 132,
+                  "bottomRow": 139,
+                  "leftColumn": 31,
+                  "rightColumn": 62,
+                  "label": "Purchase price",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Purchase price",
+                  "inputType": "TEXT",
+                  "isRequired": "{{PropertySetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE'}}",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP' && PropertySetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isRequired"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "PropertyNotes",
+                  "displayName": "Input",
+                  "type": "INPUT_WIDGET_V2",
+                  "widgetId": "propertynotes",
+                  "parentId": "0",
+                  "topRow": 141,
+                  "bottomRow": 148,
+                  "leftColumn": 2,
+                  "rightColumn": 46,
+                  "label": "Notes (optional)",
+                  "labelPosition": "Top",
+                  "defaultText": "",
+                  "placeholderText": "Notes (optional)",
+                  "inputType": "TEXT",
+                  "isRequired": false,
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 2,
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "CreatePropertyButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "createpropertybutton",
+                  "parentId": "0",
+                  "topRow": 150,
+                  "bottomRow": 154,
+                  "leftColumn": 2,
+                  "rightColumn": 20,
+                  "text": "Save property",
+                  "onClick": "{{CreatePropertySetup.run(() => { showAlert('Property saved', 'success'); ListPropertySummaries.run(); resetWidget('PropertySetupMode', true); resetWidget('PropertyName', true); resetWidget('PropertyType', true); resetWidget('PropertyStatus', true); resetWidget('PropertyAddress', true); resetWidget('PropertyLocality', true); resetWidget('PropertyRegion', true); resetWidget('PropertyPositionDate', true); resetWidget('PropertyCurrentValue', true); resetWidget('PropertyTotalDebt', true); resetWidget('PropertyPurchaseDate', true); resetWidget('PropertyPurchasePrice', true); resetWidget('PropertyNotes', true); storeValue('propertySection', 'LIST', false); }, () => showAlert(JSON.stringify(CreatePropertySetup.data?.detail || 'Could not save property'), 'error'))}}",
+                  "isVisible": "{{appsmith.store.propertySection === 'SETUP'}}",
+                  "isDisabled": "{{!appsmith.store.householdId || !PropertySetupMode.selectedOptionValue || !(PropertyName.text || '').trim() || !PropertyType.selectedOptionValue || !PropertyStatus.selectedOptionValue || (PropertySetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT' && (!/^\\d{4}-\\d{2}-\\d{2}$/.test((PropertyPositionDate.text || '').trim()) || !/^\\d+(\\.\\d{1,2})?$/.test((PropertyCurrentValue.text || '').trim()) || !/^\\d+(\\.\\d{1,2})?$/.test((PropertyTotalDebt.text || '').trim()))) || (PropertySetupMode.selectedOptionValue === 'HISTORICAL_PURCHASE' && (!/^\\d{4}-\\d{2}-\\d{2}$/.test((PropertyPurchaseDate.text || '').trim()) || !/^\\d+(\\.\\d{1,2})?$/.test((PropertyPurchasePrice.text || '').trim())))}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                }
+              ]
+            },
+            "layoutOnLoadActions": [
+              [
+                {
+                  "id": "Properties_ListPropertyTypes",
+                  "name": "ListPropertyTypes",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
+              [
+                {
+                  "id": "Properties_ListPropertyStatuses",
+                  "name": "ListPropertyStatuses",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
+              [
+                {
+                  "id": "Properties_ListPropertySummaries",
+                  "name": "ListPropertySummaries",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ]
+            ],
+            "layoutOnLoadActionErrors": [],
+            "validOnPageLoadActions": true,
+            "deleted": false,
+            "policies": [],
+            "userPermissions": []
+          }
+        ],
+        "userPermissions": [],
+        "policies": []
+      },
+      "deleted": false,
+      "gitSyncId": "phase10_5"
+    },
+    {
+      "unpublishedPage": {
         "name": "Settings",
         "slug": "settings",
         "layouts": [
@@ -11900,6 +15154,45 @@
                   ]
                 },
                 {
+                  "widgetName": "NavProperties",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navproperties",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 40,
+                  "rightColumn": 48,
+                  "text": "Properties",
+                  "onClick": "{{navigateTo('Properties', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -11907,8 +15200,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 40,
-                  "rightColumn": 48,
+                  "leftColumn": 48,
+                  "rightColumn": 56,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -12434,6 +15727,45 @@
                   ]
                 },
                 {
+                  "widgetName": "NavProperties",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "navproperties",
+                  "parentId": "0",
+                  "topRow": 11,
+                  "bottomRow": 15,
+                  "leftColumn": 40,
+                  "rightColumn": 48,
+                  "text": "Properties",
+                  "onClick": "{{navigateTo('Properties', {}, 'SAME_WINDOW')}}",
+                  "isVisible": true,
+                  "isDisabled": "{{!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "isDisabled"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
                   "widgetName": "NavSettings",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
@@ -12441,8 +15773,8 @@
                   "parentId": "0",
                   "topRow": 11,
                   "bottomRow": 15,
-                  "leftColumn": 40,
-                  "rightColumn": 48,
+                  "leftColumn": 48,
+                  "rightColumn": 56,
                   "text": "Settings",
                   "onClick": "{{navigateTo('Settings', {}, 'SAME_WINDOW')}}",
                   "isVisible": true,
@@ -12690,7 +16022,7 @@
         "policies": []
       },
       "deleted": false,
-      "gitSyncId": "phase10_5"
+      "gitSyncId": "phase10_6"
     }
   ],
   "pageOrder": [
@@ -12699,6 +16031,7 @@
     "People",
     "Person finances",
     "Cash flow",
+    "Properties",
     "Settings"
   ],
   "publishedPageOrder": [
@@ -12707,6 +16040,7 @@
     "People",
     "Person finances",
     "Cash flow",
+    "Properties",
     "Settings"
   ],
   "publishedDefaultPageName": "Home",
@@ -14522,6 +17856,478 @@
       ]
     },
     {
+      "id": "Properties_ListPropertyTypes",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "ListPropertyTypes",
+        "validName": "ListPropertyTypes",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Properties",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/lookups/property_type",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "ListPropertyTypes",
+        "validName": "ListPropertyTypes",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Properties",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/lookups/property_type",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
+    },
+    {
+      "id": "Properties_ListPropertyStatuses",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "ListPropertyStatuses",
+        "validName": "ListPropertyStatuses",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Properties",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/lookups/property_status",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "ListPropertyStatuses",
+        "validName": "ListPropertyStatuses",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Properties",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/lookups/property_status",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
+    },
+    {
+      "id": "Properties_ListPropertySummaries",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "ListPropertySummaries",
+        "validName": "ListPropertySummaries",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Properties",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/households/{{appsmith.store.householdId}}/property-summaries",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "ListPropertySummaries",
+        "validName": "ListPropertySummaries",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Properties",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/households/{{appsmith.store.householdId}}/property-summaries",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
+    },
+    {
+      "id": "Properties_CreatePropertySetup",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "CreatePropertySetup",
+        "validName": "CreatePropertySetup",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Properties",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/households/{{appsmith.store.householdId}}/properties/wizard",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "POST",
+          "formData": {
+            "apiContentType": "application/json"
+          },
+          "body": "{{PropertySetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT' ? ({ mode: 'CURRENT_SNAPSHOT', property: { display_name: String(PropertyName.text || '').trim(), property_type_id: PropertyType.selectedOptionValue, current_status_id: PropertyStatus.selectedOptionValue, address_line_1: String(PropertyAddress.text || '').trim() || null, suburb_or_locality: String(PropertyLocality.text || '').trim() || null, state_or_region: String(PropertyRegion.text || '').trim() || null, notes: String(PropertyNotes.text || '').trim() || null }, baseline: { baseline_date: String(PropertyPositionDate.text || '').trim(), property_value: Number(PropertyCurrentValue.text), loan_balance_total: Number(PropertyTotalDebt.text), status_id: PropertyStatus.selectedOptionValue }, ownership: [] }) : ({ mode: 'HISTORICAL_PURCHASE', property: { display_name: String(PropertyName.text || '').trim(), property_type_id: PropertyType.selectedOptionValue, current_status_id: PropertyStatus.selectedOptionValue, address_line_1: String(PropertyAddress.text || '').trim() || null, suburb_or_locality: String(PropertyLocality.text || '').trim() || null, state_or_region: String(PropertyRegion.text || '').trim() || null, purchase_date: String(PropertyPurchaseDate.text || '').trim(), purchase_price: Number(PropertyPurchasePrice.text), notes: String(PropertyNotes.text || '').trim() || null }, ownership: [] })}}"
+        },
+        "runBehaviour": "MANUAL",
+        "dynamicBindingPathList": [
+          {
+            "key": "body"
+          }
+        ],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId",
+          "PropertySetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT' ? ({ mode: 'CURRENT_SNAPSHOT', property: { display_name: String(PropertyName.text || '').trim(), property_type_id: PropertyType.selectedOptionValue, current_status_id: PropertyStatus.selectedOptionValue, address_line_1: String(PropertyAddress.text || '').trim() || null, suburb_or_locality: String(PropertyLocality.text || '').trim() || null, state_or_region: String(PropertyRegion.text || '').trim() || null, notes: String(PropertyNotes.text || '').trim() || null }, baseline: { baseline_date: String(PropertyPositionDate.text || '').trim(), property_value: Number(PropertyCurrentValue.text), loan_balance_total: Number(PropertyTotalDebt.text), status_id: PropertyStatus.selectedOptionValue }, ownership: [] }) : ({ mode: 'HISTORICAL_PURCHASE', property: { display_name: String(PropertyName.text || '').trim(), property_type_id: PropertyType.selectedOptionValue, current_status_id: PropertyStatus.selectedOptionValue, address_line_1: String(PropertyAddress.text || '').trim() || null, suburb_or_locality: String(PropertyLocality.text || '').trim() || null, state_or_region: String(PropertyRegion.text || '').trim() || null, purchase_date: String(PropertyPurchaseDate.text || '').trim(), purchase_price: Number(PropertyPurchasePrice.text), notes: String(PropertyNotes.text || '').trim() || null }, ownership: [] })"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "CreatePropertySetup",
+        "validName": "CreatePropertySetup",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Properties",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/households/{{appsmith.store.householdId}}/properties/wizard",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "POST",
+          "formData": {
+            "apiContentType": "application/json"
+          },
+          "body": "{{PropertySetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT' ? ({ mode: 'CURRENT_SNAPSHOT', property: { display_name: String(PropertyName.text || '').trim(), property_type_id: PropertyType.selectedOptionValue, current_status_id: PropertyStatus.selectedOptionValue, address_line_1: String(PropertyAddress.text || '').trim() || null, suburb_or_locality: String(PropertyLocality.text || '').trim() || null, state_or_region: String(PropertyRegion.text || '').trim() || null, notes: String(PropertyNotes.text || '').trim() || null }, baseline: { baseline_date: String(PropertyPositionDate.text || '').trim(), property_value: Number(PropertyCurrentValue.text), loan_balance_total: Number(PropertyTotalDebt.text), status_id: PropertyStatus.selectedOptionValue }, ownership: [] }) : ({ mode: 'HISTORICAL_PURCHASE', property: { display_name: String(PropertyName.text || '').trim(), property_type_id: PropertyType.selectedOptionValue, current_status_id: PropertyStatus.selectedOptionValue, address_line_1: String(PropertyAddress.text || '').trim() || null, suburb_or_locality: String(PropertyLocality.text || '').trim() || null, state_or_region: String(PropertyRegion.text || '').trim() || null, purchase_date: String(PropertyPurchaseDate.text || '').trim(), purchase_price: Number(PropertyPurchasePrice.text), notes: String(PropertyNotes.text || '').trim() || null }, ownership: [] })}}"
+        },
+        "runBehaviour": "MANUAL",
+        "dynamicBindingPathList": [
+          {
+            "key": "body"
+          }
+        ],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId",
+          "PropertySetupMode.selectedOptionValue === 'CURRENT_SNAPSHOT' ? ({ mode: 'CURRENT_SNAPSHOT', property: { display_name: String(PropertyName.text || '').trim(), property_type_id: PropertyType.selectedOptionValue, current_status_id: PropertyStatus.selectedOptionValue, address_line_1: String(PropertyAddress.text || '').trim() || null, suburb_or_locality: String(PropertyLocality.text || '').trim() || null, state_or_region: String(PropertyRegion.text || '').trim() || null, notes: String(PropertyNotes.text || '').trim() || null }, baseline: { baseline_date: String(PropertyPositionDate.text || '').trim(), property_value: Number(PropertyCurrentValue.text), loan_balance_total: Number(PropertyTotalDebt.text), status_id: PropertyStatus.selectedOptionValue }, ownership: [] }) : ({ mode: 'HISTORICAL_PURCHASE', property: { display_name: String(PropertyName.text || '').trim(), property_type_id: PropertyType.selectedOptionValue, current_status_id: PropertyStatus.selectedOptionValue, address_line_1: String(PropertyAddress.text || '').trim() || null, suburb_or_locality: String(PropertyLocality.text || '').trim() || null, state_or_region: String(PropertyRegion.text || '').trim() || null, purchase_date: String(PropertyPurchaseDate.text || '').trim(), purchase_price: Number(PropertyPurchasePrice.text), notes: String(PropertyNotes.text || '').trim() || null }, ownership: [] })"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
+    },
+    {
       "id": "Settings_HealthCheck",
       "pluginType": "API",
       "pluginId": "restapi-plugin",
@@ -14766,6 +18572,10 @@
       "Cashflow_ListExpenses",
       "Cashflow_CreateExpense",
       "Cashflow_ReviewCashflow",
+      "Properties_ListPropertyTypes",
+      "Properties_ListPropertyStatuses",
+      "Properties_ListPropertySummaries",
+      "Properties_CreatePropertySetup",
       "Settings_HealthCheck",
       "Settings_RestoreSelectedHousehold"
     ],
@@ -14775,6 +18585,7 @@
       "People",
       "Person finances",
       "Cash flow",
+      "Properties",
       "Settings"
     ],
     "actionCollectionList": []
