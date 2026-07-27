@@ -105,6 +105,14 @@ class AppsmithExportTests(unittest.TestCase):
         self.assertIn("selectedRow?.id", use_household["isDisabled"])
         self.assertIn("selectedRow?.id", use_household["onClick"])
 
+        households = next(
+            widget for widget in widgets if widget["widgetName"] == "ExistingHouseholds"
+        )
+        self.assertEqual(
+            households["tableData"],
+            "{{JSON.parse(JSON.stringify(ListHouseholds.data || []))}}",
+        )
+
         create_household = next(
             wrapper["unpublishedAction"]
             for wrapper in self.application["actionList"]

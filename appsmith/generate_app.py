@@ -233,7 +233,12 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
                 disabled="{{!(HouseholdName.text || '').trim() || !(HouseholdCurrency.text || '').trim() || !(HouseholdJurisdiction.text || '').trim()}}",
             ),
             text("ExistingHouseholdsLabel", "Or continue with an existing household", 38, 42),
-            table("ExistingHouseholds", "{{ListHouseholds.data}}", 43, 68),
+            table(
+                "ExistingHouseholds",
+                "{{JSON.parse(JSON.stringify(ListHouseholds.data || []))}}",
+                43,
+                68,
+            ),
             button(
                 "UseHouseholdButton",
                 "Use selected household",
