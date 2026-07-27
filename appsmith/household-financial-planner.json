@@ -1161,10 +1161,97 @@
                   "renderMode": "CANVAS",
                   "version": 2,
                   "searchKey": "",
-                  "primaryColumns": {},
+                  "columnOrder": [
+                    "id",
+                    "display_name",
+                    "currency",
+                    "jurisdiction"
+                  ],
+                  "primaryColumns": {
+                    "id": {
+                      "index": 0,
+                      "width": 150,
+                      "id": "id",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": false,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "ID",
+                      "computedValue": "{{ExistingHouseholds.sanitizedTableData.map((currentRow) => (currentRow.id))}}"
+                    },
+                    "display_name": {
+                      "index": 1,
+                      "width": 150,
+                      "id": "display_name",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Household",
+                      "computedValue": "{{ExistingHouseholds.sanitizedTableData.map((currentRow) => (currentRow.display_name))}}"
+                    },
+                    "currency": {
+                      "index": 2,
+                      "width": 150,
+                      "id": "currency",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Currency",
+                      "computedValue": "{{ExistingHouseholds.sanitizedTableData.map((currentRow) => (currentRow.currency))}}"
+                    },
+                    "jurisdiction": {
+                      "index": 3,
+                      "width": 150,
+                      "id": "jurisdiction",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Jurisdiction",
+                      "computedValue": "{{ExistingHouseholds.sanitizedTableData.map((currentRow) => (currentRow.jurisdiction))}}"
+                    }
+                  },
                   "dynamicBindingPathList": [
                     {
                       "key": "tableData"
+                    },
+                    {
+                      "key": "primaryColumns.id.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.display_name.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.currency.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.jurisdiction.computedValue"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -1676,10 +1763,97 @@
                   "renderMode": "CANVAS",
                   "version": 2,
                   "searchKey": "",
-                  "primaryColumns": {},
+                  "columnOrder": [
+                    "id",
+                    "display_name",
+                    "currency",
+                    "jurisdiction"
+                  ],
+                  "primaryColumns": {
+                    "id": {
+                      "index": 0,
+                      "width": 150,
+                      "id": "id",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": false,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "ID",
+                      "computedValue": "{{ExistingHouseholds.sanitizedTableData.map((currentRow) => (currentRow.id))}}"
+                    },
+                    "display_name": {
+                      "index": 1,
+                      "width": 150,
+                      "id": "display_name",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Household",
+                      "computedValue": "{{ExistingHouseholds.sanitizedTableData.map((currentRow) => (currentRow.display_name))}}"
+                    },
+                    "currency": {
+                      "index": 2,
+                      "width": 150,
+                      "id": "currency",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Currency",
+                      "computedValue": "{{ExistingHouseholds.sanitizedTableData.map((currentRow) => (currentRow.currency))}}"
+                    },
+                    "jurisdiction": {
+                      "index": 3,
+                      "width": 150,
+                      "id": "jurisdiction",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Jurisdiction",
+                      "computedValue": "{{ExistingHouseholds.sanitizedTableData.map((currentRow) => (currentRow.jurisdiction))}}"
+                    }
+                  },
                   "dynamicBindingPathList": [
                     {
                       "key": "tableData"
+                    },
+                    {
+                      "key": "primaryColumns.id.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.display_name.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.currency.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.jurisdiction.computedValue"
                     }
                   ],
                   "dynamicTriggerPathList": []

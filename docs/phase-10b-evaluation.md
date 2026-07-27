@@ -45,6 +45,7 @@ Record the Appsmith version, browser, viewport sizes and results before merging.
 - Generated export drift: none.
 - Country or currency defaults in household creation: none.
 - Persistent credentials or personal defaults: none.
+- Household table columns: explicit and safe for empty, failed and refreshed responses.
 - Backend regression suite: 107 passed with 92% coverage.
 - Ruff, formatting and Mypy: passed in the Python 3.14 test container.
 - Alembic: at head with no new upgrade operations detected.

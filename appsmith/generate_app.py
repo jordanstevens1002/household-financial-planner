@@ -123,7 +123,35 @@ def input_widget(
     }
 
 
-def table(name: str, data: str, top: int, bottom: int) -> dict[str, Any]:
+def table(
+    name: str,
+    data: str,
+    columns: tuple[tuple[str, str, bool], ...],
+    top: int,
+    bottom: int,
+) -> dict[str, Any]:
+    primary_columns = {
+        key: {
+            "index": index,
+            "width": 150,
+            "id": key,
+            "horizontalAlignment": "LEFT",
+            "verticalAlignment": "CENTER",
+            "columnType": "text",
+            "textSize": "PARAGRAPH",
+            "enableFilter": True,
+            "enableSort": True,
+            "isVisible": visible,
+            "isDisabled": False,
+            "isCellVisible": True,
+            "isDerived": False,
+            "label": label,
+            "computedValue": (
+                f"{{{{{name}.sanitizedTableData.map((currentRow) => (currentRow.{key}))}}}}"
+            ),
+        }
+        for index, (key, label, visible) in enumerate(columns)
+    }
     return {
         "widgetName": name,
         "displayName": "Table",
@@ -140,8 +168,12 @@ def table(name: str, data: str, top: int, bottom: int) -> dict[str, Any]:
         "renderMode": "CANVAS",
         "version": 2,
         "searchKey": "",
-        "primaryColumns": {},
-        "dynamicBindingPathList": [{"key": "tableData"}],
+        "columnOrder": [key for key, _, _ in columns],
+        "primaryColumns": primary_columns,
+        "dynamicBindingPathList": [
+            {"key": "tableData"},
+            *[{"key": f"primaryColumns.{key}.computedValue"} for key, _, _ in columns],
+        ],
         "dynamicTriggerPathList": [],
     }
 
@@ -227,6 +259,12 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
             table(
                 "ExistingHouseholds",
                 "{{Array.isArray(ListHouseholds.data) ? ListHouseholds.data : []}}",
+                (
+                    ("id", "ID", False),
+                    ("display_name", "Household", True),
+                    ("currency", "Currency", True),
+                    ("jurisdiction", "Jurisdiction", True),
+                ),
                 43,
                 68,
             ),

@@ -133,6 +133,14 @@ class AppsmithExportTests(unittest.TestCase):
         widgets = households["unpublishedPage"]["layouts"][0]["dsl"]["children"]
         table = next(widget for widget in widgets if widget["widgetName"] == "ExistingHouseholds")
         self.assertIn("Array.isArray(ListHouseholds.data)", table["tableData"])
+        self.assertEqual(
+            table["columnOrder"],
+            ["id", "display_name", "currency", "jurisdiction"],
+        )
+        for key in table["columnOrder"]:
+            column = table["primaryColumns"][key]
+            self.assertIn(f"currentRow.{key}", column["computedValue"])
+            self.assertNotEqual(column["computedValue"], f"{{{{{key}}}}}")
         use = next(widget for widget in widgets if widget["widgetName"] == "UseHouseholdButton")
         self.assertIn("!ExistingHouseholds.selectedRow", use["isDisabled"])
 
