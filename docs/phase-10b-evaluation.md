@@ -47,7 +47,8 @@ Record the Appsmith version, browser, viewport sizes and results before merging.
 - Generated export drift: none.
 - Country or currency defaults in household creation: none.
 - Persistent credentials or personal defaults: none.
-- Household table columns: explicit and safe for empty, failed and refreshed responses.
+- Household table: pinned v1.93 widget schema with explicit columns, headers and safe handling for
+  empty, failed and refreshed responses.
 - Dynamic create body: dependency metadata present in both edit and published snapshots.
 - Restored selection: verified after authentication and cleared when no longer accessible.
 - Backend regression suite: 107 passed with 92% coverage.

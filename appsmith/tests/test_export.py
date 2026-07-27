@@ -161,6 +161,9 @@ class AppsmithExportTests(unittest.TestCase):
         )
         widgets = households["unpublishedPage"]["layouts"][0]["dsl"]["children"]
         table = next(widget for widget in widgets if widget["widgetName"] == "ExistingHouseholds")
+        self.assertEqual(table["type"], "TABLE_WIDGET_V2")
+        self.assertEqual(table["version"], 3)
+        self.assertEqual(table["label"], "Households")
         self.assertIn("Array.isArray(ListHouseholds.data)", table["tableData"])
         self.assertEqual(
             table["columnOrder"],
