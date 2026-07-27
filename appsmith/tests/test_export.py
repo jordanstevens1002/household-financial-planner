@@ -21,12 +21,21 @@ class AppsmithExportTests(unittest.TestCase):
         self.assertEqual(self.application["pageOrder"], ["Home", "Settings"])
         self.assertEqual(self.application["publishedDefaultPageName"], "Home")
 
-    def test_export_contains_no_credentials_or_personal_defaults(self) -> None:
+    def test_export_contains_no_credentials_or_identity_defaults(self) -> None:
         source = EXPORT.read_text(encoding="utf-8")
-        self.assertNotIn("jordan", source.lower())
         self.assertNotIn("@", source)
         self.assertNotIn('"apiToken":', source)
         self.assertNotIn('"developmentSubject":', source)
+
+        settings = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Settings"
+        )
+        widgets = settings["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        for widget_name in ("BearerToken", "DevelopmentSubject"):
+            widget = next(item for item in widgets if item["widgetName"] == widget_name)
+            self.assertEqual(widget["defaultText"], "")
 
     def test_every_page_has_navigation_and_user_facing_content(self) -> None:
         for page in self.application["pageList"]:
