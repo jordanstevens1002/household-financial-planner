@@ -49,7 +49,8 @@ Record the Appsmith version, browser, viewport sizes and results before merging.
 - Persistent credentials or personal defaults: none.
 - Household table: pinned v1.93 widget schema with explicit columns, headers and safe handling for
   empty, failed and refreshed responses.
-- Household cells: computed from v1.93 `processedTableData` with no unsafe bare-field fallback.
+- Household cells: computed independently from raw `tableData`; columns do not read derived or
+  processed values from one another.
 - Dynamic create body: dependency metadata present in both edit and published snapshots.
 - Restored selection: verified after authentication and cleared when no longer accessible.
 - Backend regression suite: 107 passed with 92% coverage.

@@ -171,9 +171,10 @@ class AppsmithExportTests(unittest.TestCase):
         )
         for key in table["columnOrder"]:
             column = table["primaryColumns"][key]
-            self.assertIn("processedTableData || []", column["computedValue"])
+            self.assertIn("ExistingHouseholds.tableData || []", column["computedValue"])
             self.assertIn(f'currentRow["{key}"]', column["computedValue"])
-            self.assertNotIn(f": {key}", column["computedValue"])
+            self.assertNotIn("processedTableData", column["computedValue"])
+            self.assertNotIn("sanitizedTableData", column["computedValue"])
             self.assertNotEqual(column["computedValue"], f"{{{{{key}}}}}")
         use = next(widget for widget in widgets if widget["widgetName"] == "UseHouseholdButton")
         self.assertIn("!ExistingHouseholds.selectedRow", use["isDisabled"])
