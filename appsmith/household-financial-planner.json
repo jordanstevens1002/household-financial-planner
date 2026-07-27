@@ -405,17 +405,17 @@
                   "dynamicTriggerPathList": []
                 },
                 {
-                  "widgetName": "OpenHouseholds",
+                  "widgetName": "ContinueSetup",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
-                  "widgetId": "openhouseholds",
+                  "widgetId": "continuesetup",
                   "parentId": "0",
                   "topRow": 32,
                   "bottomRow": 36,
                   "leftColumn": 2,
-                  "rightColumn": 20,
-                  "text": "Choose a household",
-                  "onClick": "{{navigateTo('Households')}}",
+                  "rightColumn": 26,
+                  "text": "{{appsmith.store.personId ? 'Continue with ' + appsmith.store.personName : appsmith.store.householdId ? 'Add or choose a person' : 'Choose a household'}}",
+                  "onClick": "{{navigateTo(appsmith.store.personId ? 'Person finances' : appsmith.store.householdId ? 'People' : 'Households')}}",
                   "isVisible": true,
                   "isDisabled": false,
                   "isLoading": false,
@@ -432,120 +432,9 @@
                     },
                     {
                       "key": "borderRadius"
-                    }
-                  ],
-                  "dynamicTriggerPathList": [
-                    {
-                      "key": "onClick"
-                    }
-                  ]
-                },
-                {
-                  "widgetName": "OpenPeople",
-                  "displayName": "Button",
-                  "type": "BUTTON_WIDGET",
-                  "widgetId": "openpeople",
-                  "parentId": "0",
-                  "topRow": 32,
-                  "bottomRow": 36,
-                  "leftColumn": 22,
-                  "rightColumn": 32,
-                  "text": "People",
-                  "onClick": "{{navigateTo('People')}}",
-                  "isVisible": true,
-                  "isDisabled": "{{!appsmith.store.householdId}}",
-                  "isLoading": false,
-                  "renderMode": "CANVAS",
-                  "version": 1,
-                  "buttonVariant": "PRIMARY",
-                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
-                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
-                  "animateLoading": true,
-                  "responsiveBehavior": "hug",
-                  "dynamicBindingPathList": [
-                    {
-                      "key": "buttonColor"
                     },
                     {
-                      "key": "borderRadius"
-                    },
-                    {
-                      "key": "isDisabled"
-                    }
-                  ],
-                  "dynamicTriggerPathList": [
-                    {
-                      "key": "onClick"
-                    }
-                  ]
-                },
-                {
-                  "widgetName": "OpenPersonFinances",
-                  "displayName": "Button",
-                  "type": "BUTTON_WIDGET",
-                  "widgetId": "openpersonfinances",
-                  "parentId": "0",
-                  "topRow": 32,
-                  "bottomRow": 36,
-                  "leftColumn": 34,
-                  "rightColumn": 48,
-                  "text": "Person finances",
-                  "onClick": "{{navigateTo('Person finances')}}",
-                  "isVisible": true,
-                  "isDisabled": "{{!appsmith.store.personId}}",
-                  "isLoading": false,
-                  "renderMode": "CANVAS",
-                  "version": 1,
-                  "buttonVariant": "PRIMARY",
-                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
-                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
-                  "animateLoading": true,
-                  "responsiveBehavior": "hug",
-                  "dynamicBindingPathList": [
-                    {
-                      "key": "buttonColor"
-                    },
-                    {
-                      "key": "borderRadius"
-                    },
-                    {
-                      "key": "isDisabled"
-                    }
-                  ],
-                  "dynamicTriggerPathList": [
-                    {
-                      "key": "onClick"
-                    }
-                  ]
-                },
-                {
-                  "widgetName": "OpenSettings",
-                  "displayName": "Button",
-                  "type": "BUTTON_WIDGET",
-                  "widgetId": "opensettings",
-                  "parentId": "0",
-                  "topRow": 32,
-                  "bottomRow": 36,
-                  "leftColumn": 50,
-                  "rightColumn": 62,
-                  "text": "Connection settings",
-                  "onClick": "{{navigateTo('Settings')}}",
-                  "isVisible": true,
-                  "isDisabled": false,
-                  "isLoading": false,
-                  "renderMode": "CANVAS",
-                  "version": 1,
-                  "buttonVariant": "PRIMARY",
-                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
-                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
-                  "animateLoading": true,
-                  "responsiveBehavior": "hug",
-                  "dynamicBindingPathList": [
-                    {
-                      "key": "buttonColor"
-                    },
-                    {
-                      "key": "borderRadius"
+                      "key": "text"
                     }
                   ],
                   "dynamicTriggerPathList": [
@@ -909,17 +798,17 @@
                   "dynamicTriggerPathList": []
                 },
                 {
-                  "widgetName": "OpenHouseholds",
+                  "widgetName": "ContinueSetup",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
-                  "widgetId": "openhouseholds",
+                  "widgetId": "continuesetup",
                   "parentId": "0",
                   "topRow": 32,
                   "bottomRow": 36,
                   "leftColumn": 2,
-                  "rightColumn": 20,
-                  "text": "Choose a household",
-                  "onClick": "{{navigateTo('Households')}}",
+                  "rightColumn": 26,
+                  "text": "{{appsmith.store.personId ? 'Continue with ' + appsmith.store.personName : appsmith.store.householdId ? 'Add or choose a person' : 'Choose a household'}}",
+                  "onClick": "{{navigateTo(appsmith.store.personId ? 'Person finances' : appsmith.store.householdId ? 'People' : 'Households')}}",
                   "isVisible": true,
                   "isDisabled": false,
                   "isLoading": false,
@@ -936,120 +825,9 @@
                     },
                     {
                       "key": "borderRadius"
-                    }
-                  ],
-                  "dynamicTriggerPathList": [
-                    {
-                      "key": "onClick"
-                    }
-                  ]
-                },
-                {
-                  "widgetName": "OpenPeople",
-                  "displayName": "Button",
-                  "type": "BUTTON_WIDGET",
-                  "widgetId": "openpeople",
-                  "parentId": "0",
-                  "topRow": 32,
-                  "bottomRow": 36,
-                  "leftColumn": 22,
-                  "rightColumn": 32,
-                  "text": "People",
-                  "onClick": "{{navigateTo('People')}}",
-                  "isVisible": true,
-                  "isDisabled": "{{!appsmith.store.householdId}}",
-                  "isLoading": false,
-                  "renderMode": "CANVAS",
-                  "version": 1,
-                  "buttonVariant": "PRIMARY",
-                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
-                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
-                  "animateLoading": true,
-                  "responsiveBehavior": "hug",
-                  "dynamicBindingPathList": [
-                    {
-                      "key": "buttonColor"
                     },
                     {
-                      "key": "borderRadius"
-                    },
-                    {
-                      "key": "isDisabled"
-                    }
-                  ],
-                  "dynamicTriggerPathList": [
-                    {
-                      "key": "onClick"
-                    }
-                  ]
-                },
-                {
-                  "widgetName": "OpenPersonFinances",
-                  "displayName": "Button",
-                  "type": "BUTTON_WIDGET",
-                  "widgetId": "openpersonfinances",
-                  "parentId": "0",
-                  "topRow": 32,
-                  "bottomRow": 36,
-                  "leftColumn": 34,
-                  "rightColumn": 48,
-                  "text": "Person finances",
-                  "onClick": "{{navigateTo('Person finances')}}",
-                  "isVisible": true,
-                  "isDisabled": "{{!appsmith.store.personId}}",
-                  "isLoading": false,
-                  "renderMode": "CANVAS",
-                  "version": 1,
-                  "buttonVariant": "PRIMARY",
-                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
-                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
-                  "animateLoading": true,
-                  "responsiveBehavior": "hug",
-                  "dynamicBindingPathList": [
-                    {
-                      "key": "buttonColor"
-                    },
-                    {
-                      "key": "borderRadius"
-                    },
-                    {
-                      "key": "isDisabled"
-                    }
-                  ],
-                  "dynamicTriggerPathList": [
-                    {
-                      "key": "onClick"
-                    }
-                  ]
-                },
-                {
-                  "widgetName": "OpenSettings",
-                  "displayName": "Button",
-                  "type": "BUTTON_WIDGET",
-                  "widgetId": "opensettings",
-                  "parentId": "0",
-                  "topRow": 32,
-                  "bottomRow": 36,
-                  "leftColumn": 50,
-                  "rightColumn": 62,
-                  "text": "Connection settings",
-                  "onClick": "{{navigateTo('Settings')}}",
-                  "isVisible": true,
-                  "isDisabled": false,
-                  "isLoading": false,
-                  "renderMode": "CANVAS",
-                  "version": 1,
-                  "buttonVariant": "PRIMARY",
-                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
-                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
-                  "animateLoading": true,
-                  "responsiveBehavior": "hug",
-                  "dynamicBindingPathList": [
-                    {
-                      "key": "buttonColor"
-                    },
-                    {
-                      "key": "borderRadius"
+                      "key": "text"
                     }
                   ],
                   "dynamicTriggerPathList": [
@@ -5471,8 +5249,8 @@
                   "type": "TEXT_WIDGET",
                   "widgetId": "taxheading",
                   "parentId": "0",
-                  "topRow": 47,
-                  "bottomRow": 51,
+                  "topRow": 122,
+                  "bottomRow": 126,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "text": "Tax settings",
@@ -5507,8 +5285,8 @@
                   "type": "TEXT_WIDGET",
                   "widgetId": "taxemptystate",
                   "parentId": "0",
-                  "topRow": 52,
-                  "bottomRow": 56,
+                  "topRow": 127,
+                  "bottomRow": 131,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "text": "{{Array.isArray(ListTaxProfiles.data) && ListTaxProfiles.data.length ? '' : 'No tax settings yet. Choose an installed provider or enter a manual annual net income.'}}",
@@ -5543,8 +5321,8 @@
                   "type": "SELECT_WIDGET",
                   "widgetId": "taxcalculationmode",
                   "parentId": "0",
-                  "topRow": 62,
-                  "bottomRow": 69,
+                  "topRow": 137,
+                  "bottomRow": 144,
                   "leftColumn": 2,
                   "rightColumn": 24,
                   "labelText": "Calculation method",
@@ -5574,8 +5352,8 @@
                   "type": "SELECT_WIDGET",
                   "widgetId": "taxprovideryear",
                   "parentId": "0",
-                  "topRow": 62,
-                  "bottomRow": 69,
+                  "topRow": 137,
+                  "bottomRow": 144,
                   "leftColumn": 25,
                   "rightColumn": 48,
                   "labelText": "Provider and tax year",
@@ -5605,8 +5383,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "taxparameters",
                   "parentId": "0",
-                  "topRow": 71,
-                  "bottomRow": 78,
+                  "topRow": 146,
+                  "bottomRow": 153,
                   "leftColumn": 49,
                   "rightColumn": 62,
                   "label": "Provider settings as JSON (use {} for defaults)",
@@ -5637,8 +5415,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "manualtaxjurisdiction",
                   "parentId": "0",
-                  "topRow": 71,
-                  "bottomRow": 78,
+                  "topRow": 146,
+                  "bottomRow": 153,
                   "leftColumn": 2,
                   "rightColumn": 20,
                   "label": "Jurisdiction",
@@ -5669,8 +5447,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "manualtaxyear",
                   "parentId": "0",
-                  "topRow": 71,
-                  "bottomRow": 78,
+                  "topRow": 146,
+                  "bottomRow": 153,
                   "leftColumn": 21,
                   "rightColumn": 40,
                   "label": "Tax year",
@@ -5701,8 +5479,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "manualannualnetincome",
                   "parentId": "0",
-                  "topRow": 71,
-                  "bottomRow": 78,
+                  "topRow": 146,
+                  "bottomRow": 153,
                   "leftColumn": 41,
                   "rightColumn": 62,
                   "label": "Annual net income",
@@ -5733,8 +5511,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "taxeffectivefrom",
                   "parentId": "0",
-                  "topRow": 80,
-                  "bottomRow": 87,
+                  "topRow": 155,
+                  "bottomRow": 162,
                   "leftColumn": 2,
                   "rightColumn": 24,
                   "label": "Effective from (YYYY-MM-DD)",
@@ -5765,8 +5543,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "taxeffectiveto",
                   "parentId": "0",
-                  "topRow": 80,
-                  "bottomRow": 87,
+                  "topRow": 155,
+                  "bottomRow": 162,
                   "leftColumn": 25,
                   "rightColumn": 48,
                   "label": "Effective to (optional, YYYY-MM-DD)",
@@ -5797,8 +5575,8 @@
                   "type": "BUTTON_WIDGET",
                   "widgetId": "createtaxprofilebutton",
                   "parentId": "0",
-                  "topRow": 89,
-                  "bottomRow": 93,
+                  "topRow": 164,
+                  "bottomRow": 168,
                   "leftColumn": 2,
                   "rightColumn": 20,
                   "text": "Save tax settings",
@@ -5839,8 +5617,8 @@
                   "type": "TABLE_WIDGET_V2",
                   "widgetId": "taxprofiles",
                   "parentId": "0",
-                  "topRow": 95,
-                  "bottomRow": 119,
+                  "topRow": 170,
+                  "bottomRow": 194,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "tableData": "{{Array.isArray(ListTaxProfiles.data) ? ListTaxProfiles.data.map((item) => ({...item, calculation_mode: (item.settings?.calculation_mode || 'AUTOMATIC') === 'MANUAL_NET' ? 'Manual annual net income' : 'Installed provider', manual_annual_net_income: item.settings?.manual_annual_net_income || ''})) : []}}",
@@ -7272,8 +7050,8 @@
                   "type": "TEXT_WIDGET",
                   "widgetId": "taxheading",
                   "parentId": "0",
-                  "topRow": 47,
-                  "bottomRow": 51,
+                  "topRow": 122,
+                  "bottomRow": 126,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "text": "Tax settings",
@@ -7308,8 +7086,8 @@
                   "type": "TEXT_WIDGET",
                   "widgetId": "taxemptystate",
                   "parentId": "0",
-                  "topRow": 52,
-                  "bottomRow": 56,
+                  "topRow": 127,
+                  "bottomRow": 131,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "text": "{{Array.isArray(ListTaxProfiles.data) && ListTaxProfiles.data.length ? '' : 'No tax settings yet. Choose an installed provider or enter a manual annual net income.'}}",
@@ -7344,8 +7122,8 @@
                   "type": "SELECT_WIDGET",
                   "widgetId": "taxcalculationmode",
                   "parentId": "0",
-                  "topRow": 62,
-                  "bottomRow": 69,
+                  "topRow": 137,
+                  "bottomRow": 144,
                   "leftColumn": 2,
                   "rightColumn": 24,
                   "labelText": "Calculation method",
@@ -7375,8 +7153,8 @@
                   "type": "SELECT_WIDGET",
                   "widgetId": "taxprovideryear",
                   "parentId": "0",
-                  "topRow": 62,
-                  "bottomRow": 69,
+                  "topRow": 137,
+                  "bottomRow": 144,
                   "leftColumn": 25,
                   "rightColumn": 48,
                   "labelText": "Provider and tax year",
@@ -7406,8 +7184,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "taxparameters",
                   "parentId": "0",
-                  "topRow": 71,
-                  "bottomRow": 78,
+                  "topRow": 146,
+                  "bottomRow": 153,
                   "leftColumn": 49,
                   "rightColumn": 62,
                   "label": "Provider settings as JSON (use {} for defaults)",
@@ -7438,8 +7216,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "manualtaxjurisdiction",
                   "parentId": "0",
-                  "topRow": 71,
-                  "bottomRow": 78,
+                  "topRow": 146,
+                  "bottomRow": 153,
                   "leftColumn": 2,
                   "rightColumn": 20,
                   "label": "Jurisdiction",
@@ -7470,8 +7248,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "manualtaxyear",
                   "parentId": "0",
-                  "topRow": 71,
-                  "bottomRow": 78,
+                  "topRow": 146,
+                  "bottomRow": 153,
                   "leftColumn": 21,
                   "rightColumn": 40,
                   "label": "Tax year",
@@ -7502,8 +7280,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "manualannualnetincome",
                   "parentId": "0",
-                  "topRow": 71,
-                  "bottomRow": 78,
+                  "topRow": 146,
+                  "bottomRow": 153,
                   "leftColumn": 41,
                   "rightColumn": 62,
                   "label": "Annual net income",
@@ -7534,8 +7312,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "taxeffectivefrom",
                   "parentId": "0",
-                  "topRow": 80,
-                  "bottomRow": 87,
+                  "topRow": 155,
+                  "bottomRow": 162,
                   "leftColumn": 2,
                   "rightColumn": 24,
                   "label": "Effective from (YYYY-MM-DD)",
@@ -7566,8 +7344,8 @@
                   "type": "INPUT_WIDGET_V2",
                   "widgetId": "taxeffectiveto",
                   "parentId": "0",
-                  "topRow": 80,
-                  "bottomRow": 87,
+                  "topRow": 155,
+                  "bottomRow": 162,
                   "leftColumn": 25,
                   "rightColumn": 48,
                   "label": "Effective to (optional, YYYY-MM-DD)",
@@ -7598,8 +7376,8 @@
                   "type": "BUTTON_WIDGET",
                   "widgetId": "createtaxprofilebutton",
                   "parentId": "0",
-                  "topRow": 89,
-                  "bottomRow": 93,
+                  "topRow": 164,
+                  "bottomRow": 168,
                   "leftColumn": 2,
                   "rightColumn": 20,
                   "text": "Save tax settings",
@@ -7640,8 +7418,8 @@
                   "type": "TABLE_WIDGET_V2",
                   "widgetId": "taxprofiles",
                   "parentId": "0",
-                  "topRow": 95,
-                  "bottomRow": 119,
+                  "topRow": 170,
+                  "bottomRow": 194,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "tableData": "{{Array.isArray(ListTaxProfiles.data) ? ListTaxProfiles.data.map((item) => ({...item, calculation_mode: (item.settings?.calculation_mode || 'AUTOMATIC') === 'MANUAL_NET' ? 'Manual annual net income' : 'Installed provider', manual_annual_net_income: item.settings?.manual_annual_net_income || ''})) : []}}",

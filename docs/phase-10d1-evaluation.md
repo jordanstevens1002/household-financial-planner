@@ -21,6 +21,8 @@ Confirm the following in edit mode and after deploying the imported application:
 1. A person is selected once on People and Person finances opens for that person.
 2. **Change person** returns to People; there is no second people table.
 3. Income and Tax settings act as separate progressive sections.
+   In edit mode Appsmith may show hidden widgets translucently, but the two section layouts must
+   occupy separate rows and never overlap.
 4. The empty state in each section explains what to add next.
 5. Successful submissions refresh their list and clear the completed form.
 6. Failed submissions preserve the entered values and show the backend error.
@@ -30,13 +32,15 @@ Confirm the following in edit mode and after deploying the imported application:
 10. Leaving Advanced mode hides JSON without changing the provider and year selection.
 11. Manual net-income settings remain available without an installed provider.
 12. The flow remains usable at desktop and narrow mobile widths.
+13. Home contains the primary navigation bar plus one context-aware continuation action, not a
+    second row that repeats every navigation destination.
 
 Professional currency and national-jurisdiction dropdowns, including maintained flag presentation,
 are recorded for Phase 10K because they require shared reference data and cross-application design.
 
 ## Recorded automated results
 
-- Appsmith structural tests: 28 passed.
+- Appsmith structural tests: 30 passed.
 - Generated export drift: none.
 - Duplicate person-selection widgets and actions: none.
 - Provider JSON visibility: Advanced mode only.

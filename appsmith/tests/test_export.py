@@ -531,6 +531,66 @@ class AppsmithExportTests(unittest.TestCase):
         self.assertIn("No income sources yet", income["text"])
         self.assertIn("No tax settings yet", tax["text"])
 
+    def test_hidden_finance_sections_do_not_overlap_in_edit_mode(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Person finances"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        income_names = {
+            "IncomeHeading",
+            "IncomeEmptyState",
+            "IncomeType",
+            "IncomeName",
+            "IncomeAmount",
+            "IncomeFrequency",
+            "IncomeTaxable",
+            "IncomeEffectiveFrom",
+            "IncomeEffectiveTo",
+            "IncomeGrowthRate",
+            "IncomeSalarySacrifice",
+            "IncomeNotes",
+            "CreateIncomeButton",
+            "IncomeSources",
+        }
+        tax_names = {
+            "TaxHeading",
+            "TaxEmptyState",
+            "TaxCalculationMode",
+            "TaxProviderYear",
+            "TaxParameters",
+            "ManualTaxJurisdiction",
+            "ManualTaxYear",
+            "ManualAnnualNetIncome",
+            "TaxEffectiveFrom",
+            "TaxEffectiveTo",
+            "CreateTaxProfileButton",
+            "TaxProfiles",
+        }
+        income_bottom = max(
+            widget["bottomRow"] for widget in widgets if widget["widgetName"] in income_names
+        )
+        tax_top = min(widget["topRow"] for widget in widgets if widget["widgetName"] in tax_names)
+        self.assertLess(income_bottom, tax_top)
+
+    def test_home_has_one_contextual_action_instead_of_duplicate_navigation(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Home"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        names = {widget["widgetName"] for widget in widgets}
+        self.assertIn("ContinueSetup", names)
+        for duplicate in ("OpenHouseholds", "OpenPeople", "OpenPersonFinances", "OpenSettings"):
+            self.assertNotIn(duplicate, names)
+        continue_button = next(
+            widget for widget in widgets if widget["widgetName"] == "ContinueSetup"
+        )
+        self.assertIn("appsmith.store.personId", continue_button["onClick"])
+        self.assertIn("appsmith.store.householdId", continue_button["onClick"])
+
     def test_phase_10k_records_professional_country_and_currency_selectors(self) -> None:
         plan = (ROOT.parent / "PROJECT_PLAN.md").read_text(encoding="utf-8")
         self.assertIn("currency and national-jurisdiction", plan)
