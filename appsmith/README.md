@@ -5,8 +5,10 @@
 settings to the tested household and people foundation. Installed tax providers and their supported
 years come from the backend registry; the frontend does not assume Australia or any other country.
 Phase 10D.1 removes duplicate person selection, separates the income and tax workflows, and places
-raw provider JSON behind an explicit Advanced mode. The application is generated deterministically
-by `generate_app.py`; edit the generator rather than the JSON.
+raw provider JSON behind an explicit Advanced mode. Phase 10E adds progressive household-expense
+and dated cash-flow-summary sections without adding duplicate household selection or navigation.
+The application is generated deterministically by `generate_app.py`; edit the generator rather than
+the JSON.
 
 ## Import locally
 
@@ -20,7 +22,8 @@ by `generate_app.py`; edit the generator rather than the JSON.
 6. Open **Households** to create a household or select an existing one.
 7. Open **People** to add and list identity records for the selected household.
 8. Select a person and open **Person finances** to record income and tax settings.
-9. Click **Deploy** before checking the normal launched application; edit mode and published mode
+9. Open **Cash flow** to add household expenses and calculate an explicitly dated position.
+10. Click **Deploy** before checking the normal launched application; edit mode and published mode
    use different Appsmith snapshots.
 
 No bearer token, development identity, email address, household ID or financial value is stored in

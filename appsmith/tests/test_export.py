@@ -15,12 +15,12 @@ class AppsmithExportTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.application = json.loads(EXPORT.read_text(encoding="utf-8"))
 
-    def test_export_has_supported_schema_and_person_finance_slice_pages(self) -> None:
+    def test_export_has_supported_schema_and_cashflow_slice_pages(self) -> None:
         self.assertEqual(self.application["clientSchemaVersion"], 1)
         self.assertEqual(self.application["serverSchemaVersion"], 6)
         self.assertEqual(
             self.application["pageOrder"],
-            ["Home", "Households", "People", "Person finances", "Settings"],
+            ["Home", "Households", "People", "Person finances", "Cash flow", "Settings"],
         )
         self.assertEqual(self.application["publishedDefaultPageName"], "Home")
 
@@ -50,7 +50,7 @@ class AppsmithExportTests(unittest.TestCase):
 
     def test_api_actions_use_runtime_auth_and_docker_service_url(self) -> None:
         actions = self.application["actionList"]
-        self.assertEqual(len(actions), 12)
+        self.assertEqual(len(actions), 17)
         for wrapper in actions:
             action = wrapper["unpublishedAction"]
             self.assertEqual(
@@ -135,6 +135,7 @@ class AppsmithExportTests(unittest.TestCase):
         for widget in (create, select):
             self.assertIn("storeValue('householdId'", widget["onClick"])
             self.assertIn("storeValue('householdName'", widget["onClick"])
+            self.assertIn("storeValue('householdCurrency'", widget["onClick"])
             self.assertIn(", true)", widget["onClick"])
 
     def test_saved_household_is_verified_after_authentication(self) -> None:
@@ -157,8 +158,10 @@ class AppsmithExportTests(unittest.TestCase):
         self.assertIn("await storeValue('apiToken'", save["onClick"])
         self.assertIn("RestoreSelectedHousehold.run", save["onClick"])
         self.assertIn("item.id === appsmith.store.householdId", save["onClick"])
+        self.assertIn("storeValue('householdCurrency'", save["onClick"])
         self.assertIn("removeValue('householdId')", save["onClick"])
         self.assertIn("removeValue('householdName')", save["onClick"])
+        self.assertIn("removeValue('householdCurrency')", save["onClick"])
 
     def test_household_table_guards_non_array_responses(self) -> None:
         households = next(
@@ -304,7 +307,6 @@ class AppsmithExportTests(unittest.TestCase):
     def test_person_finance_slice_does_not_include_later_workflows(self) -> None:
         source = EXPORT.read_text(encoding="utf-8")
         for deferred_name in (
-            "CreateExpense",
             "CreateProperty",
             "CreateScenario",
             "ListTimeline",
@@ -595,6 +597,163 @@ class AppsmithExportTests(unittest.TestCase):
         plan = (ROOT.parent / "PROJECT_PLAN.md").read_text(encoding="utf-8")
         self.assertIn("currency and national-jurisdiction", plan)
         self.assertIn("country/flag presentation", plan)
+
+    def test_cashflow_actions_are_household_scoped_and_backend_calculated(self) -> None:
+        actions = {
+            item["unpublishedAction"]["name"]: item["unpublishedAction"]
+            for item in self.application["actionList"]
+        }
+        self.assertEqual(
+            actions["ListExpenseTypes"]["actionConfiguration"]["path"],
+            "/api/v1/lookups/household_expense_type",
+        )
+        for name, method in (("ListExpenses", "GET"), ("CreateExpense", "POST")):
+            action = actions[name]
+            self.assertEqual(
+                action["actionConfiguration"]["path"],
+                "/api/v1/households/{{appsmith.store.householdId}}/expenses",
+            )
+            self.assertEqual(action["actionConfiguration"]["httpMethod"], method)
+            self.assertIn("appsmith.store.householdId", action["jsonPathKeys"])
+        review = actions["ReviewCashflow"]
+        self.assertEqual(review["actionConfiguration"]["httpMethod"], "GET")
+        self.assertEqual(
+            review["actionConfiguration"]["path"],
+            "/api/v1/households/{{appsmith.store.householdId}}/cashflow",
+        )
+        self.assertEqual(
+            review["actionConfiguration"]["queryParameters"],
+            [{"key": "as_of", "value": "{{CashflowAsOf.text}}"}],
+        )
+        self.assertIn("CashflowAsOf.text", review["jsonPathKeys"])
+
+    def test_expense_form_uses_lookups_and_explicit_material_values(self) -> None:
+        action = next(
+            item["unpublishedAction"]
+            for item in self.application["actionList"]
+            if item["unpublishedAction"]["name"] == "CreateExpense"
+        )
+        body = action["actionConfiguration"]["body"]
+        for widget_name in (
+            "ExpenseCategory",
+            "ExpensePerson",
+            "ExpenseName",
+            "ExpenseAmount",
+            "ExpenseFrequency",
+            "ExpenseGrowthRate",
+            "ExpenseEssential",
+            "ExpenseNotes",
+            "ExpenseEffectiveFrom",
+            "ExpenseEffectiveTo",
+        ):
+            self.assertIn(widget_name, body)
+        self.assertNotIn("category_id: '", body)
+        self.assertNotIn("amount: 0", body)
+        self.assertNotIn("frequency: '", body)
+
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Cash flow"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        create = next(widget for widget in widgets if widget["widgetName"] == "CreateExpenseButton")
+        for required in (
+            "appsmith.store.householdId",
+            "ExpenseCategory.selectedOptionValue",
+            "ExpenseAmount.text",
+            "ExpenseFrequency.selectedOptionValue",
+            "ExpenseEffectiveFrom.text",
+        ):
+            self.assertIn(required, create["isDisabled"])
+        self.assertIn("resetWidget('ExpenseName'", create["onClick"])
+
+    def test_cashflow_page_has_progressive_non_overlapping_sections(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Cash flow"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        names = {widget["widgetName"] for widget in widgets}
+        self.assertIn("ShowExpensesSectionButton", names)
+        self.assertIn("ShowSummarySectionButton", names)
+        self.assertNotIn("SelectHousehold", names)
+        expense = [
+            widget
+            for widget in widgets
+            if "cashflowSection || 'EXPENSES'" in str(widget.get("isVisible", ""))
+        ]
+        summary = [
+            widget
+            for widget in widgets
+            if "cashflowSection === 'SUMMARY'" in str(widget.get("isVisible", ""))
+        ]
+        self.assertTrue(expense)
+        self.assertTrue(summary)
+        self.assertLess(
+            max(widget["bottomRow"] for widget in expense),
+            min(widget["topRow"] for widget in summary),
+        )
+
+    def test_expense_and_projection_tables_use_friendly_values_and_distinct_columns(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Cash flow"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        expenses = next(widget for widget in widgets if widget["widgetName"] == "ExpensesTable")
+        people = next(widget for widget in widgets if widget["widgetName"] == "PeopleCashflowTable")
+        self.assertIn("Whole household", expenses["tableData"])
+        self.assertIn("Fortnightly", expenses["tableData"])
+        self.assertIn("Essential", expenses["tableData"])
+        self.assertIn("No tax settings", people["tableData"])
+        for table in (expenses, people):
+            aliases = []
+            for key in table["columnOrder"]:
+                column = table["primaryColumns"][key]
+                self.assertEqual(column["id"], key)
+                self.assertEqual(column["originalId"], key)
+                self.assertEqual(column["alias"], key)
+                aliases.append(column["alias"])
+            self.assertEqual(len(aliases), len(set(aliases)))
+
+    def test_cashflow_summary_displays_backend_metrics_currency_and_warnings(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Cash flow"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        by_name = {widget["widgetName"]: widget for widget in widgets}
+        for name, field in (
+            ("AnnualNetMetric", "annual_net_income"),
+            ("AnnualExpensesMetric", "annual_expenses"),
+            ("AnnualSurplusMetric", "annual_surplus"),
+            ("MonthlySurplusMetric", "monthly_surplus"),
+        ):
+            self.assertIn(f"ReviewCashflow.data?.{field}", by_name[name]["text"])
+            self.assertIn("ReviewCashflow.data?.currency", by_name[name]["text"])
+        self.assertIn("ReviewCashflow.data?.warnings", by_name["CashflowWarnings"]["text"])
+
+    def test_cashflow_navigation_requires_household_without_duplicate_navigation(self) -> None:
+        for page in self.application["pageList"]:
+            widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+            cashflow = next(widget for widget in widgets if widget["widgetName"] == "NavCashflow")
+            self.assertIn("!appsmith.store.householdId", cashflow["isDisabled"])
+            navigation = [widget for widget in widgets if widget["widgetName"].startswith("Nav")]
+            self.assertEqual(
+                [widget["widgetName"] for widget in navigation],
+                [
+                    "NavHome",
+                    "NavHouseholds",
+                    "NavPeople",
+                    "NavPersonfinances",
+                    "NavCashflow",
+                    "NavSettings",
+                ],
+            )
 
 
 if __name__ == "__main__":

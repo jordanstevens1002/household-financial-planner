@@ -15,6 +15,7 @@ PAGES = (
     ("Households", "households"),
     ("People", "people"),
     ("Person finances", "person-finances"),
+    ("Cash flow", "cash-flow"),
     ("Settings", "settings"),
 )
 
@@ -280,6 +281,8 @@ def common_widgets(page_name: str) -> list[dict[str, Any]]:
                 disabled=(
                     "{{!appsmith.store.personId}}"
                     if name == "Person finances"
+                    else "{{!appsmith.store.householdId}}"
+                    if name == "Cash flow"
                     else False
                 ),
             )
@@ -333,7 +336,7 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
             button(
                 "CreateHouseholdButton",
                 "Create household",
-                "{{CreateHousehold.run(async () => { await storeValue('householdId', CreateHousehold.data.id, true); await storeValue('householdName', CreateHousehold.data.display_name, true); await removeValue('personId'); await removeValue('personName'); showAlert('Household created and selected', 'success'); ListHouseholds.run(); navigateTo('Home'); }, () => showAlert(JSON.stringify(CreateHousehold.data?.detail || 'Could not create household'), 'error'))}}",
+                "{{CreateHousehold.run(async () => { await storeValue('householdId', CreateHousehold.data.id, true); await storeValue('householdName', CreateHousehold.data.display_name, true); await storeValue('householdCurrency', CreateHousehold.data.currency, true); await removeValue('personId'); await removeValue('personName'); showAlert('Household created and selected', 'success'); ListHouseholds.run(); navigateTo('Home'); }, () => showAlert(JSON.stringify(CreateHousehold.data?.detail || 'Could not create household'), 'error'))}}",
                 31,
                 2,
                 20,
@@ -356,7 +359,7 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
             button(
                 "UseHouseholdButton",
                 "Use selected household",
-                "{{(async () => { await storeValue('householdId', ExistingHouseholds.selectedRow.id, true); await storeValue('householdName', ExistingHouseholds.selectedRow.display_name, true); await removeValue('personId'); await removeValue('personName'); showAlert('Household selected', 'success'); navigateTo('Home'); })()}}",
+                "{{(async () => { await storeValue('householdId', ExistingHouseholds.selectedRow.id, true); await storeValue('householdName', ExistingHouseholds.selectedRow.display_name, true); await storeValue('householdCurrency', ExistingHouseholds.selectedRow.currency, true); await removeValue('personId'); await removeValue('personName'); showAlert('Household selected', 'success'); navigateTo('Home'); })()}}",
                 70,
                 2,
                 22,
@@ -749,6 +752,264 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
                 visible="{{appsmith.store.financeSection === 'TAX'}}",
             ),
         ]
+    elif name == "Cash flow":
+        widgets += [
+            text(
+                "CashflowHelp",
+                "Record shared or person-related household expenses, then review the backend-calculated position for an explicit date.",
+                17,
+                24,
+            ),
+            text(
+                "CashflowContext",
+                "Household: {{appsmith.store.householdName || 'choose a household first'}} • Currency: {{appsmith.store.householdCurrency || 'not set'}}",
+                25,
+                29,
+            ),
+            button(
+                "ShowExpensesSectionButton",
+                "Expenses",
+                "{{storeValue('cashflowSection', 'EXPENSES', false)}}",
+                30,
+                2,
+                16,
+            ),
+            button(
+                "ShowSummarySectionButton",
+                "Cash-flow summary",
+                "{{storeValue('cashflowSection', 'SUMMARY', false)}}",
+                30,
+                18,
+                36,
+            ),
+            text(
+                "ExpenseHeading",
+                "Household expenses",
+                47,
+                51,
+                visible="{{(appsmith.store.cashflowSection || 'EXPENSES') === 'EXPENSES'}}",
+            ),
+            text(
+                "ExpenseEmptyState",
+                "{{Array.isArray(ListExpenses.data) && ListExpenses.data.length ? '' : 'No household expenses yet. Add the first regular cost below.'}}",
+                52,
+                56,
+                visible="{{(appsmith.store.cashflowSection || 'EXPENSES') === 'EXPENSES'}}",
+            ),
+            select_widget(
+                "ExpenseCategory",
+                "Expense category",
+                "{{Array.isArray(ListExpenseTypes.data) ? ListExpenseTypes.data.map((item) => ({label: item.display_name, value: item.id})) : []}}",
+                62,
+                2,
+                18,
+                visible="{{(appsmith.store.cashflowSection || 'EXPENSES') === 'EXPENSES'}}",
+            ),
+            select_widget(
+                "ExpensePerson",
+                "Who is it for? (optional)",
+                "{{[{label: 'Whole household', value: 'HOUSEHOLD'}, ...(Array.isArray(ListCashflowPeople.data) ? ListCashflowPeople.data.map((item) => ({label: item.display_name, value: item.id})) : [])]}}",
+                62,
+                19,
+                35,
+                default="HOUSEHOLD",
+                visible="{{(appsmith.store.cashflowSection || 'EXPENSES') === 'EXPENSES'}}",
+            ),
+            input_widget(
+                "ExpenseName",
+                "Expense name",
+                62,
+                36,
+                50,
+                required=True,
+                visible="{{(appsmith.store.cashflowSection || 'EXPENSES') === 'EXPENSES'}}",
+            ),
+            input_widget(
+                "ExpenseAmount",
+                "Amount",
+                62,
+                51,
+                62,
+                required=True,
+                visible="{{(appsmith.store.cashflowSection || 'EXPENSES') === 'EXPENSES'}}",
+            ),
+            select_widget(
+                "ExpenseFrequency",
+                "Frequency",
+                "{{[{label: 'Weekly', value: 'WEEKLY'}, {label: 'Fortnightly', value: 'FORTNIGHTLY'}, {label: 'Monthly', value: 'MONTHLY'}, {label: 'Quarterly', value: 'QUARTERLY'}, {label: 'Annual', value: 'ANNUAL'}]}}",
+                71,
+                2,
+                18,
+                visible="{{(appsmith.store.cashflowSection || 'EXPENSES') === 'EXPENSES'}}",
+            ),
+            select_widget(
+                "ExpenseEssential",
+                "Priority",
+                "{{[{label: 'Essential', value: 'true'}, {label: 'Flexible', value: 'false'}]}}",
+                71,
+                19,
+                35,
+                default="true",
+                visible="{{(appsmith.store.cashflowSection || 'EXPENSES') === 'EXPENSES'}}",
+            ),
+            input_widget(
+                "ExpenseEffectiveFrom",
+                "Effective from (YYYY-MM-DD)",
+                71,
+                36,
+                50,
+                required=True,
+                visible="{{(appsmith.store.cashflowSection || 'EXPENSES') === 'EXPENSES'}}",
+            ),
+            input_widget(
+                "ExpenseEffectiveTo",
+                "Effective to (optional, YYYY-MM-DD)",
+                71,
+                51,
+                62,
+                visible="{{(appsmith.store.cashflowSection || 'EXPENSES') === 'EXPENSES'}}",
+            ),
+            input_widget(
+                "ExpenseGrowthRate",
+                "Annual growth % (optional)",
+                80,
+                2,
+                20,
+                visible="{{(appsmith.store.cashflowSection || 'EXPENSES') === 'EXPENSES'}}",
+            ),
+            input_widget(
+                "ExpenseNotes",
+                "Notes (optional)",
+                80,
+                21,
+                50,
+                visible="{{(appsmith.store.cashflowSection || 'EXPENSES') === 'EXPENSES'}}",
+            ),
+            button(
+                "CreateExpenseButton",
+                "Add expense",
+                "{{CreateExpense.run(() => { showAlert('Expense added', 'success'); ListExpenses.run(); resetWidget('ExpenseCategory', true); resetWidget('ExpensePerson', true); resetWidget('ExpenseName', true); resetWidget('ExpenseAmount', true); resetWidget('ExpenseFrequency', true); resetWidget('ExpenseEssential', true); resetWidget('ExpenseEffectiveFrom', true); resetWidget('ExpenseEffectiveTo', true); resetWidget('ExpenseGrowthRate', true); resetWidget('ExpenseNotes', true); }, () => showAlert(JSON.stringify(CreateExpense.data?.detail || 'Could not add expense'), 'error'))}}",
+                89,
+                2,
+                18,
+                disabled="{{!appsmith.store.householdId || !ExpenseCategory.selectedOptionValue || !(ExpenseName.text || '').trim() || !/^\\d+(\\.\\d{1,2})?$/.test((ExpenseAmount.text || '').trim()) || !ExpenseFrequency.selectedOptionValue || !ExpenseEssential.selectedOptionValue || !/^\\d{4}-\\d{2}-\\d{2}$/.test((ExpenseEffectiveFrom.text || '').trim()) || ((ExpenseEffectiveTo.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(ExpenseEffectiveTo.text.trim())) || ((ExpenseGrowthRate.text || '').trim() && !/^-?\\d+(\\.\\d{1,4})?$/.test(ExpenseGrowthRate.text.trim()))}}",
+                visible="{{(appsmith.store.cashflowSection || 'EXPENSES') === 'EXPENSES'}}",
+            ),
+            table(
+                "ExpensesTable",
+                "{{Array.isArray(ListExpenses.data) ? ListExpenses.data.map((item) => ({...item, person: (Array.isArray(ListCashflowPeople.data) ? ListCashflowPeople.data.find((person) => person.id === item.person_id)?.display_name : '') || 'Whole household', category: (Array.isArray(ListExpenseTypes.data) ? ListExpenseTypes.data.find((category) => category.id === item.category_id)?.display_name : '') || item.category_id, frequency: ({WEEKLY: 'Weekly', FORTNIGHTLY: 'Fortnightly', MONTHLY: 'Monthly', QUARTERLY: 'Quarterly', ANNUAL: 'Annual'})[item.frequency] || item.frequency, priority: item.is_essential ? 'Essential' : 'Flexible'})) : []}}",
+                (
+                    ("id", "ID", False),
+                    ("display_name", "Expense", True),
+                    ("category", "Category", True),
+                    ("person", "For", True),
+                    ("amount", "Amount", True),
+                    ("frequency", "Frequency", True),
+                    ("priority", "Priority", True),
+                    ("annual_growth_rate", "Annual growth %", True),
+                    ("effective_from", "Effective from", True),
+                    ("effective_to", "Effective to", True),
+                ),
+                95,
+                119,
+                label="Household expenses",
+                visible="{{(appsmith.store.cashflowSection || 'EXPENSES') === 'EXPENSES'}}",
+            ),
+            text(
+                "SummaryHeading",
+                "Cash-flow summary",
+                122,
+                126,
+                visible="{{appsmith.store.cashflowSection === 'SUMMARY'}}",
+            ),
+            text(
+                "SummaryHelp",
+                "Choose the date you want to understand. Results use income, tax settings and expenses effective on that date.",
+                127,
+                132,
+                visible="{{appsmith.store.cashflowSection === 'SUMMARY'}}",
+            ),
+            input_widget(
+                "CashflowAsOf",
+                "Position date (YYYY-MM-DD)",
+                137,
+                2,
+                24,
+                required=True,
+                visible="{{appsmith.store.cashflowSection === 'SUMMARY'}}",
+            ),
+            button(
+                "ReviewCashflowButton",
+                "Calculate position",
+                "{{ReviewCashflow.run(() => showAlert('Cash flow calculated', 'success'), () => showAlert(JSON.stringify(ReviewCashflow.data?.detail || 'Could not calculate cash flow'), 'error'))}}",
+                137,
+                26,
+                44,
+                disabled="{{!appsmith.store.householdId || !/^\\d{4}-\\d{2}-\\d{2}$/.test((CashflowAsOf.text || '').trim())}}",
+                visible="{{appsmith.store.cashflowSection === 'SUMMARY'}}",
+            ),
+            text(
+                "AnnualNetMetric",
+                "Annual net income: {{ReviewCashflow.data?.currency || ''}} {{ReviewCashflow.data?.annual_net_income || '—'}}",
+                146,
+                151,
+                2,
+                31,
+                visible="{{appsmith.store.cashflowSection === 'SUMMARY'}}",
+            ),
+            text(
+                "AnnualExpensesMetric",
+                "Annual expenses: {{ReviewCashflow.data?.currency || ''}} {{ReviewCashflow.data?.annual_expenses || '—'}}",
+                146,
+                151,
+                33,
+                62,
+                visible="{{appsmith.store.cashflowSection === 'SUMMARY'}}",
+            ),
+            text(
+                "AnnualSurplusMetric",
+                "Annual surplus: {{ReviewCashflow.data?.currency || ''}} {{ReviewCashflow.data?.annual_surplus || '—'}}",
+                153,
+                158,
+                2,
+                31,
+                visible="{{appsmith.store.cashflowSection === 'SUMMARY'}}",
+            ),
+            text(
+                "MonthlySurplusMetric",
+                "Monthly surplus: {{ReviewCashflow.data?.currency || ''}} {{ReviewCashflow.data?.monthly_surplus || '—'}}",
+                153,
+                158,
+                33,
+                62,
+                visible="{{appsmith.store.cashflowSection === 'SUMMARY'}}",
+            ),
+            text(
+                "CashflowWarnings",
+                "{{Array.isArray(ReviewCashflow.data?.warnings) && ReviewCashflow.data.warnings.length ? 'Planning notes: ' + ReviewCashflow.data.warnings.join(' • ') : ''}}",
+                160,
+                168,
+                visible="{{appsmith.store.cashflowSection === 'SUMMARY'}}",
+            ),
+            table(
+                "PeopleCashflowTable",
+                "{{Array.isArray(ReviewCashflow.data?.people) ? ReviewCashflow.data.people.map((item) => ({...item, calculation_mode: ({AUTOMATIC: 'Installed provider', MANUAL_NET: 'Manual annual net income', NO_PROFILE: 'No tax settings'})[item.calculation_mode] || item.calculation_mode, warnings: Array.isArray(item.warnings) ? item.warnings.join(' • ') : ''})) : []}}",
+                (
+                    ("person_id", "Person ID", False),
+                    ("display_name", "Person", True),
+                    ("gross_taxable_income", "Gross taxable", True),
+                    ("non_taxable_income", "Non-taxable", True),
+                    ("net_income", "Net income", True),
+                    ("tax_and_repayments", "Tax and repayments", True),
+                    ("calculation_mode", "Tax method", True),
+                    ("warnings", "Planning notes", True),
+                ),
+                170,
+                194,
+                label="People cash flow",
+                visible="{{appsmith.store.cashflowSection === 'SUMMARY'}}",
+            ),
+        ]
     else:
         widgets += [
             text(
@@ -768,7 +1029,7 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
             button(
                 "SaveSettings",
                 "Save connection",
-                "{{(async () => { await storeValue('apiToken', BearerToken.text || '', false); await storeValue('developmentSubject', DevelopmentSubject.text || '', false); if (!appsmith.store.householdId) { showAlert('Connection saved for this session', 'success'); return; } RestoreSelectedHousehold.run(async () => { const household = Array.isArray(RestoreSelectedHousehold.data) ? RestoreSelectedHousehold.data.find((item) => item.id === appsmith.store.householdId) : undefined; if (household) { await storeValue('householdName', household.display_name, true); showAlert('Connection saved and household restored', 'success'); } else { await removeValue('householdId'); await removeValue('householdName'); showAlert('The saved household is no longer available. Choose another household.', 'error'); navigateTo('Households'); } }, () => showAlert('Connection saved, but the saved household could not be verified', 'error')); })()}}",
+                "{{(async () => { await storeValue('apiToken', BearerToken.text || '', false); await storeValue('developmentSubject', DevelopmentSubject.text || '', false); if (!appsmith.store.householdId) { showAlert('Connection saved for this session', 'success'); return; } RestoreSelectedHousehold.run(async () => { const household = Array.isArray(RestoreSelectedHousehold.data) ? RestoreSelectedHousehold.data.find((item) => item.id === appsmith.store.householdId) : undefined; if (household) { await storeValue('householdName', household.display_name, true); await storeValue('householdCurrency', household.currency, true); showAlert('Connection saved and household restored', 'success'); } else { await removeValue('householdId'); await removeValue('householdName'); await removeValue('householdCurrency'); showAlert('The saved household is no longer available. Choose another household.', 'error'); navigateTo('Households'); } }, () => showAlert('Connection saved, but the saved household could not be verified', 'error')); })()}}",
                 39,
                 2,
                 20,
@@ -799,7 +1060,16 @@ def datasource() -> dict[str, Any]:
     }
 
 
-def action(page: str, name: str, method: str, path: str, *, body: str = "", on_load: bool = False) -> dict[str, Any]:
+def action(
+    page: str,
+    name: str,
+    method: str,
+    path: str,
+    *,
+    body: str = "",
+    on_load: bool = False,
+    query_parameters: tuple[tuple[str, str], ...] = (),
+) -> dict[str, Any]:
     identifier = f"{page.replace(' ', '')}_{name}"
     configuration: dict[str, Any] = {
         "timeoutInMillisecond": 10000,
@@ -811,7 +1081,9 @@ def action(page: str, name: str, method: str, path: str, *, body: str = "", on_l
             {"key": "Content-Type", "value": "application/json"},
         ],
         "encodeParamsToggle": True,
-        "queryParameters": [],
+        "queryParameters": [
+            {"key": key, "value": value} for key, value in query_parameters
+        ],
         "bodyFormData": [],
         "httpMethod": method,
         "formData": {"apiContentType": "application/json" if body else "none"},
@@ -819,7 +1091,7 @@ def action(page: str, name: str, method: str, path: str, *, body: str = "", on_l
     if body:
         configuration["body"] = body
     dynamic_binding_paths = [{"key": "body"}] if body.startswith("{{") else []
-    dynamic_sources = [path, body]
+    dynamic_sources = [path, body, *(value for _, value in query_parameters)]
     json_path_keys = [
         match.group(1).strip()
         for source in dynamic_sources
@@ -917,6 +1189,41 @@ def actions() -> list[dict[str, Any]]:
             "POST",
             "/api/v1/people/{{appsmith.store.personId}}/tax-profiles",
             body="{{TaxCalculationMode.selectedOptionValue === 'AUTOMATIC' ? ({ jurisdiction: TaxProviderYear.selectedOptionValue.split('|')[0], tax_year: TaxProviderYear.selectedOptionValue.split('|')[1], settings: { calculation_mode: 'AUTOMATIC', parameters: appsmith.store.financeAdvancedMode ? JSON.parse(TaxParameters.text || '{}') : {} }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null }) : ({ jurisdiction: String(ManualTaxJurisdiction.text || '').trim().toUpperCase(), tax_year: String(ManualTaxYear.text || '').trim(), settings: { calculation_mode: 'MANUAL_NET', manual_annual_net_income: Number(ManualAnnualNetIncome.text) }, effective_from: String(TaxEffectiveFrom.text || '').trim(), effective_to: String(TaxEffectiveTo.text || '').trim() || null })}}",
+        ),
+        action(
+            "Cash flow",
+            "ListExpenseTypes",
+            "GET",
+            "/api/v1/lookups/household_expense_type",
+            on_load=True,
+        ),
+        action(
+            "Cash flow",
+            "ListCashflowPeople",
+            "GET",
+            f"/api/v1/households/{household}/people",
+            on_load=True,
+        ),
+        action(
+            "Cash flow",
+            "ListExpenses",
+            "GET",
+            f"/api/v1/households/{household}/expenses",
+            on_load=True,
+        ),
+        action(
+            "Cash flow",
+            "CreateExpense",
+            "POST",
+            f"/api/v1/households/{household}/expenses",
+            body="{{({ category_id: ExpenseCategory.selectedOptionValue, person_id: ExpensePerson.selectedOptionValue === 'HOUSEHOLD' ? null : ExpensePerson.selectedOptionValue || null, display_name: String(ExpenseName.text || '').trim(), amount: Number(ExpenseAmount.text), frequency: ExpenseFrequency.selectedOptionValue, annual_growth_rate: String(ExpenseGrowthRate.text || '').trim() ? Number(ExpenseGrowthRate.text) : null, is_essential: ExpenseEssential.selectedOptionValue === 'true', notes: String(ExpenseNotes.text || '').trim() || null, effective_from: String(ExpenseEffectiveFrom.text || '').trim(), effective_to: String(ExpenseEffectiveTo.text || '').trim() || null })}}",
+        ),
+        action(
+            "Cash flow",
+            "ReviewCashflow",
+            "GET",
+            f"/api/v1/households/{household}/cashflow",
+            query_parameters=(("as_of", "{{CashflowAsOf.text}}"),),
         ),
         action("Settings", "HealthCheck", "GET", "/health/ready", on_load=True),
         action(
