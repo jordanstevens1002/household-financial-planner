@@ -14,6 +14,12 @@ An external provider implements the `TaxProvider` and `TaxEngine` protocols from
 - selecting a versioned engine; and
 - returning generic named components, totals, warnings, and a ruleset version.
 
+`supported_tax_years` must be ordered from oldest to newest. When a requested projection date maps
+to a year that is not installed, the cash-flow service uses the final (newest) engine as a planning
+fallback and returns a prominent warning naming both the requested and substituted years. This
+avoids treating gross income as tax-free in future projections while keeping the estimate's
+provenance explicit.
+
 Register the provider from the external package's `pyproject.toml`:
 
 ```toml

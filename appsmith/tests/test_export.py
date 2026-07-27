@@ -731,6 +731,8 @@ class AppsmithExportTests(unittest.TestCase):
             ("AnnualNetMetric", "annual_net_income"),
             ("AnnualExpensesMetric", "annual_expenses"),
             ("AnnualSurplusMetric", "annual_surplus"),
+            ("MonthlyNetMetric", "monthly_net_income"),
+            ("MonthlyExpensesMetric", "monthly_expenses"),
             ("MonthlySurplusMetric", "monthly_surplus"),
         ):
             self.assertIn(f"ReviewCashflow.data?.{field}", by_name[name]["text"])

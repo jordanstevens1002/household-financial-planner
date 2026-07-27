@@ -9394,13 +9394,85 @@
                   "dynamicTriggerPathList": []
                 },
                 {
+                  "widgetName": "MonthlyNetMetric",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "monthlynetmetric",
+                  "parentId": "0",
+                  "topRow": 153,
+                  "bottomRow": 158,
+                  "leftColumn": 33,
+                  "rightColumn": 62,
+                  "text": "Monthly net income: {{ReviewCashflow.data?.currency || ''}} {{ReviewCashflow.data?.monthly_net_income || '\u2014'}}",
+                  "isVisible": "{{appsmith.store.cashflowSection === 'SUMMARY'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "MonthlyExpensesMetric",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "monthlyexpensesmetric",
+                  "parentId": "0",
+                  "topRow": 160,
+                  "bottomRow": 165,
+                  "leftColumn": 2,
+                  "rightColumn": 31,
+                  "text": "Monthly expenses: {{ReviewCashflow.data?.currency || ''}} {{ReviewCashflow.data?.monthly_expenses || '\u2014'}}",
+                  "isVisible": "{{appsmith.store.cashflowSection === 'SUMMARY'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
                   "widgetName": "MonthlySurplusMetric",
                   "displayName": "Text",
                   "type": "TEXT_WIDGET",
                   "widgetId": "monthlysurplusmetric",
                   "parentId": "0",
-                  "topRow": 153,
-                  "bottomRow": 158,
+                  "topRow": 160,
+                  "bottomRow": 165,
                   "leftColumn": 33,
                   "rightColumn": 62,
                   "text": "Monthly surplus: {{ReviewCashflow.data?.currency || ''}} {{ReviewCashflow.data?.monthly_surplus || '\u2014'}}",
@@ -9435,8 +9507,8 @@
                   "type": "TEXT_WIDGET",
                   "widgetId": "cashflowwarnings",
                   "parentId": "0",
-                  "topRow": 160,
-                  "bottomRow": 168,
+                  "topRow": 167,
+                  "bottomRow": 175,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "text": "{{Array.isArray(ReviewCashflow.data?.warnings) && ReviewCashflow.data.warnings.length ? 'Planning notes: ' + ReviewCashflow.data.warnings.join(' \u2022 ') : ''}}",
@@ -9471,8 +9543,8 @@
                   "type": "TABLE_WIDGET_V2",
                   "widgetId": "peoplecashflowtable",
                   "parentId": "0",
-                  "topRow": 170,
-                  "bottomRow": 194,
+                  "topRow": 177,
+                  "bottomRow": 201,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "tableData": "{{Array.isArray(ReviewCashflow.data?.people) ? ReviewCashflow.data.people.map((item) => ({...item, calculation_mode: ({AUTOMATIC: 'Installed provider', MANUAL_NET: 'Manual annual net income', NO_PROFILE: 'No tax settings'})[item.calculation_mode] || item.calculation_mode, warnings: Array.isArray(item.warnings) ? item.warnings.join(' \u2022 ') : ''})) : []}}",
@@ -11136,13 +11208,85 @@
                   "dynamicTriggerPathList": []
                 },
                 {
+                  "widgetName": "MonthlyNetMetric",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "monthlynetmetric",
+                  "parentId": "0",
+                  "topRow": 153,
+                  "bottomRow": 158,
+                  "leftColumn": 33,
+                  "rightColumn": 62,
+                  "text": "Monthly net income: {{ReviewCashflow.data?.currency || ''}} {{ReviewCashflow.data?.monthly_net_income || '\u2014'}}",
+                  "isVisible": "{{appsmith.store.cashflowSection === 'SUMMARY'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "MonthlyExpensesMetric",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "monthlyexpensesmetric",
+                  "parentId": "0",
+                  "topRow": 160,
+                  "bottomRow": 165,
+                  "leftColumn": 2,
+                  "rightColumn": 31,
+                  "text": "Monthly expenses: {{ReviewCashflow.data?.currency || ''}} {{ReviewCashflow.data?.monthly_expenses || '\u2014'}}",
+                  "isVisible": "{{appsmith.store.cashflowSection === 'SUMMARY'}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
                   "widgetName": "MonthlySurplusMetric",
                   "displayName": "Text",
                   "type": "TEXT_WIDGET",
                   "widgetId": "monthlysurplusmetric",
                   "parentId": "0",
-                  "topRow": 153,
-                  "bottomRow": 158,
+                  "topRow": 160,
+                  "bottomRow": 165,
                   "leftColumn": 33,
                   "rightColumn": 62,
                   "text": "Monthly surplus: {{ReviewCashflow.data?.currency || ''}} {{ReviewCashflow.data?.monthly_surplus || '\u2014'}}",
@@ -11177,8 +11321,8 @@
                   "type": "TEXT_WIDGET",
                   "widgetId": "cashflowwarnings",
                   "parentId": "0",
-                  "topRow": 160,
-                  "bottomRow": 168,
+                  "topRow": 167,
+                  "bottomRow": 175,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "text": "{{Array.isArray(ReviewCashflow.data?.warnings) && ReviewCashflow.data.warnings.length ? 'Planning notes: ' + ReviewCashflow.data.warnings.join(' \u2022 ') : ''}}",
@@ -11213,8 +11357,8 @@
                   "type": "TABLE_WIDGET_V2",
                   "widgetId": "peoplecashflowtable",
                   "parentId": "0",
-                  "topRow": 170,
-                  "bottomRow": 194,
+                  "topRow": 177,
+                  "bottomRow": 201,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "tableData": "{{Array.isArray(ReviewCashflow.data?.people) ? ReviewCashflow.data.people.map((item) => ({...item, calculation_mode: ({AUTOMATIC: 'Installed provider', MANUAL_NET: 'Manual annual net income', NO_PROFILE: 'No tax settings'})[item.calculation_mode] || item.calculation_mode, warnings: Array.isArray(item.warnings) ? item.warnings.join(' \u2022 ') : ''})) : []}}",

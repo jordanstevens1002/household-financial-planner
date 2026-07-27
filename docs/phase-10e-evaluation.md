@@ -33,9 +33,10 @@ Confirm all of the following in edit mode and again after **Deploy**:
 10. Successful creation refreshes the list and clears the form; failure preserves entered values.
 11. Tables use friendly frequency, priority, person and tax-method labels.
 12. The summary requires an explicit ISO position date.
-13. Annual net income, expenses and surplus plus monthly surplus come from the backend response and
-    display the household currency.
-14. Missing tax settings and provider limitations are visible as planning notes.
+13. Annual net income, expenses and surplus plus monthly net income, expenses and surplus come from
+    the backend response and display the household currency.
+14. For dates beyond installed tax schedules, the newest installed schedule is used as a planning
+    fallback and the specific fallback is visible in planning notes.
 15. Expense changes affect positions only on dates where the expense is effective.
 16. The page remains usable at desktop and narrow mobile widths.
 
@@ -49,7 +50,7 @@ Confirm all of the following in edit mode and again after **Deploy**:
 - Duplicate household selection or navigation: none.
 - Expense categories: backend lookup action only.
 - Summary calculations performed in frontend: none.
-- Backend regression suite: 108 passed with 92% coverage.
+- Backend regression suite: 110 passed with 92% coverage.
 - Ruff, formatting and Mypy: passed in the Python 3.14 test container.
 - Alembic: at head with no new upgrade operations detected.
 - Compose configuration and live API readiness: passed.
