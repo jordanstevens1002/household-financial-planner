@@ -147,7 +147,10 @@ def table(
             "isDerived": False,
             "label": label,
             "computedValue": (
-                f"{{{{{name}.sanitizedTableData.map((currentRow) => (currentRow.{key}))}}}}"
+                "{{(() => { "
+                f"const tableData = {name}.processedTableData || []; "
+                f'return tableData.map((currentRow) => (currentRow["{key}"])); '
+                "})()}}"
             ),
         }
         for index, (key, label, visible) in enumerate(columns)

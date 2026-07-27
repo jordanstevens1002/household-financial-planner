@@ -1189,7 +1189,7 @@
                       "isCellVisible": true,
                       "isDerived": false,
                       "label": "ID",
-                      "computedValue": "{{ExistingHouseholds.sanitizedTableData.map((currentRow) => (currentRow.id))}}"
+                      "computedValue": "{{(() => { const tableData = ExistingHouseholds.processedTableData || []; return tableData.map((currentRow) => (currentRow[\"id\"])); })()}}"
                     },
                     "display_name": {
                       "index": 1,
@@ -1206,7 +1206,7 @@
                       "isCellVisible": true,
                       "isDerived": false,
                       "label": "Household",
-                      "computedValue": "{{ExistingHouseholds.sanitizedTableData.map((currentRow) => (currentRow.display_name))}}"
+                      "computedValue": "{{(() => { const tableData = ExistingHouseholds.processedTableData || []; return tableData.map((currentRow) => (currentRow[\"display_name\"])); })()}}"
                     },
                     "currency": {
                       "index": 2,
@@ -1223,7 +1223,7 @@
                       "isCellVisible": true,
                       "isDerived": false,
                       "label": "Currency",
-                      "computedValue": "{{ExistingHouseholds.sanitizedTableData.map((currentRow) => (currentRow.currency))}}"
+                      "computedValue": "{{(() => { const tableData = ExistingHouseholds.processedTableData || []; return tableData.map((currentRow) => (currentRow[\"currency\"])); })()}}"
                     },
                     "jurisdiction": {
                       "index": 3,
@@ -1240,7 +1240,7 @@
                       "isCellVisible": true,
                       "isDerived": false,
                       "label": "Jurisdiction",
-                      "computedValue": "{{ExistingHouseholds.sanitizedTableData.map((currentRow) => (currentRow.jurisdiction))}}"
+                      "computedValue": "{{(() => { const tableData = ExistingHouseholds.processedTableData || []; return tableData.map((currentRow) => (currentRow[\"jurisdiction\"])); })()}}"
                     }
                   },
                   "derivedColumns": {},
@@ -1799,7 +1799,7 @@
                       "isCellVisible": true,
                       "isDerived": false,
                       "label": "ID",
-                      "computedValue": "{{ExistingHouseholds.sanitizedTableData.map((currentRow) => (currentRow.id))}}"
+                      "computedValue": "{{(() => { const tableData = ExistingHouseholds.processedTableData || []; return tableData.map((currentRow) => (currentRow[\"id\"])); })()}}"
                     },
                     "display_name": {
                       "index": 1,
@@ -1816,7 +1816,7 @@
                       "isCellVisible": true,
                       "isDerived": false,
                       "label": "Household",
-                      "computedValue": "{{ExistingHouseholds.sanitizedTableData.map((currentRow) => (currentRow.display_name))}}"
+                      "computedValue": "{{(() => { const tableData = ExistingHouseholds.processedTableData || []; return tableData.map((currentRow) => (currentRow[\"display_name\"])); })()}}"
                     },
                     "currency": {
                       "index": 2,
@@ -1833,7 +1833,7 @@
                       "isCellVisible": true,
                       "isDerived": false,
                       "label": "Currency",
-                      "computedValue": "{{ExistingHouseholds.sanitizedTableData.map((currentRow) => (currentRow.currency))}}"
+                      "computedValue": "{{(() => { const tableData = ExistingHouseholds.processedTableData || []; return tableData.map((currentRow) => (currentRow[\"currency\"])); })()}}"
                     },
                     "jurisdiction": {
                       "index": 3,
@@ -1850,7 +1850,7 @@
                       "isCellVisible": true,
                       "isDerived": false,
                       "label": "Jurisdiction",
-                      "computedValue": "{{ExistingHouseholds.sanitizedTableData.map((currentRow) => (currentRow.jurisdiction))}}"
+                      "computedValue": "{{(() => { const tableData = ExistingHouseholds.processedTableData || []; return tableData.map((currentRow) => (currentRow[\"jurisdiction\"])); })()}}"
                     }
                   },
                   "derivedColumns": {},
