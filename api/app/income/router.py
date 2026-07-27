@@ -22,10 +22,16 @@ from app.income.schemas import (
     TaxCalculationRequest,
     TaxProfileCreate,
     TaxProfileRead,
+    TaxProviderRead,
     TaxSettings,
 )
 from app.income.tax.base import TaxCalculationInput
-from app.income.tax.registry import TaxProviderError, get_tax_engine, tax_year_for_date
+from app.income.tax.registry import (
+    TaxProviderError,
+    get_registry,
+    get_tax_engine,
+    tax_year_for_date,
+)
 from app.models import (
     ApplicationUser,
     Household,
@@ -146,6 +152,20 @@ async def list_tax_profiles(
             .order_by(PersonTaxProfile.effective_from)
         )
     )
+
+
+@router.get("/tax-providers", response_model=list[TaxProviderRead])
+async def list_tax_providers(
+    _: ApplicationUser = Depends(current_user),
+) -> list[TaxProviderRead]:
+    return [
+        TaxProviderRead(
+            jurisdiction=provider.jurisdiction,
+            display_name=provider.display_name,
+            supported_tax_years=list(provider.supported_tax_years),
+        )
+        for provider in get_registry().providers()
+    ]
 
 
 @router.post(

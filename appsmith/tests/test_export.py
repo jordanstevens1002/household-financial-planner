@@ -15,12 +15,12 @@ class AppsmithExportTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.application = json.loads(EXPORT.read_text(encoding="utf-8"))
 
-    def test_export_has_supported_schema_and_people_slice_pages(self) -> None:
+    def test_export_has_supported_schema_and_person_finance_slice_pages(self) -> None:
         self.assertEqual(self.application["clientSchemaVersion"], 1)
         self.assertEqual(self.application["serverSchemaVersion"], 6)
         self.assertEqual(
             self.application["pageOrder"],
-            ["Home", "Households", "People", "Settings"],
+            ["Home", "Households", "People", "Person finances", "Settings"],
         )
         self.assertEqual(self.application["publishedDefaultPageName"], "Home")
 
@@ -50,7 +50,7 @@ class AppsmithExportTests(unittest.TestCase):
 
     def test_api_actions_use_runtime_auth_and_docker_service_url(self) -> None:
         actions = self.application["actionList"]
-        self.assertEqual(len(actions), 6)
+        self.assertEqual(len(actions), 13)
         for wrapper in actions:
             action = wrapper["unpublishedAction"]
             self.assertEqual(
@@ -301,16 +301,163 @@ class AppsmithExportTests(unittest.TestCase):
             aliases.append(column["alias"])
         self.assertEqual(len(aliases), len(set(aliases)))
 
-    def test_people_slice_does_not_include_later_workflows(self) -> None:
+    def test_person_finance_slice_does_not_include_later_workflows(self) -> None:
         source = EXPORT.read_text(encoding="utf-8")
         for deferred_name in (
-            "CreateIncome",
             "CreateExpense",
             "CreateProperty",
             "CreateScenario",
             "ListTimeline",
         ):
             self.assertNotIn(deferred_name, source)
+
+    def test_person_selection_opens_finances_and_household_change_clears_it(self) -> None:
+        pages = {
+            page["unpublishedPage"]["name"]: page
+            for page in self.application["pageList"]
+        }
+        people_widgets = pages["People"]["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        manage = next(
+            widget
+            for widget in people_widgets
+            if widget["widgetName"] == "ManagePersonFinancesButton"
+        )
+        self.assertIn("ExistingPeople.selectedRow.id", manage["onClick"])
+        self.assertIn("storeValue('personId'", manage["onClick"])
+        self.assertIn("navigateTo('Person finances')", manage["onClick"])
+
+        household_widgets = pages["Households"]["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        for name in ("CreateHouseholdButton", "UseHouseholdButton"):
+            widget = next(item for item in household_widgets if item["widgetName"] == name)
+            self.assertIn("removeValue('personId')", widget["onClick"])
+            self.assertIn("removeValue('personName')", widget["onClick"])
+
+    def test_person_finance_actions_are_scoped_and_use_lookup_discovery(self) -> None:
+        actions = {
+            item["unpublishedAction"]["name"]: item["unpublishedAction"]
+            for item in self.application["actionList"]
+        }
+        self.assertEqual(
+            actions["ListFinancePeople"]["actionConfiguration"]["path"],
+            "/api/v1/households/{{appsmith.store.householdId}}/people",
+        )
+        self.assertEqual(
+            actions["ListIncomeTypes"]["actionConfiguration"]["path"],
+            "/api/v1/lookups/income_type",
+        )
+        self.assertEqual(
+            actions["ListTaxProviders"]["actionConfiguration"]["path"],
+            "/api/v1/tax-providers",
+        )
+        for name, suffix, method in (
+            ("ListIncomeSources", "income-sources", "GET"),
+            ("CreateIncome", "income-sources", "POST"),
+            ("ListTaxProfiles", "tax-profiles", "GET"),
+            ("CreateTaxProfile", "tax-profiles", "POST"),
+        ):
+            action = actions[name]
+            self.assertEqual(
+                action["actionConfiguration"]["path"],
+                f"/api/v1/people/{{{{appsmith.store.personId}}}}/{suffix}",
+            )
+            self.assertEqual(action["actionConfiguration"]["httpMethod"], method)
+            self.assertIn("appsmith.store.personId", action["jsonPathKeys"])
+
+    def test_income_form_sends_dated_recurring_source_without_defaults(self) -> None:
+        action = next(
+            item["unpublishedAction"]
+            for item in self.application["actionList"]
+            if item["unpublishedAction"]["name"] == "CreateIncome"
+        )
+        body = action["actionConfiguration"]["body"]
+        for widget_name in (
+            "IncomeType",
+            "IncomeName",
+            "IncomeAmount",
+            "IncomeFrequency",
+            "IncomeTaxable",
+            "IncomeEffectiveFrom",
+            "IncomeEffectiveTo",
+            "IncomeGrowthRate",
+            "IncomeSalarySacrifice",
+            "IncomeNotes",
+        ):
+            self.assertIn(widget_name, body)
+        self.assertNotIn("income_type_id: '", body)
+        self.assertNotIn("frequency: 'ANNUAL'", body)
+        self.assertNotIn("gross_amount: 0", body)
+
+    def test_tax_form_discovers_providers_and_keeps_manual_mode_country_neutral(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Person finances"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        provider = next(widget for widget in widgets if widget["widgetName"] == "TaxProviderYear")
+        self.assertIn("ListTaxProviders.data", provider["sourceData"])
+        self.assertIn("provider.supported_tax_years", provider["sourceData"])
+        self.assertNotIn("Australia", provider["sourceData"])
+        self.assertNotIn("AU", provider["sourceData"])
+
+        action = next(
+            item["unpublishedAction"]
+            for item in self.application["actionList"]
+            if item["unpublishedAction"]["name"] == "CreateTaxProfile"
+        )
+        body = action["actionConfiguration"]["body"]
+        self.assertIn("TaxProviderYear.selectedOptionValue.split", body)
+        self.assertIn("ManualTaxJurisdiction.text", body)
+        self.assertIn("ManualTaxYear.text", body)
+        self.assertIn("ManualAnnualNetIncome.text", body)
+        self.assertIn("JSON.parse(TaxParameters.text", body)
+        self.assertNotIn("jurisdiction: 'AU'", body)
+        self.assertNotIn("tax_year: '2025-26'", body)
+
+    def test_person_finance_tables_guard_responses_and_keep_distinct_columns(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Person finances"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        for table_name in ("FinancePeople", "IncomeSources", "TaxProfiles"):
+            table = next(widget for widget in widgets if widget["widgetName"] == table_name)
+            self.assertIn("Array.isArray(", table["tableData"])
+            aliases = []
+            for key in table["columnOrder"]:
+                column = table["primaryColumns"][key]
+                self.assertEqual(column["id"], key)
+                self.assertEqual(column["originalId"], key)
+                self.assertEqual(column["alias"], key)
+                self.assertIn(f"{table_name}.tableData || []", column["computedValue"])
+                aliases.append(column["alias"])
+            self.assertEqual(len(aliases), len(set(aliases)))
+
+    def test_person_finance_validation_requires_explicit_material_values(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Person finances"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        income = next(widget for widget in widgets if widget["widgetName"] == "CreateIncomeButton")
+        for required in (
+            "appsmith.store.personId",
+            "IncomeType.selectedOptionValue",
+            "IncomeAmount.text",
+            "IncomeFrequency.selectedOptionValue",
+            "IncomeEffectiveFrom.text",
+        ):
+            self.assertIn(required, income["isDisabled"])
+
+        tax = next(
+            widget for widget in widgets if widget["widgetName"] == "CreateTaxProfileButton"
+        )
+        self.assertIn("TaxProviderYear.selectedOptionValue", tax["isDisabled"])
+        self.assertIn("JSON.parse(TaxParameters.text)", tax["isDisabled"])
+        self.assertIn("ManualAnnualNetIncome.text", tax["isDisabled"])
+        self.assertIn("TaxEffectiveFrom.text", tax["isDisabled"])
 
 
 if __name__ == "__main__":
