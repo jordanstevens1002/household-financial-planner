@@ -1856,6 +1856,9 @@ mode manual review, and keep generated Appsmith JSON outside the handwritten rev
 - **10C — people identity:** create and list configurable people without implying that their
   finances are complete.
 - **10D — person finances:** income sources and tax settings with country-neutral provider use.
+- **10D.1 — person-finance UX refinement:** remove duplicate person selection, progressively reveal
+  income and tax workflows, improve empty states and labels, and place raw provider JSON behind an
+  explicit Advanced mode.
 - **10E — household cash flow:** expenses and backend-calculated household cash-flow summaries.
 - **10F — property setup:** current position and purchase-history workflows with friendly summary
   fields and explicit total property debt.
@@ -1864,7 +1867,8 @@ mode manual review, and keep generated Appsmith JSON outside the handwritten rev
 - **10I — timeline:** unified historical, current, planned and projected provenance.
 - **10J — scenarios:** saved custom scenarios, templates and comparisons.
 - **10K — dashboard and polish:** useful financial summaries, responsive review and cross-flow
-  integration.
+  integration. Replace free-text currency and national-jurisdiction entry with maintained dropdown
+  reference data and professional country/flag presentation without making a country the default.
 
 No slice is done when its edit-mode behaviour differs from its deployed application behaviour.
 

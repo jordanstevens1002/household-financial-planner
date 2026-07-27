@@ -50,7 +50,7 @@ class AppsmithExportTests(unittest.TestCase):
 
     def test_api_actions_use_runtime_auth_and_docker_service_url(self) -> None:
         actions = self.application["actionList"]
-        self.assertEqual(len(actions), 13)
+        self.assertEqual(len(actions), 12)
         for wrapper in actions:
             action = wrapper["unpublishedAction"]
             self.assertEqual(
@@ -337,10 +337,7 @@ class AppsmithExportTests(unittest.TestCase):
             item["unpublishedAction"]["name"]: item["unpublishedAction"]
             for item in self.application["actionList"]
         }
-        self.assertEqual(
-            actions["ListFinancePeople"]["actionConfiguration"]["path"],
-            "/api/v1/households/{{appsmith.store.householdId}}/people",
-        )
+        self.assertNotIn("ListFinancePeople", actions)
         self.assertEqual(
             actions["ListIncomeTypes"]["actionConfiguration"]["path"],
             "/api/v1/lookups/income_type",
@@ -421,7 +418,7 @@ class AppsmithExportTests(unittest.TestCase):
             if page["unpublishedPage"]["name"] == "Person finances"
         )
         widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
-        for table_name in ("FinancePeople", "IncomeSources", "TaxProfiles"):
+        for table_name in ("IncomeSources", "TaxProfiles"):
             table = next(widget for widget in widgets if widget["widgetName"] == table_name)
             self.assertIn("Array.isArray(", table["tableData"])
             aliases = []
@@ -458,6 +455,146 @@ class AppsmithExportTests(unittest.TestCase):
         self.assertIn("JSON.parse(TaxParameters.text)", tax["isDisabled"])
         self.assertIn("ManualAnnualNetIncome.text", tax["isDisabled"])
         self.assertIn("TaxEffectiveFrom.text", tax["isDisabled"])
+
+    def test_person_finance_page_uses_progressive_sections_without_duplicate_selection(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Person finances"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        names = {widget["widgetName"] for widget in widgets}
+        self.assertNotIn("FinancePeople", names)
+        self.assertNotIn("UseFinancePersonButton", names)
+        self.assertIn("ChangeFinancePersonButton", names)
+        self.assertIn("ShowIncomeSectionButton", names)
+        self.assertIn("ShowTaxSectionButton", names)
+
+        income = next(widget for widget in widgets if widget["widgetName"] == "IncomeType")
+        tax = next(widget for widget in widgets if widget["widgetName"] == "TaxCalculationMode")
+        self.assertIn("financeSection", income["isVisible"])
+        self.assertIn("financeSection", tax["isVisible"])
+
+    def test_raw_provider_json_is_available_only_in_explicit_advanced_mode(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Person finances"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        toggle = next(
+            widget for widget in widgets if widget["widgetName"] == "ToggleAdvancedModeButton"
+        )
+        parameters = next(widget for widget in widgets if widget["widgetName"] == "TaxParameters")
+        self.assertIn("financeAdvancedMode", toggle["onClick"])
+        self.assertIn("financeAdvancedMode", parameters["isVisible"])
+        self.assertIn("TaxCalculationMode.selectedOptionValue === 'AUTOMATIC'", parameters["isVisible"])
+
+        create = next(
+            widget for widget in widgets if widget["widgetName"] == "CreateTaxProfileButton"
+        )
+        self.assertIn("appsmith.store.financeAdvancedMode", create["isDisabled"])
+        self.assertIn("JSON.parse(TaxParameters.text)", create["isDisabled"])
+
+    def test_finance_tables_use_friendly_labels_and_forms_reset_after_success(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Person finances"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        income_table = next(widget for widget in widgets if widget["widgetName"] == "IncomeSources")
+        tax_table = next(widget for widget in widgets if widget["widgetName"] == "TaxProfiles")
+        self.assertIn("Fortnightly", income_table["tableData"])
+        self.assertIn("item.taxable ? 'Yes' : 'No'", income_table["tableData"])
+        self.assertIn("Installed provider", tax_table["tableData"])
+        self.assertIn("Manual annual net income", tax_table["tableData"])
+
+        create_income = next(
+            widget for widget in widgets if widget["widgetName"] == "CreateIncomeButton"
+        )
+        create_tax = next(
+            widget for widget in widgets if widget["widgetName"] == "CreateTaxProfileButton"
+        )
+        self.assertIn("resetWidget('IncomeName'", create_income["onClick"])
+        self.assertIn("resetWidget('TaxEffectiveFrom'", create_tax["onClick"])
+
+    def test_finance_empty_states_explain_the_next_action(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Person finances"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        income = next(widget for widget in widgets if widget["widgetName"] == "IncomeEmptyState")
+        tax = next(widget for widget in widgets if widget["widgetName"] == "TaxEmptyState")
+        self.assertIn("No income sources yet", income["text"])
+        self.assertIn("No tax settings yet", tax["text"])
+
+    def test_hidden_finance_sections_do_not_overlap_in_edit_mode(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Person finances"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        income_names = {
+            "IncomeHeading",
+            "IncomeEmptyState",
+            "IncomeType",
+            "IncomeName",
+            "IncomeAmount",
+            "IncomeFrequency",
+            "IncomeTaxable",
+            "IncomeEffectiveFrom",
+            "IncomeEffectiveTo",
+            "IncomeGrowthRate",
+            "IncomeSalarySacrifice",
+            "IncomeNotes",
+            "CreateIncomeButton",
+            "IncomeSources",
+        }
+        tax_names = {
+            "TaxHeading",
+            "TaxEmptyState",
+            "TaxCalculationMode",
+            "TaxProviderYear",
+            "TaxParameters",
+            "ManualTaxJurisdiction",
+            "ManualTaxYear",
+            "ManualAnnualNetIncome",
+            "TaxEffectiveFrom",
+            "TaxEffectiveTo",
+            "CreateTaxProfileButton",
+            "TaxProfiles",
+        }
+        income_bottom = max(
+            widget["bottomRow"] for widget in widgets if widget["widgetName"] in income_names
+        )
+        tax_top = min(widget["topRow"] for widget in widgets if widget["widgetName"] in tax_names)
+        self.assertLess(income_bottom, tax_top)
+
+    def test_home_has_one_contextual_action_instead_of_duplicate_navigation(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Home"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        names = {widget["widgetName"] for widget in widgets}
+        self.assertIn("ContinueSetup", names)
+        for duplicate in ("OpenHouseholds", "OpenPeople", "OpenPersonFinances", "OpenSettings"):
+            self.assertNotIn(duplicate, names)
+        continue_button = next(
+            widget for widget in widgets if widget["widgetName"] == "ContinueSetup"
+        )
+        self.assertIn("appsmith.store.personId", continue_button["onClick"])
+        self.assertIn("appsmith.store.householdId", continue_button["onClick"])
+
+    def test_phase_10k_records_professional_country_and_currency_selectors(self) -> None:
+        plan = (ROOT.parent / "PROJECT_PLAN.md").read_text(encoding="utf-8")
+        self.assertIn("currency and national-jurisdiction", plan)
+        self.assertIn("country/flag presentation", plan)
 
 
 if __name__ == "__main__":
