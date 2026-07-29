@@ -6,7 +6,7 @@ from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -23,6 +23,9 @@ from app.loans.schemas import (
     LoanGroupCreate,
     LoanGroupRead,
     LoanRead,
+    LoanRepaymentResponsibilityCreate,
+    LoanRepaymentResponsibilityRead,
+    LoanRepaymentResponsibilityResult,
     LoanScheduleRead,
     RefinanceCreate,
     RefinanceRead,
@@ -40,6 +43,7 @@ from app.models import (
     HouseholdRole,
     Loan,
     LoanGroup,
+    LoanRepaymentResponsibility,
     LookupItem,
     Person,
     Property,
@@ -161,6 +165,90 @@ async def get_loan(
     session: AsyncSession = Depends(get_session),
 ) -> Loan:
     return await _loan_with_access(loan_id, HouseholdRole.VIEWER, user, session)
+
+
+async def _responsibility_total(
+    loan_id: uuid.UUID, effective_date: date, session: AsyncSession
+) -> Decimal:
+    latest_effective_from = (
+        select(func.max(LoanRepaymentResponsibility.effective_from))
+        .where(
+            LoanRepaymentResponsibility.loan_id == loan_id,
+            LoanRepaymentResponsibility.effective_from <= effective_date,
+        )
+        .scalar_subquery()
+    )
+    total = await session.scalar(
+        select(
+            func.coalesce(func.sum(LoanRepaymentResponsibility.responsibility_percentage), 0)
+        ).where(
+            LoanRepaymentResponsibility.loan_id == loan_id,
+            LoanRepaymentResponsibility.effective_from == latest_effective_from,
+            or_(
+                LoanRepaymentResponsibility.effective_to.is_(None),
+                LoanRepaymentResponsibility.effective_to >= effective_date,
+            ),
+        )
+    )
+    return Decimal(total or 0)
+
+
+def _responsibility_warnings(total: Decimal) -> list[str]:
+    if total == Decimal("100"):
+        return []
+    return [
+        f"Repayment responsibility totals {total:.2f}% rather than 100.00% for the effective date"
+    ]
+
+
+@router.get(
+    "/loans/{loan_id}/repayment-responsibilities",
+    response_model=list[LoanRepaymentResponsibilityRead],
+)
+async def list_repayment_responsibilities(
+    loan_id: uuid.UUID,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> list[LoanRepaymentResponsibility]:
+    await _loan_with_access(loan_id, HouseholdRole.VIEWER, user, session)
+    return list(
+        await session.scalars(
+            select(LoanRepaymentResponsibility)
+            .where(LoanRepaymentResponsibility.loan_id == loan_id)
+            .order_by(
+                LoanRepaymentResponsibility.effective_from,
+                LoanRepaymentResponsibility.id,
+            )
+        )
+    )
+
+
+@router.post(
+    "/loans/{loan_id}/repayment-responsibilities",
+    response_model=LoanRepaymentResponsibilityResult,
+    status_code=201,
+)
+async def create_repayment_responsibility(
+    loan_id: uuid.UUID,
+    payload: LoanRepaymentResponsibilityCreate,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> LoanRepaymentResponsibilityResult:
+    loan = await _loan_with_access(loan_id, HouseholdRole.EDITOR, user, session)
+    person = await session.get(Person, payload.person_id)
+    if person is None or person.household_id != loan.household_id:
+        raise HTTPException(422, "Responsible person must belong to the loan household")
+    record = LoanRepaymentResponsibility(loan_id=loan.id, **payload.model_dump())
+    session.add(record)
+    await session.flush()
+    total = await _responsibility_total(loan.id, payload.effective_from, session)
+    await session.commit()
+    await session.refresh(record)
+    return LoanRepaymentResponsibilityResult(
+        responsibility=LoanRepaymentResponsibilityRead.model_validate(record),
+        total_percentage=total,
+        warnings=_responsibility_warnings(total),
+    )
 
 
 def _validate_loan_event(payload: LoanEventCreate, event_type: EventType) -> None:

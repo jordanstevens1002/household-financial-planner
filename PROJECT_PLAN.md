@@ -1863,7 +1863,12 @@ mode manual review, and keep generated Appsmith JSON outside the handwritten rev
 - **10F — property setup:** separate “Start from today's position” and “Record purchase history”
   workflows with friendly summary fields and explicit total property debt. Purchase history must
   never imply that a property is paid off: current value and debt remain unrecorded until supplied.
-- **10G — ownership and loans:** ownership allocation and zero, one or multiple actual loans.
+- **10G — ownership and loans:** dated ownership allocation and zero, one or multiple actual
+  property loans. Missing loans remain a valid empty state; each fixed, variable or other loan
+  component is a separate record with explicit opening balance, date, rate and repayment settings.
+  Effective loan repayments feed household cash flow automatically and must never require a
+  duplicate household expense. Optional dated person responsibility is advanced reporting
+  attribution only; it does not change the household repayment total or derive from ownership.
 - **10H — retirement:** configurable accounts, contributions and provider-backed projections.
 - **10I — timeline:** unified historical, current, planned and projected provenance.
 - **10J — scenarios:** saved custom scenarios, templates and comparisons.
@@ -1872,6 +1877,9 @@ mode manual review, and keep generated Appsmith JSON outside the handwritten rev
   reference data and professional country/flag presentation without making a country the default.
 
 No slice is done when its edit-mode behaviour differs from its deployed application behaviour.
+For Version 1, Appsmith review prioritises complete functional flows, correct persistence and
+accurate backend calculations over pixel-level polish. A native React frontend is planned as
+Version 2 after this roadmap is complete and will reuse the stable FastAPI contracts.
 
 The Appsmith application must be stored as a deterministic, importable export in the repository;
 UI configuration that exists only inside a local Docker volume is not complete. The application

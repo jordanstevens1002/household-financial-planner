@@ -242,6 +242,25 @@ async def create_ownership(
     )
 
 
+@router.get("/properties/{property_id}/ownership", response_model=list[OwnershipRead])
+async def list_ownership(
+    property_id: uuid.UUID,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> list[PropertyOwnershipInterest]:
+    await _property_with_access(property_id, HouseholdRole.VIEWER, user, session)
+    return list(
+        await session.scalars(
+            select(PropertyOwnershipInterest)
+            .where(PropertyOwnershipInterest.property_id == property_id)
+            .order_by(
+                PropertyOwnershipInterest.effective_from,
+                PropertyOwnershipInterest.id,
+            )
+        )
+    )
+
+
 @router.post("/properties/{property_id}/baselines", response_model=BaselineRead, status_code=201)
 async def create_baseline(
     property_id: uuid.UUID,

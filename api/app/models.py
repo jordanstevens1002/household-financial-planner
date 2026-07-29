@@ -287,6 +287,25 @@ class Loan(Base):
     )
 
 
+class LoanRepaymentResponsibility(Base):
+    __tablename__ = "loan_repayment_responsibilities"
+    __table_args__ = (
+        CheckConstraint("responsibility_percentage > 0 AND responsibility_percentage <= 100"),
+        CheckConstraint("effective_to IS NULL OR effective_to >= effective_from"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    loan_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("loans.id", ondelete="CASCADE"), index=True
+    )
+    person_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("people.id", ondelete="CASCADE"), index=True
+    )
+    responsibility_percentage: Mapped[Decimal] = mapped_column(Numeric(5, 2))
+    effective_from: Mapped[date] = mapped_column(Date, index=True)
+    effective_to: Mapped[date | None] = mapped_column(Date)
+    notes: Mapped[str | None] = mapped_column(String(2000))
+
+
 class Goal(Base):
     __tablename__ = "goals"
     __table_args__ = (

@@ -166,6 +166,133 @@ async def test_historical_personal_loan_and_multiple_property_loans(
     assert personal["currency"] == "NZD"
 
 
+async def test_loan_repayments_flow_into_cashflow_and_follow_dated_events(
+    client: AsyncClient, loan_setup: dict[str, str]
+) -> None:
+    loan = await create_loan(client, loan_setup)
+    household_id = loan_setup["household_id"]
+    initial = await client.get(
+        f"/api/v1/households/{household_id}/cashflow",
+        params={"as_of": "2020-02-01"},
+    )
+    assert initial.status_code == 200
+    assert initial.json()["annual_ordinary_expenses"] == "0.00"
+    assert initial.json()["annual_loan_repayments"] == "36000.00"
+    assert initial.json()["annual_expenses"] == "36000.00"
+    assert initial.json()["monthly_loan_repayments"] == "3000.00"
+    assert initial.json()["monthly_surplus"] == "-3000.00"
+    assert initial.json()["loan_repayments"][0]["periodic_repayment"] == "3000.00"
+
+    await add_loan_event(
+        client,
+        loan_setup,
+        str(loan["id"]),
+        "LOAN_REPAYMENT_CHANGED",
+        amount=3500,
+        effective_at="2020-02-15T00:00:00+00:00",
+    )
+    changed = await client.get(
+        f"/api/v1/households/{household_id}/cashflow",
+        params={"as_of": "2020-03-01"},
+    )
+    assert changed.json()["annual_loan_repayments"] == "42000.00"
+
+    await add_loan_event(
+        client,
+        loan_setup,
+        str(loan["id"]),
+        "LOAN_CLOSED",
+        effective_at="2020-04-15T00:00:00+00:00",
+    )
+    closed = await client.get(
+        f"/api/v1/households/{household_id}/cashflow",
+        params={"as_of": "2020-05-01"},
+    )
+    assert closed.json()["annual_loan_repayments"] == "0.00"
+    assert closed.json()["loan_repayments"] == []
+
+
+async def test_advanced_repayment_responsibility_is_optional_dated_attribution(
+    client: AsyncClient, loan_setup: dict[str, str]
+) -> None:
+    loan = await create_loan(client, loan_setup)
+    first_person = await client.post(
+        f"/api/v1/households/{loan_setup['household_id']}/people",
+        json={"display_name": "First payer", "effective_from": "2020-01-01"},
+    )
+    second_person = await client.post(
+        f"/api/v1/households/{loan_setup['household_id']}/people",
+        json={"display_name": "Second payer", "effective_from": "2020-01-01"},
+    )
+    assert first_person.status_code == second_person.status_code == 201
+    first = await client.post(
+        f"/api/v1/loans/{loan['id']}/repayment-responsibilities",
+        json={
+            "person_id": first_person.json()["id"],
+            "responsibility_percentage": 70,
+            "effective_from": "2020-01-01",
+        },
+    )
+    second = await client.post(
+        f"/api/v1/loans/{loan['id']}/repayment-responsibilities",
+        json={
+            "person_id": second_person.json()["id"],
+            "responsibility_percentage": 30,
+            "effective_from": "2020-01-01",
+        },
+    )
+    assert first.status_code == second.status_code == 201
+    assert first.json()["warnings"]
+    assert second.json()["total_percentage"] == "100.00"
+    listed = await client.get(f"/api/v1/loans/{loan['id']}/repayment-responsibilities")
+    assert listed.status_code == 200
+    assert {item["responsibility_percentage"] for item in listed.json()} == {
+        "70.00",
+        "30.00",
+    }
+
+    cashflow = await client.get(
+        f"/api/v1/households/{loan_setup['household_id']}/cashflow",
+        params={"as_of": "2020-02-01"},
+    )
+    body = cashflow.json()
+    assert body["annual_loan_repayments"] == "36000.00"
+    allocations = {item["display_name"]: item for item in body["loan_repayments"][0]["allocations"]}
+    assert allocations["First payer"]["annual_amount"] == "25200.00"
+    assert allocations["Second payer"]["annual_amount"] == "10800.00"
+    changed = await client.post(
+        f"/api/v1/loans/{loan['id']}/repayment-responsibilities",
+        json={
+            "person_id": second_person.json()["id"],
+            "responsibility_percentage": 100,
+            "effective_from": "2021-01-01",
+        },
+    )
+    assert changed.status_code == 201
+    changed_cashflow = await client.get(
+        f"/api/v1/households/{loan_setup['household_id']}/cashflow",
+        params={"as_of": "2021-02-01"},
+    )
+    changed_allocations = changed_cashflow.json()["loan_repayments"][0]["allocations"]
+    assert len(changed_allocations) == 1
+    assert changed_allocations[0]["display_name"] == "Second payer"
+    assert changed_allocations[0]["annual_amount"] == "36000.00"
+    other_household = await create_household(client, "Other household")
+    outsider = await client.post(
+        f"/api/v1/households/{other_household['id']}/people",
+        json={"display_name": "Outside payer", "effective_from": "2020-01-01"},
+    )
+    rejected = await client.post(
+        f"/api/v1/loans/{loan['id']}/repayment-responsibilities",
+        json={
+            "person_id": outsider.json()["id"],
+            "responsibility_percentage": 100,
+            "effective_from": "2020-01-01",
+        },
+    )
+    assert rejected.status_code == 422
+
+
 async def test_schedule_applies_offsets_rate_changes_lump_sums_and_redraw(
     client: AsyncClient, loan_setup: dict[str, str]
 ) -> None:

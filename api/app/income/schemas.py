@@ -137,6 +137,28 @@ class PersonIncomeProjection(BaseModel):
     warnings: list[str]
 
 
+class LoanRepaymentAllocationRead(BaseModel):
+    person_id: uuid.UUID
+    display_name: str
+    responsibility_percentage: Decimal
+    annual_amount: Decimal
+    monthly_amount: Decimal
+
+
+class LoanRepaymentProjectionRead(BaseModel):
+    loan_id: uuid.UUID
+    property_id: uuid.UUID | None
+    display_name: str
+    currency: str
+    repayment_frequency: str
+    periodic_repayment: Decimal
+    annual_repayment: Decimal
+    monthly_repayment: Decimal
+    included_in_household_total: bool
+    allocations: list[LoanRepaymentAllocationRead]
+    warnings: list[str]
+
+
 class HouseholdCashflowRead(BaseModel):
     household_id: uuid.UUID
     as_of: date
@@ -144,9 +166,14 @@ class HouseholdCashflowRead(BaseModel):
     people: list[PersonIncomeProjection]
     annual_gross_income: Decimal
     annual_net_income: Decimal
+    annual_ordinary_expenses: Decimal
+    annual_loan_repayments: Decimal
     annual_expenses: Decimal
     annual_surplus: Decimal
     monthly_net_income: Decimal
+    monthly_ordinary_expenses: Decimal
+    monthly_loan_repayments: Decimal
     monthly_expenses: Decimal
     monthly_surplus: Decimal
+    loan_repayments: list[LoanRepaymentProjectionRead]
     warnings: list[str]

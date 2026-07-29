@@ -58,7 +58,7 @@ class AppsmithExportTests(unittest.TestCase):
 
     def test_api_actions_use_runtime_auth_and_docker_service_url(self) -> None:
         actions = self.application["actionList"]
-        self.assertEqual(len(actions), 21)
+        self.assertEqual(len(actions), 29)
         for wrapper in actions:
             action = wrapper["unpublishedAction"]
             self.assertEqual(
@@ -312,7 +312,7 @@ class AppsmithExportTests(unittest.TestCase):
             aliases.append(column["alias"])
         self.assertEqual(len(aliases), len(set(aliases)))
 
-    def test_export_does_not_include_workflows_after_phase_10f(self) -> None:
+    def test_export_does_not_include_workflows_after_phase_10g(self) -> None:
         source = EXPORT.read_text(encoding="utf-8")
         for deferred_name in (
             "CreateScenario",
@@ -737,14 +737,21 @@ class AppsmithExportTests(unittest.TestCase):
         for name, field in (
             ("AnnualNetMetric", "annual_net_income"),
             ("AnnualExpensesMetric", "annual_expenses"),
+            ("AnnualOrdinaryExpensesMetric", "annual_ordinary_expenses"),
+            ("AnnualLoanRepaymentsMetric", "annual_loan_repayments"),
             ("AnnualSurplusMetric", "annual_surplus"),
             ("MonthlyNetMetric", "monthly_net_income"),
+            ("MonthlyOrdinaryExpensesMetric", "monthly_ordinary_expenses"),
+            ("MonthlyLoanRepaymentsMetric", "monthly_loan_repayments"),
             ("MonthlyExpensesMetric", "monthly_expenses"),
             ("MonthlySurplusMetric", "monthly_surplus"),
         ):
             self.assertIn(f"ReviewCashflow.data?.{field}", by_name[name]["text"])
             self.assertIn("ReviewCashflow.data?.currency", by_name[name]["text"])
         self.assertIn("ReviewCashflow.data?.warnings", by_name["CashflowWarnings"]["text"])
+        repayments = by_name["LoanRepaymentsTable"]
+        self.assertIn("ReviewCashflow.data?.loan_repayments", repayments["tableData"])
+        self.assertIn("Shared household cash flow", repayments["tableData"])
 
     def test_cashflow_navigation_requires_household_without_duplicate_navigation(self) -> None:
         for page in self.application["pageList"]:
@@ -862,6 +869,197 @@ class AppsmithExportTests(unittest.TestCase):
             table["primaryColumns"][key]["alias"] for key in table["columnOrder"]
         ]
         self.assertEqual(len(aliases), len(set(aliases)))
+
+    def test_ownership_actions_are_selected_property_scoped(self) -> None:
+        actions = {
+            item["unpublishedAction"]["name"]: item["unpublishedAction"]
+            for item in self.application["actionList"]
+        }
+        for name, method in (
+            ("ListPropertyOwnership", "GET"),
+            ("CreatePropertyOwnership", "POST"),
+        ):
+            action = actions[name]
+            self.assertEqual(
+                action["actionConfiguration"]["path"],
+                "/api/v1/properties/{{appsmith.store.propertyId}}/ownership",
+            )
+            self.assertEqual(action["actionConfiguration"]["httpMethod"], method)
+        body = actions["CreatePropertyOwnership"]["actionConfiguration"]["body"]
+        for widget in (
+            "OwnershipType",
+            "OwnershipPerson",
+            "OwnershipExternalName",
+            "OwnershipPercentage",
+            "OwnershipEffectiveFrom",
+            "OwnershipEffectiveTo",
+            "OwnershipNotes",
+        ):
+            self.assertIn(widget, body)
+
+    def test_ownership_form_is_dated_and_shows_api_warnings(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Properties"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        by_name = {widget["widgetName"]: widget for widget in widgets}
+        create = by_name["CreateOwnershipButton"]
+        for required in (
+            "appsmith.store.propertyId",
+            "OwnershipType.selectedOptionValue",
+            "OwnershipPercentage.text",
+            "OwnershipEffectiveFrom.text",
+        ):
+            self.assertIn(required, create["isDisabled"])
+        self.assertIn("CreatePropertyOwnership.data?.warnings", create["onClick"])
+        self.assertIn("ListPropertyOwnership.run()", create["onClick"])
+        self.assertIn("Whole household", by_name["OwnershipTable"]["tableData"])
+
+    def test_loan_actions_support_multiple_property_linked_records(self) -> None:
+        actions = {
+            item["unpublishedAction"]["name"]: item["unpublishedAction"]
+            for item in self.application["actionList"]
+        }
+        self.assertEqual(
+            actions["ListLoanTypes"]["actionConfiguration"]["path"],
+            "/api/v1/lookups/loan_type",
+        )
+        self.assertEqual(
+            actions["ListPropertyLoans"]["actionConfiguration"]["path"],
+            "/api/v1/households/{{appsmith.store.householdId}}/loans",
+        )
+        create = actions["CreatePropertyLoan"]
+        self.assertEqual(
+            create["actionConfiguration"]["path"],
+            "/api/v1/households/{{appsmith.store.householdId}}/loans",
+        )
+        body = create["actionConfiguration"]["body"]
+        for value in (
+            "property_id: appsmith.store.propertyId",
+            "LoanType.selectedOptionValue",
+            "LoanOpeningBalance.text",
+            "LoanOpeningDate.text",
+            "LoanInterestRate.text",
+            "LoanRepaymentFrequency.selectedOptionValue",
+            "LoanInterestMethod.selectedOptionValue",
+            "LoanInterestOnly.selectedOptionValue",
+        ):
+            self.assertIn(value, body)
+        self.assertNotIn("currency:", body)
+        self.assertNotIn("term_months: 360", body)
+
+    def test_loan_form_has_explicit_no_one_or_many_semantics(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Properties"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        by_name = {widget["widgetName"]: widget for widget in widgets}
+        self.assertIn("no loan, one loan, or several", by_name["LoansHelp"]["text"])
+        self.assertIn("debt-free property", by_name["LoansEmptyState"]["text"])
+        self.assertIn("property_id === appsmith.store.propertyId", by_name["LoansTable"]["tableData"])
+        create = by_name["CreateLoanButton"]
+        for required in (
+            "appsmith.store.propertyId",
+            "LoanType.selectedOptionValue",
+            "LoanName.text",
+            "LoanOpeningBalance.text",
+            "LoanOpeningDate.text",
+            "LoanInterestRate.text",
+            "LoanRepaymentFrequency.selectedOptionValue",
+            "LoanInterestMethod.selectedOptionValue",
+            "LoanInterestOnly.selectedOptionValue",
+        ):
+            self.assertIn(required, create["isDisabled"])
+        self.assertIn("ListPropertyLoans.run()", create["onClick"])
+
+    def test_advanced_loan_responsibility_is_optional_dated_attribution(self) -> None:
+        actions = {
+            item["unpublishedAction"]["name"]: item["unpublishedAction"]
+            for item in self.application["actionList"]
+        }
+        for name, method in (
+            ("ListLoanResponsibilities", "GET"),
+            ("CreateLoanResponsibility", "POST"),
+        ):
+            action = actions[name]
+            self.assertEqual(
+                action["actionConfiguration"]["path"],
+                "/api/v1/loans/{{appsmith.store.loanId}}/repayment-responsibilities",
+            )
+            self.assertEqual(action["actionConfiguration"]["httpMethod"], method)
+        body = actions["CreateLoanResponsibility"]["actionConfiguration"]["body"]
+        for widget in (
+            "LoanResponsiblePerson",
+            "LoanResponsibilityPercentage",
+            "LoanResponsibilityFrom",
+            "LoanResponsibilityTo",
+            "LoanResponsibilityNotes",
+        ):
+            self.assertIn(widget, body)
+
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Properties"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        by_name = {widget["widgetName"]: widget for widget in widgets}
+        self.assertEqual(
+            by_name["ManageLoanResponsibilityButton"]["text"],
+            "Advanced repayment responsibility",
+        )
+        help_text = by_name["LoanResponsibilityHelp"]["text"]
+        self.assertIn("does not change or duplicate", help_text)
+        self.assertIn("newer effective date replaces", help_text)
+        create = by_name["CreateLoanResponsibilityButton"]
+        self.assertIn("CreateLoanResponsibility.data?.warnings", create["onClick"])
+        self.assertIn("appsmith.store.loanId", create["isDisabled"])
+
+    def test_property_workflow_sections_do_not_overlap_in_edit_mode(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Properties"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        section_markers = (
+            "propertySection || 'LIST'",
+            "propertySection === 'SETUP'",
+            "propertySection === 'OWNERSHIP'",
+            "propertySection === 'LOANS'",
+        )
+        sections = [
+            [
+                widget
+                for widget in widgets
+                if marker in str(widget.get("isVisible", ""))
+            ]
+            for marker in section_markers
+        ]
+        self.assertTrue(all(sections))
+        for earlier, later in zip(sections, sections[1:]):
+            self.assertLess(
+                max(widget["bottomRow"] for widget in earlier),
+                min(widget["topRow"] for widget in later),
+            )
+
+    def test_property_change_clears_selected_person_and_property_context(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Households"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        for button_name in ("CreateHouseholdButton", "UseHouseholdButton"):
+            on_click = next(
+                widget["onClick"] for widget in widgets if widget["widgetName"] == button_name
+            )
+            self.assertIn("removeValue('propertyId')", on_click)
+            self.assertIn("removeValue('propertyName')", on_click)
 
 
 if __name__ == "__main__":

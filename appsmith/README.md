@@ -9,6 +9,10 @@ raw provider JSON behind an explicit Advanced mode. Phase 10E adds progressive h
 and dated cash-flow-summary sections without adding duplicate household selection or navigation.
 Phase 10F adds property setup from either a current position or known purchase history. Current
 value and total property debt remain explicitly unrecorded when only purchase history is known.
+Phase 10G adds dated ownership interests and property-linked loan records. A property may have no
+loans, one loan or multiple separate components without silently creating loan assumptions.
+Effective repayments are included automatically in household cash flow. Advanced dated
+responsibility settings may attribute a repayment to people without duplicating or changing it.
 The application is generated deterministically by `generate_app.py`; edit the generator rather than
 the JSON.
 
@@ -26,7 +30,8 @@ the JSON.
 8. Select a person and open **Person finances** to record income and tax settings.
 9. Open **Cash flow** to add household expenses and calculate an explicitly dated position.
 10. Open **Properties** to add a current-position snapshot or record a historical purchase.
-11. Click **Deploy** before checking the normal launched application; edit mode and published mode
+11. Select a property to record dated ownership and zero, one or multiple actual loans.
+12. Click **Deploy** before checking the normal launched application; edit mode and published mode
    use different Appsmith snapshots.
 
 No bearer token, development identity, email address, household ID or financial value is stored in
