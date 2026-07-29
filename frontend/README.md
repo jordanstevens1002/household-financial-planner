@@ -43,9 +43,12 @@ npm run lint
 npm run typecheck
 npm test
 npm run build
-npx playwright install chromium
+npx playwright install chromium firefox
 npm run e2e
 ```
+
+Run only the browser you are actively checking with `npm run e2e -- --project
+chromium` or `npm run e2e -- --project firefox`.
 
 The production image builds the static application and serves it through Nginx with
 SPA history fallback and a same-origin proxy to the Docker `api` service.
