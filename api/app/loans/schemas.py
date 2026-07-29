@@ -53,6 +53,32 @@ class LoanRead(LoanCreate):
     currency: str
 
 
+class LoanRepaymentResponsibilityCreate(BaseModel):
+    person_id: uuid.UUID
+    responsibility_percentage: Decimal = Field(gt=0, le=100, decimal_places=2)
+    effective_from: date
+    effective_to: date | None = None
+    notes: str | None = Field(default=None, max_length=2000)
+
+    @model_validator(mode="after")
+    def dates_are_ordered(self) -> LoanRepaymentResponsibilityCreate:
+        if self.effective_to is not None and self.effective_to < self.effective_from:
+            raise ValueError("effective_to must not precede effective_from")
+        return self
+
+
+class LoanRepaymentResponsibilityRead(LoanRepaymentResponsibilityCreate):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    loan_id: uuid.UUID
+
+
+class LoanRepaymentResponsibilityResult(BaseModel):
+    responsibility: LoanRepaymentResponsibilityRead
+    total_percentage: Decimal
+    warnings: list[str]
+
+
 class LoanEventCreate(BaseModel):
     event_type_id: uuid.UUID
     idempotency_key: str | None = Field(default=None, min_length=1, max_length=100)

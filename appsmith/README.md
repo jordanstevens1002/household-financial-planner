@@ -11,6 +11,8 @@ Phase 10F adds property setup from either a current position or known purchase h
 value and total property debt remain explicitly unrecorded when only purchase history is known.
 Phase 10G adds dated ownership interests and property-linked loan records. A property may have no
 loans, one loan or multiple separate components without silently creating loan assumptions.
+Effective repayments are included automatically in household cash flow. Advanced dated
+responsibility settings may attribute a repayment to people without duplicating or changing it.
 The application is generated deterministically by `generate_app.py`; edit the generator rather than
 the JSON.
 

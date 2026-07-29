@@ -1,11 +1,11 @@
 """Income, tax, and household cash-flow API routes."""
 
 import uuid
-from datetime import date
+from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -17,6 +17,8 @@ from app.income.schemas import (
     HouseholdExpenseRead,
     IncomeSourceCreate,
     IncomeSourceRead,
+    LoanRepaymentAllocationRead,
+    LoanRepaymentProjectionRead,
     PersonIncomeProjection,
     TaxCalculationRead,
     TaxCalculationRequest,
@@ -32,13 +34,18 @@ from app.income.tax.registry import (
     get_tax_engine,
     get_tax_engine_for_date,
 )
+from app.loans.calculations import generate_schedule, payments_per_year
 from app.models import (
     ApplicationUser,
+    EventType,
+    FinancialEvent,
     Household,
     HouseholdExpense,
     HouseholdMembership,
     HouseholdRole,
     IncomeSource,
+    Loan,
+    LoanRepaymentResponsibility,
     PaymentFrequency,
     Person,
     PersonTaxProfile,
@@ -60,6 +67,122 @@ ANNUAL_MULTIPLIERS = {
 
 def _money(value: Decimal) -> Decimal:
     return value.quantize(CENT, rounding=ROUND_HALF_UP)
+
+
+async def _loan_repayment_projection(
+    loan: Loan,
+    household_currency: str,
+    people_by_id: dict[uuid.UUID, Person],
+    as_of: date,
+    session: AsyncSession,
+) -> LoanRepaymentProjectionRead | None:
+    if loan.opening_balance_date > as_of:
+        return None
+    typed_events = list(
+        (
+            await session.execute(
+                select(FinancialEvent, EventType.code)
+                .join(EventType, EventType.id == FinancialEvent.event_type_id)
+                .where(
+                    FinancialEvent.loan_id == loan.id,
+                    FinancialEvent.is_enabled.is_(True),
+                )
+                .order_by(
+                    FinancialEvent.effective_at,
+                    EventType.priority,
+                    FinancialEvent.recorded_at,
+                    FinancialEvent.id,
+                )
+            )
+        ).all()
+    )
+    effective_events = [
+        (event, code) for event, code in typed_events if event.effective_at.date() <= as_of
+    ]
+    closure_codes = {"LOAN_REFINANCED", "LOAN_CLOSED"}
+    is_closed = any(code in closure_codes for _, code in effective_events)
+    has_later_closure = any(
+        code in closure_codes and event.effective_at.date() > as_of for event, code in typed_events
+    )
+    if is_closed or (not loan.is_active and not has_later_closure):
+        return None
+    warnings: list[str] = []
+    try:
+        schedule = generate_schedule(
+            loan,
+            effective_events,
+            through_date=as_of + timedelta(days=35),
+        )
+        next_entry = next(
+            (entry for entry in schedule.entries if entry.payment_date >= as_of),
+            None,
+        )
+        periodic = next_entry.repayment if next_entry is not None else Decimal("0")
+    except ValueError as exc:
+        periodic = Decimal("0")
+        warnings.append(f"{loan.display_name}: {exc}; repayment is excluded from cash flow.")
+    annual = _money(periodic * Decimal(payments_per_year(loan.repayment_frequency)))
+    included = loan.currency == household_currency
+    if not included:
+        warnings.append(
+            f"{loan.display_name} uses {loan.currency}; no exchange rate is configured, "
+            f"so its repayment is excluded from the {household_currency} household total."
+        )
+    latest_responsibility_date = (
+        select(func.max(LoanRepaymentResponsibility.effective_from))
+        .where(
+            LoanRepaymentResponsibility.loan_id == loan.id,
+            LoanRepaymentResponsibility.effective_from <= as_of,
+        )
+        .scalar_subquery()
+    )
+    responsibilities = list(
+        await session.scalars(
+            select(LoanRepaymentResponsibility).where(
+                LoanRepaymentResponsibility.loan_id == loan.id,
+                LoanRepaymentResponsibility.effective_from == latest_responsibility_date,
+                or_(
+                    LoanRepaymentResponsibility.effective_to.is_(None),
+                    LoanRepaymentResponsibility.effective_to >= as_of,
+                ),
+            )
+        )
+    )
+    responsibility_total = sum(
+        (item.responsibility_percentage for item in responsibilities),
+        Decimal("0"),
+    )
+    if responsibilities and responsibility_total != Decimal("100"):
+        warnings.append(
+            f"{loan.display_name} repayment responsibility totals "
+            f"{responsibility_total:.2f}% rather than 100.00%."
+        )
+    allocations = [
+        LoanRepaymentAllocationRead(
+            person_id=item.person_id,
+            display_name=people_by_id[item.person_id].display_name,
+            responsibility_percentage=item.responsibility_percentage,
+            annual_amount=_money(annual * item.responsibility_percentage / Decimal("100")),
+            monthly_amount=_money(
+                annual * item.responsibility_percentage / Decimal("100") / Decimal("12")
+            ),
+        )
+        for item in responsibilities
+        if item.person_id in people_by_id
+    ]
+    return LoanRepaymentProjectionRead(
+        loan_id=loan.id,
+        property_id=loan.property_id,
+        display_name=loan.display_name,
+        currency=loan.currency,
+        repayment_frequency=loan.repayment_frequency,
+        periodic_repayment=_money(periodic),
+        annual_repayment=annual,
+        monthly_repayment=_money(annual / Decimal("12")),
+        included_in_household_total=included,
+        allocations=allocations,
+        warnings=warnings,
+    )
 
 
 def _annual_value(
@@ -413,6 +536,7 @@ async def household_cashflow(
         )
     )
     projections = [await _person_projection(person, as_of, session) for person in people]
+    people_by_id = {person.id: person for person in people}
     expenses = list(
         await session.scalars(
             select(HouseholdExpense).where(
@@ -425,7 +549,7 @@ async def household_cashflow(
             )
         )
     )
-    annual_expenses = sum(
+    annual_ordinary_expenses = sum(
         (
             _annual_value(
                 item.amount,
@@ -438,12 +562,42 @@ async def household_cashflow(
         ),
         Decimal("0"),
     )
+    loans = list(
+        await session.scalars(
+            select(Loan).where(
+                Loan.household_id == household_id,
+                Loan.opening_balance_date <= as_of,
+            )
+        )
+    )
+    loan_repayments = [
+        projection
+        for loan in loans
+        if (
+            projection := await _loan_repayment_projection(
+                loan,
+                household.currency,
+                people_by_id,
+                as_of,
+                session,
+            )
+        )
+        is not None
+    ]
+    annual_loan_repayments = sum(
+        (item.annual_repayment for item in loan_repayments if item.included_in_household_total),
+        Decimal("0"),
+    )
+    annual_expenses = annual_ordinary_expenses + annual_loan_repayments
     gross = sum(
         (item.gross_taxable_income + item.non_taxable_income for item in projections),
         Decimal("0"),
     )
     net = sum((item.net_income for item in projections), Decimal("0"))
-    warnings = [warning for item in projections for warning in item.warnings]
+    warnings = [
+        *[warning for item in projections for warning in item.warnings],
+        *[warning for item in loan_repayments for warning in item.warnings],
+    ]
     return HouseholdCashflowRead(
         household_id=household_id,
         as_of=as_of,
@@ -451,10 +605,15 @@ async def household_cashflow(
         people=projections,
         annual_gross_income=_money(gross),
         annual_net_income=_money(net),
+        annual_ordinary_expenses=_money(annual_ordinary_expenses),
+        annual_loan_repayments=_money(annual_loan_repayments),
         annual_expenses=_money(annual_expenses),
         annual_surplus=_money(net - annual_expenses),
         monthly_net_income=_money(net / Decimal("12")),
+        monthly_ordinary_expenses=_money(annual_ordinary_expenses / Decimal("12")),
+        monthly_loan_repayments=_money(annual_loan_repayments / Decimal("12")),
         monthly_expenses=_money(annual_expenses / Decimal("12")),
         monthly_surplus=_money((net - annual_expenses) / Decimal("12")),
+        loan_repayments=loan_repayments,
         warnings=warnings,
     )

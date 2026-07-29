@@ -1866,6 +1866,9 @@ mode manual review, and keep generated Appsmith JSON outside the handwritten rev
 - **10G — ownership and loans:** dated ownership allocation and zero, one or multiple actual
   property loans. Missing loans remain a valid empty state; each fixed, variable or other loan
   component is a separate record with explicit opening balance, date, rate and repayment settings.
+  Effective loan repayments feed household cash flow automatically and must never require a
+  duplicate household expense. Optional dated person responsibility is advanced reporting
+  attribution only; it does not change the household repayment total or derive from ownership.
 - **10H — retirement:** configurable accounts, contributions and provider-backed projections.
 - **10I — timeline:** unified historical, current, planned and projected provenance.
 - **10J — scenarios:** saved custom scenarios, templates and comparisons.

@@ -15,6 +15,8 @@ pixel-level Appsmith polish.
 | Appsmith structural tests | 100% passing |
 | Ownership and loan records scoped to selected property | 100% |
 | Required financial values silently defaulted | 0 |
+| Loan repayments requiring duplicate ordinary expenses | 0 |
+| Responsibility allocation changing household repayment total | 0 |
 | Country or currency inferred by frontend | 0 |
 | Backend regression suite | 100% passing |
 | Compose and migration validation | Pass |
@@ -38,19 +40,25 @@ Confirm in edit mode and again after **Deploy**:
 12. Loan term and scheduled repayment may remain unknown rather than receiving silent defaults.
 13. A second loan is added as another record and does not replace the first.
 14. Loan rows are filtered to the selected property.
-15. Successful creation refreshes the relevant list and clears the form; failure preserves values.
+15. Effective loan repayments appear automatically and separately in household cash flow.
+16. Total expenses equal ordinary expenses plus loan repayments without duplicate entry.
+17. Advanced responsibility is optional and requires a selected loan, household person, percentage
+    and effective date.
+18. A newer responsibility effective date replaces the earlier attribution for reporting.
+19. Responsibility allocation does not change the household repayment or surplus.
+20. Successful creation refreshes the relevant list and clears the form; failure preserves values.
 
 ## Recorded automated results
 
 - Appsmith version: v1.93, pinned by Docker Compose and reported healthy.
 - Required pages: Home, Households, People, Person finances, Cash flow, Properties and Settings.
-- Appsmith structural tests: 45 passed.
+- Appsmith structural tests: 46 passed.
 - Generated export drift: none.
 - Property, setup, ownership and loan edit-mode section overlap: none.
 - Ownership and loan actions scoped to the selected property: 100%.
 - Required financial values silently defaulted: none.
 - Frontend country or currency inference: none.
-- Backend regression suite: 111 passed with 92% coverage.
+- Backend regression suite: 113 passed with 92% coverage.
 - Ruff, formatting and Mypy: passed in the Python 3.14 test container.
 - Alembic: at head with no new upgrade operations detected.
 - Compose configuration and live API readiness: passed.

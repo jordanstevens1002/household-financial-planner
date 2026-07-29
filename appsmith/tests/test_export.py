@@ -58,7 +58,7 @@ class AppsmithExportTests(unittest.TestCase):
 
     def test_api_actions_use_runtime_auth_and_docker_service_url(self) -> None:
         actions = self.application["actionList"]
-        self.assertEqual(len(actions), 27)
+        self.assertEqual(len(actions), 29)
         for wrapper in actions:
             action = wrapper["unpublishedAction"]
             self.assertEqual(
@@ -737,14 +737,21 @@ class AppsmithExportTests(unittest.TestCase):
         for name, field in (
             ("AnnualNetMetric", "annual_net_income"),
             ("AnnualExpensesMetric", "annual_expenses"),
+            ("AnnualOrdinaryExpensesMetric", "annual_ordinary_expenses"),
+            ("AnnualLoanRepaymentsMetric", "annual_loan_repayments"),
             ("AnnualSurplusMetric", "annual_surplus"),
             ("MonthlyNetMetric", "monthly_net_income"),
+            ("MonthlyOrdinaryExpensesMetric", "monthly_ordinary_expenses"),
+            ("MonthlyLoanRepaymentsMetric", "monthly_loan_repayments"),
             ("MonthlyExpensesMetric", "monthly_expenses"),
             ("MonthlySurplusMetric", "monthly_surplus"),
         ):
             self.assertIn(f"ReviewCashflow.data?.{field}", by_name[name]["text"])
             self.assertIn("ReviewCashflow.data?.currency", by_name[name]["text"])
         self.assertIn("ReviewCashflow.data?.warnings", by_name["CashflowWarnings"]["text"])
+        repayments = by_name["LoanRepaymentsTable"]
+        self.assertIn("ReviewCashflow.data?.loan_repayments", repayments["tableData"])
+        self.assertIn("Shared household cash flow", repayments["tableData"])
 
     def test_cashflow_navigation_requires_household_without_duplicate_navigation(self) -> None:
         for page in self.application["pageList"]:
@@ -968,6 +975,49 @@ class AppsmithExportTests(unittest.TestCase):
         ):
             self.assertIn(required, create["isDisabled"])
         self.assertIn("ListPropertyLoans.run()", create["onClick"])
+
+    def test_advanced_loan_responsibility_is_optional_dated_attribution(self) -> None:
+        actions = {
+            item["unpublishedAction"]["name"]: item["unpublishedAction"]
+            for item in self.application["actionList"]
+        }
+        for name, method in (
+            ("ListLoanResponsibilities", "GET"),
+            ("CreateLoanResponsibility", "POST"),
+        ):
+            action = actions[name]
+            self.assertEqual(
+                action["actionConfiguration"]["path"],
+                "/api/v1/loans/{{appsmith.store.loanId}}/repayment-responsibilities",
+            )
+            self.assertEqual(action["actionConfiguration"]["httpMethod"], method)
+        body = actions["CreateLoanResponsibility"]["actionConfiguration"]["body"]
+        for widget in (
+            "LoanResponsiblePerson",
+            "LoanResponsibilityPercentage",
+            "LoanResponsibilityFrom",
+            "LoanResponsibilityTo",
+            "LoanResponsibilityNotes",
+        ):
+            self.assertIn(widget, body)
+
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Properties"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        by_name = {widget["widgetName"]: widget for widget in widgets}
+        self.assertEqual(
+            by_name["ManageLoanResponsibilityButton"]["text"],
+            "Advanced repayment responsibility",
+        )
+        help_text = by_name["LoanResponsibilityHelp"]["text"]
+        self.assertIn("does not change or duplicate", help_text)
+        self.assertIn("newer effective date replaces", help_text)
+        create = by_name["CreateLoanResponsibilityButton"]
+        self.assertIn("CreateLoanResponsibility.data?.warnings", create["onClick"])
+        self.assertIn("appsmith.store.loanId", create["isDisabled"])
 
     def test_property_workflow_sections_do_not_overlap_in_edit_mode(self) -> None:
         page = next(
