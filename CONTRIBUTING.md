@@ -65,7 +65,9 @@ review because the completed feature pull request is squash-merged into `develop
 - Preserve the distinction between observed, planned and projected data.
 
 See [Architecture principles](docs/architecture-principles.md) and
-[Code organisation](docs/code-organisation.md).
+[Code organisation](docs/code-organisation.md). Work contributing to the v2 frontend
+must also follow the [React v2 architecture contract](docs/react-v2-architecture.md)
+and keep the [API parity matrix](docs/react-v2-api-parity.md) current.
 
 ## Reporting security problems
 

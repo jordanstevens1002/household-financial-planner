@@ -1,7 +1,7 @@
 # Architecture principles
 
-This document consolidates the priorities established while implementing Phases 1–9. It is a
-review checklist for all later work and complements the detailed product plan.
+This document consolidates the project's established architecture priorities. It is a review
+checklist for future work.
 
 ## Household product scope and language
 
