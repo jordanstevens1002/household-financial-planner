@@ -2020,7 +2020,7 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
             ),
             text(
                 "TimelineEmptyState",
-                "{{Array.isArray(ListTimeline.data?.events) && ListTimeline.data.events.length ? '' : 'No events match this date range. Add an event or broaden the filters.'}}",
+                "{{Array.isArray(ListTimeline.data?.events) && ListTimeline.data.events.length ? '' : 'No financial events match this range. People and properties are source records and do not appear here until a dated financial event exists.'}}",
                 46,
                 52,
             ),
@@ -2045,7 +2045,7 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
             ),
             button(
                 "ToggleSelectedEventButton",
-                "{{TimelineTable.selectedRow.is_enabled ? 'Disable selected plan' : 'Enable selected plan'}}",
+                "{{TimelineTable.selectedRow?.is_enabled ? 'Disable selected plan' : 'Enable selected plan'}}",
                 "{{ToggleTimelineEvent.run(() => { showAlert('Planned event updated', 'success'); ListTimeline.run(); }, () => showAlert(JSON.stringify(ToggleTimelineEvent.data?.detail || 'Could not update event'), 'error'))}}",
                 84,
                 2,
@@ -2589,8 +2589,8 @@ def actions() -> list[dict[str, Any]]:
             "Timeline",
             "ToggleTimelineEvent",
             "PATCH",
-            "/api/v1/events/{{TimelineTable.selectedRow.id}}/enabled",
-            body="{{({ is_enabled: !TimelineTable.selectedRow.is_enabled })}}",
+            "/api/v1/events/{{TimelineTable.selectedRow?.id || ''}}/enabled",
+            body="{{({ is_enabled: !(TimelineTable.selectedRow?.is_enabled || false) })}}",
         ),
         action("Settings", "HealthCheck", "GET", "/health/ready", on_load=True),
         action(

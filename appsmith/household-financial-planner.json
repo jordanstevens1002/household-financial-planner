@@ -25587,7 +25587,7 @@
                   "bottomRow": 52,
                   "leftColumn": 2,
                   "rightColumn": 62,
-                  "text": "{{Array.isArray(ListTimeline.data?.events) && ListTimeline.data.events.length ? '' : 'No events match this date range. Add an event or broaden the filters.'}}",
+                  "text": "{{Array.isArray(ListTimeline.data?.events) && ListTimeline.data.events.length ? '' : 'No financial events match this range. People and properties are source records and do not appear here until a dated financial event exists.'}}",
                   "isVisible": true,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -25885,7 +25885,7 @@
                   "bottomRow": 88,
                   "leftColumn": 2,
                   "rightColumn": 22,
-                  "text": "{{TimelineTable.selectedRow.is_enabled ? 'Disable selected plan' : 'Enable selected plan'}}",
+                  "text": "{{TimelineTable.selectedRow?.is_enabled ? 'Disable selected plan' : 'Enable selected plan'}}",
                   "onClick": "{{ToggleTimelineEvent.run(() => { showAlert('Planned event updated', 'success'); ListTimeline.run(); }, () => showAlert(JSON.stringify(ToggleTimelineEvent.data?.detail || 'Could not update event'), 'error'))}}",
                   "isVisible": true,
                   "isDisabled": "{{!TimelineTable.selectedRow || !TimelineTable.selectedRow.id || TimelineTable.selectedRow.classification === 'OBSERVED'}}",
@@ -27119,7 +27119,7 @@
                   "bottomRow": 52,
                   "leftColumn": 2,
                   "rightColumn": 62,
-                  "text": "{{Array.isArray(ListTimeline.data?.events) && ListTimeline.data.events.length ? '' : 'No events match this date range. Add an event or broaden the filters.'}}",
+                  "text": "{{Array.isArray(ListTimeline.data?.events) && ListTimeline.data.events.length ? '' : 'No financial events match this range. People and properties are source records and do not appear here until a dated financial event exists.'}}",
                   "isVisible": true,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -27417,7 +27417,7 @@
                   "bottomRow": 88,
                   "leftColumn": 2,
                   "rightColumn": 22,
-                  "text": "{{TimelineTable.selectedRow.is_enabled ? 'Disable selected plan' : 'Enable selected plan'}}",
+                  "text": "{{TimelineTable.selectedRow?.is_enabled ? 'Disable selected plan' : 'Enable selected plan'}}",
                   "onClick": "{{ToggleTimelineEvent.run(() => { showAlert('Planned event updated', 'success'); ListTimeline.run(); }, () => showAlert(JSON.stringify(ToggleTimelineEvent.data?.detail || 'Could not update event'), 'error'))}}",
                   "isVisible": true,
                   "isDisabled": "{{!TimelineTable.selectedRow || !TimelineTable.selectedRow.id || TimelineTable.selectedRow.classification === 'OBSERVED'}}",
@@ -34302,7 +34302,7 @@
         "actionConfiguration": {
           "timeoutInMillisecond": 10000,
           "paginationType": "NONE",
-          "path": "/api/v1/events/{{TimelineTable.selectedRow.id}}/enabled",
+          "path": "/api/v1/events/{{TimelineTable.selectedRow?.id || ''}}/enabled",
           "headers": [
             {
               "key": "Authorization",
@@ -34324,7 +34324,7 @@
           "formData": {
             "apiContentType": "application/json"
           },
-          "body": "{{({ is_enabled: !TimelineTable.selectedRow.is_enabled })}}"
+          "body": "{{({ is_enabled: !(TimelineTable.selectedRow?.is_enabled || false) })}}"
         },
         "runBehaviour": "MANUAL",
         "dynamicBindingPathList": [
@@ -34336,8 +34336,8 @@
         "invalids": [],
         "messages": [],
         "jsonPathKeys": [
-          "TimelineTable.selectedRow.id",
-          "({ is_enabled: !TimelineTable.selectedRow.is_enabled })"
+          "TimelineTable.selectedRow?.id || ''",
+          "({ is_enabled: !(TimelineTable.selectedRow?.is_enabled || false) })"
         ],
         "confirmBeforeExecute": false,
         "userPermissions": []
@@ -34361,7 +34361,7 @@
         "actionConfiguration": {
           "timeoutInMillisecond": 10000,
           "paginationType": "NONE",
-          "path": "/api/v1/events/{{TimelineTable.selectedRow.id}}/enabled",
+          "path": "/api/v1/events/{{TimelineTable.selectedRow?.id || ''}}/enabled",
           "headers": [
             {
               "key": "Authorization",
@@ -34383,7 +34383,7 @@
           "formData": {
             "apiContentType": "application/json"
           },
-          "body": "{{({ is_enabled: !TimelineTable.selectedRow.is_enabled })}}"
+          "body": "{{({ is_enabled: !(TimelineTable.selectedRow?.is_enabled || false) })}}"
         },
         "runBehaviour": "MANUAL",
         "dynamicBindingPathList": [
@@ -34395,8 +34395,8 @@
         "invalids": [],
         "messages": [],
         "jsonPathKeys": [
-          "TimelineTable.selectedRow.id",
-          "({ is_enabled: !TimelineTable.selectedRow.is_enabled })"
+          "TimelineTable.selectedRow?.id || ''",
+          "({ is_enabled: !(TimelineTable.selectedRow?.is_enabled || false) })"
         ],
         "confirmBeforeExecute": false,
         "userPermissions": []

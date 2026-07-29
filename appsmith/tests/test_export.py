@@ -180,6 +180,15 @@ class AppsmithExportTests(unittest.TestCase):
         )
         toggle = by_name["ToggleSelectedEventButton"]
         self.assertIn("classification === 'OBSERVED'", toggle["isDisabled"])
+        self.assertIn("selectedRow?.is_enabled", toggle["text"])
+
+        actions = {
+            item["unpublishedAction"]["name"]: item["unpublishedAction"]
+            for item in self.application["actionList"]
+        }
+        toggle_action = actions["ToggleTimelineEvent"]["actionConfiguration"]
+        self.assertIn("selectedRow?.id", toggle_action["path"])
+        self.assertIn("selectedRow?.is_enabled", toggle_action["body"])
 
     def test_timeline_event_requires_explicit_classification_and_effective_datetime(
         self,
