@@ -30,6 +30,7 @@ from app.retirement.providers.base import RetirementProjectionRules
 from app.retirement.providers.registry import (
     RetirementProviderError,
     get_retirement_provider,
+    list_retirement_providers,
 )
 from app.retirement.schemas import (
     ContributionProfileCreate,
@@ -40,10 +41,19 @@ from app.retirement.schemas import (
     RetirementEventCreate,
     RetirementEventRead,
     RetirementProjectionRead,
+    RetirementProviderRead,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["retirement"])
 logger = get_logger(component="retirement")
+
+
+@router.get("/retirement-providers", response_model=list[RetirementProviderRead])
+async def retirement_providers() -> list[RetirementProviderRead]:
+    return [
+        RetirementProviderRead(code=provider.code, display_name=provider.display_name)
+        for provider in list_retirement_providers()
+    ]
 
 
 async def _account_with_access(

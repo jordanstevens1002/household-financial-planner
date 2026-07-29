@@ -166,6 +166,13 @@ async def test_generic_retirement_account_contributions_events_and_projection(
     assert listed.json()[0]["id"] == account["id"]
 
 
+async def test_retirement_provider_catalogue_is_discoverable(client: AsyncClient) -> None:
+    response = await client.get("/api/v1/retirement-providers")
+
+    assert response.status_code == 200
+    assert response.json() == [{"code": "AU_SUPER", "display_name": "Australian superannuation"}]
+
+
 async def test_australian_super_profile_rules_and_duplicate_inputs(
     client: AsyncClient, retirement_types: dict[str, LookupItem]
 ) -> None:

@@ -49,3 +49,9 @@ def test_retirement_provider_registry_rejects_missing_and_duplicate_codes() -> N
         registry.get_provider("missing")
     with pytest.raises(RetirementProviderError, match="Duplicate retirement provider"):
         registry.register(ExampleProvider())
+
+
+def test_retirement_provider_registry_lists_installed_providers_by_code() -> None:
+    registry = RetirementProviderRegistry([ExampleProvider()])
+
+    assert [provider.code for provider in registry.list_providers()] == ["EX_PLAN"]

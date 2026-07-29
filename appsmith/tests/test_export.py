@@ -27,10 +27,102 @@ class AppsmithExportTests(unittest.TestCase):
                 "Person finances",
                 "Cash flow",
                 "Properties",
+                "Retirement",
                 "Settings",
             ],
         )
         self.assertEqual(self.application["publishedDefaultPageName"], "Home")
+
+    def test_retirement_actions_use_neutral_discovery_and_backend_projection(self) -> None:
+        actions = {
+            item["unpublishedAction"]["name"]: item["unpublishedAction"]
+            for item in self.application["actionList"]
+        }
+        expected = {
+            "ListRetirementAccountTypes": "/api/v1/lookups/retirement_account_type",
+            "ListRetirementProviders": "/api/v1/retirement-providers",
+            "ListRetirementAccounts": (
+                "/api/v1/households/{{appsmith.store.householdId}}/retirement-accounts"
+            ),
+            "ListContributionProfiles": (
+                "/api/v1/retirement-accounts/"
+                "{{appsmith.store.retirementAccountId}}/contribution-profiles"
+            ),
+            "CalculateRetirementProjection": (
+                "/api/v1/retirement-accounts/"
+                "{{appsmith.store.retirementAccountId}}/projection"
+            ),
+        }
+        for name, path in expected.items():
+            self.assertEqual(actions[name]["actionConfiguration"]["path"], path)
+
+        body = actions["CreateRetirementAccount"]["actionConfiguration"]["body"]
+        self.assertIn("RetirementProvider.selectedOptionValue", body)
+        self.assertIn("JSON.parse(RetirementProviderSettings.text", body)
+        self.assertNotIn("AU_SUPER", body)
+        self.assertNotIn("Australian", body)
+
+    def test_retirement_page_has_progressive_contribution_and_projection_flows(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Retirement"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        names = {widget["widgetName"] for widget in widgets}
+        for required in (
+            "RetirementAccountsTable",
+            "ManageRetirementAccountButton",
+            "ToggleRetirementAdvancedButton",
+            "ContributionProfilesTable",
+            "CalculateRetirementProjectionButton",
+            "ProjectedBalance",
+            "ProjectionAssumptions",
+            "ProjectionWarnings",
+        ):
+            self.assertIn(required, names)
+
+        provider = next(
+            widget for widget in widgets if widget["widgetName"] == "RetirementProvider"
+        )
+        self.assertIn("ListRetirementProviders.data", provider["sourceData"])
+        self.assertNotIn("Australian", provider["sourceData"])
+        settings = next(
+            widget
+            for widget in widgets
+            if widget["widgetName"] == "RetirementProviderSettings"
+        )
+        self.assertIn("retirementAdvancedMode", settings["isVisible"])
+
+    def test_retirement_forms_require_material_values_without_country_defaults(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Retirement"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        create = next(
+            widget
+            for widget in widgets
+            if widget["widgetName"] == "CreateRetirementAccountButton"
+        )
+        for required in (
+            "RetirementAccountType.selectedOptionValue",
+            "RetirementOpeningBalance.text",
+            "RetirementOpeningDate.text",
+            "RetirementReturnRate.text",
+            "RetirementAnnualFees.text",
+        ):
+            self.assertIn(required, create["isDisabled"])
+
+        contribution = next(
+            widget
+            for widget in widgets
+            if widget["widgetName"] == "CreateContributionProfileButton"
+        )
+        self.assertIn("ContributionEmployerRate.text", contribution["isDisabled"])
+        self.assertIn("ContributionEmployerAmount.text", contribution["isDisabled"])
+        self.assertIn("retirementAccountId", contribution["isDisabled"])
 
     def test_export_contains_no_credentials_or_identity_defaults(self) -> None:
         source = EXPORT.read_text(encoding="utf-8")
@@ -58,7 +150,7 @@ class AppsmithExportTests(unittest.TestCase):
 
     def test_api_actions_use_runtime_auth_and_docker_service_url(self) -> None:
         actions = self.application["actionList"]
-        self.assertEqual(len(actions), 29)
+        self.assertEqual(len(actions), 37)
         for wrapper in actions:
             action = wrapper["unpublishedAction"]
             self.assertEqual(
@@ -312,7 +404,7 @@ class AppsmithExportTests(unittest.TestCase):
             aliases.append(column["alias"])
         self.assertEqual(len(aliases), len(set(aliases)))
 
-    def test_export_does_not_include_workflows_after_phase_10g(self) -> None:
+    def test_export_does_not_include_workflows_after_phase_10h(self) -> None:
         source = EXPORT.read_text(encoding="utf-8")
         for deferred_name in (
             "CreateScenario",
@@ -760,8 +852,12 @@ class AppsmithExportTests(unittest.TestCase):
             properties = next(
                 widget for widget in widgets if widget["widgetName"] == "NavProperties"
             )
+            retirement = next(
+                widget for widget in widgets if widget["widgetName"] == "NavRetirement"
+            )
             self.assertIn("!appsmith.store.householdId", cashflow["isDisabled"])
             self.assertIn("!appsmith.store.householdId", properties["isDisabled"])
+            self.assertIn("!appsmith.store.householdId", retirement["isDisabled"])
             navigation = [widget for widget in widgets if widget["widgetName"].startswith("Nav")]
             self.assertEqual(
                 [widget["widgetName"] for widget in navigation],
@@ -772,6 +868,7 @@ class AppsmithExportTests(unittest.TestCase):
                     "NavPersonfinances",
                     "NavCashflow",
                     "NavProperties",
+                    "NavRetirement",
                     "NavSettings",
                 ],
             )
