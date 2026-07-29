@@ -1874,7 +1874,11 @@ mode manual review, and keep generated Appsmith JSON outside the handwritten rev
   choices are discovered from the API; provider JSON remains an optional Advanced setting.
   Projection results must disclose contributions, contribution tax, fees, earnings, assumptions
   and warnings. The UI must not infer a provider from household jurisdiction or currency.
-- **10I — timeline:** unified historical, current, planned and projected provenance.
+- **10I — timeline:** one household timeline for observed history, planned decisions and projected
+  estimates, using backend classifications, deterministic ordering and data-quality flags. Users
+  can filter dates, include disabled plans, create explicitly classified events and enable or
+  disable non-observed events. Raw event payloads and idempotency keys remain Advanced settings;
+  observed records cannot be disabled or presented as editable plans.
 - **10J — scenarios:** saved custom scenarios, templates and comparisons.
 - **10K — dashboard and polish:** useful financial summaries, responsive review and cross-flow
   integration. Replace free-text currency and national-jurisdiction entry with maintained dropdown

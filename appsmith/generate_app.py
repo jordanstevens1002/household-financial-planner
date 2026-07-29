@@ -18,6 +18,7 @@ PAGES = (
     ("Cash flow", "cash-flow"),
     ("Properties", "properties"),
     ("Retirement", "retirement"),
+    ("Timeline", "timeline"),
     ("Settings", "settings"),
 )
 
@@ -271,6 +272,7 @@ def common_widgets(page_name: str) -> list[dict[str, Any]]:
             10,
         ),
     ]
+    navigation_width = 64 // len(PAGES)
     for index, (name, _) in enumerate(PAGES):
         widgets.append(
             button(
@@ -278,13 +280,13 @@ def common_widgets(page_name: str) -> list[dict[str, Any]]:
                 name,
                 f"{{{{navigateTo('{name}', {{}}, 'SAME_WINDOW')}}}}",
                 11,
-                index * 8,
-                (index + 1) * 8,
+                index * navigation_width,
+                (index + 1) * navigation_width,
                 disabled=(
                     "{{!appsmith.store.personId}}"
                     if name == "Person finances"
                     else "{{!appsmith.store.householdId}}"
-                    if name in {"Cash flow", "Properties", "Retirement"}
+                    if name in {"Cash flow", "Properties", "Retirement", "Timeline"}
                     else False
                 ),
             )
@@ -1982,6 +1984,206 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
                 visible="{{appsmith.store.retirementSection === 'PROJECTION'}}",
             ),
         ]
+    elif name == "Timeline":
+        widgets += [
+            text(
+                "TimelineHelp",
+                "Review what happened, what is true today, and what is planned or projected. Classification and quality warnings come from FastAPI so provenance stays consistent.",
+                17,
+                23,
+            ),
+            input_widget("TimelineFrom", "From date (optional, YYYY-MM-DD)", 24, 2, 20),
+            input_widget("TimelineTo", "To date (optional, YYYY-MM-DD)", 24, 21, 39),
+            select_widget(
+                "TimelineIncludeDisabled",
+                "Disabled events",
+                "{{[{label: 'Hide disabled events', value: 'false'}, {label: 'Include disabled events', value: 'true'}]}}",
+                24,
+                40,
+                62,
+                default="false",
+            ),
+            button(
+                "RefreshTimelineButton",
+                "Refresh timeline",
+                "{{ListTimeline.run(() => showAlert('Timeline refreshed', 'success'), () => showAlert(JSON.stringify(ListTimeline.data?.detail || 'Could not load timeline'), 'error'))}}",
+                33,
+                2,
+                20,
+                disabled="{{((TimelineFrom.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(TimelineFrom.text.trim())) || ((TimelineTo.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(TimelineTo.text.trim()))}}",
+            ),
+            text(
+                "TimelineQualityFlags",
+                "{{Array.isArray(ListTimeline.data?.data_quality_flags) && ListTimeline.data.data_quality_flags.length ? 'Data quality: ' + ListTimeline.data.data_quality_flags.join(' • ') : ''}}",
+                39,
+                45,
+            ),
+            text(
+                "TimelineEmptyState",
+                "{{Array.isArray(ListTimeline.data?.events) && ListTimeline.data.events.length ? '' : 'No financial events match this range. People and properties are source records and do not appear here until a dated financial event exists.'}}",
+                46,
+                52,
+            ),
+            table(
+                "TimelineTable",
+                "{{Array.isArray(ListTimeline.data?.events) ? ListTimeline.data.events.map((item) => ({...item, event: item.event_type_code.replaceAll('_', ' ').toLowerCase().replace(/(^|\\s)\\S/g, (letter) => letter.toUpperCase()), effective_date: item.effective_at.slice(0, 10), provenance: ({OBSERVED: 'Observed', PLANNED: 'Planned', PROJECTED: 'Projected'})[item.classification] || item.classification, status: item.is_enabled ? 'Enabled' : 'Disabled', related_to: (Array.isArray(ListTimelineProperties.data) ? ListTimelineProperties.data.find((property) => property.id === item.property_id)?.display_name : '') || (Array.isArray(ListTimelinePeople.data) ? ListTimelinePeople.data.find((person) => person.id === item.person_id)?.display_name : '') || (Array.isArray(ListTimelineLoans.data) ? ListTimelineLoans.data.find((loan) => loan.id === item.loan_id)?.display_name : '') || 'Household', quality: Array.isArray(item.data_quality_flags) ? item.data_quality_flags.join(' • ') : ''})) : []}}",
+                (
+                    ("id", "ID", False),
+                    ("event", "Event", True),
+                    ("effective_date", "Effective date", True),
+                    ("provenance", "Provenance", True),
+                    ("related_to", "Related to", True),
+                    ("amount", "Amount", True),
+                    ("percentage", "Percentage", True),
+                    ("status", "Status", True),
+                    ("quality", "Data quality", True),
+                    ("notes", "Notes", True),
+                ),
+                53,
+                82,
+                label="Household timeline",
+            ),
+            button(
+                "ToggleSelectedEventButton",
+                "{{TimelineTable.selectedRow?.is_enabled ? 'Disable selected plan' : 'Enable selected plan'}}",
+                "{{ToggleTimelineEvent.run(() => { showAlert('Planned event updated', 'success'); ListTimeline.run(); }, () => showAlert(JSON.stringify(ToggleTimelineEvent.data?.detail || 'Could not update event'), 'error'))}}",
+                84,
+                2,
+                22,
+                disabled="{{!TimelineTable.selectedRow || !TimelineTable.selectedRow.id || TimelineTable.selectedRow.classification === 'OBSERVED'}}",
+            ),
+            button(
+                "ShowCreateTimelineEventButton",
+                "{{appsmith.store.timelineCreateOpen ? 'Hide event form' : 'Add an event'}}",
+                "{{storeValue('timelineCreateOpen', !appsmith.store.timelineCreateOpen, false)}}",
+                84,
+                24,
+                42,
+            ),
+            text(
+                "CreateTimelineEventHelp",
+                "Observed means recorded history. Planned means a decision you may change. Projected means an estimated future result. Choose deliberately.",
+                91,
+                97,
+                visible="{{appsmith.store.timelineCreateOpen}}",
+            ),
+            select_widget(
+                "TimelineEventType",
+                "Event type",
+                "{{Array.isArray(ListEventTypes.data) ? ListEventTypes.data.map((item) => ({label: item.display_name, value: item.id})) : []}}",
+                98,
+                2,
+                22,
+                visible="{{appsmith.store.timelineCreateOpen}}",
+            ),
+            select_widget(
+                "TimelineClassification",
+                "Provenance",
+                "{{[{label: 'Observed history', value: 'OBSERVED'}, {label: 'Planned decision', value: 'PLANNED'}, {label: 'Projected estimate', value: 'PROJECTED'}]}}",
+                98,
+                23,
+                42,
+                visible="{{appsmith.store.timelineCreateOpen}}",
+            ),
+            input_widget(
+                "TimelineEffectiveAt",
+                "Effective date and time (ISO 8601)",
+                98,
+                43,
+                62,
+                required=True,
+                visible="{{appsmith.store.timelineCreateOpen}}",
+            ),
+            select_widget(
+                "TimelineProperty",
+                "Related property (optional)",
+                "{{[{label: 'No property', value: 'NONE'}, ...(Array.isArray(ListTimelineProperties.data) ? ListTimelineProperties.data.map((item) => ({label: item.display_name, value: item.id})) : [])]}}",
+                107,
+                2,
+                22,
+                default="NONE",
+                visible="{{appsmith.store.timelineCreateOpen}}",
+            ),
+            select_widget(
+                "TimelinePerson",
+                "Related person (optional)",
+                "{{[{label: 'No person', value: 'NONE'}, ...(Array.isArray(ListTimelinePeople.data) ? ListTimelinePeople.data.map((item) => ({label: item.display_name, value: item.id})) : [])]}}",
+                107,
+                23,
+                42,
+                default="NONE",
+                visible="{{appsmith.store.timelineCreateOpen}}",
+            ),
+            select_widget(
+                "TimelineLoan",
+                "Related loan (optional)",
+                "{{[{label: 'No loan', value: 'NONE'}, ...(Array.isArray(ListTimelineLoans.data) ? ListTimelineLoans.data.map((item) => ({label: item.display_name, value: item.id})) : [])]}}",
+                107,
+                43,
+                62,
+                default="NONE",
+                visible="{{appsmith.store.timelineCreateOpen}}",
+            ),
+            input_widget(
+                "TimelineAmount",
+                "Amount (optional)",
+                116,
+                2,
+                17,
+                visible="{{appsmith.store.timelineCreateOpen}}",
+            ),
+            input_widget(
+                "TimelinePercentage",
+                "Percentage (optional)",
+                116,
+                18,
+                32,
+                visible="{{appsmith.store.timelineCreateOpen}}",
+            ),
+            input_widget(
+                "TimelineNotes",
+                "Notes (optional)",
+                116,
+                33,
+                62,
+                visible="{{appsmith.store.timelineCreateOpen}}",
+            ),
+            button(
+                "ToggleTimelineAdvancedButton",
+                "{{appsmith.store.timelineAdvancedMode ? 'Hide advanced settings' : 'Advanced settings'}}",
+                "{{storeValue('timelineAdvancedMode', !appsmith.store.timelineAdvancedMode, false)}}",
+                125,
+                2,
+                20,
+                visible="{{appsmith.store.timelineCreateOpen}}",
+            ),
+            input_widget(
+                "TimelinePayload",
+                "Event payload as JSON",
+                132,
+                2,
+                42,
+                visible="{{appsmith.store.timelineCreateOpen && appsmith.store.timelineAdvancedMode}}",
+            ),
+            input_widget(
+                "TimelineIdempotencyKey",
+                "Idempotency key (optional)",
+                132,
+                43,
+                62,
+                visible="{{appsmith.store.timelineCreateOpen && appsmith.store.timelineAdvancedMode}}",
+            ),
+            button(
+                "CreateTimelineEventButton",
+                "Add event",
+                "{{CreateTimelineEvent.run(() => { showAlert('Event added to timeline', 'success'); ListTimeline.run(); resetWidget('TimelineEventType', true); resetWidget('TimelineClassification', true); resetWidget('TimelineEffectiveAt', true); resetWidget('TimelineProperty', true); resetWidget('TimelinePerson', true); resetWidget('TimelineLoan', true); resetWidget('TimelineAmount', true); resetWidget('TimelinePercentage', true); resetWidget('TimelineNotes', true); resetWidget('TimelinePayload', true); resetWidget('TimelineIdempotencyKey', true); }, () => showAlert(JSON.stringify(CreateTimelineEvent.data?.detail || 'Could not add event'), 'error'))}}",
+                141,
+                2,
+                20,
+                disabled="{{!TimelineEventType.selectedOptionValue || !TimelineClassification.selectedOptionValue || !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2})?(Z|[+-]\\d{2}:\\d{2})$/.test((TimelineEffectiveAt.text || '').trim()) || ((TimelineAmount.text || '').trim() && !/^-?\\d+(\\.\\d{1,2})?$/.test(TimelineAmount.text.trim())) || ((TimelinePercentage.text || '').trim() && (!/^\\d+(\\.\\d+)?$/.test(TimelinePercentage.text.trim()) || Number(TimelinePercentage.text) < 0 || Number(TimelinePercentage.text) > 100)) || (appsmith.store.timelineAdvancedMode && (() => { try { JSON.parse(TimelinePayload.text || '{}'); return false; } catch (e) { return true; } })())}}",
+                visible="{{appsmith.store.timelineCreateOpen}}",
+            ),
+        ]
     else:
         widgets += [
             text(
@@ -2335,6 +2537,60 @@ def actions() -> list[dict[str, Any]]:
             query_parameters=(
                 ("projection_date", "{{RetirementProjectionDate.text}}"),
             ),
+        ),
+        action(
+            "Timeline",
+            "ListEventTypes",
+            "GET",
+            "/api/v1/event-types",
+            on_load=True,
+        ),
+        action(
+            "Timeline",
+            "ListTimelineProperties",
+            "GET",
+            f"/api/v1/households/{household}/property-summaries",
+            on_load=True,
+        ),
+        action(
+            "Timeline",
+            "ListTimelinePeople",
+            "GET",
+            f"/api/v1/households/{household}/people",
+            on_load=True,
+        ),
+        action(
+            "Timeline",
+            "ListTimelineLoans",
+            "GET",
+            f"/api/v1/households/{household}/loans",
+            on_load=True,
+        ),
+        action(
+            "Timeline",
+            "ListTimeline",
+            "GET",
+            f"/api/v1/households/{household}/timeline"
+            "{{'?' + ["
+            "(TimelineFrom.text || '').trim() ? 'from_date=' + encodeURIComponent(TimelineFrom.text.trim()) : '', "
+            "(TimelineTo.text || '').trim() ? 'to_date=' + encodeURIComponent(TimelineTo.text.trim()) : '', "
+            "'include_disabled=' + (TimelineIncludeDisabled.selectedOptionValue || 'false')"
+            "].filter(Boolean).join('&')}}",
+            on_load=True,
+        ),
+        action(
+            "Timeline",
+            "CreateTimelineEvent",
+            "POST",
+            f"/api/v1/households/{household}/events",
+            body="{{({ event_type_id: TimelineEventType.selectedOptionValue, idempotency_key: appsmith.store.timelineAdvancedMode ? String(TimelineIdempotencyKey.text || '').trim() || null : null, effective_at: String(TimelineEffectiveAt.text || '').trim(), property_id: TimelineProperty.selectedOptionValue && TimelineProperty.selectedOptionValue !== 'NONE' ? TimelineProperty.selectedOptionValue : null, person_id: TimelinePerson.selectedOptionValue && TimelinePerson.selectedOptionValue !== 'NONE' ? TimelinePerson.selectedOptionValue : null, loan_id: TimelineLoan.selectedOptionValue && TimelineLoan.selectedOptionValue !== 'NONE' ? TimelineLoan.selectedOptionValue : null, amount: String(TimelineAmount.text || '').trim() ? Number(TimelineAmount.text) : null, percentage: String(TimelinePercentage.text || '').trim() ? Number(TimelinePercentage.text) : null, payload: appsmith.store.timelineAdvancedMode ? JSON.parse(TimelinePayload.text || '{}') : {}, notes: String(TimelineNotes.text || '').trim() || null, classification: TimelineClassification.selectedOptionValue, is_enabled: true })}}",
+        ),
+        action(
+            "Timeline",
+            "ToggleTimelineEvent",
+            "PATCH",
+            "/api/v1/events/{{TimelineTable.selectedRow?.id || ''}}/enabled",
+            body="{{({ is_enabled: !(TimelineTable.selectedRow?.is_enabled || false) })}}",
         ),
         action("Settings", "HealthCheck", "GET", "/health/ready", on_load=True),
         action(
