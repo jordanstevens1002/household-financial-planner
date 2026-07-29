@@ -37,6 +37,7 @@ Repeat in both modes:
 2. Confirm existing events are ordered by effective date and display provenance, related record,
    enabled state and quality flags.
 3. Filter by a valid from/to date and confirm only matching events remain.
+   With both dates blank, confirm the request omits both parameters rather than sending `null`.
 4. Add a planned event with an explicit ISO timestamp such as `2027-01-01T09:00:00+11:00`.
 5. Confirm it appears as **Planned**, then disable and re-enable it.
 6. Confirm an observed event cannot be toggled.

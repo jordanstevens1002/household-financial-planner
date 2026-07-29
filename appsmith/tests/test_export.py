@@ -131,14 +131,17 @@ class AppsmithExportTests(unittest.TestCase):
             for item in self.application["actionList"]
         }
         timeline = actions["ListTimeline"]["actionConfiguration"]
-        self.assertEqual(
-            timeline["path"],
-            "/api/v1/households/{{appsmith.store.householdId}}/timeline",
+        self.assertTrue(
+            timeline["path"].startswith(
+                "/api/v1/households/{{appsmith.store.householdId}}/timeline"
+            )
         )
-        parameters = {item["key"]: item["value"] for item in timeline["queryParameters"]}
-        self.assertIn("TimelineFrom.text", parameters["from_date"])
-        self.assertIn("TimelineTo.text", parameters["to_date"])
-        self.assertIn("TimelineIncludeDisabled", parameters["include_disabled"])
+        self.assertIn("TimelineFrom.text", timeline["path"])
+        self.assertIn("TimelineTo.text", timeline["path"])
+        self.assertIn("TimelineIncludeDisabled", timeline["path"])
+        self.assertIn(".filter(Boolean)", timeline["path"])
+        self.assertNotIn("from_date=null", timeline["path"])
+        self.assertEqual(timeline["queryParameters"], [])
 
         create = actions["CreateTimelineEvent"]["actionConfiguration"]["body"]
         for field in (

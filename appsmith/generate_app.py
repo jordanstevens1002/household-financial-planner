@@ -2570,16 +2570,13 @@ def actions() -> list[dict[str, Any]]:
             "Timeline",
             "ListTimeline",
             "GET",
-            f"/api/v1/households/{household}/timeline",
+            f"/api/v1/households/{household}/timeline"
+            "{{'?' + ["
+            "(TimelineFrom.text || '').trim() ? 'from_date=' + encodeURIComponent(TimelineFrom.text.trim()) : '', "
+            "(TimelineTo.text || '').trim() ? 'to_date=' + encodeURIComponent(TimelineTo.text.trim()) : '', "
+            "'include_disabled=' + (TimelineIncludeDisabled.selectedOptionValue || 'false')"
+            "].filter(Boolean).join('&')}}",
             on_load=True,
-            query_parameters=(
-                ("from_date", "{{String(TimelineFrom.text || '').trim() || undefined}}"),
-                ("to_date", "{{String(TimelineTo.text || '').trim() || undefined}}"),
-                (
-                    "include_disabled",
-                    "{{TimelineIncludeDisabled.selectedOptionValue || 'false'}}",
-                ),
-            ),
         ),
         action(
             "Timeline",

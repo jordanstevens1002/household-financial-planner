@@ -34054,7 +34054,7 @@
         "actionConfiguration": {
           "timeoutInMillisecond": 10000,
           "paginationType": "NONE",
-          "path": "/api/v1/households/{{appsmith.store.householdId}}/timeline",
+          "path": "/api/v1/households/{{appsmith.store.householdId}}/timeline{{'?' + [(TimelineFrom.text || '').trim() ? 'from_date=' + encodeURIComponent(TimelineFrom.text.trim()) : '', (TimelineTo.text || '').trim() ? 'to_date=' + encodeURIComponent(TimelineTo.text.trim()) : '', 'include_disabled=' + (TimelineIncludeDisabled.selectedOptionValue || 'false')].filter(Boolean).join('&')}}",
           "headers": [
             {
               "key": "Authorization",
@@ -34070,20 +34070,7 @@
             }
           ],
           "encodeParamsToggle": true,
-          "queryParameters": [
-            {
-              "key": "from_date",
-              "value": "{{String(TimelineFrom.text || '').trim() || undefined}}"
-            },
-            {
-              "key": "to_date",
-              "value": "{{String(TimelineTo.text || '').trim() || undefined}}"
-            },
-            {
-              "key": "include_disabled",
-              "value": "{{TimelineIncludeDisabled.selectedOptionValue || 'false'}}"
-            }
-          ],
+          "queryParameters": [],
           "bodyFormData": [],
           "httpMethod": "GET",
           "formData": {
@@ -34097,9 +34084,7 @@
         "messages": [],
         "jsonPathKeys": [
           "appsmith.store.householdId",
-          "String(TimelineFrom.text || '').trim() || undefined",
-          "String(TimelineTo.text || '').trim() || undefined",
-          "TimelineIncludeDisabled.selectedOptionValue || 'false'"
+          "'?' + [(TimelineFrom.text || '').trim() ? 'from_date=' + encodeURIComponent(TimelineFrom.text.trim()) : '', (TimelineTo.text || '').trim() ? 'to_date=' + encodeURIComponent(TimelineTo.text.trim()) : '', 'include_disabled=' + (TimelineIncludeDisabled.selectedOptionValue || 'false')].filter(Boolean).join('&')"
         ],
         "confirmBeforeExecute": false,
         "userPermissions": []
@@ -34123,7 +34108,7 @@
         "actionConfiguration": {
           "timeoutInMillisecond": 10000,
           "paginationType": "NONE",
-          "path": "/api/v1/households/{{appsmith.store.householdId}}/timeline",
+          "path": "/api/v1/households/{{appsmith.store.householdId}}/timeline{{'?' + [(TimelineFrom.text || '').trim() ? 'from_date=' + encodeURIComponent(TimelineFrom.text.trim()) : '', (TimelineTo.text || '').trim() ? 'to_date=' + encodeURIComponent(TimelineTo.text.trim()) : '', 'include_disabled=' + (TimelineIncludeDisabled.selectedOptionValue || 'false')].filter(Boolean).join('&')}}",
           "headers": [
             {
               "key": "Authorization",
@@ -34139,20 +34124,7 @@
             }
           ],
           "encodeParamsToggle": true,
-          "queryParameters": [
-            {
-              "key": "from_date",
-              "value": "{{String(TimelineFrom.text || '').trim() || undefined}}"
-            },
-            {
-              "key": "to_date",
-              "value": "{{String(TimelineTo.text || '').trim() || undefined}}"
-            },
-            {
-              "key": "include_disabled",
-              "value": "{{TimelineIncludeDisabled.selectedOptionValue || 'false'}}"
-            }
-          ],
+          "queryParameters": [],
           "bodyFormData": [],
           "httpMethod": "GET",
           "formData": {
@@ -34166,9 +34138,7 @@
         "messages": [],
         "jsonPathKeys": [
           "appsmith.store.householdId",
-          "String(TimelineFrom.text || '').trim() || undefined",
-          "String(TimelineTo.text || '').trim() || undefined",
-          "TimelineIncludeDisabled.selectedOptionValue || 'false'"
+          "'?' + [(TimelineFrom.text || '').trim() ? 'from_date=' + encodeURIComponent(TimelineFrom.text.trim()) : '', (TimelineTo.text || '').trim() ? 'to_date=' + encodeURIComponent(TimelineTo.text.trim()) : '', 'include_disabled=' + (TimelineIncludeDisabled.selectedOptionValue || 'false')].filter(Boolean).join('&')"
         ],
         "confirmBeforeExecute": false,
         "userPermissions": []
