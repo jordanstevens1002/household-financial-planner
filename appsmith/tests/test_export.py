@@ -331,11 +331,14 @@ class AppsmithExportTests(unittest.TestCase):
         self.assertIn("AI assistants are permitted", contributing)
         self.assertIn("Use [Conventional Commits]", contributing)
         self.assertIn("targeting `develop`", contributing)
+        self.assertIn("approximately 750 human-reviewed changed lines", contributing)
+        self.assertIn("exceeding 1,500", contributing)
 
         ci_workflow = (repository / ".github/workflows/ci.yml").read_text(
             encoding="utf-8"
         )
         self.assertIn("conventional-pr-title:", ci_workflow)
+        self.assertIn("pr-size-guidance:", ci_workflow)
         self.assertIn("branches: [main, develop]", ci_workflow)
 
         primary_files = (

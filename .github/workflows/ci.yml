@@ -33,6 +33,61 @@ jobs:
               )
           PY
 
+  pr-size-guidance:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Report pull request size guidance
+        run: |
+          python3 - <<'PY'
+          import os
+          import subprocess
+
+          generated_paths = {
+              "appsmith/household-financial-planner.json",
+          }
+          output = subprocess.check_output(
+              ["git", "diff", "--numstat", os.environ["BASE_SHA"], os.environ["HEAD_SHA"]],
+              text=True,
+          )
+          reviewed = generated = 0
+          for row in output.splitlines():
+              additions, deletions, path = row.split("\t", 2)
+              if additions == "-" or deletions == "-":
+                  continue
+              changed = int(additions) + int(deletions)
+              if path in generated_paths or path.endswith(".lock"):
+                  generated += changed
+              else:
+                  reviewed += changed
+
+          summary = (
+              f"Human-reviewed changed lines: {reviewed}\n"
+              f"Generated or lock-file changed lines: {generated}\n"
+          )
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as stream:
+              stream.write("## Pull request size\n\n")
+              stream.write(summary.replace("\n", "  \n"))
+
+          print(summary, end="")
+          if reviewed > 1500:
+              print(
+                  "::warning::This pull request exceeds 1,500 human-reviewed changed lines. "
+                  "Split it or record explicit maintainer agreement."
+              )
+          elif reviewed > 750:
+              print(
+                  "::warning::This pull request exceeds the 750-line review guide. "
+                  "Explain why it remains one cohesive change."
+              )
+          PY
+
   appsmith-quality:
     runs-on: ubuntu-latest
     steps:

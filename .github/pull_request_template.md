@@ -2,6 +2,16 @@
 
 Describe the user-visible outcome and explicitly list anything deferred.
 
+## Issue and scope
+
+- Related issue: `Refs #`
+- [ ] The issue was split into independently reviewable slices where appropriate.
+- Human-reviewed changed lines:
+- Generated changed lines:
+- [ ] The initial human-reviewed diff is near the 750-line guide, or the reason it cannot be split
+      is explained below.
+- Size exception:
+
 ## API and migration changes
 
 - API changes:
