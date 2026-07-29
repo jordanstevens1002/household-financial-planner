@@ -583,7 +583,7 @@
                   "bottomRow": 24,
                   "leftColumn": 2,
                   "rightColumn": 62,
-                  "text": "Connect to the API, then create or choose the household you want to explore.",
+                  "text": "{{appsmith.store.householdId ? 'A concise view of the household position using backend-calculated figures.' : 'Connect to the API, then create or choose the household you want to explore.'}}",
                   "isVisible": true,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -677,10 +677,593 @@
                       "key": "onClick"
                     }
                   ]
+                },
+                {
+                  "widgetName": "DashboardHeading",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "dashboardheading",
+                  "parentId": "0",
+                  "topRow": 39,
+                  "bottomRow": 44,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Household overview",
+                  "isVisible": "{{!!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "DashboardRecordCounts",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "dashboardrecordcounts",
+                  "parentId": "0",
+                  "topRow": 45,
+                  "bottomRow": 51,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "People: {{Array.isArray(DashboardPeople.data) ? DashboardPeople.data.length : '\u2014'}} \u00b7 Properties: {{Array.isArray(DashboardProperties.data) ? DashboardProperties.data.length : '\u2014'}} \u00b7 Retirement accounts: {{Array.isArray(DashboardRetirement.data) ? DashboardRetirement.data.length : '\u2014'}} \u00b7 Saved scenarios: {{Array.isArray(DashboardScenarios.data) ? DashboardScenarios.data.length : '\u2014'}}",
+                  "isVisible": "{{!!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "DashboardMonthlySurplus",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "dashboardmonthlysurplus",
+                  "parentId": "0",
+                  "topRow": 52,
+                  "bottomRow": 58,
+                  "leftColumn": 2,
+                  "rightColumn": 22,
+                  "text": "Monthly surplus: {{DashboardCashflow.data?.currency || appsmith.store.householdCurrency || ''}} {{DashboardCashflow.data?.monthly_surplus ?? 'Not available'}}",
+                  "isVisible": "{{!!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "DashboardMonthlyIncome",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "dashboardmonthlyincome",
+                  "parentId": "0",
+                  "topRow": 52,
+                  "bottomRow": 58,
+                  "leftColumn": 23,
+                  "rightColumn": 42,
+                  "text": "Monthly net income: {{DashboardCashflow.data?.currency || appsmith.store.householdCurrency || ''}} {{DashboardCashflow.data?.monthly_net_income ?? 'Not available'}}",
+                  "isVisible": "{{!!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "DashboardMonthlyExpenses",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "dashboardmonthlyexpenses",
+                  "parentId": "0",
+                  "topRow": 52,
+                  "bottomRow": 58,
+                  "leftColumn": 43,
+                  "rightColumn": 62,
+                  "text": "Monthly expenses: {{DashboardCashflow.data?.currency || appsmith.store.householdCurrency || ''}} {{DashboardCashflow.data?.monthly_expenses ?? 'Not available'}}",
+                  "isVisible": "{{!!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "DashboardWarnings",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "dashboardwarnings",
+                  "parentId": "0",
+                  "topRow": 59,
+                  "bottomRow": 65,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "{{Array.isArray(DashboardCashflow.data?.warnings) && DashboardCashflow.data.warnings.length ? 'Review: ' + DashboardCashflow.data.warnings.join(' \u2022 ') : ''}}",
+                  "isVisible": "{{!!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "DashboardPropertiesTable",
+                  "displayName": "Table",
+                  "type": "TABLE_WIDGET_V2",
+                  "widgetId": "dashboardpropertiestable",
+                  "parentId": "0",
+                  "topRow": 66,
+                  "bottomRow": 91,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "tableData": "{{Array.isArray(DashboardProperties.data) ? DashboardProperties.data.map((item) => ({...item, current_value_display: item.current_value == null ? 'Not recorded' : item.currency + ' ' + item.current_value, debt_display: item.total_property_debt == null ? 'Not recorded' : item.currency + ' ' + item.total_property_debt})) : []}}",
+                  "isVisible": "{{!!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 3,
+                  "defaultPageSize": 0,
+                  "isVisibleDownload": true,
+                  "isVisibleFilters": true,
+                  "isVisibleSearch": true,
+                  "isVisiblePagination": true,
+                  "label": "Property position",
+                  "searchKey": "",
+                  "columnOrder": [
+                    "id",
+                    "display_name",
+                    "current_value_display",
+                    "debt_display",
+                    "setup_mode"
+                  ],
+                  "primaryColumns": {
+                    "id": {
+                      "index": 0,
+                      "width": 150,
+                      "originalId": "id",
+                      "id": "id",
+                      "alias": "id",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": false,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "ID",
+                      "computedValue": "{{(DashboardPropertiesTable.tableData || []).map((currentRow) => currentRow[\"id\"])}}"
+                    },
+                    "display_name": {
+                      "index": 1,
+                      "width": 150,
+                      "originalId": "display_name",
+                      "id": "display_name",
+                      "alias": "display_name",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Property",
+                      "computedValue": "{{(DashboardPropertiesTable.tableData || []).map((currentRow) => currentRow[\"display_name\"])}}"
+                    },
+                    "current_value_display": {
+                      "index": 2,
+                      "width": 150,
+                      "originalId": "current_value_display",
+                      "id": "current_value_display",
+                      "alias": "current_value_display",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Current value",
+                      "computedValue": "{{(DashboardPropertiesTable.tableData || []).map((currentRow) => currentRow[\"current_value_display\"])}}"
+                    },
+                    "debt_display": {
+                      "index": 3,
+                      "width": 150,
+                      "originalId": "debt_display",
+                      "id": "debt_display",
+                      "alias": "debt_display",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Property debt",
+                      "computedValue": "{{(DashboardPropertiesTable.tableData || []).map((currentRow) => currentRow[\"debt_display\"])}}"
+                    },
+                    "setup_mode": {
+                      "index": 4,
+                      "width": 150,
+                      "originalId": "setup_mode",
+                      "id": "setup_mode",
+                      "alias": "setup_mode",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Setup",
+                      "computedValue": "{{(DashboardPropertiesTable.tableData || []).map((currentRow) => currentRow[\"setup_mode\"])}}"
+                    }
+                  },
+                  "derivedColumns": {},
+                  "columnSizeMap": {},
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "tableData"
+                    },
+                    {
+                      "key": "isVisible"
+                    },
+                    {
+                      "key": "primaryColumns.id.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.display_name.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.current_value_display.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.debt_display.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.setup_mode.computedValue"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "DashboardTimelineTable",
+                  "displayName": "Table",
+                  "type": "TABLE_WIDGET_V2",
+                  "widgetId": "dashboardtimelinetable",
+                  "parentId": "0",
+                  "topRow": 98,
+                  "bottomRow": 123,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "tableData": "{{Array.isArray(DashboardTimeline.data?.events) ? DashboardTimeline.data.events.filter((item) => item.is_enabled && ['PLANNED', 'PROJECTED'].includes(item.classification)).slice(0, 5).map((item) => ({...item, event: item.event_type_code.replaceAll('_', ' ').toLowerCase().replace(/(^|\\s)\\S/g, (letter) => letter.toUpperCase()), effective_date: item.effective_at.slice(0, 10), provenance: item.classification === 'PLANNED' ? 'Planned' : 'Projected'})) : []}}",
+                  "isVisible": "{{!!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 3,
+                  "defaultPageSize": 0,
+                  "isVisibleDownload": true,
+                  "isVisibleFilters": true,
+                  "isVisibleSearch": true,
+                  "isVisiblePagination": true,
+                  "label": "Upcoming plans and projections",
+                  "searchKey": "",
+                  "columnOrder": [
+                    "id",
+                    "event",
+                    "effective_date",
+                    "provenance",
+                    "notes"
+                  ],
+                  "primaryColumns": {
+                    "id": {
+                      "index": 0,
+                      "width": 150,
+                      "originalId": "id",
+                      "id": "id",
+                      "alias": "id",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": false,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "ID",
+                      "computedValue": "{{(DashboardTimelineTable.tableData || []).map((currentRow) => currentRow[\"id\"])}}"
+                    },
+                    "event": {
+                      "index": 1,
+                      "width": 150,
+                      "originalId": "event",
+                      "id": "event",
+                      "alias": "event",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Upcoming event",
+                      "computedValue": "{{(DashboardTimelineTable.tableData || []).map((currentRow) => currentRow[\"event\"])}}"
+                    },
+                    "effective_date": {
+                      "index": 2,
+                      "width": 150,
+                      "originalId": "effective_date",
+                      "id": "effective_date",
+                      "alias": "effective_date",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Date",
+                      "computedValue": "{{(DashboardTimelineTable.tableData || []).map((currentRow) => currentRow[\"effective_date\"])}}"
+                    },
+                    "provenance": {
+                      "index": 3,
+                      "width": 150,
+                      "originalId": "provenance",
+                      "id": "provenance",
+                      "alias": "provenance",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Type",
+                      "computedValue": "{{(DashboardTimelineTable.tableData || []).map((currentRow) => currentRow[\"provenance\"])}}"
+                    },
+                    "notes": {
+                      "index": 4,
+                      "width": 150,
+                      "originalId": "notes",
+                      "id": "notes",
+                      "alias": "notes",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Notes",
+                      "computedValue": "{{(DashboardTimelineTable.tableData || []).map((currentRow) => currentRow[\"notes\"])}}"
+                    }
+                  },
+                  "derivedColumns": {},
+                  "columnSizeMap": {},
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "tableData"
+                    },
+                    {
+                      "key": "isVisible"
+                    },
+                    {
+                      "key": "primaryColumns.id.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.event.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.effective_date.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.provenance.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.notes.computedValue"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
                 }
               ]
             },
-            "layoutOnLoadActions": [],
+            "layoutOnLoadActions": [
+              [
+                {
+                  "id": "Home_DashboardPeople",
+                  "name": "DashboardPeople",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
+              [
+                {
+                  "id": "Home_DashboardCashflow",
+                  "name": "DashboardCashflow",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
+              [
+                {
+                  "id": "Home_DashboardProperties",
+                  "name": "DashboardProperties",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
+              [
+                {
+                  "id": "Home_DashboardRetirement",
+                  "name": "DashboardRetirement",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
+              [
+                {
+                  "id": "Home_DashboardScenarios",
+                  "name": "DashboardScenarios",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
+              [
+                {
+                  "id": "Home_DashboardTimeline",
+                  "name": "DashboardTimeline",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ]
+            ],
             "layoutOnLoadActionErrors": [],
             "validOnPageLoadActions": true,
             "deleted": false,
@@ -1171,7 +1754,7 @@
                   "bottomRow": 24,
                   "leftColumn": 2,
                   "rightColumn": 62,
-                  "text": "Connect to the API, then create or choose the household you want to explore.",
+                  "text": "{{appsmith.store.householdId ? 'A concise view of the household position using backend-calculated figures.' : 'Connect to the API, then create or choose the household you want to explore.'}}",
                   "isVisible": true,
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -1265,10 +1848,593 @@
                       "key": "onClick"
                     }
                   ]
+                },
+                {
+                  "widgetName": "DashboardHeading",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "dashboardheading",
+                  "parentId": "0",
+                  "topRow": 39,
+                  "bottomRow": 44,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "Household overview",
+                  "isVisible": "{{!!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "DashboardRecordCounts",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "dashboardrecordcounts",
+                  "parentId": "0",
+                  "topRow": 45,
+                  "bottomRow": 51,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "People: {{Array.isArray(DashboardPeople.data) ? DashboardPeople.data.length : '\u2014'}} \u00b7 Properties: {{Array.isArray(DashboardProperties.data) ? DashboardProperties.data.length : '\u2014'}} \u00b7 Retirement accounts: {{Array.isArray(DashboardRetirement.data) ? DashboardRetirement.data.length : '\u2014'}} \u00b7 Saved scenarios: {{Array.isArray(DashboardScenarios.data) ? DashboardScenarios.data.length : '\u2014'}}",
+                  "isVisible": "{{!!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "DashboardMonthlySurplus",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "dashboardmonthlysurplus",
+                  "parentId": "0",
+                  "topRow": 52,
+                  "bottomRow": 58,
+                  "leftColumn": 2,
+                  "rightColumn": 22,
+                  "text": "Monthly surplus: {{DashboardCashflow.data?.currency || appsmith.store.householdCurrency || ''}} {{DashboardCashflow.data?.monthly_surplus ?? 'Not available'}}",
+                  "isVisible": "{{!!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "DashboardMonthlyIncome",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "dashboardmonthlyincome",
+                  "parentId": "0",
+                  "topRow": 52,
+                  "bottomRow": 58,
+                  "leftColumn": 23,
+                  "rightColumn": 42,
+                  "text": "Monthly net income: {{DashboardCashflow.data?.currency || appsmith.store.householdCurrency || ''}} {{DashboardCashflow.data?.monthly_net_income ?? 'Not available'}}",
+                  "isVisible": "{{!!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "DashboardMonthlyExpenses",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "dashboardmonthlyexpenses",
+                  "parentId": "0",
+                  "topRow": 52,
+                  "bottomRow": 58,
+                  "leftColumn": 43,
+                  "rightColumn": 62,
+                  "text": "Monthly expenses: {{DashboardCashflow.data?.currency || appsmith.store.householdCurrency || ''}} {{DashboardCashflow.data?.monthly_expenses ?? 'Not available'}}",
+                  "isVisible": "{{!!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "DashboardWarnings",
+                  "displayName": "Text",
+                  "type": "TEXT_WIDGET",
+                  "widgetId": "dashboardwarnings",
+                  "parentId": "0",
+                  "topRow": 59,
+                  "bottomRow": 65,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "text": "{{Array.isArray(DashboardCashflow.data?.warnings) && DashboardCashflow.data.warnings.length ? 'Review: ' + DashboardCashflow.data.warnings.join(' \u2022 ') : ''}}",
+                  "isVisible": "{{!!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "fontFamily": "{{appsmith.theme.fontFamily.appFont}}",
+                  "fontSize": "1rem",
+                  "textAlign": "LEFT",
+                  "textColor": "#172B4D",
+                  "fontStyle": "",
+                  "overflow": "NONE",
+                  "shouldTruncate": false,
+                  "animateLoading": true,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "fontFamily"
+                    },
+                    {
+                      "key": "text"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "DashboardPropertiesTable",
+                  "displayName": "Table",
+                  "type": "TABLE_WIDGET_V2",
+                  "widgetId": "dashboardpropertiestable",
+                  "parentId": "0",
+                  "topRow": 66,
+                  "bottomRow": 91,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "tableData": "{{Array.isArray(DashboardProperties.data) ? DashboardProperties.data.map((item) => ({...item, current_value_display: item.current_value == null ? 'Not recorded' : item.currency + ' ' + item.current_value, debt_display: item.total_property_debt == null ? 'Not recorded' : item.currency + ' ' + item.total_property_debt})) : []}}",
+                  "isVisible": "{{!!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 3,
+                  "defaultPageSize": 0,
+                  "isVisibleDownload": true,
+                  "isVisibleFilters": true,
+                  "isVisibleSearch": true,
+                  "isVisiblePagination": true,
+                  "label": "Property position",
+                  "searchKey": "",
+                  "columnOrder": [
+                    "id",
+                    "display_name",
+                    "current_value_display",
+                    "debt_display",
+                    "setup_mode"
+                  ],
+                  "primaryColumns": {
+                    "id": {
+                      "index": 0,
+                      "width": 150,
+                      "originalId": "id",
+                      "id": "id",
+                      "alias": "id",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": false,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "ID",
+                      "computedValue": "{{(DashboardPropertiesTable.tableData || []).map((currentRow) => currentRow[\"id\"])}}"
+                    },
+                    "display_name": {
+                      "index": 1,
+                      "width": 150,
+                      "originalId": "display_name",
+                      "id": "display_name",
+                      "alias": "display_name",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Property",
+                      "computedValue": "{{(DashboardPropertiesTable.tableData || []).map((currentRow) => currentRow[\"display_name\"])}}"
+                    },
+                    "current_value_display": {
+                      "index": 2,
+                      "width": 150,
+                      "originalId": "current_value_display",
+                      "id": "current_value_display",
+                      "alias": "current_value_display",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Current value",
+                      "computedValue": "{{(DashboardPropertiesTable.tableData || []).map((currentRow) => currentRow[\"current_value_display\"])}}"
+                    },
+                    "debt_display": {
+                      "index": 3,
+                      "width": 150,
+                      "originalId": "debt_display",
+                      "id": "debt_display",
+                      "alias": "debt_display",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Property debt",
+                      "computedValue": "{{(DashboardPropertiesTable.tableData || []).map((currentRow) => currentRow[\"debt_display\"])}}"
+                    },
+                    "setup_mode": {
+                      "index": 4,
+                      "width": 150,
+                      "originalId": "setup_mode",
+                      "id": "setup_mode",
+                      "alias": "setup_mode",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Setup",
+                      "computedValue": "{{(DashboardPropertiesTable.tableData || []).map((currentRow) => currentRow[\"setup_mode\"])}}"
+                    }
+                  },
+                  "derivedColumns": {},
+                  "columnSizeMap": {},
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "tableData"
+                    },
+                    {
+                      "key": "isVisible"
+                    },
+                    {
+                      "key": "primaryColumns.id.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.display_name.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.current_value_display.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.debt_display.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.setup_mode.computedValue"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
+                  "widgetName": "DashboardTimelineTable",
+                  "displayName": "Table",
+                  "type": "TABLE_WIDGET_V2",
+                  "widgetId": "dashboardtimelinetable",
+                  "parentId": "0",
+                  "topRow": 98,
+                  "bottomRow": 123,
+                  "leftColumn": 2,
+                  "rightColumn": 62,
+                  "tableData": "{{Array.isArray(DashboardTimeline.data?.events) ? DashboardTimeline.data.events.filter((item) => item.is_enabled && ['PLANNED', 'PROJECTED'].includes(item.classification)).slice(0, 5).map((item) => ({...item, event: item.event_type_code.replaceAll('_', ' ').toLowerCase().replace(/(^|\\s)\\S/g, (letter) => letter.toUpperCase()), effective_date: item.effective_at.slice(0, 10), provenance: item.classification === 'PLANNED' ? 'Planned' : 'Projected'})) : []}}",
+                  "isVisible": "{{!!appsmith.store.householdId}}",
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 3,
+                  "defaultPageSize": 0,
+                  "isVisibleDownload": true,
+                  "isVisibleFilters": true,
+                  "isVisibleSearch": true,
+                  "isVisiblePagination": true,
+                  "label": "Upcoming plans and projections",
+                  "searchKey": "",
+                  "columnOrder": [
+                    "id",
+                    "event",
+                    "effective_date",
+                    "provenance",
+                    "notes"
+                  ],
+                  "primaryColumns": {
+                    "id": {
+                      "index": 0,
+                      "width": 150,
+                      "originalId": "id",
+                      "id": "id",
+                      "alias": "id",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": false,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "ID",
+                      "computedValue": "{{(DashboardTimelineTable.tableData || []).map((currentRow) => currentRow[\"id\"])}}"
+                    },
+                    "event": {
+                      "index": 1,
+                      "width": 150,
+                      "originalId": "event",
+                      "id": "event",
+                      "alias": "event",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Upcoming event",
+                      "computedValue": "{{(DashboardTimelineTable.tableData || []).map((currentRow) => currentRow[\"event\"])}}"
+                    },
+                    "effective_date": {
+                      "index": 2,
+                      "width": 150,
+                      "originalId": "effective_date",
+                      "id": "effective_date",
+                      "alias": "effective_date",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Date",
+                      "computedValue": "{{(DashboardTimelineTable.tableData || []).map((currentRow) => currentRow[\"effective_date\"])}}"
+                    },
+                    "provenance": {
+                      "index": 3,
+                      "width": 150,
+                      "originalId": "provenance",
+                      "id": "provenance",
+                      "alias": "provenance",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Type",
+                      "computedValue": "{{(DashboardTimelineTable.tableData || []).map((currentRow) => currentRow[\"provenance\"])}}"
+                    },
+                    "notes": {
+                      "index": 4,
+                      "width": 150,
+                      "originalId": "notes",
+                      "id": "notes",
+                      "alias": "notes",
+                      "horizontalAlignment": "LEFT",
+                      "verticalAlignment": "CENTER",
+                      "columnType": "text",
+                      "textSize": "PARAGRAPH",
+                      "enableFilter": true,
+                      "enableSort": true,
+                      "isVisible": true,
+                      "isDisabled": false,
+                      "isCellVisible": true,
+                      "isDerived": false,
+                      "label": "Notes",
+                      "computedValue": "{{(DashboardTimelineTable.tableData || []).map((currentRow) => currentRow[\"notes\"])}}"
+                    }
+                  },
+                  "derivedColumns": {},
+                  "columnSizeMap": {},
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "tableData"
+                    },
+                    {
+                      "key": "isVisible"
+                    },
+                    {
+                      "key": "primaryColumns.id.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.event.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.effective_date.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.provenance.computedValue"
+                    },
+                    {
+                      "key": "primaryColumns.notes.computedValue"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
                 }
               ]
             },
-            "layoutOnLoadActions": [],
+            "layoutOnLoadActions": [
+              [
+                {
+                  "id": "Home_DashboardPeople",
+                  "name": "DashboardPeople",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
+              [
+                {
+                  "id": "Home_DashboardCashflow",
+                  "name": "DashboardCashflow",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
+              [
+                {
+                  "id": "Home_DashboardProperties",
+                  "name": "DashboardProperties",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
+              [
+                {
+                  "id": "Home_DashboardRetirement",
+                  "name": "DashboardRetirement",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
+              [
+                {
+                  "id": "Home_DashboardScenarios",
+                  "name": "DashboardScenarios",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
+              [
+                {
+                  "id": "Home_DashboardTimeline",
+                  "name": "DashboardTimeline",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ]
+            ],
             "layoutOnLoadActionErrors": [],
             "validOnPageLoadActions": true,
             "deleted": false,
@@ -1817,58 +2983,56 @@
                 },
                 {
                   "widgetName": "HouseholdCurrency",
-                  "displayName": "Input",
-                  "type": "INPUT_WIDGET_V2",
+                  "displayName": "Select",
+                  "type": "SELECT_WIDGET",
                   "widgetId": "householdcurrency",
                   "parentId": "0",
                   "topRow": 22,
                   "bottomRow": 29,
                   "leftColumn": 31,
                   "rightColumn": 47,
-                  "label": "Currency code (for example AUD or USD)",
-                  "labelPosition": "Top",
-                  "defaultText": "",
-                  "placeholderText": "Currency code (for example AUD or USD)",
-                  "inputType": "TEXT",
-                  "isRequired": true,
+                  "labelText": "Currency",
+                  "sourceData": "{{Array.isArray(ListCurrencyReferences.data) ? ListCurrencyReferences.data.map((item) => ({label: item.code + ' \u2014 ' + item.display_name, value: item.code})) : []}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
+                  "defaultOptionValue": "",
+                  "placeholderText": "Choose currency",
                   "isVisible": true,
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
-                  "version": 2,
-                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "version": 1,
                   "dynamicBindingPathList": [
                     {
-                      "key": "borderRadius"
+                      "key": "sourceData"
                     }
                   ],
                   "dynamicTriggerPathList": []
                 },
                 {
                   "widgetName": "HouseholdJurisdiction",
-                  "displayName": "Input",
-                  "type": "INPUT_WIDGET_V2",
+                  "displayName": "Select",
+                  "type": "SELECT_WIDGET",
                   "widgetId": "householdjurisdiction",
                   "parentId": "0",
                   "topRow": 22,
                   "bottomRow": 29,
                   "leftColumn": 48,
                   "rightColumn": 62,
-                  "label": "Jurisdiction (optional)",
-                  "labelPosition": "Top",
-                  "defaultText": "",
-                  "placeholderText": "Jurisdiction (optional)",
-                  "inputType": "TEXT",
-                  "isRequired": false,
+                  "labelText": "National jurisdiction (optional)",
+                  "sourceData": "{{[{label: 'No national jurisdiction', value: 'NONE'}, ...(Array.isArray(ListCountryReferences.data) ? ListCountryReferences.data.map((item) => ({label: item.flag + ' ' + item.display_name + ' (' + item.code + ')', value: item.code})) : [])]}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
+                  "defaultOptionValue": "NONE",
+                  "placeholderText": "Choose national jurisdiction (optional)",
                   "isVisible": true,
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
-                  "version": 2,
-                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "version": 1,
                   "dynamicBindingPathList": [
                     {
-                      "key": "borderRadius"
+                      "key": "sourceData"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -1886,7 +3050,7 @@
                   "text": "Create household",
                   "onClick": "{{CreateHousehold.run(async () => { await storeValue('householdId', CreateHousehold.data.id, true); await storeValue('householdName', CreateHousehold.data.display_name, true); await storeValue('householdCurrency', CreateHousehold.data.currency, true); await removeValue('personId'); await removeValue('personName'); await removeValue('propertyId'); await removeValue('propertyName'); await removeValue('retirementAccountId'); await removeValue('retirementAccountName'); await removeValue('scenarioId'); await removeValue('scenarioName'); showAlert('Household created and selected', 'success'); ListHouseholds.run(); navigateTo('Home'); }, () => showAlert(JSON.stringify(CreateHousehold.data?.detail || 'Could not create household'), 'error'))}}",
                   "isVisible": true,
-                  "isDisabled": "{{!(HouseholdName.text || '').trim() || !/^[A-Za-z]{3}$/.test((HouseholdCurrency.text || '').trim())}}",
+                  "isDisabled": "{{!(HouseholdName.text || '').trim() || !HouseholdCurrency.selectedOptionValue}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
                   "version": 1,
@@ -2154,6 +3318,26 @@
                 {
                   "id": "Households_ListHouseholds",
                   "name": "ListHouseholds",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
+              [
+                {
+                  "id": "Households_ListCountryReferences",
+                  "name": "ListCountryReferences",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
+              [
+                {
+                  "id": "Households_ListCurrencyReferences",
+                  "name": "ListCurrencyReferences",
                   "pluginType": "API",
                   "confirmBeforeExecute": false,
                   "jsonPathKeys": [],
@@ -2705,58 +3889,56 @@
                 },
                 {
                   "widgetName": "HouseholdCurrency",
-                  "displayName": "Input",
-                  "type": "INPUT_WIDGET_V2",
+                  "displayName": "Select",
+                  "type": "SELECT_WIDGET",
                   "widgetId": "householdcurrency",
                   "parentId": "0",
                   "topRow": 22,
                   "bottomRow": 29,
                   "leftColumn": 31,
                   "rightColumn": 47,
-                  "label": "Currency code (for example AUD or USD)",
-                  "labelPosition": "Top",
-                  "defaultText": "",
-                  "placeholderText": "Currency code (for example AUD or USD)",
-                  "inputType": "TEXT",
-                  "isRequired": true,
+                  "labelText": "Currency",
+                  "sourceData": "{{Array.isArray(ListCurrencyReferences.data) ? ListCurrencyReferences.data.map((item) => ({label: item.code + ' \u2014 ' + item.display_name, value: item.code})) : []}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
+                  "defaultOptionValue": "",
+                  "placeholderText": "Choose currency",
                   "isVisible": true,
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
-                  "version": 2,
-                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "version": 1,
                   "dynamicBindingPathList": [
                     {
-                      "key": "borderRadius"
+                      "key": "sourceData"
                     }
                   ],
                   "dynamicTriggerPathList": []
                 },
                 {
                   "widgetName": "HouseholdJurisdiction",
-                  "displayName": "Input",
-                  "type": "INPUT_WIDGET_V2",
+                  "displayName": "Select",
+                  "type": "SELECT_WIDGET",
                   "widgetId": "householdjurisdiction",
                   "parentId": "0",
                   "topRow": 22,
                   "bottomRow": 29,
                   "leftColumn": 48,
                   "rightColumn": 62,
-                  "label": "Jurisdiction (optional)",
-                  "labelPosition": "Top",
-                  "defaultText": "",
-                  "placeholderText": "Jurisdiction (optional)",
-                  "inputType": "TEXT",
-                  "isRequired": false,
+                  "labelText": "National jurisdiction (optional)",
+                  "sourceData": "{{[{label: 'No national jurisdiction', value: 'NONE'}, ...(Array.isArray(ListCountryReferences.data) ? ListCountryReferences.data.map((item) => ({label: item.flag + ' ' + item.display_name + ' (' + item.code + ')', value: item.code})) : [])]}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
+                  "defaultOptionValue": "NONE",
+                  "placeholderText": "Choose national jurisdiction (optional)",
                   "isVisible": true,
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
-                  "version": 2,
-                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "version": 1,
                   "dynamicBindingPathList": [
                     {
-                      "key": "borderRadius"
+                      "key": "sourceData"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -2774,7 +3956,7 @@
                   "text": "Create household",
                   "onClick": "{{CreateHousehold.run(async () => { await storeValue('householdId', CreateHousehold.data.id, true); await storeValue('householdName', CreateHousehold.data.display_name, true); await storeValue('householdCurrency', CreateHousehold.data.currency, true); await removeValue('personId'); await removeValue('personName'); await removeValue('propertyId'); await removeValue('propertyName'); await removeValue('retirementAccountId'); await removeValue('retirementAccountName'); await removeValue('scenarioId'); await removeValue('scenarioName'); showAlert('Household created and selected', 'success'); ListHouseholds.run(); navigateTo('Home'); }, () => showAlert(JSON.stringify(CreateHousehold.data?.detail || 'Could not create household'), 'error'))}}",
                   "isVisible": true,
-                  "isDisabled": "{{!(HouseholdName.text || '').trim() || !/^[A-Za-z]{3}$/.test((HouseholdCurrency.text || '').trim())}}",
+                  "isDisabled": "{{!(HouseholdName.text || '').trim() || !HouseholdCurrency.selectedOptionValue}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
                   "version": 1,
@@ -3042,6 +4224,26 @@
                 {
                   "id": "Households_ListHouseholds",
                   "name": "ListHouseholds",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
+              [
+                {
+                  "id": "Households_ListCountryReferences",
+                  "name": "ListCountryReferences",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
+              [
+                {
+                  "id": "Households_ListCurrencyReferences",
+                  "name": "ListCurrencyReferences",
                   "pluginType": "API",
                   "confirmBeforeExecute": false,
                   "jsonPathKeys": [],
@@ -3688,58 +4890,28 @@
                 },
                 {
                   "widgetName": "PersonResidencyCountry",
-                  "displayName": "Input",
-                  "type": "INPUT_WIDGET_V2",
+                  "displayName": "Select",
+                  "type": "SELECT_WIDGET",
                   "widgetId": "personresidencycountry",
                   "parentId": "0",
                   "topRow": 38,
                   "bottomRow": 45,
                   "leftColumn": 2,
                   "rightColumn": 24,
-                  "label": "Tax residency country (optional, two-letter code)",
-                  "labelPosition": "Top",
-                  "defaultText": "",
-                  "placeholderText": "Tax residency country (optional, two-letter code)",
-                  "inputType": "TEXT",
-                  "isRequired": false,
+                  "labelText": "Tax residency country (optional)",
+                  "sourceData": "{{[{label: 'Not recorded', value: 'NONE'}, ...(Array.isArray(ListPersonCountryReferences.data) ? ListPersonCountryReferences.data.map((item) => ({label: item.flag + ' ' + item.display_name + ' (' + item.code + ')', value: item.code})) : [])]}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
+                  "defaultOptionValue": "NONE",
+                  "placeholderText": "Choose tax residency country (optional)",
                   "isVisible": true,
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
-                  "version": 2,
-                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "version": 1,
                   "dynamicBindingPathList": [
                     {
-                      "key": "borderRadius"
-                    }
-                  ],
-                  "dynamicTriggerPathList": []
-                },
-                {
-                  "widgetName": "PersonTaxJurisdiction",
-                  "displayName": "Input",
-                  "type": "INPUT_WIDGET_V2",
-                  "widgetId": "persontaxjurisdiction",
-                  "parentId": "0",
-                  "topRow": 38,
-                  "bottomRow": 45,
-                  "leftColumn": 25,
-                  "rightColumn": 47,
-                  "label": "Tax jurisdiction (optional)",
-                  "labelPosition": "Top",
-                  "defaultText": "",
-                  "placeholderText": "Tax jurisdiction (optional)",
-                  "inputType": "TEXT",
-                  "isRequired": false,
-                  "isVisible": true,
-                  "isDisabled": false,
-                  "isLoading": false,
-                  "renderMode": "CANVAS",
-                  "version": 2,
-                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
-                  "dynamicBindingPathList": [
-                    {
-                      "key": "borderRadius"
+                      "key": "sourceData"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -3752,8 +4924,8 @@
                   "parentId": "0",
                   "topRow": 38,
                   "bottomRow": 45,
-                  "leftColumn": 48,
-                  "rightColumn": 62,
+                  "leftColumn": 25,
+                  "rightColumn": 43,
                   "label": "Effective from (YYYY-MM-DD)",
                   "labelPosition": "Top",
                   "defaultText": "",
@@ -3774,19 +4946,89 @@
                   "dynamicTriggerPathList": []
                 },
                 {
+                  "widgetName": "TogglePersonAdvancedButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "togglepersonadvancedbutton",
+                  "parentId": "0",
+                  "topRow": 39,
+                  "bottomRow": 43,
+                  "leftColumn": 44,
+                  "rightColumn": 62,
+                  "text": "{{appsmith.store.personAdvancedMode ? 'Hide advanced settings' : 'Advanced settings'}}",
+                  "onClick": "{{storeValue('personAdvancedMode', !appsmith.store.personAdvancedMode, false)}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "PersonTaxJurisdiction",
+                  "displayName": "Select",
+                  "type": "SELECT_WIDGET",
+                  "widgetId": "persontaxjurisdiction",
+                  "parentId": "0",
+                  "topRow": 47,
+                  "bottomRow": 54,
+                  "leftColumn": 2,
+                  "rightColumn": 30,
+                  "labelText": "Tax jurisdiction override",
+                  "sourceData": "{{[{label: 'Use tax residency country', value: 'NONE'}, ...(Array.isArray(ListPersonCountryReferences.data) ? ListPersonCountryReferences.data.map((item) => ({label: item.flag + ' ' + item.display_name + ' (' + item.code + ')', value: item.code})) : [])]}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
+                  "defaultOptionValue": "NONE",
+                  "placeholderText": "Choose tax jurisdiction override",
+                  "isVisible": "{{appsmith.store.personAdvancedMode}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "sourceData"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
                   "widgetName": "CreatePersonButton",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
                   "widgetId": "createpersonbutton",
                   "parentId": "0",
-                  "topRow": 47,
-                  "bottomRow": 51,
+                  "topRow": 56,
+                  "bottomRow": 60,
                   "leftColumn": 2,
                   "rightColumn": 18,
                   "text": "Add person",
-                  "onClick": "{{CreatePerson.run(() => { showAlert('Person added', 'success'); ListPeople.run(); }, () => showAlert(JSON.stringify(CreatePerson.data?.detail || 'Could not add person'), 'error'))}}",
+                  "onClick": "{{CreatePerson.run(() => { showAlert('Person added', 'success'); ListPeople.run(); resetWidget('PersonDisplayName', true); resetWidget('PersonLegalName', true); resetWidget('PersonDateOfBirth', true); resetWidget('PersonResidencyCountry', true); resetWidget('PersonTaxJurisdiction', true); resetWidget('PersonEffectiveFrom', true); storeValue('personAdvancedMode', false, false); }, () => showAlert(JSON.stringify(CreatePerson.data?.detail || 'Could not add person'), 'error'))}}",
                   "isVisible": true,
-                  "isDisabled": "{{!appsmith.store.householdId || !(PersonDisplayName.text || '').trim() || !/^\\d{4}-\\d{2}-\\d{2}$/.test((PersonEffectiveFrom.text || '').trim()) || ((PersonDateOfBirth.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(PersonDateOfBirth.text.trim())) || ((PersonResidencyCountry.text || '').trim() && !/^[A-Za-z]{2}$/.test(PersonResidencyCountry.text.trim()))}}",
+                  "isDisabled": "{{!appsmith.store.householdId || !(PersonDisplayName.text || '').trim() || !/^\\d{4}-\\d{2}-\\d{2}$/.test((PersonEffectiveFrom.text || '').trim()) || ((PersonDateOfBirth.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(PersonDateOfBirth.text.trim()))}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
                   "version": 1,
@@ -3818,8 +5060,8 @@
                   "type": "BUTTON_WIDGET",
                   "widgetId": "refreshpeoplebutton",
                   "parentId": "0",
-                  "topRow": 47,
-                  "bottomRow": 51,
+                  "topRow": 56,
+                  "bottomRow": 60,
                   "leftColumn": 20,
                   "rightColumn": 36,
                   "text": "Refresh people",
@@ -3857,8 +5099,8 @@
                   "type": "TEXT_WIDGET",
                   "widgetId": "peoplelistlabel",
                   "parentId": "0",
-                  "topRow": 54,
-                  "bottomRow": 58,
+                  "topRow": 63,
+                  "bottomRow": 67,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "text": "People in this household",
@@ -3890,8 +5132,8 @@
                   "type": "TABLE_WIDGET_V2",
                   "widgetId": "existingpeople",
                   "parentId": "0",
-                  "topRow": 59,
-                  "bottomRow": 88,
+                  "topRow": 68,
+                  "bottomRow": 97,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "tableData": "{{Array.isArray(ListPeople.data) ? ListPeople.data : []}}",
@@ -4109,8 +5351,8 @@
                   "type": "BUTTON_WIDGET",
                   "widgetId": "managepersonfinancesbutton",
                   "parentId": "0",
-                  "topRow": 90,
-                  "bottomRow": 94,
+                  "topRow": 99,
+                  "bottomRow": 103,
                   "leftColumn": 2,
                   "rightColumn": 28,
                   "text": "Manage selected person's finances",
@@ -4145,6 +5387,16 @@
               ]
             },
             "layoutOnLoadActions": [
+              [
+                {
+                  "id": "People_ListPersonCountryReferences",
+                  "name": "ListPersonCountryReferences",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
               [
                 {
                   "id": "People_ListPeople",
@@ -4791,58 +6043,28 @@
                 },
                 {
                   "widgetName": "PersonResidencyCountry",
-                  "displayName": "Input",
-                  "type": "INPUT_WIDGET_V2",
+                  "displayName": "Select",
+                  "type": "SELECT_WIDGET",
                   "widgetId": "personresidencycountry",
                   "parentId": "0",
                   "topRow": 38,
                   "bottomRow": 45,
                   "leftColumn": 2,
                   "rightColumn": 24,
-                  "label": "Tax residency country (optional, two-letter code)",
-                  "labelPosition": "Top",
-                  "defaultText": "",
-                  "placeholderText": "Tax residency country (optional, two-letter code)",
-                  "inputType": "TEXT",
-                  "isRequired": false,
+                  "labelText": "Tax residency country (optional)",
+                  "sourceData": "{{[{label: 'Not recorded', value: 'NONE'}, ...(Array.isArray(ListPersonCountryReferences.data) ? ListPersonCountryReferences.data.map((item) => ({label: item.flag + ' ' + item.display_name + ' (' + item.code + ')', value: item.code})) : [])]}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
+                  "defaultOptionValue": "NONE",
+                  "placeholderText": "Choose tax residency country (optional)",
                   "isVisible": true,
                   "isDisabled": false,
                   "isLoading": false,
                   "renderMode": "CANVAS",
-                  "version": 2,
-                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "version": 1,
                   "dynamicBindingPathList": [
                     {
-                      "key": "borderRadius"
-                    }
-                  ],
-                  "dynamicTriggerPathList": []
-                },
-                {
-                  "widgetName": "PersonTaxJurisdiction",
-                  "displayName": "Input",
-                  "type": "INPUT_WIDGET_V2",
-                  "widgetId": "persontaxjurisdiction",
-                  "parentId": "0",
-                  "topRow": 38,
-                  "bottomRow": 45,
-                  "leftColumn": 25,
-                  "rightColumn": 47,
-                  "label": "Tax jurisdiction (optional)",
-                  "labelPosition": "Top",
-                  "defaultText": "",
-                  "placeholderText": "Tax jurisdiction (optional)",
-                  "inputType": "TEXT",
-                  "isRequired": false,
-                  "isVisible": true,
-                  "isDisabled": false,
-                  "isLoading": false,
-                  "renderMode": "CANVAS",
-                  "version": 2,
-                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
-                  "dynamicBindingPathList": [
-                    {
-                      "key": "borderRadius"
+                      "key": "sourceData"
                     }
                   ],
                   "dynamicTriggerPathList": []
@@ -4855,8 +6077,8 @@
                   "parentId": "0",
                   "topRow": 38,
                   "bottomRow": 45,
-                  "leftColumn": 48,
-                  "rightColumn": 62,
+                  "leftColumn": 25,
+                  "rightColumn": 43,
                   "label": "Effective from (YYYY-MM-DD)",
                   "labelPosition": "Top",
                   "defaultText": "",
@@ -4877,19 +6099,89 @@
                   "dynamicTriggerPathList": []
                 },
                 {
+                  "widgetName": "TogglePersonAdvancedButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "togglepersonadvancedbutton",
+                  "parentId": "0",
+                  "topRow": 39,
+                  "bottomRow": 43,
+                  "leftColumn": 44,
+                  "rightColumn": 62,
+                  "text": "{{appsmith.store.personAdvancedMode ? 'Hide advanced settings' : 'Advanced settings'}}",
+                  "onClick": "{{storeValue('personAdvancedMode', !appsmith.store.personAdvancedMode, false)}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "PersonTaxJurisdiction",
+                  "displayName": "Select",
+                  "type": "SELECT_WIDGET",
+                  "widgetId": "persontaxjurisdiction",
+                  "parentId": "0",
+                  "topRow": 47,
+                  "bottomRow": 54,
+                  "leftColumn": 2,
+                  "rightColumn": 30,
+                  "labelText": "Tax jurisdiction override",
+                  "sourceData": "{{[{label: 'Use tax residency country', value: 'NONE'}, ...(Array.isArray(ListPersonCountryReferences.data) ? ListPersonCountryReferences.data.map((item) => ({label: item.flag + ' ' + item.display_name + ' (' + item.code + ')', value: item.code})) : [])]}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
+                  "defaultOptionValue": "NONE",
+                  "placeholderText": "Choose tax jurisdiction override",
+                  "isVisible": "{{appsmith.store.personAdvancedMode}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "sourceData"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
                   "widgetName": "CreatePersonButton",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
                   "widgetId": "createpersonbutton",
                   "parentId": "0",
-                  "topRow": 47,
-                  "bottomRow": 51,
+                  "topRow": 56,
+                  "bottomRow": 60,
                   "leftColumn": 2,
                   "rightColumn": 18,
                   "text": "Add person",
-                  "onClick": "{{CreatePerson.run(() => { showAlert('Person added', 'success'); ListPeople.run(); }, () => showAlert(JSON.stringify(CreatePerson.data?.detail || 'Could not add person'), 'error'))}}",
+                  "onClick": "{{CreatePerson.run(() => { showAlert('Person added', 'success'); ListPeople.run(); resetWidget('PersonDisplayName', true); resetWidget('PersonLegalName', true); resetWidget('PersonDateOfBirth', true); resetWidget('PersonResidencyCountry', true); resetWidget('PersonTaxJurisdiction', true); resetWidget('PersonEffectiveFrom', true); storeValue('personAdvancedMode', false, false); }, () => showAlert(JSON.stringify(CreatePerson.data?.detail || 'Could not add person'), 'error'))}}",
                   "isVisible": true,
-                  "isDisabled": "{{!appsmith.store.householdId || !(PersonDisplayName.text || '').trim() || !/^\\d{4}-\\d{2}-\\d{2}$/.test((PersonEffectiveFrom.text || '').trim()) || ((PersonDateOfBirth.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(PersonDateOfBirth.text.trim())) || ((PersonResidencyCountry.text || '').trim() && !/^[A-Za-z]{2}$/.test(PersonResidencyCountry.text.trim()))}}",
+                  "isDisabled": "{{!appsmith.store.householdId || !(PersonDisplayName.text || '').trim() || !/^\\d{4}-\\d{2}-\\d{2}$/.test((PersonEffectiveFrom.text || '').trim()) || ((PersonDateOfBirth.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(PersonDateOfBirth.text.trim()))}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
                   "version": 1,
@@ -4921,8 +6213,8 @@
                   "type": "BUTTON_WIDGET",
                   "widgetId": "refreshpeoplebutton",
                   "parentId": "0",
-                  "topRow": 47,
-                  "bottomRow": 51,
+                  "topRow": 56,
+                  "bottomRow": 60,
                   "leftColumn": 20,
                   "rightColumn": 36,
                   "text": "Refresh people",
@@ -4960,8 +6252,8 @@
                   "type": "TEXT_WIDGET",
                   "widgetId": "peoplelistlabel",
                   "parentId": "0",
-                  "topRow": 54,
-                  "bottomRow": 58,
+                  "topRow": 63,
+                  "bottomRow": 67,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "text": "People in this household",
@@ -4993,8 +6285,8 @@
                   "type": "TABLE_WIDGET_V2",
                   "widgetId": "existingpeople",
                   "parentId": "0",
-                  "topRow": 59,
-                  "bottomRow": 88,
+                  "topRow": 68,
+                  "bottomRow": 97,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "tableData": "{{Array.isArray(ListPeople.data) ? ListPeople.data : []}}",
@@ -5212,8 +6504,8 @@
                   "type": "BUTTON_WIDGET",
                   "widgetId": "managepersonfinancesbutton",
                   "parentId": "0",
-                  "topRow": 90,
-                  "bottomRow": 94,
+                  "topRow": 99,
+                  "bottomRow": 103,
                   "leftColumn": 2,
                   "rightColumn": 28,
                   "text": "Manage selected person's finances",
@@ -5248,6 +6540,16 @@
               ]
             },
             "layoutOnLoadActions": [
+              [
+                {
+                  "id": "People_ListPersonCountryReferences",
+                  "name": "ListPersonCountryReferences",
+                  "pluginType": "API",
+                  "confirmBeforeExecute": false,
+                  "jsonPathKeys": [],
+                  "timeoutInMillisecond": 10000
+                }
+              ],
               [
                 {
                   "id": "People_ListPeople",
@@ -34255,6 +35557,720 @@
   "unpublishedDefaultPageName": "Home",
   "actionList": [
     {
+      "id": "Home_DashboardPeople",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "DashboardPeople",
+        "validName": "DashboardPeople",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Home",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "{{appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/people' : '/health/live'}}",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/people' : '/health/live'"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "DashboardPeople",
+        "validName": "DashboardPeople",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Home",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "{{appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/people' : '/health/live'}}",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/people' : '/health/live'"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
+    },
+    {
+      "id": "Home_DashboardCashflow",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "DashboardCashflow",
+        "validName": "DashboardCashflow",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Home",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "{{appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/cashflow' : '/health/live'}}",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [
+            {
+              "key": "as_of",
+              "value": "{{moment().format('YYYY-MM-DD')}}"
+            }
+          ],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/cashflow' : '/health/live'",
+          "moment().format('YYYY-MM-DD')"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "DashboardCashflow",
+        "validName": "DashboardCashflow",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Home",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "{{appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/cashflow' : '/health/live'}}",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [
+            {
+              "key": "as_of",
+              "value": "{{moment().format('YYYY-MM-DD')}}"
+            }
+          ],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/cashflow' : '/health/live'",
+          "moment().format('YYYY-MM-DD')"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
+    },
+    {
+      "id": "Home_DashboardProperties",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "DashboardProperties",
+        "validName": "DashboardProperties",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Home",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "{{appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/property-summaries' : '/health/live'}}",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/property-summaries' : '/health/live'"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "DashboardProperties",
+        "validName": "DashboardProperties",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Home",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "{{appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/property-summaries' : '/health/live'}}",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/property-summaries' : '/health/live'"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
+    },
+    {
+      "id": "Home_DashboardRetirement",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "DashboardRetirement",
+        "validName": "DashboardRetirement",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Home",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "{{appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/retirement-accounts' : '/health/live'}}",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/retirement-accounts' : '/health/live'"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "DashboardRetirement",
+        "validName": "DashboardRetirement",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Home",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "{{appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/retirement-accounts' : '/health/live'}}",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/retirement-accounts' : '/health/live'"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
+    },
+    {
+      "id": "Home_DashboardScenarios",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "DashboardScenarios",
+        "validName": "DashboardScenarios",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Home",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "{{appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/scenarios' : '/health/live'}}",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/scenarios' : '/health/live'"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "DashboardScenarios",
+        "validName": "DashboardScenarios",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Home",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "{{appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/scenarios' : '/health/live'}}",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/scenarios' : '/health/live'"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
+    },
+    {
+      "id": "Home_DashboardTimeline",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "DashboardTimeline",
+        "validName": "DashboardTimeline",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Home",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "{{appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/timeline' : '/health/live'}}",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/timeline' : '/health/live'"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "DashboardTimeline",
+        "validName": "DashboardTimeline",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Home",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "{{appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/timeline' : '/health/live'}}",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [
+          "appsmith.store.householdId ? '/api/v1/households/' + appsmith.store.householdId + '/timeline' : '/health/live'"
+        ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
+    },
+    {
       "id": "Households_ListHouseholds",
       "pluginType": "API",
       "pluginId": "restapi-plugin",
@@ -34368,6 +36384,232 @@
       ]
     },
     {
+      "id": "Households_ListCountryReferences",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "ListCountryReferences",
+        "validName": "ListCountryReferences",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Households",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/reference/countries",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "ListCountryReferences",
+        "validName": "ListCountryReferences",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Households",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/reference/countries",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
+    },
+    {
+      "id": "Households_ListCurrencyReferences",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "ListCurrencyReferences",
+        "validName": "ListCurrencyReferences",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Households",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/reference/currencies",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "ListCurrencyReferences",
+        "validName": "ListCurrencyReferences",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "Households",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/reference/currencies",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
+    },
+    {
       "id": "Households_CreateHousehold",
       "pluginType": "API",
       "pluginId": "restapi-plugin",
@@ -34412,7 +36654,7 @@
           "formData": {
             "apiContentType": "application/json"
           },
-          "body": "{{({ display_name: String(HouseholdName.text || '').trim(), currency: String(HouseholdCurrency.text || '').trim().toUpperCase(), jurisdiction: String(HouseholdJurisdiction.text || '').trim().toUpperCase() || null })}}"
+          "body": "{{({ display_name: String(HouseholdName.text || '').trim(), currency: HouseholdCurrency.selectedOptionValue, jurisdiction: HouseholdJurisdiction.selectedOptionValue && HouseholdJurisdiction.selectedOptionValue !== 'NONE' ? HouseholdJurisdiction.selectedOptionValue : null })}}"
         },
         "runBehaviour": "MANUAL",
         "dynamicBindingPathList": [
@@ -34424,7 +36666,7 @@
         "invalids": [],
         "messages": [],
         "jsonPathKeys": [
-          "({ display_name: String(HouseholdName.text || '').trim(), currency: String(HouseholdCurrency.text || '').trim().toUpperCase(), jurisdiction: String(HouseholdJurisdiction.text || '').trim().toUpperCase() || null })"
+          "({ display_name: String(HouseholdName.text || '').trim(), currency: HouseholdCurrency.selectedOptionValue, jurisdiction: HouseholdJurisdiction.selectedOptionValue && HouseholdJurisdiction.selectedOptionValue !== 'NONE' ? HouseholdJurisdiction.selectedOptionValue : null })"
         ],
         "confirmBeforeExecute": false,
         "userPermissions": []
@@ -34470,7 +36712,7 @@
           "formData": {
             "apiContentType": "application/json"
           },
-          "body": "{{({ display_name: String(HouseholdName.text || '').trim(), currency: String(HouseholdCurrency.text || '').trim().toUpperCase(), jurisdiction: String(HouseholdJurisdiction.text || '').trim().toUpperCase() || null })}}"
+          "body": "{{({ display_name: String(HouseholdName.text || '').trim(), currency: HouseholdCurrency.selectedOptionValue, jurisdiction: HouseholdJurisdiction.selectedOptionValue && HouseholdJurisdiction.selectedOptionValue !== 'NONE' ? HouseholdJurisdiction.selectedOptionValue : null })}}"
         },
         "runBehaviour": "MANUAL",
         "dynamicBindingPathList": [
@@ -34482,8 +36724,121 @@
         "invalids": [],
         "messages": [],
         "jsonPathKeys": [
-          "({ display_name: String(HouseholdName.text || '').trim(), currency: String(HouseholdCurrency.text || '').trim().toUpperCase(), jurisdiction: String(HouseholdJurisdiction.text || '').trim().toUpperCase() || null })"
+          "({ display_name: String(HouseholdName.text || '').trim(), currency: HouseholdCurrency.selectedOptionValue, jurisdiction: HouseholdJurisdiction.selectedOptionValue && HouseholdJurisdiction.selectedOptionValue !== 'NONE' ? HouseholdJurisdiction.selectedOptionValue : null })"
         ],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "new": false,
+      "userPermissions": [
+        "read:actions",
+        "execute:actions",
+        "manage:actions"
+      ]
+    },
+    {
+      "id": "People_ListPersonCountryReferences",
+      "pluginType": "API",
+      "pluginId": "restapi-plugin",
+      "unpublishedAction": {
+        "name": "ListPersonCountryReferences",
+        "validName": "ListPersonCountryReferences",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "People",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/reference/countries",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [],
+        "confirmBeforeExecute": false,
+        "userPermissions": []
+      },
+      "publishedAction": {
+        "name": "ListPersonCountryReferences",
+        "validName": "ListPersonCountryReferences",
+        "datasource": {
+          "name": "HouseholdPlannerAPI",
+          "pluginId": "restapi-plugin",
+          "datasourceConfiguration": {
+            "url": "http://api:8000"
+          },
+          "isValid": true,
+          "invalids": [],
+          "messages": [],
+          "new": true,
+          "userPermissions": []
+        },
+        "pageId": "People",
+        "actionConfiguration": {
+          "timeoutInMillisecond": 10000,
+          "paginationType": "NONE",
+          "path": "/api/v1/reference/countries",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{appsmith.store.apiToken || ''}}"
+            },
+            {
+              "key": "X-Development-Subject",
+              "value": "{{appsmith.store.developmentSubject || ''}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "encodeParamsToggle": true,
+          "queryParameters": [],
+          "bodyFormData": [],
+          "httpMethod": "GET",
+          "formData": {
+            "apiContentType": "none"
+          }
+        },
+        "runBehaviour": "ON_PAGE_LOAD",
+        "dynamicBindingPathList": [],
+        "isValid": true,
+        "invalids": [],
+        "messages": [],
+        "jsonPathKeys": [],
         "confirmBeforeExecute": false,
         "userPermissions": []
       },
@@ -34656,7 +37011,7 @@
           "formData": {
             "apiContentType": "application/json"
           },
-          "body": "{{({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: String(PersonResidencyCountry.text || '').trim().toUpperCase() || null, tax_jurisdiction: String(PersonTaxJurisdiction.text || '').trim() || null, effective_from: String(PersonEffectiveFrom.text || '').trim() })}}"
+          "body": "{{({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, tax_jurisdiction: appsmith.store.personAdvancedMode && PersonTaxJurisdiction.selectedOptionValue && PersonTaxJurisdiction.selectedOptionValue !== 'NONE' ? PersonTaxJurisdiction.selectedOptionValue : PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, effective_from: String(PersonEffectiveFrom.text || '').trim() })}}"
         },
         "runBehaviour": "MANUAL",
         "dynamicBindingPathList": [
@@ -34669,7 +37024,7 @@
         "messages": [],
         "jsonPathKeys": [
           "appsmith.store.householdId",
-          "({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: String(PersonResidencyCountry.text || '').trim().toUpperCase() || null, tax_jurisdiction: String(PersonTaxJurisdiction.text || '').trim() || null, effective_from: String(PersonEffectiveFrom.text || '').trim() })"
+          "({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, tax_jurisdiction: appsmith.store.personAdvancedMode && PersonTaxJurisdiction.selectedOptionValue && PersonTaxJurisdiction.selectedOptionValue !== 'NONE' ? PersonTaxJurisdiction.selectedOptionValue : PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, effective_from: String(PersonEffectiveFrom.text || '').trim() })"
         ],
         "confirmBeforeExecute": false,
         "userPermissions": []
@@ -34715,7 +37070,7 @@
           "formData": {
             "apiContentType": "application/json"
           },
-          "body": "{{({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: String(PersonResidencyCountry.text || '').trim().toUpperCase() || null, tax_jurisdiction: String(PersonTaxJurisdiction.text || '').trim() || null, effective_from: String(PersonEffectiveFrom.text || '').trim() })}}"
+          "body": "{{({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, tax_jurisdiction: appsmith.store.personAdvancedMode && PersonTaxJurisdiction.selectedOptionValue && PersonTaxJurisdiction.selectedOptionValue !== 'NONE' ? PersonTaxJurisdiction.selectedOptionValue : PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, effective_from: String(PersonEffectiveFrom.text || '').trim() })}}"
         },
         "runBehaviour": "MANUAL",
         "dynamicBindingPathList": [
@@ -34728,7 +37083,7 @@
         "messages": [],
         "jsonPathKeys": [
           "appsmith.store.householdId",
-          "({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: String(PersonResidencyCountry.text || '').trim().toUpperCase() || null, tax_jurisdiction: String(PersonTaxJurisdiction.text || '').trim() || null, effective_from: String(PersonEffectiveFrom.text || '').trim() })"
+          "({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, tax_jurisdiction: appsmith.store.personAdvancedMode && PersonTaxJurisdiction.selectedOptionValue && PersonTaxJurisdiction.selectedOptionValue !== 'NONE' ? PersonTaxJurisdiction.selectedOptionValue : PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, effective_from: String(PersonEffectiveFrom.text || '').trim() })"
         ],
         "confirmBeforeExecute": false,
         "userPermissions": []
@@ -40528,8 +42883,17 @@
   "actionCollectionList": [],
   "updatedResources": {
     "actionList": [
+      "Home_DashboardPeople",
+      "Home_DashboardCashflow",
+      "Home_DashboardProperties",
+      "Home_DashboardRetirement",
+      "Home_DashboardScenarios",
+      "Home_DashboardTimeline",
       "Households_ListHouseholds",
+      "Households_ListCountryReferences",
+      "Households_ListCurrencyReferences",
       "Households_CreateHousehold",
+      "People_ListPersonCountryReferences",
       "People_ListPeople",
       "People_CreatePerson",
       "Personfinances_ListIncomeTypes",

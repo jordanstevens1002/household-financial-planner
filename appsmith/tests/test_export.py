@@ -261,9 +261,21 @@ class AppsmithExportTests(unittest.TestCase):
             self.assertTrue(any(name.startswith("Nav") for name in names))
             self.assertGreaterEqual(len(children), 5)
 
+    def test_every_widget_remains_inside_the_responsive_canvas(self) -> None:
+        for page in self.application["pageList"]:
+            children = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+            for widget in children:
+                with self.subTest(
+                    page=page["unpublishedPage"]["name"],
+                    widget=widget["widgetName"],
+                ):
+                    self.assertGreaterEqual(widget["leftColumn"], 0)
+                    self.assertLess(widget["leftColumn"], widget["rightColumn"])
+                    self.assertLessEqual(widget["rightColumn"], 64)
+
     def test_api_actions_use_runtime_auth_and_docker_service_url(self) -> None:
         actions = self.application["actionList"]
-        self.assertEqual(len(actions), 52)
+        self.assertEqual(len(actions), 61)
         for wrapper in actions:
             action = wrapper["unpublishedAction"]
             self.assertEqual(
@@ -434,8 +446,8 @@ class AppsmithExportTests(unittest.TestCase):
             if item["unpublishedAction"]["name"] == "CreateHousehold"
         )
         body = action["actionConfiguration"]["body"]
-        self.assertIn("HouseholdCurrency.text", body)
-        self.assertIn("HouseholdJurisdiction.text", body)
+        self.assertIn("HouseholdCurrency.selectedOptionValue", body)
+        self.assertIn("HouseholdJurisdiction.selectedOptionValue", body)
         self.assertNotIn("currency: '", body)
         self.assertNotIn("jurisdiction: '", body)
 
@@ -470,11 +482,18 @@ class AppsmithExportTests(unittest.TestCase):
             "PersonDisplayName",
             "PersonLegalName",
             "PersonDateOfBirth",
-            "PersonResidencyCountry",
-            "PersonTaxJurisdiction",
             "PersonEffectiveFrom",
         ):
             self.assertIn(f"{widget_name}.text", body)
+        self.assertIn("PersonResidencyCountry.selectedOptionValue", body)
+        self.assertIn("PersonTaxJurisdiction.selectedOptionValue", body)
+        self.assertIn("appsmith.store.personAdvancedMode", body)
+        self.assertIn(
+            ": PersonResidencyCountry.selectedOptionValue && "
+            "PersonResidencyCountry.selectedOptionValue !== 'NONE' ? "
+            "PersonResidencyCountry.selectedOptionValue : null",
+            body,
+        )
         self.assertNotIn("tax_residency_country: '", body)
         self.assertNotIn("tax_jurisdiction: '", body)
         for financial_field in ("income", "salary", "tax_rate", "retirement", "expense"):
@@ -517,9 +536,9 @@ class AppsmithExportTests(unittest.TestCase):
             aliases.append(column["alias"])
         self.assertEqual(len(aliases), len(set(aliases)))
 
-    def test_export_does_not_include_workflows_after_phase_10j(self) -> None:
+    def test_export_does_not_include_workflows_after_phase_10k(self) -> None:
         source = EXPORT.read_text(encoding="utf-8")
-        for deferred_name in ("DashboardSummary",):
+        for deferred_name in ("DemoMode",):
             self.assertNotIn(deferred_name, source)
 
     def test_person_selection_opens_finances_and_household_change_clears_it(self) -> None:
@@ -802,10 +821,106 @@ class AppsmithExportTests(unittest.TestCase):
         self.assertIn("appsmith.store.personId", continue_button["onClick"])
         self.assertIn("appsmith.store.householdId", continue_button["onClick"])
 
-    def test_phase_10k_records_professional_country_and_currency_selectors(self) -> None:
-        plan = (ROOT.parent / "PROJECT_PLAN.md").read_text(encoding="utf-8")
-        self.assertIn("currency and national-jurisdiction", plan)
-        self.assertIn("country/flag presentation", plan)
+    def test_phase_10k_uses_maintained_country_and_currency_selectors(self) -> None:
+        actions = {
+            item["unpublishedAction"]["name"]: item["unpublishedAction"]
+            for item in self.application["actionList"]
+        }
+        self.assertEqual(
+            actions["ListCountryReferences"]["actionConfiguration"]["path"],
+            "/api/v1/reference/countries",
+        )
+        self.assertEqual(
+            actions["ListCurrencyReferences"]["actionConfiguration"]["path"],
+            "/api/v1/reference/currencies",
+        )
+        households = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Households"
+        )
+        widgets = households["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        by_name = {widget["widgetName"]: widget for widget in widgets}
+        currency = by_name["HouseholdCurrency"]
+        jurisdiction = by_name["HouseholdJurisdiction"]
+        self.assertEqual(currency["type"], "SELECT_WIDGET")
+        self.assertIn("ListCurrencyReferences.data", currency["sourceData"])
+        self.assertEqual(currency["defaultOptionValue"], "")
+        self.assertEqual(jurisdiction["type"], "SELECT_WIDGET")
+        self.assertIn("ListCountryReferences.data", jurisdiction["sourceData"])
+        self.assertIn("item.flag", jurisdiction["sourceData"])
+        self.assertEqual(jurisdiction["defaultOptionValue"], "NONE")
+
+        people = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "People"
+        )
+        people_widgets = people["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        residency = next(
+            widget
+            for widget in people_widgets
+            if widget["widgetName"] == "PersonResidencyCountry"
+        )
+        self.assertEqual(residency["type"], "SELECT_WIDGET")
+        self.assertIn("ListPersonCountryReferences.data", residency["sourceData"])
+        self.assertIn("item.flag", residency["sourceData"])
+        self.assertEqual(residency["defaultOptionValue"], "NONE")
+        jurisdiction = next(
+            widget
+            for widget in people_widgets
+            if widget["widgetName"] == "PersonTaxJurisdiction"
+        )
+        self.assertEqual(jurisdiction["type"], "SELECT_WIDGET")
+        self.assertIn("ListPersonCountryReferences.data", jurisdiction["sourceData"])
+        self.assertIn("item.flag", jurisdiction["sourceData"])
+        self.assertIn("personAdvancedMode", jurisdiction["isVisible"])
+        self.assertEqual(jurisdiction["defaultOptionValue"], "NONE")
+
+    def test_home_dashboard_uses_backend_figures_and_safe_empty_paths(self) -> None:
+        actions = {
+            item["unpublishedAction"]["name"]: item["unpublishedAction"]
+            for item in self.application["actionList"]
+        }
+        for name, suffix in (
+            ("DashboardPeople", "people"),
+            ("DashboardCashflow", "cashflow"),
+            ("DashboardProperties", "property-summaries"),
+            ("DashboardRetirement", "retirement-accounts"),
+            ("DashboardScenarios", "scenarios"),
+            ("DashboardTimeline", "timeline"),
+        ):
+            configuration = actions[name]["actionConfiguration"]
+            self.assertIn("appsmith.store.householdId", configuration["path"])
+            self.assertIn(suffix, configuration["path"])
+            self.assertIn("/health/live", configuration["path"])
+            self.assertEqual(actions[name]["runBehaviour"], "ON_PAGE_LOAD")
+
+        home = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Home"
+        )
+        widgets = home["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        by_name = {widget["widgetName"]: widget for widget in widgets}
+        self.assertIn(
+            "DashboardCashflow.data?.monthly_surplus",
+            by_name["DashboardMonthlySurplus"]["text"],
+        )
+        self.assertIn(
+            "DashboardCashflow.data?.monthly_expenses",
+            by_name["DashboardMonthlyExpenses"]["text"],
+        )
+        self.assertIn(
+            "DashboardProperties.data",
+            by_name["DashboardPropertiesTable"]["tableData"],
+        )
+        self.assertIn(
+            "DashboardTimeline.data?.events",
+            by_name["DashboardTimelineTable"]["tableData"],
+        )
+        source = EXPORT.read_text(encoding="utf-8")
+        self.assertNotIn("monthly_surplus:", source)
 
     def test_cashflow_actions_are_household_scoped_and_backend_calculated(self) -> None:
         actions = {
