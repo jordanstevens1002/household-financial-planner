@@ -24,7 +24,8 @@ change household records; multi-metric baseline JSON remains behind Advanced mod
 Phase 10K adds a household dashboard using backend-calculated cash flow, property positions,
 upcoming plans and cross-flow record counts. Household currency, national jurisdiction and person
 tax-residency choices use maintained API reference data with ISO labels and country flags; no
-country or currency is selected implicitly.
+country or currency is selected implicitly. A person's tax jurisdiction follows their tax
+residency unless an Advanced country override is explicitly selected.
 The application is generated deterministically by `generate_app.py`; edit the generator rather than
 the JSON.
 

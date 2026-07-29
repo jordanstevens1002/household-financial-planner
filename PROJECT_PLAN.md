@@ -1900,7 +1900,9 @@ mode manual review, and keep generated Appsmith JSON outside the handwritten rev
   Country and currency options come from authenticated FastAPI reference endpoints backed by a
   maintained ISO dataset. Country labels include flags and codes; currency labels include ISO code
   and name. Household currency remains mandatory and explicit, while national jurisdiction and
-  person tax residency remain optional with no inferred selection.
+  person tax residency remain optional with no inferred selection. A person's tax jurisdiction
+  normally follows their selected tax-residency country. A different country can be selected only
+  through an explicit Advanced jurisdiction override.
   Acceptance includes reference-data API tests, deterministic dashboard/selector export tests,
   safe Home loading before a household is selected, one navigation bar, no conditionally hidden
   layout overlaps, all widgets remaining inside the 64-column canvas, full backend regression and

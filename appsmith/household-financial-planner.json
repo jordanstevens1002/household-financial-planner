@@ -4917,35 +4917,6 @@
                   "dynamicTriggerPathList": []
                 },
                 {
-                  "widgetName": "PersonTaxJurisdiction",
-                  "displayName": "Input",
-                  "type": "INPUT_WIDGET_V2",
-                  "widgetId": "persontaxjurisdiction",
-                  "parentId": "0",
-                  "topRow": 38,
-                  "bottomRow": 45,
-                  "leftColumn": 25,
-                  "rightColumn": 47,
-                  "label": "Tax jurisdiction (optional)",
-                  "labelPosition": "Top",
-                  "defaultText": "",
-                  "placeholderText": "Tax jurisdiction (optional)",
-                  "inputType": "TEXT",
-                  "isRequired": false,
-                  "isVisible": true,
-                  "isDisabled": false,
-                  "isLoading": false,
-                  "renderMode": "CANVAS",
-                  "version": 2,
-                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
-                  "dynamicBindingPathList": [
-                    {
-                      "key": "borderRadius"
-                    }
-                  ],
-                  "dynamicTriggerPathList": []
-                },
-                {
                   "widgetName": "PersonEffectiveFrom",
                   "displayName": "Input",
                   "type": "INPUT_WIDGET_V2",
@@ -4953,8 +4924,8 @@
                   "parentId": "0",
                   "topRow": 38,
                   "bottomRow": 45,
-                  "leftColumn": 48,
-                  "rightColumn": 62,
+                  "leftColumn": 25,
+                  "rightColumn": 43,
                   "label": "Effective from (YYYY-MM-DD)",
                   "labelPosition": "Top",
                   "defaultText": "",
@@ -4975,17 +4946,87 @@
                   "dynamicTriggerPathList": []
                 },
                 {
+                  "widgetName": "TogglePersonAdvancedButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "togglepersonadvancedbutton",
+                  "parentId": "0",
+                  "topRow": 39,
+                  "bottomRow": 43,
+                  "leftColumn": 44,
+                  "rightColumn": 62,
+                  "text": "{{appsmith.store.personAdvancedMode ? 'Hide advanced settings' : 'Advanced settings'}}",
+                  "onClick": "{{storeValue('personAdvancedMode', !appsmith.store.personAdvancedMode, false)}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "PersonTaxJurisdiction",
+                  "displayName": "Select",
+                  "type": "SELECT_WIDGET",
+                  "widgetId": "persontaxjurisdiction",
+                  "parentId": "0",
+                  "topRow": 47,
+                  "bottomRow": 54,
+                  "leftColumn": 2,
+                  "rightColumn": 30,
+                  "labelText": "Tax jurisdiction override",
+                  "sourceData": "{{[{label: 'Use tax residency country', value: 'NONE'}, ...(Array.isArray(ListPersonCountryReferences.data) ? ListPersonCountryReferences.data.map((item) => ({label: item.flag + ' ' + item.display_name + ' (' + item.code + ')', value: item.code})) : [])]}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
+                  "defaultOptionValue": "NONE",
+                  "placeholderText": "Choose tax jurisdiction override",
+                  "isVisible": "{{appsmith.store.personAdvancedMode}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "sourceData"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
                   "widgetName": "CreatePersonButton",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
                   "widgetId": "createpersonbutton",
                   "parentId": "0",
-                  "topRow": 47,
-                  "bottomRow": 51,
+                  "topRow": 56,
+                  "bottomRow": 60,
                   "leftColumn": 2,
                   "rightColumn": 18,
                   "text": "Add person",
-                  "onClick": "{{CreatePerson.run(() => { showAlert('Person added', 'success'); ListPeople.run(); }, () => showAlert(JSON.stringify(CreatePerson.data?.detail || 'Could not add person'), 'error'))}}",
+                  "onClick": "{{CreatePerson.run(() => { showAlert('Person added', 'success'); ListPeople.run(); resetWidget('PersonDisplayName', true); resetWidget('PersonLegalName', true); resetWidget('PersonDateOfBirth', true); resetWidget('PersonResidencyCountry', true); resetWidget('PersonTaxJurisdiction', true); resetWidget('PersonEffectiveFrom', true); storeValue('personAdvancedMode', false, false); }, () => showAlert(JSON.stringify(CreatePerson.data?.detail || 'Could not add person'), 'error'))}}",
                   "isVisible": true,
                   "isDisabled": "{{!appsmith.store.householdId || !(PersonDisplayName.text || '').trim() || !/^\\d{4}-\\d{2}-\\d{2}$/.test((PersonEffectiveFrom.text || '').trim()) || ((PersonDateOfBirth.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(PersonDateOfBirth.text.trim()))}}",
                   "isLoading": false,
@@ -5019,8 +5060,8 @@
                   "type": "BUTTON_WIDGET",
                   "widgetId": "refreshpeoplebutton",
                   "parentId": "0",
-                  "topRow": 47,
-                  "bottomRow": 51,
+                  "topRow": 56,
+                  "bottomRow": 60,
                   "leftColumn": 20,
                   "rightColumn": 36,
                   "text": "Refresh people",
@@ -5058,8 +5099,8 @@
                   "type": "TEXT_WIDGET",
                   "widgetId": "peoplelistlabel",
                   "parentId": "0",
-                  "topRow": 54,
-                  "bottomRow": 58,
+                  "topRow": 63,
+                  "bottomRow": 67,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "text": "People in this household",
@@ -5091,8 +5132,8 @@
                   "type": "TABLE_WIDGET_V2",
                   "widgetId": "existingpeople",
                   "parentId": "0",
-                  "topRow": 59,
-                  "bottomRow": 88,
+                  "topRow": 68,
+                  "bottomRow": 97,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "tableData": "{{Array.isArray(ListPeople.data) ? ListPeople.data : []}}",
@@ -5310,8 +5351,8 @@
                   "type": "BUTTON_WIDGET",
                   "widgetId": "managepersonfinancesbutton",
                   "parentId": "0",
-                  "topRow": 90,
-                  "bottomRow": 94,
+                  "topRow": 99,
+                  "bottomRow": 103,
                   "leftColumn": 2,
                   "rightColumn": 28,
                   "text": "Manage selected person's finances",
@@ -6029,35 +6070,6 @@
                   "dynamicTriggerPathList": []
                 },
                 {
-                  "widgetName": "PersonTaxJurisdiction",
-                  "displayName": "Input",
-                  "type": "INPUT_WIDGET_V2",
-                  "widgetId": "persontaxjurisdiction",
-                  "parentId": "0",
-                  "topRow": 38,
-                  "bottomRow": 45,
-                  "leftColumn": 25,
-                  "rightColumn": 47,
-                  "label": "Tax jurisdiction (optional)",
-                  "labelPosition": "Top",
-                  "defaultText": "",
-                  "placeholderText": "Tax jurisdiction (optional)",
-                  "inputType": "TEXT",
-                  "isRequired": false,
-                  "isVisible": true,
-                  "isDisabled": false,
-                  "isLoading": false,
-                  "renderMode": "CANVAS",
-                  "version": 2,
-                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
-                  "dynamicBindingPathList": [
-                    {
-                      "key": "borderRadius"
-                    }
-                  ],
-                  "dynamicTriggerPathList": []
-                },
-                {
                   "widgetName": "PersonEffectiveFrom",
                   "displayName": "Input",
                   "type": "INPUT_WIDGET_V2",
@@ -6065,8 +6077,8 @@
                   "parentId": "0",
                   "topRow": 38,
                   "bottomRow": 45,
-                  "leftColumn": 48,
-                  "rightColumn": 62,
+                  "leftColumn": 25,
+                  "rightColumn": 43,
                   "label": "Effective from (YYYY-MM-DD)",
                   "labelPosition": "Top",
                   "defaultText": "",
@@ -6087,17 +6099,87 @@
                   "dynamicTriggerPathList": []
                 },
                 {
+                  "widgetName": "TogglePersonAdvancedButton",
+                  "displayName": "Button",
+                  "type": "BUTTON_WIDGET",
+                  "widgetId": "togglepersonadvancedbutton",
+                  "parentId": "0",
+                  "topRow": 39,
+                  "bottomRow": 43,
+                  "leftColumn": 44,
+                  "rightColumn": 62,
+                  "text": "{{appsmith.store.personAdvancedMode ? 'Hide advanced settings' : 'Advanced settings'}}",
+                  "onClick": "{{storeValue('personAdvancedMode', !appsmith.store.personAdvancedMode, false)}}",
+                  "isVisible": true,
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "buttonVariant": "PRIMARY",
+                  "buttonColor": "{{appsmith.theme.colors.primaryColor}}",
+                  "borderRadius": "{{appsmith.theme.borderRadius.appBorderRadius}}",
+                  "animateLoading": true,
+                  "responsiveBehavior": "hug",
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "buttonColor"
+                    },
+                    {
+                      "key": "borderRadius"
+                    },
+                    {
+                      "key": "text"
+                    }
+                  ],
+                  "dynamicTriggerPathList": [
+                    {
+                      "key": "onClick"
+                    }
+                  ]
+                },
+                {
+                  "widgetName": "PersonTaxJurisdiction",
+                  "displayName": "Select",
+                  "type": "SELECT_WIDGET",
+                  "widgetId": "persontaxjurisdiction",
+                  "parentId": "0",
+                  "topRow": 47,
+                  "bottomRow": 54,
+                  "leftColumn": 2,
+                  "rightColumn": 30,
+                  "labelText": "Tax jurisdiction override",
+                  "sourceData": "{{[{label: 'Use tax residency country', value: 'NONE'}, ...(Array.isArray(ListPersonCountryReferences.data) ? ListPersonCountryReferences.data.map((item) => ({label: item.flag + ' ' + item.display_name + ' (' + item.code + ')', value: item.code})) : [])]}}",
+                  "optionLabel": "label",
+                  "optionValue": "value",
+                  "defaultOptionValue": "NONE",
+                  "placeholderText": "Choose tax jurisdiction override",
+                  "isVisible": "{{appsmith.store.personAdvancedMode}}",
+                  "isDisabled": false,
+                  "isLoading": false,
+                  "renderMode": "CANVAS",
+                  "version": 1,
+                  "dynamicBindingPathList": [
+                    {
+                      "key": "sourceData"
+                    },
+                    {
+                      "key": "isVisible"
+                    }
+                  ],
+                  "dynamicTriggerPathList": []
+                },
+                {
                   "widgetName": "CreatePersonButton",
                   "displayName": "Button",
                   "type": "BUTTON_WIDGET",
                   "widgetId": "createpersonbutton",
                   "parentId": "0",
-                  "topRow": 47,
-                  "bottomRow": 51,
+                  "topRow": 56,
+                  "bottomRow": 60,
                   "leftColumn": 2,
                   "rightColumn": 18,
                   "text": "Add person",
-                  "onClick": "{{CreatePerson.run(() => { showAlert('Person added', 'success'); ListPeople.run(); }, () => showAlert(JSON.stringify(CreatePerson.data?.detail || 'Could not add person'), 'error'))}}",
+                  "onClick": "{{CreatePerson.run(() => { showAlert('Person added', 'success'); ListPeople.run(); resetWidget('PersonDisplayName', true); resetWidget('PersonLegalName', true); resetWidget('PersonDateOfBirth', true); resetWidget('PersonResidencyCountry', true); resetWidget('PersonTaxJurisdiction', true); resetWidget('PersonEffectiveFrom', true); storeValue('personAdvancedMode', false, false); }, () => showAlert(JSON.stringify(CreatePerson.data?.detail || 'Could not add person'), 'error'))}}",
                   "isVisible": true,
                   "isDisabled": "{{!appsmith.store.householdId || !(PersonDisplayName.text || '').trim() || !/^\\d{4}-\\d{2}-\\d{2}$/.test((PersonEffectiveFrom.text || '').trim()) || ((PersonDateOfBirth.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(PersonDateOfBirth.text.trim()))}}",
                   "isLoading": false,
@@ -6131,8 +6213,8 @@
                   "type": "BUTTON_WIDGET",
                   "widgetId": "refreshpeoplebutton",
                   "parentId": "0",
-                  "topRow": 47,
-                  "bottomRow": 51,
+                  "topRow": 56,
+                  "bottomRow": 60,
                   "leftColumn": 20,
                   "rightColumn": 36,
                   "text": "Refresh people",
@@ -6170,8 +6252,8 @@
                   "type": "TEXT_WIDGET",
                   "widgetId": "peoplelistlabel",
                   "parentId": "0",
-                  "topRow": 54,
-                  "bottomRow": 58,
+                  "topRow": 63,
+                  "bottomRow": 67,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "text": "People in this household",
@@ -6203,8 +6285,8 @@
                   "type": "TABLE_WIDGET_V2",
                   "widgetId": "existingpeople",
                   "parentId": "0",
-                  "topRow": 59,
-                  "bottomRow": 88,
+                  "topRow": 68,
+                  "bottomRow": 97,
                   "leftColumn": 2,
                   "rightColumn": 62,
                   "tableData": "{{Array.isArray(ListPeople.data) ? ListPeople.data : []}}",
@@ -6422,8 +6504,8 @@
                   "type": "BUTTON_WIDGET",
                   "widgetId": "managepersonfinancesbutton",
                   "parentId": "0",
-                  "topRow": 90,
-                  "bottomRow": 94,
+                  "topRow": 99,
+                  "bottomRow": 103,
                   "leftColumn": 2,
                   "rightColumn": 28,
                   "text": "Manage selected person's finances",
@@ -36929,7 +37011,7 @@
           "formData": {
             "apiContentType": "application/json"
           },
-          "body": "{{({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, tax_jurisdiction: String(PersonTaxJurisdiction.text || '').trim() || null, effective_from: String(PersonEffectiveFrom.text || '').trim() })}}"
+          "body": "{{({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, tax_jurisdiction: appsmith.store.personAdvancedMode && PersonTaxJurisdiction.selectedOptionValue && PersonTaxJurisdiction.selectedOptionValue !== 'NONE' ? PersonTaxJurisdiction.selectedOptionValue : PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, effective_from: String(PersonEffectiveFrom.text || '').trim() })}}"
         },
         "runBehaviour": "MANUAL",
         "dynamicBindingPathList": [
@@ -36942,7 +37024,7 @@
         "messages": [],
         "jsonPathKeys": [
           "appsmith.store.householdId",
-          "({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, tax_jurisdiction: String(PersonTaxJurisdiction.text || '').trim() || null, effective_from: String(PersonEffectiveFrom.text || '').trim() })"
+          "({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, tax_jurisdiction: appsmith.store.personAdvancedMode && PersonTaxJurisdiction.selectedOptionValue && PersonTaxJurisdiction.selectedOptionValue !== 'NONE' ? PersonTaxJurisdiction.selectedOptionValue : PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, effective_from: String(PersonEffectiveFrom.text || '').trim() })"
         ],
         "confirmBeforeExecute": false,
         "userPermissions": []
@@ -36988,7 +37070,7 @@
           "formData": {
             "apiContentType": "application/json"
           },
-          "body": "{{({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, tax_jurisdiction: String(PersonTaxJurisdiction.text || '').trim() || null, effective_from: String(PersonEffectiveFrom.text || '').trim() })}}"
+          "body": "{{({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, tax_jurisdiction: appsmith.store.personAdvancedMode && PersonTaxJurisdiction.selectedOptionValue && PersonTaxJurisdiction.selectedOptionValue !== 'NONE' ? PersonTaxJurisdiction.selectedOptionValue : PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, effective_from: String(PersonEffectiveFrom.text || '').trim() })}}"
         },
         "runBehaviour": "MANUAL",
         "dynamicBindingPathList": [
@@ -37001,7 +37083,7 @@
         "messages": [],
         "jsonPathKeys": [
           "appsmith.store.householdId",
-          "({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, tax_jurisdiction: String(PersonTaxJurisdiction.text || '').trim() || null, effective_from: String(PersonEffectiveFrom.text || '').trim() })"
+          "({ display_name: String(PersonDisplayName.text || '').trim(), legal_name: String(PersonLegalName.text || '').trim() || null, date_of_birth: String(PersonDateOfBirth.text || '').trim() || null, tax_residency_country: PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, tax_jurisdiction: appsmith.store.personAdvancedMode && PersonTaxJurisdiction.selectedOptionValue && PersonTaxJurisdiction.selectedOptionValue !== 'NONE' ? PersonTaxJurisdiction.selectedOptionValue : PersonResidencyCountry.selectedOptionValue && PersonResidencyCountry.selectedOptionValue !== 'NONE' ? PersonResidencyCountry.selectedOptionValue : null, effective_from: String(PersonEffectiveFrom.text || '').trim() })"
         ],
         "confirmBeforeExecute": false,
         "userPermissions": []

@@ -482,11 +482,18 @@ class AppsmithExportTests(unittest.TestCase):
             "PersonDisplayName",
             "PersonLegalName",
             "PersonDateOfBirth",
-            "PersonTaxJurisdiction",
             "PersonEffectiveFrom",
         ):
             self.assertIn(f"{widget_name}.text", body)
         self.assertIn("PersonResidencyCountry.selectedOptionValue", body)
+        self.assertIn("PersonTaxJurisdiction.selectedOptionValue", body)
+        self.assertIn("appsmith.store.personAdvancedMode", body)
+        self.assertIn(
+            ": PersonResidencyCountry.selectedOptionValue && "
+            "PersonResidencyCountry.selectedOptionValue !== 'NONE' ? "
+            "PersonResidencyCountry.selectedOptionValue : null",
+            body,
+        )
         self.assertNotIn("tax_residency_country: '", body)
         self.assertNotIn("tax_jurisdiction: '", body)
         for financial_field in ("income", "salary", "tax_rate", "retirement", "expense"):
@@ -859,6 +866,16 @@ class AppsmithExportTests(unittest.TestCase):
         self.assertIn("ListPersonCountryReferences.data", residency["sourceData"])
         self.assertIn("item.flag", residency["sourceData"])
         self.assertEqual(residency["defaultOptionValue"], "NONE")
+        jurisdiction = next(
+            widget
+            for widget in people_widgets
+            if widget["widgetName"] == "PersonTaxJurisdiction"
+        )
+        self.assertEqual(jurisdiction["type"], "SELECT_WIDGET")
+        self.assertIn("ListPersonCountryReferences.data", jurisdiction["sourceData"])
+        self.assertIn("item.flag", jurisdiction["sourceData"])
+        self.assertIn("personAdvancedMode", jurisdiction["isVisible"])
+        self.assertEqual(jurisdiction["defaultOptionValue"], "NONE")
 
     def test_home_dashboard_uses_backend_figures_and_safe_empty_paths(self) -> None:
         actions = {

@@ -8,7 +8,10 @@ implement financial formulas in Appsmith.
 
 FastAPI exposes authenticated ISO country and currency reference endpoints backed by `pycountry`.
 Country labels include a flag, name and two-letter code. Currency labels include the three-letter
-code and name. No country, jurisdiction or currency is inferred from another field.
+code and name. No residency country, household jurisdiction or currency is inferred from another
+field.
+A person's ordinary tax jurisdiction follows their selected tax-residency country. Advanced
+settings allow an explicit country override for atypical cross-border arrangements.
 
 ## Automated acceptance
 
@@ -31,15 +34,18 @@ Test in edit mode and again after deployment:
 2. Open Households and confirm currency is an unselected searchable dropdown.
 3. Confirm national jurisdiction is optional and shows flag, country name and code.
 4. Create a non-Australian household and verify its selected values persist in the household table.
-5. Add a person and confirm tax residency uses the same professional country presentation.
-6. Populate income, expense, property, retirement, timeline and scenario records.
-7. Return Home and verify counts match their source pages.
-8. Confirm monthly income, expenses and surplus match the Cash flow page for today's date.
-9. Confirm property values/debts preserve `Not recorded` instead of inventing zero.
-10. Confirm only enabled planned/projected events appear in the upcoming-events table.
-11. Narrow the browser to a mobile-width review and confirm content remains operable without
+5. Add a person and confirm tax residency uses the same professional country presentation and is
+   stored as their tax jurisdiction.
+6. Open Advanced settings, select a different jurisdiction country, add another person and confirm
+   the explicit override is stored.
+7. Populate income, expense, property, retirement, timeline and scenario records.
+8. Return Home and verify counts match their source pages.
+9. Confirm monthly income, expenses and surplus match the Cash flow page for today's date.
+10. Confirm property values/debts preserve `Not recorded` instead of inventing zero.
+11. Confirm only enabled planned/projected events appear in the upcoming-events table.
+12. Narrow the browser to a mobile-width review and confirm content remains operable without
     duplicated navigation or overlapping controls.
-12. Repeat the Home and selector checks in the deployed application.
+13. Repeat the Home and selector checks in the deployed application.
 
 ## Evaluation metrics
 
