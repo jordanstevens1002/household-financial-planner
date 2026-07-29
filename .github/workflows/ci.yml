@@ -3,12 +3,36 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, develop]
 
 permissions:
   contents: read
 
 jobs:
+  conventional-pr-title:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      PR_TITLE: ${{ github.event.pull_request.title }}
+    steps:
+      - name: Check Conventional Commit pull request title
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+
+          title = os.environ["PR_TITLE"]
+          pattern = re.compile(
+              r"(feat|fix|docs|test|refactor|build|ci|chore|perf|revert)"
+              r"(\([a-z0-9._/-]+\))?!?: .+"
+          )
+          if pattern.fullmatch(title) is None:
+              raise SystemExit(
+                  "Pull request title must use Conventional Commits, for example "
+                  "'feat(loans): add repayment comparison'."
+              )
+          PY
+
   appsmith-quality:
     runs-on: ubuntu-latest
     steps:

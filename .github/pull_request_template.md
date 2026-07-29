@@ -10,9 +10,9 @@ Describe the user-visible outcome and explicitly list anything deferred.
 
 ## Test and evaluation evidence
 
-- [ ] New behavior has automated tests.
+- [ ] New behaviour has automated tests.
 - [ ] Regression tests cover defects found during implementation.
-- [ ] Household isolation and role behavior are tested where relevant.
+- [ ] Household isolation and role behaviour are tested where relevant.
 - [ ] Ruff and formatting checks pass.
 - [ ] Strict mypy passes.
 - [ ] All tests pass.
@@ -21,11 +21,11 @@ Describe the user-visible outcome and explicitly list anything deferred.
 - [ ] Docker build and Compose validation pass.
 - [ ] Dependency and container security scans pass.
 
-Record measured results and link CI runs here. Behavior without relevant tests is incomplete.
+Record measured results and link CI runs here. Behaviour without relevant tests is incomplete.
 
 ## Manual review
 
-List the reviewer actions needed to exercise the changed behavior in edit and deployed modes where
+List the reviewer actions needed to exercise the changed behaviour in edit and deployed modes where
 applicable.
 
 ## Security and privacy

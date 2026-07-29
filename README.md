@@ -113,8 +113,9 @@ Financial data is stored in the PostgreSQL Docker volume and Appsmith configurat
 separate Appsmith volume. Read [Backup and restore](docs/backup-and-restore.md) before relying on a
 deployment and [Upgrading](docs/upgrading.md) before changing versions.
 
-The application performs forward-only database upgrades at API start-up. Restore a verified backup
-instead of attempting an unsupported migration downgrade.
+The original migration chain through v1.0.0 is forward-only. From v1.0.0 onward, schema changes
+must include a tested downgrade path to the preceding release unless an irreversible migration is
+clearly documented before release. Always take a verified backup before upgrading.
 
 ## Development and tests
 
@@ -133,11 +134,11 @@ python3 -m unittest discover -s appsmith/tests -v
 ```
 
 The backend keeps financial calculations outside the frontend and tests household isolation,
-dated behavior, provider abstraction, API validation and calculation results. See
-[Architecture principles](docs/architecture-principles.md), [Code organisation](docs/code-organization.md)
+dated behaviour, provider abstraction, API validation and calculation results. See
+[Architecture principles](docs/architecture-principles.md), [Code organisation](docs/code-organisation.md)
 and [Contributing](CONTRIBUTING.md).
 
-## Extending country-specific behavior
+## Extending country-specific behaviour
 
 The shared application does not select a provider from household currency or jurisdiction.
 Installed providers are discovered through registries:
@@ -165,6 +166,6 @@ Household Financial Planner is licensed under the GNU General Public License v3.
 AI coding tools were used throughout development to turn the project outline and review feedback
 into small implementation branches. Each change was inspected through pull requests and exercised
 with automated tests, Docker checks and manual Appsmith walkthroughs. Human review determined the
-product direction, accepted or rejected behavior, and identified defects for correction. AI output
+product direction, accepted or rejected behaviour, and identified defects for correction. AI output
 should therefore be treated as assisted implementation, not evidence that the financial logic is
 professionally certified.

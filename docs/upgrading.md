@@ -30,5 +30,7 @@ calculations.
 
 ## Rollback
 
-Database downgrades are not supported. If an upgrade must be reversed, stop the stack, check out
-the previous application version and restore the pre-upgrade PostgreSQL and Appsmith backups.
+The original database migration chain through v1.0.0 does not support downgrades. To reverse the
+v1.0.0 upgrade, stop the stack, check out the preceding commit and restore matching pre-upgrade
+database and Appsmith backups. Later releases must provide a tested downgrade to the preceding
+release unless their release notes explicitly identify an irreversible migration.

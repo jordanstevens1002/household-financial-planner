@@ -1,4 +1,4 @@
-# Code organization
+# Code organisation
 
 The backend uses domain-oriented packages. A domain keeps its API router, request/response schemas,
 calculations, and optional provider integrations together. The test tree mirrors the application

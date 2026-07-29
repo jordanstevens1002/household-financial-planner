@@ -9,22 +9,30 @@ Thank you for helping improve Household Financial Planner.
 - Keep shared financial logic country-neutral.
 - Add local rules through the provider registries instead of jurisdiction checks in shared code.
 - Never commit real financial data, identities, credentials or tokens.
+- AI assistants are permitted, but contributors remain responsible for every line they submit.
+  Review generated changes personally and thoroughly before opening a pull request.
 
 ## Development workflow
 
-1. Fork the repository and create a focused branch from `main`.
+1. Fork the repository and create a focused branch from `develop`.
 2. Make the smallest coherent change.
-3. Add or update tests; behavior without relevant tests is incomplete.
+3. Add or update tests; behaviour without relevant tests is incomplete.
 4. Run the Python 3.14 backend quality image and Appsmith export tests from the root README.
 5. Update user and operator documentation.
-6. Open a ready-for-review pull request using the repository template.
+6. Open a ready-for-review pull request targeting `develop` using the repository template.
 
-Database migrations are forward-only before the next released version. Never rewrite a migration
-that has appeared in a release; add a new migration instead.
+`develop` is the integration branch for tested changes; `main` contains stable releases. Release
+pull requests promote `develop` to `main`. Never rewrite a migration that has appeared in a release;
+add a new migration with tested upgrade and downgrade paths instead.
+
+Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for commit messages:
+`type(optional-scope): concise description`. Common types are `feat`, `fix`, `docs`, `test`,
+`refactor`, `build`, `ci`, `chore`, `perf` and `revert`. Mark incompatible changes with `!` before
+the colon and include a `BREAKING CHANGE:` footer.
 
 ## Style and architecture
 
-- Use British English in documentation where practical.
+- Use Australian English in documentation where practical.
 - Use Ruff formatting and linting and strict mypy.
 - Use Pydantic schemas at API boundaries.
 - Use `pydantic-settings` for configuration and `structlog` for API logging.
@@ -32,7 +40,7 @@ that has appeared in a release; add a new migration instead.
 - Preserve the distinction between observed, planned and projected data.
 
 See [Architecture principles](docs/architecture-principles.md) and
-[Code organisation](docs/code-organization.md).
+[Code organisation](docs/code-organisation.md).
 
 ## Reporting security problems
 

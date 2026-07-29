@@ -41,10 +41,10 @@ review checklist for all later work and complements the detailed product plan.
   request logging uses `structlog` with request correlation.
 - A change is not complete without proportionate unit, integration, regression, access-control,
   household-isolation, migration, and performance tests. Required tests may not be bypassed.
-- Before v1.0, migrations move forward only as a release requirement. Every change proves upgrade
-  from the previous schema and checks for Alembic drift; downgrade functions are best-effort only.
-- Phase evaluation documents record thresholds and measured results. `main` remains releasable and
-  implementation changes are reviewed through ready-for-review pull requests.
+- The original migration chain through v1.0.0 is forward-only. Later schema changes provide tested
+  upgrade and downgrade paths to the preceding release unless explicitly documented as irreversible.
+- `develop` is the tested integration branch and `main` remains the stable release branch.
+  Implementation changes are reviewed through ready-for-review pull requests.
 
 ## Review questions
 

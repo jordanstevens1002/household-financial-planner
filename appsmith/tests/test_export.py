@@ -327,6 +327,17 @@ class AppsmithExportTests(unittest.TestCase):
         )
         self.assertIn("## Use of AI in development", readme)
 
+        contributing = (repository / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        self.assertIn("AI assistants are permitted", contributing)
+        self.assertIn("Use [Conventional Commits]", contributing)
+        self.assertIn("targeting `develop`", contributing)
+
+        ci_workflow = (repository / ".github/workflows/ci.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("conventional-pr-title:", ci_workflow)
+        self.assertIn("branches: [main, develop]", ci_workflow)
+
         primary_files = (
             repository / "README.md",
             repository / "api/README.md",

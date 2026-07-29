@@ -11,8 +11,10 @@ not available, contact the repository owner privately through their GitHub profi
 tokens, passwords, production database dumps or real household financial data in a report.
 
 Please include the affected version, configuration, reproduction steps, impact and any suggested
-mitigation. You should receive an acknowledgement within seven days, but this volunteer project
-does not guarantee a response or remediation timeline.
+mitigation. GitHub sends an automatic notification that a private report was submitted, but it does
+not provide the maintainer acknowledgement described here. The maintainer aims to acknowledge a
+report manually within seven days, but this volunteer project does not guarantee a response or
+remediation timeline.
 
 ## Deployment responsibilities
 
