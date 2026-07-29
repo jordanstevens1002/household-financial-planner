@@ -331,6 +331,8 @@ class AppsmithExportTests(unittest.TestCase):
         self.assertIn("AI assistants are permitted", contributing)
         self.assertIn("Use [Conventional Commits]", contributing)
         self.assertIn("targeting `develop`", contributing)
+        self.assertIn("If you have repository write access", contributing)
+        self.assertIn("Otherwise, fork the repository", contributing)
         self.assertIn("approximately 750 human-reviewed changed lines", contributing)
         self.assertIn("exceeding 1,500", contributing)
 

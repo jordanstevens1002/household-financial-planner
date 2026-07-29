@@ -16,7 +16,8 @@ Thank you for helping improve Household Financial Planner.
 
 1. Start with an issue that explains the problem, desired outcome and acceptance criteria.
 2. Split broad issues into independently reviewable vertical slices before implementation.
-3. Fork the repository and create a focused branch from `develop`.
+3. If you have repository write access, create a focused branch from `develop` in this repository.
+   Otherwise, fork the repository and create the branch from your fork's copy of `develop`.
 4. Make the smallest coherent change.
 5. Add or update tests; behaviour without relevant tests is incomplete.
 6. Run the Python 3.14 backend quality image and Appsmith export tests from the root README.
