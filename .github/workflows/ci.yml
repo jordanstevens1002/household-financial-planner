@@ -51,7 +51,9 @@ jobs:
 
           generated_paths = {
               "appsmith/household-financial-planner.json",
+              "frontend/openapi.json",
               "frontend/package-lock.json",
+              "frontend/src/api/schema.d.ts",
           }
           output = subprocess.check_output(
               ["git", "diff", "--numstat", os.environ["BASE_SHA"], os.environ["HEAD_SHA"]],
@@ -132,6 +134,8 @@ jobs:
           cache: pip
           cache-dependency-path: api/pyproject.toml
       - run: pip install ".[test]"
+      - run: python scripts/export_openapi.py ../frontend/openapi.json
+      - run: git diff --exit-code -- ../frontend/openapi.json
       - run: sh scripts/check.sh
       - run: alembic upgrade head
       - run: alembic check
@@ -150,6 +154,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm audit
+      - run: npm run contracts:check
       - run: npm run format:check
       - run: npm run lint
       - run: npm run typecheck

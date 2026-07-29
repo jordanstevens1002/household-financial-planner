@@ -1,6 +1,7 @@
 coverage
 dist
 node_modules
+openapi.json
 playwright-report
 test-results
 *.tsbuildinfo

@@ -7,12 +7,18 @@
     "node": "24.x",
     "npm": ">=11 <12"
   },
+  "overrides": {
+    "js-yaml": "^4.3.0",
+    "minimatch": "^10.2.6"
+  },
   "scripts": {
     "build": "tsc -b && vite build",
+    "contracts:check": "npm run generate:api && git diff --exit-code -- openapi.json src/api/schema.d.ts",
     "dev": "vite --host 0.0.0.0",
     "e2e": "playwright test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "generate:api": "openapi-typescript openapi.json -o src/api/schema.d.ts",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run --coverage",
@@ -22,6 +28,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/material": "^9.2.0",
+    "@tanstack/react-query": "^5.101.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
@@ -42,6 +49,7 @@
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.8.0",
     "jsdom": "^30.0.1",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.9.6",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.65.0",

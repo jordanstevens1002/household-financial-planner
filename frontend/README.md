@@ -30,11 +30,14 @@ npm run dev
 ```
 
 Vite prints the development URL, normally <http://localhost:5173>.
+Requests under `/api` are proxied to `http://127.0.0.1:8000` by default. Set
+`VITE_API_PROXY_TARGET` when the API is available elsewhere.
 
 Run all foundation checks with:
 
 ```bash
 npm audit
+npm run contracts:check
 npm run format:check
 npm run lint
 npm run typecheck
@@ -45,5 +48,20 @@ npm run e2e
 ```
 
 The production image builds the static application and serves it through Nginx with
-SPA history fallback. Same-origin API proxying and generated FastAPI contracts are
-introduced by the next migration issue.
+SPA history fallback and a same-origin proxy to the Docker `api` service.
+
+## API contracts
+
+`openapi.json` is exported deterministically from FastAPI and
+`src/api/schema.d.ts` is generated from it. Both files are committed but must never
+be edited manually. From the repository root, regenerate them with:
+
+```bash
+docker compose run --rm api python scripts/export_openapi.py - > frontend/openapi.json
+docker run --rm --user "$(id -u):$(id -g)" \
+  -v "$PWD/frontend:/app" -w /app node:24-alpine npm run generate:api
+```
+
+The CI drift checks are authoritative. The request client sends cookies only through
+the browser's `include` mode, supports in-memory CSRF values for mutations, and
+normalises API failures with their `X-Request-ID`.
