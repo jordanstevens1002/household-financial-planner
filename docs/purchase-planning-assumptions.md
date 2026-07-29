@@ -1,4 +1,4 @@
-# Phase 8 purchase-planning assumptions
+# Purchase-planning assumptions
 
 - Purchase types, intended uses, locations and funding-source labels are not country defaults.
 - Only funding available by the target date is counted.
@@ -11,6 +11,6 @@
 - Australia is a bundled provider example using explicit user-entered rates. It is not an official
   transfer-duty calculator and is never selected from currency or location automatically.
 - Tax, grants, exemptions, insurance, exchange rates and lender serviceability rules are not
-  inferred. Providers may expose relevant estimates and warnings through generic components.
+  inferred.
 
 The result is decision support, not lending, legal, tax or financial advice.

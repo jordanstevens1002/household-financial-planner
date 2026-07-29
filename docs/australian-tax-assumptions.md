@@ -1,8 +1,7 @@
-# Phase 6 Australian tax assumptions
+# Australian tax assumptions
 
-The Phase 6 Australian engine provides a transparent planning estimate for the 2025–26 financial
-year. It is not tax advice and is not intended to reproduce every field of an Australian tax
-return.
+The bundled Australian engine provides a transparent estimate for the 2025–26 financial year. It
+is not tax advice and is not intended to reproduce every field of an Australian tax return.
 
 Implemented rules:
 
@@ -11,15 +10,15 @@ Implemented rules:
 - an optional 2% Medicare levy;
 - an explicitly supplied Medicare levy surcharge percentage;
 - 2025–26 marginal study and training loan repayments;
-- estimated deductions and reportable super contributions;
+- estimated deductions and reportable retirement contributions; and
 - manual annual net income as an alternative to automatic calculation.
 
-Not yet modelled:
+Not modelled:
 
 - Medicare levy low-income and family reductions or exemptions;
 - automatic Medicare levy surcharge thresholds and private-health-cover rules;
 - SAPTO and other individual offsets;
-- capital gains, business concessions, foreign income, or detailed rental deductions;
+- capital gains, business concessions, foreign income or detailed rental deductions; and
 - PAYG withholding and tax-return reconciliation.
 
 The engine refuses unsupported years. A future financial year requires a separate implementation
@@ -27,7 +26,7 @@ and boundary tests before it becomes selectable.
 
 Australia is the bundled example for the generic provider interface. Australian-only inputs are
 validated from `settings.parameters`; the shared income service does not know their names. See
-[Adding a tax provider](custom-tax-provider.md) for the external package scaffold.
+[Adding a tax provider](custom-tax-provider.md).
 
 Official sources consulted:
 

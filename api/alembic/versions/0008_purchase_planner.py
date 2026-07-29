@@ -1,4 +1,4 @@
-"""Create Phase 8 purchase planning structures."""
+"""Create purchase-planning structures."""
 
 import uuid
 from collections.abc import Sequence

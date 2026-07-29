@@ -5,8 +5,8 @@ from httpx import AsyncClient
 from app.main import app
 
 
-def test_api_patch_version_records_alignment_release() -> None:
-    assert app.version == "0.10.0"
+def test_api_reports_release_version() -> None:
+    assert app.version == "1.0.0"
 
 
 async def test_liveness_does_not_require_database(client: AsyncClient) -> None:

@@ -1,4 +1,4 @@
-# Open Household Property & Financial Planner
+# Archived development plan: Open Household Property & Financial Planner
 ## Codex-Ready Project Specification — General-Purpose Edition
 
 ## 1. Project purpose

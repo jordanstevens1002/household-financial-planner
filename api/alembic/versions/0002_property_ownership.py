@@ -1,4 +1,4 @@
-"""Create Phase 2 property and ownership tables."""
+"""Create property and ownership tables."""
 
 from collections.abc import Sequence
 

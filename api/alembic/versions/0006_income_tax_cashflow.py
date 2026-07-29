@@ -1,4 +1,4 @@
-"""Create Phase 6 income, tax profile, and household expense structures."""
+"""Create income, tax-profile and household-expense structures."""
 
 import uuid
 from collections.abc import Sequence

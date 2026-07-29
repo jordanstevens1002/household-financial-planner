@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Verify tag matches package version
+        run: |
+          python - <<'PY'
+          import os
+          import tomllib
+          from pathlib import Path
+
+          version = tomllib.loads(Path("api/pyproject.toml").read_text())["project"]["version"]
+          tag = os.environ["GITHUB_REF_NAME"]
+          if tag != f"v{version}":
+              raise SystemExit(f"Tag {tag} does not match package version {version}")
+          PY
+      - name: Verify Appsmith export
+        run: |
+          python3 appsmith/generate_app.py
+          git diff --exit-code -- appsmith/household-financial-planner.json
+          python3 -m unittest discover -s appsmith/tests -v
+      - name: Run Python quality image
+        run: |
+          docker build --target test --tag household-financial-planner-api:${{ github.ref_name }} api
+          docker run --rm household-financial-planner-api:${{ github.ref_name }}
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "${GITHUB_REF_NAME}"
+          --verify-tag
+          --title "Household Financial Planner ${GITHUB_REF_NAME}"
+          --generate-notes

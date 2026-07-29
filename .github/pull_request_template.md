@@ -1,6 +1,16 @@
 ## Summary
 
-Describe the completed phase deliverables and explicitly list anything deferred.
+Describe the user-visible outcome and explicitly list anything deferred.
+
+## Issue and scope
+
+- Related issue: `Refs #`
+- [ ] The issue was split into independently reviewable slices where appropriate.
+- Human-reviewed changed lines:
+- Generated changed lines:
+- [ ] The initial human-reviewed diff is near the 750-line guide, or the reason it cannot be split
+      is explained below.
+- Size exception:
 
 ## API and migration changes
 
@@ -16,18 +26,19 @@ Describe the completed phase deliverables and explicitly list anything deferred.
 - [ ] Ruff and formatting checks pass.
 - [ ] Strict mypy passes.
 - [ ] All tests pass.
-- [ ] Coverage meets or exceeds the phase threshold.
-- [ ] PostgreSQL migrations succeed from the previous phase.
+- [ ] Coverage meets or exceeds the repository threshold.
+- [ ] PostgreSQL migrations and `alembic check` pass.
 - [ ] Docker build and Compose validation pass.
 - [ ] Dependency and container security scans pass.
 
-Record measured results and link CI runs here. A phase is not done if required evidence is absent.
+Record measured results and link CI runs here. Behaviour without relevant tests is incomplete.
 
 ## Manual review
 
-List the reviewer actions needed to exercise the changed behaviour.
+List the reviewer actions needed to exercise the changed behaviour in edit and deployed modes where
+applicable.
 
 ## Security and privacy
 
-Describe access-control, secret-handling, financial-data, telemetry, or external-service implications.
-
+Describe access-control, secret-handling, financial-data, telemetry or external-service
+implications.

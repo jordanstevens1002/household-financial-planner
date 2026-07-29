@@ -1,4 +1,4 @@
-"""Create Phase 7 retirement account and projection structures."""
+"""Create retirement-account and projection structures."""
 
 from collections.abc import Sequence
 
