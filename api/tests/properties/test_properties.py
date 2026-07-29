@@ -227,6 +227,10 @@ async def test_add_dated_ownership_reports_running_total(
     assert first.json()["warnings"]
     assert second.json()["total_percentage"] == "100.00"
     assert second.json()["warnings"] == []
+    listed = await client.get(f"/api/v1/properties/{property_id}/ownership")
+    assert listed.status_code == 200
+    assert [item["owner_type"] for item in listed.json()] == ["HOUSEHOLD", "TRUST"]
+    assert [item["ownership_percentage"] for item in listed.json()] == ["60.00", "40.00"]
 
 
 async def test_property_from_another_household_is_hidden(
