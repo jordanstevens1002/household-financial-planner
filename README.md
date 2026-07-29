@@ -36,7 +36,7 @@ financial system.
 ## Requirements
 
 - Docker Engine with Docker Compose;
-- enough local resources to run PostgreSQL, FastAPI and Appsmith; and
+- enough local resources to run PostgreSQL, FastAPI, Appsmith and the React preview; and
 - an OpenID Connect provider for production authentication.
 
 Python 3.14 is used inside the API container. Appsmith is pinned to the version in `.env.example`
@@ -69,6 +69,7 @@ so an upstream image update cannot silently change the committed application sch
 5. Open:
 
    - Appsmith: `http://localhost:8080`
+   - React v2 preview: `http://localhost:3000`
    - API documentation: `http://localhost:8000/docs`
    - API readiness: `http://localhost:8000/health/ready`
 
@@ -137,6 +138,9 @@ The backend keeps financial calculations outside the frontend and tests househol
 dated behaviour, provider abstraction, API validation and calculation results. See
 [Architecture principles](docs/architecture-principles.md), [Code organisation](docs/code-organisation.md)
 and [Contributing](CONTRIBUTING.md).
+
+The React replacement is being developed alongside Appsmith. Its setup and quality
+commands are documented in [the frontend guide](frontend/README.md).
 
 ## Extending country-specific behaviour
 
