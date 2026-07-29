@@ -96,6 +96,28 @@ class AppsmithExportTests(unittest.TestCase):
         )
         self.assertIn("retirementAdvancedMode", settings["isVisible"])
 
+    def test_retirement_progressive_sections_do_not_overlap_in_edit_mode(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Retirement"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        by_name = {widget["widgetName"]: widget for widget in widgets}
+        contribution_bottom = by_name["ContributionProfilesTable"]["bottomRow"]
+        projection_widgets = (
+            "ProjectionHelp",
+            "RetirementProjectionDate",
+            "CalculateRetirementProjectionButton",
+            "ProjectedBalance",
+            "ProjectionTotals",
+            "ProjectionAssumptions",
+            "ProjectionWarnings",
+        )
+        self.assertTrue(
+            all(by_name[name]["topRow"] > contribution_bottom for name in projection_widgets)
+        )
+
     def test_retirement_forms_require_material_values_without_country_defaults(self) -> None:
         page = next(
             page
@@ -1078,6 +1100,40 @@ class AppsmithExportTests(unittest.TestCase):
         self.assertIn(
             "Current baseline",
             by_name["ScenarioComparisonTable"]["tableData"],
+        )
+
+    def test_scenario_progressive_sections_do_not_overlap_in_edit_mode(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Scenarios"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        by_name = {widget["widgetName"]: widget for widget in widgets}
+
+        assumption_bottom = by_name["ScenarioOverridesTable"]["bottomRow"]
+        calculation_widgets = (
+            "ScenarioCalculationHelp",
+            "ScenarioAsOf",
+            "ScenarioBaselineKey",
+            "ScenarioBaselineValue",
+            "ToggleScenarioAdvancedButton",
+            "ScenarioBaselineJson",
+            "CalculateScenarioButton",
+            "ScenarioCalculationResult",
+        )
+        self.assertTrue(
+            all(by_name[name]["topRow"] > assumption_bottom for name in calculation_widgets)
+        )
+
+        calculation_bottom = by_name["ScenarioCalculationResult"]["bottomRow"]
+        comparison_widgets = (
+            "ComparisonScenario",
+            "CompareScenariosButton",
+            "ScenarioComparisonTable",
+        )
+        self.assertTrue(
+            all(by_name[name]["topRow"] > calculation_bottom for name in comparison_widgets)
         )
 
     def test_property_actions_use_lookups_and_household_scoped_wizard(self) -> None:
