@@ -29,6 +29,7 @@ class AppsmithExportTests(unittest.TestCase):
                 "Properties",
                 "Retirement",
                 "Timeline",
+                "Scenarios",
                 "Settings",
             ],
         )
@@ -240,7 +241,7 @@ class AppsmithExportTests(unittest.TestCase):
 
     def test_api_actions_use_runtime_auth_and_docker_service_url(self) -> None:
         actions = self.application["actionList"]
-        self.assertEqual(len(actions), 44)
+        self.assertEqual(len(actions), 52)
         for wrapper in actions:
             action = wrapper["unpublishedAction"]
             self.assertEqual(
@@ -494,9 +495,9 @@ class AppsmithExportTests(unittest.TestCase):
             aliases.append(column["alias"])
         self.assertEqual(len(aliases), len(set(aliases)))
 
-    def test_export_does_not_include_workflows_after_phase_10i(self) -> None:
+    def test_export_does_not_include_workflows_after_phase_10j(self) -> None:
         source = EXPORT.read_text(encoding="utf-8")
-        for deferred_name in ("CreateScenario",):
+        for deferred_name in ("DashboardSummary",):
             self.assertNotIn(deferred_name, source)
 
     def test_person_selection_opens_finances_and_household_change_clears_it(self) -> None:
@@ -945,10 +946,14 @@ class AppsmithExportTests(unittest.TestCase):
             timeline = next(
                 widget for widget in widgets if widget["widgetName"] == "NavTimeline"
             )
+            scenarios = next(
+                widget for widget in widgets if widget["widgetName"] == "NavScenarios"
+            )
             self.assertIn("!appsmith.store.householdId", cashflow["isDisabled"])
             self.assertIn("!appsmith.store.householdId", properties["isDisabled"])
             self.assertIn("!appsmith.store.householdId", retirement["isDisabled"])
             self.assertIn("!appsmith.store.householdId", timeline["isDisabled"])
+            self.assertIn("!appsmith.store.householdId", scenarios["isDisabled"])
             navigation = [widget for widget in widgets if widget["widgetName"].startswith("Nav")]
             self.assertEqual(
                 [widget["widgetName"] for widget in navigation],
@@ -961,9 +966,119 @@ class AppsmithExportTests(unittest.TestCase):
                     "NavProperties",
                     "NavRetirement",
                     "NavTimeline",
+                    "NavScenarios",
                     "NavSettings",
                 ],
             )
+
+    def test_scenario_actions_persist_templates_custom_scenarios_and_overrides(self) -> None:
+        actions = {
+            item["unpublishedAction"]["name"]: item["unpublishedAction"]
+            for item in self.application["actionList"]
+        }
+        expected = {
+            "ListScenarioTemplates": ("GET", "/api/v1/scenario-templates"),
+            "ListScenarios": (
+                "GET",
+                "/api/v1/households/{{appsmith.store.householdId}}/scenarios",
+            ),
+            "CreateCustomScenario": (
+                "POST",
+                "/api/v1/households/{{appsmith.store.householdId}}/scenarios",
+            ),
+            "CreateScenarioFromTemplate": (
+                "POST",
+                "/api/v1/households/{{appsmith.store.householdId}}/scenarios/from-template",
+            ),
+            "GetScenario": (
+                "GET",
+                "/api/v1/scenarios/{{appsmith.store.scenarioId || ''}}",
+            ),
+            "AddScenarioOverride": (
+                "POST",
+                "/api/v1/scenarios/{{appsmith.store.scenarioId || ''}}/overrides",
+            ),
+        }
+        for name, (method, path) in expected.items():
+            action = actions[name]
+            self.assertEqual(action["actionConfiguration"]["httpMethod"], method)
+            self.assertEqual(action["actionConfiguration"]["path"], path)
+
+        custom = actions["CreateCustomScenario"]["actionConfiguration"]["body"]
+        self.assertIn("ScenarioBase.selectedOptionValue", custom)
+        self.assertIn("overrides: []", custom)
+        override = actions["AddScenarioOverride"]["actionConfiguration"]["body"]
+        self.assertIn("target_entity_type: 'METRIC'", override)
+        self.assertIn("ScenarioOverrideOperation.selectedOptionValue", override)
+
+    def test_scenario_page_discovers_neutral_templates_and_saves_for_later(self) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Scenarios"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        by_name = {widget["widgetName"]: widget for widget in widgets}
+        template = by_name["ScenarioTemplate"]
+        self.assertIn("ListScenarioTemplates.data", template["sourceData"])
+        self.assertIn("target_entity_type === 'METRIC'", template["sourceData"])
+        self.assertNotIn("Australia", template["sourceData"])
+        self.assertNotIn("AUSTRALIA", template["sourceData"])
+        self.assertIn("ListScenarios.data", by_name["ScenariosTable"]["tableData"])
+        self.assertIn(
+            "storeValue('scenarioId'",
+            by_name["ManageScenarioButton"]["onClick"],
+        )
+        self.assertIn("selectedRow?.id", by_name["ManageScenarioButton"]["onClick"])
+        for household_action in ("CreateHouseholdButton", "UseHouseholdButton"):
+            households = next(
+                item
+                for item in self.application["pageList"]
+                if item["unpublishedPage"]["name"] == "Households"
+            )
+            household_widgets = households["unpublishedPage"]["layouts"][0]["dsl"][
+                "children"
+            ]
+            widget = next(
+                item for item in household_widgets if item["widgetName"] == household_action
+            )
+            self.assertIn("removeValue('scenarioId')", widget["onClick"])
+
+    def test_scenario_calculation_and_comparison_use_baseline_without_mutating_data(
+        self,
+    ) -> None:
+        actions = {
+            item["unpublishedAction"]["name"]: item["unpublishedAction"]
+            for item in self.application["actionList"]
+        }
+        calculate = actions["CalculateScenario"]["actionConfiguration"]
+        self.assertEqual(
+            calculate["path"],
+            "/api/v1/scenarios/{{appsmith.store.scenarioId || ''}}/calculate",
+        )
+        compare = actions["CompareScenarios"]["actionConfiguration"]
+        self.assertEqual(compare["path"], "/api/v1/scenarios/compare")
+        for body in (calculate["body"], compare["body"]):
+            self.assertIn("baseline_metrics", body)
+            self.assertIn("scenarioAdvancedMode", body)
+            self.assertIn("JSON.parse(ScenarioBaselineJson.text", body)
+        self.assertIn("scenario_ids", compare["body"])
+
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Scenarios"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        by_name = {widget["widgetName"]: widget for widget in widgets}
+        self.assertIn(
+            "scenarioAdvancedMode",
+            by_name["ScenarioBaselineJson"]["isVisible"],
+        )
+        self.assertIn(
+            "Current baseline",
+            by_name["ScenarioComparisonTable"]["tableData"],
+        )
 
     def test_property_actions_use_lookups_and_household_scoped_wizard(self) -> None:
         actions = {

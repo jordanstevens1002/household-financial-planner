@@ -18,6 +18,9 @@ backend-calculated projections. Account types and optional providers are discove
 raw provider settings remain behind Advanced mode.
 Phase 10I adds a filtered household timeline using the backend's observed, planned and projected
 classifications and quality flags. Event payload JSON is available only in Advanced mode.
+Phase 10J adds saved custom and inherited scenarios, country-neutral metric templates, dated
+assumptions, baseline calculations and side-by-side comparisons. Scenario calculations do not
+change household records; multi-metric baseline JSON remains behind Advanced mode.
 The application is generated deterministically by `generate_app.py`; edit the generator rather than
 the JSON.
 
@@ -38,7 +41,9 @@ the JSON.
 11. Select a property to record dated ownership and zero, one or multiple actual loans.
 12. Open **Retirement** to add an account, record dated contributions and calculate a projection.
 13. Open **Timeline** to review provenance, add an explicitly classified event and manage plans.
-14. Click **Deploy** before checking the normal launched application; edit mode and published mode
+14. Open **Scenarios** to save a custom or template-based possibility, add dated assumptions,
+    calculate it and compare it with another saved scenario.
+15. Click **Deploy** before checking the normal launched application; edit mode and published mode
    use different Appsmith snapshots.
 
 No bearer token, development identity, email address, household ID or financial value is stored in

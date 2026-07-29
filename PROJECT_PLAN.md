@@ -1879,7 +1879,18 @@ mode manual review, and keep generated Appsmith JSON outside the handwritten rev
   can filter dates, include disabled plans, create explicitly classified events and enable or
   disable non-observed events. Raw event payloads and idempotency keys remain Advanced settings;
   observed records cannot be disabled or presented as editable plans.
-- **10J — scenarios:** saved custom scenarios, templates and comparisons.
+- **10J — scenarios:** saved custom scenarios, country-neutral templates and comparisons.
+  Users can create a named custom scenario, optionally inherit from another saved scenario, or
+  start from an installed metric template discovered from the API. They can return to saved
+  scenarios, add dated metric assumptions, calculate against an explicitly supplied baseline and
+  compare two scenarios with the unchanged baseline shown alongside them. Scenario work must not
+  mutate household records. Friendly single-metric controls are the default; multi-metric JSON is
+  available only through Advanced mode. Templates that require entity selection are not offered
+  until the UI can collect the required target safely.
+  Acceptance includes deterministic export tests for persistence paths, guarded selection,
+  country-neutral template discovery, inheritance, overrides, calculation and comparison; the
+  full backend regression suite; and a manual edit-mode and deployed-mode round trip showing that
+  saved scenarios remain available after navigating away and returning.
 - **10K — dashboard and polish:** useful financial summaries, responsive review and cross-flow
   integration. Replace free-text currency and national-jurisdiction entry with maintained dropdown
   reference data and professional country/flag presentation without making a country the default.
