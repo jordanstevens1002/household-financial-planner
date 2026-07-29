@@ -1,4 +1,4 @@
-"""Create Phase 5 rental profile and property expense structures."""
+"""Create rental profile and property-expense structures."""
 
 import uuid
 from collections.abc import Sequence

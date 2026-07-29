@@ -1,4 +1,4 @@
-"""Generate the importable Appsmith application used by Phase 10."""
+"""Generate the importable Appsmith application."""
 
 from __future__ import annotations
 
@@ -3181,7 +3181,14 @@ def build() -> dict[str, Any]:
             "userPermissions": [],
         }
         page = {"name": name, "slug": slug, "layouts": [layout], "userPermissions": [], "policies": []}
-        pages.append({"unpublishedPage": page, "publishedPage": deepcopy(page), "deleted": False, "gitSyncId": f"phase10_{index}"})
+        pages.append(
+            {
+                "unpublishedPage": page,
+                "publishedPage": deepcopy(page),
+                "deleted": False,
+                "gitSyncId": f"app_page_{index}",
+            }
+        )
 
     page_refs = [{"id": name, "isDefault": index == 0} for index, (name, _) in enumerate(PAGES)]
     return {

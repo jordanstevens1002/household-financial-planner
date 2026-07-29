@@ -1,4 +1,4 @@
-"""Create Phase 4 loan, goal, and loan-event structures."""
+"""Create loan, goal and loan-event structures."""
 
 import uuid
 from collections.abc import Sequence

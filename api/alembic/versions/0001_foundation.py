@@ -1,4 +1,4 @@
-"""Create Phase 1 foundation tables."""
+"""Create foundation tables."""
 
 from collections.abc import Sequence
 

@@ -1,4 +1,4 @@
-"""Create Phase 3 event and timeline tables."""
+"""Create event and timeline tables."""
 
 import uuid
 from collections.abc import Sequence

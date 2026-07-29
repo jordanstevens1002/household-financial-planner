@@ -1,4 +1,4 @@
-"""Create Phase 9 scenario and override structures."""
+"""Create scenario and override structures."""
 
 from collections.abc import Sequence
 
