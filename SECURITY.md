@@ -12,8 +12,7 @@ tokens, passwords, production database dumps or real household financial data in
 
 Please include the affected version, configuration, reproduction steps, impact and any suggested
 mitigation. GitHub sends an automatic notification that a private report was submitted, but it does
-not provide the maintainer acknowledgement described here. The maintainer aims to acknowledge a
-report manually within seven days, but this volunteer project does not guarantee a response or
+not provide the maintainer acknowledgement described here. This volunteer project does not guarantee a response or
 remediation timeline.
 
 ## Deployment responsibilities
