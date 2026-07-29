@@ -28,6 +28,7 @@ class AppsmithExportTests(unittest.TestCase):
                 "Cash flow",
                 "Properties",
                 "Retirement",
+                "Timeline",
                 "Settings",
             ],
         )
@@ -124,6 +125,83 @@ class AppsmithExportTests(unittest.TestCase):
         self.assertIn("ContributionEmployerAmount.text", contribution["isDisabled"])
         self.assertIn("retirementAccountId", contribution["isDisabled"])
 
+    def test_timeline_actions_use_backend_provenance_and_filters(self) -> None:
+        actions = {
+            item["unpublishedAction"]["name"]: item["unpublishedAction"]
+            for item in self.application["actionList"]
+        }
+        timeline = actions["ListTimeline"]["actionConfiguration"]
+        self.assertEqual(
+            timeline["path"],
+            "/api/v1/households/{{appsmith.store.householdId}}/timeline",
+        )
+        parameters = {item["key"]: item["value"] for item in timeline["queryParameters"]}
+        self.assertIn("TimelineFrom.text", parameters["from_date"])
+        self.assertIn("TimelineTo.text", parameters["to_date"])
+        self.assertIn("TimelineIncludeDisabled", parameters["include_disabled"])
+
+        create = actions["CreateTimelineEvent"]["actionConfiguration"]["body"]
+        for field in (
+            "TimelineEventType.selectedOptionValue",
+            "TimelineClassification.selectedOptionValue",
+            "TimelineEffectiveAt.text",
+            "TimelineProperty.selectedOptionValue",
+            "TimelinePerson.selectedOptionValue",
+            "TimelineLoan.selectedOptionValue",
+        ):
+            self.assertIn(field, create)
+        self.assertIn("JSON.parse(TimelinePayload.text", create)
+
+    def test_timeline_page_displays_provenance_quality_and_progressive_advanced_form(
+        self,
+    ) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Timeline"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        by_name = {widget["widgetName"]: widget for widget in widgets}
+        table = by_name["TimelineTable"]
+        self.assertIn("ListTimeline.data?.events", table["tableData"])
+        self.assertIn("item.classification", table["tableData"])
+        self.assertIn("data_quality_flags", table["tableData"])
+        self.assertIn(
+            "ListTimeline.data?.data_quality_flags",
+            by_name["TimelineQualityFlags"]["text"],
+        )
+        self.assertIn("timelineCreateOpen", by_name["TimelineEventType"]["isVisible"])
+        self.assertIn(
+            "timelineAdvancedMode",
+            by_name["TimelinePayload"]["isVisible"],
+        )
+        toggle = by_name["ToggleSelectedEventButton"]
+        self.assertIn("classification === 'OBSERVED'", toggle["isDisabled"])
+
+    def test_timeline_event_requires_explicit_classification_and_effective_datetime(
+        self,
+    ) -> None:
+        page = next(
+            page
+            for page in self.application["pageList"]
+            if page["unpublishedPage"]["name"] == "Timeline"
+        )
+        widgets = page["unpublishedPage"]["layouts"][0]["dsl"]["children"]
+        create = next(
+            widget
+            for widget in widgets
+            if widget["widgetName"] == "CreateTimelineEventButton"
+        )
+        self.assertIn("TimelineEventType.selectedOptionValue", create["isDisabled"])
+        self.assertIn("TimelineClassification.selectedOptionValue", create["isDisabled"])
+        self.assertIn("TimelineEffectiveAt.text", create["isDisabled"])
+        classification = next(
+            widget
+            for widget in widgets
+            if widget["widgetName"] == "TimelineClassification"
+        )
+        self.assertEqual(classification["defaultOptionValue"], "")
+
     def test_export_contains_no_credentials_or_identity_defaults(self) -> None:
         source = EXPORT.read_text(encoding="utf-8")
         self.assertNotIn("@", source)
@@ -150,7 +228,7 @@ class AppsmithExportTests(unittest.TestCase):
 
     def test_api_actions_use_runtime_auth_and_docker_service_url(self) -> None:
         actions = self.application["actionList"]
-        self.assertEqual(len(actions), 37)
+        self.assertEqual(len(actions), 44)
         for wrapper in actions:
             action = wrapper["unpublishedAction"]
             self.assertEqual(
@@ -404,12 +482,9 @@ class AppsmithExportTests(unittest.TestCase):
             aliases.append(column["alias"])
         self.assertEqual(len(aliases), len(set(aliases)))
 
-    def test_export_does_not_include_workflows_after_phase_10h(self) -> None:
+    def test_export_does_not_include_workflows_after_phase_10i(self) -> None:
         source = EXPORT.read_text(encoding="utf-8")
-        for deferred_name in (
-            "CreateScenario",
-            "ListTimeline",
-        ):
+        for deferred_name in ("CreateScenario",):
             self.assertNotIn(deferred_name, source)
 
     def test_person_selection_opens_finances_and_household_change_clears_it(self) -> None:
@@ -855,9 +930,13 @@ class AppsmithExportTests(unittest.TestCase):
             retirement = next(
                 widget for widget in widgets if widget["widgetName"] == "NavRetirement"
             )
+            timeline = next(
+                widget for widget in widgets if widget["widgetName"] == "NavTimeline"
+            )
             self.assertIn("!appsmith.store.householdId", cashflow["isDisabled"])
             self.assertIn("!appsmith.store.householdId", properties["isDisabled"])
             self.assertIn("!appsmith.store.householdId", retirement["isDisabled"])
+            self.assertIn("!appsmith.store.householdId", timeline["isDisabled"])
             navigation = [widget for widget in widgets if widget["widgetName"].startswith("Nav")]
             self.assertEqual(
                 [widget["widgetName"] for widget in navigation],
@@ -869,6 +948,7 @@ class AppsmithExportTests(unittest.TestCase):
                     "NavCashflow",
                     "NavProperties",
                     "NavRetirement",
+                    "NavTimeline",
                     "NavSettings",
                 ],
             )

@@ -16,6 +16,8 @@ responsibility settings may attribute a repayment to people without duplicating 
 Phase 10H adds household or person-linked retirement accounts, dated contribution profiles and
 backend-calculated projections. Account types and optional providers are discovered from the API;
 raw provider settings remain behind Advanced mode.
+Phase 10I adds a filtered household timeline using the backend's observed, planned and projected
+classifications and quality flags. Event payload JSON is available only in Advanced mode.
 The application is generated deterministically by `generate_app.py`; edit the generator rather than
 the JSON.
 
@@ -35,7 +37,8 @@ the JSON.
 10. Open **Properties** to add a current-position snapshot or record a historical purchase.
 11. Select a property to record dated ownership and zero, one or multiple actual loans.
 12. Open **Retirement** to add an account, record dated contributions and calculate a projection.
-13. Click **Deploy** before checking the normal launched application; edit mode and published mode
+13. Open **Timeline** to review provenance, add an explicitly classified event and manage plans.
+14. Click **Deploy** before checking the normal launched application; edit mode and published mode
    use different Appsmith snapshots.
 
 No bearer token, development identity, email address, household ID or financial value is stored in
