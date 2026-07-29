@@ -9,6 +9,11 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.models import RetirementEventType
 
 
+class RetirementProviderRead(BaseModel):
+    code: str
+    display_name: str
+
+
 class RetirementAccountCreate(BaseModel):
     person_id: uuid.UUID | None = None
     display_name: str = Field(min_length=1, max_length=200)

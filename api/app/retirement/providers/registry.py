@@ -37,6 +37,9 @@ class RetirementProviderRegistry:
                 f"No retirement provider is installed for code: {normalized}"
             ) from exc
 
+    def list_providers(self) -> list[RetirementProvider]:
+        return [self._providers[code] for code in sorted(self._providers)]
+
 
 def _external_providers() -> list[RetirementProvider]:
     providers: list[RetirementProvider] = []
@@ -53,3 +56,7 @@ def get_registry() -> RetirementProviderRegistry:
 
 def get_retirement_provider(code: str) -> RetirementProvider:
     return get_registry().get_provider(code)
+
+
+def list_retirement_providers() -> list[RetirementProvider]:
+    return get_registry().list_providers()
