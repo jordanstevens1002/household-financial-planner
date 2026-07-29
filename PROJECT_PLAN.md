@@ -1894,6 +1894,17 @@ mode manual review, and keep generated Appsmith JSON outside the handwritten rev
 - **10K — dashboard and polish:** useful financial summaries, responsive review and cross-flow
   integration. Replace free-text currency and national-jurisdiction entry with maintained dropdown
   reference data and professional country/flag presentation without making a country the default.
+  The Home page becomes a household overview composed from existing backend contracts: current
+  monthly cash flow, record counts, property positions, upcoming planned/projected events and
+  backend warnings. Appsmith may format or count records but must not reproduce financial formulas.
+  Country and currency options come from authenticated FastAPI reference endpoints backed by a
+  maintained ISO dataset. Country labels include flags and codes; currency labels include ISO code
+  and name. Household currency remains mandatory and explicit, while national jurisdiction and
+  person tax residency remain optional with no inferred selection.
+  Acceptance includes reference-data API tests, deterministic dashboard/selector export tests,
+  safe Home loading before a household is selected, one navigation bar, no conditionally hidden
+  layout overlaps, all widgets remaining inside the 64-column canvas, full backend regression and
+  manual desktop/mobile-width review in both Appsmith edit and deployed modes.
 
 No slice is done when its edit-mode behaviour differs from its deployed application behaviour.
 For Version 1, Appsmith review prioritises complete functional flows, correct persistence and

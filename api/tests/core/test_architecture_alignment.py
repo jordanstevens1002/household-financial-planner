@@ -32,6 +32,7 @@ def test_application_and_tests_share_domain_oriented_packages() -> None:
         "properties",
         "purchases",
         "rental",
+        "reference_data",
         "retirement",
         "scenarios",
     }

@@ -21,6 +21,10 @@ classifications and quality flags. Event payload JSON is available only in Advan
 Phase 10J adds saved custom and inherited scenarios, country-neutral metric templates, dated
 assumptions, baseline calculations and side-by-side comparisons. Scenario calculations do not
 change household records; multi-metric baseline JSON remains behind Advanced mode.
+Phase 10K adds a household dashboard using backend-calculated cash flow, property positions,
+upcoming plans and cross-flow record counts. Household currency, national jurisdiction and person
+tax-residency choices use maintained API reference data with ISO labels and country flags; no
+country or currency is selected implicitly.
 The application is generated deterministically by `generate_app.py`; edit the generator rather than
 the JSON.
 
@@ -34,6 +38,7 @@ the JSON.
    API bearer token instead.
 5. Save the settings and select **Test API connection**.
 6. Open **Households** to create a household or select an existing one.
+   Currency is required; national jurisdiction is optional. Both use maintained dropdown data.
 7. Open **People** to add and list identity records for the selected household.
 8. Select a person and open **Person finances** to record income and tax settings.
 9. Open **Cash flow** to add household expenses and calculate an explicitly dated position.
@@ -45,6 +50,8 @@ the JSON.
     calculate it and compare it with another saved scenario.
 15. Click **Deploy** before checking the normal launched application; edit mode and published mode
    use different Appsmith snapshots.
+16. Return to **Home** and confirm the household overview matches the records and backend cash-flow
+    result entered in the preceding flows.
 
 No bearer token, development identity, email address, household ID or financial value is stored in
 the committed export. Appsmith stores bearer tokens and development identities for the current

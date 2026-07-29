@@ -20,6 +20,7 @@ from app.income.router import router as income_router
 from app.loans.router import router as loans_router
 from app.properties.router import router as properties_router
 from app.purchases.router import router as purchases_router
+from app.reference_data.router import router as reference_data_router
 from app.rental.router import router as rental_router
 from app.retirement.router import router as retirement_router
 from app.scenarios.router import router as scenarios_router
@@ -48,6 +49,7 @@ app.include_router(income_router)
 app.include_router(retirement_router)
 app.include_router(purchases_router)
 app.include_router(scenarios_router)
+app.include_router(reference_data_router)
 
 
 @app.middleware("http")
