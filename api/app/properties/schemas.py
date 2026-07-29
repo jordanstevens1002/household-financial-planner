@@ -109,6 +109,20 @@ class PropertySetupMode(StrEnum):
     CURRENT_SNAPSHOT = "CURRENT_SNAPSHOT"
 
 
+class PropertySummaryRead(BaseModel):
+    id: uuid.UUID
+    display_name: str
+    property_type_id: uuid.UUID
+    current_status_id: uuid.UUID
+    currency: str
+    purchase_date: date | None
+    purchase_price: Decimal | None
+    setup_mode: PropertySetupMode | None
+    position_date: date | None
+    current_value: Decimal | None
+    total_property_debt: Decimal | None
+
+
 class PropertyWizardCreate(BaseModel):
     mode: PropertySetupMode
     property: PropertyCreate

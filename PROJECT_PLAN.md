@@ -1860,8 +1860,9 @@ mode manual review, and keep generated Appsmith JSON outside the handwritten rev
   income and tax workflows, improve empty states and labels, and place raw provider JSON behind an
   explicit Advanced mode.
 - **10E — household cash flow:** expenses and backend-calculated household cash-flow summaries.
-- **10F — property setup:** current position and purchase-history workflows with friendly summary
-  fields and explicit total property debt.
+- **10F — property setup:** separate “Start from today's position” and “Record purchase history”
+  workflows with friendly summary fields and explicit total property debt. Purchase history must
+  never imply that a property is paid off: current value and debt remain unrecorded until supplied.
 - **10G — ownership and loans:** ownership allocation and zero, one or multiple actual loans.
 - **10H — retirement:** configurable accounts, contributions and provider-backed projections.
 - **10I — timeline:** unified historical, current, planned and projected provenance.

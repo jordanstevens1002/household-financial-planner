@@ -97,6 +97,62 @@ async def test_current_snapshot_wizard_accepts_no_loan_and_warns_on_incomplete_o
     assert "40.00% rather than 100.00%" in body["warnings"][0]
 
 
+async def test_property_summaries_distinguish_snapshot_debt_from_unrecorded_history(
+    client: AsyncClient, property_lookups: dict[str, str]
+) -> None:
+    household = await create_household(client)
+    snapshot = await client.post(
+        f"/api/v1/households/{household['id']}/properties/wizard",
+        json={
+            "mode": "CURRENT_SNAPSHOT",
+            "property": property_payload(property_lookups) | {"display_name": "Current home"},
+            "baseline": {
+                "baseline_date": "2026-07-27",
+                "property_value": "850000.00",
+                "loan_balance_total": "310000.00",
+                "status_id": property_lookups["status"],
+            },
+        },
+    )
+    history = await client.post(
+        f"/api/v1/households/{household['id']}/properties/wizard",
+        json={
+            "mode": "HISTORICAL_PURCHASE",
+            "property": property_payload(property_lookups)
+            | {
+                "display_name": "Earlier purchase",
+                "purchase_date": "2017-03-02",
+                "purchase_price": "520000.00",
+            },
+        },
+    )
+    assert snapshot.status_code == history.status_code == 201
+    later_baseline = await client.post(
+        f"/api/v1/properties/{snapshot.json()['property']['id']}/baselines",
+        json={
+            "baseline_date": "2026-08-27",
+            "property_value": "860000.00",
+            "loan_balance_total": "300000.00",
+            "status_id": property_lookups["status"],
+        },
+    )
+    assert later_baseline.status_code == 201
+
+    response = await client.get(f"/api/v1/households/{household['id']}/property-summaries")
+
+    assert response.status_code == 200
+    by_name = {item["display_name"]: item for item in response.json()}
+    assert by_name["Current home"]["currency"] == "AUD"
+    assert by_name["Current home"]["setup_mode"] == "CURRENT_SNAPSHOT"
+    assert by_name["Current home"]["position_date"] == "2026-08-27"
+    assert by_name["Current home"]["current_value"] == "860000.00"
+    assert by_name["Current home"]["total_property_debt"] == "300000.00"
+    assert by_name["Earlier purchase"]["setup_mode"] == "HISTORICAL_PURCHASE"
+    assert by_name["Earlier purchase"]["purchase_price"] == "520000.00"
+    assert by_name["Earlier purchase"]["current_value"] is None
+    assert by_name["Earlier purchase"]["total_property_debt"] is None
+
+
 async def test_property_inherits_household_currency_when_omitted(
     client: AsyncClient, property_lookups: dict[str, str]
 ) -> None:

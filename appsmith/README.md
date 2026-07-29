@@ -7,6 +7,8 @@ years come from the backend registry; the frontend does not assume Australia or 
 Phase 10D.1 removes duplicate person selection, separates the income and tax workflows, and places
 raw provider JSON behind an explicit Advanced mode. Phase 10E adds progressive household-expense
 and dated cash-flow-summary sections without adding duplicate household selection or navigation.
+Phase 10F adds property setup from either a current position or known purchase history. Current
+value and total property debt remain explicitly unrecorded when only purchase history is known.
 The application is generated deterministically by `generate_app.py`; edit the generator rather than
 the JSON.
 
@@ -23,7 +25,8 @@ the JSON.
 7. Open **People** to add and list identity records for the selected household.
 8. Select a person and open **Person finances** to record income and tax settings.
 9. Open **Cash flow** to add household expenses and calculate an explicitly dated position.
-10. Click **Deploy** before checking the normal launched application; edit mode and published mode
+10. Open **Properties** to add a current-position snapshot or record a historical purchase.
+11. Click **Deploy** before checking the normal launched application; edit mode and published mode
    use different Appsmith snapshots.
 
 No bearer token, development identity, email address, household ID or financial value is stored in
