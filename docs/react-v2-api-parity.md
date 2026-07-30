@@ -10,6 +10,12 @@ decorators, so route changes require an intentional matrix update.
 | GET | `/health/live` | API liveness | #39 |
 | GET | `/health/ready` | API and database readiness | #39 |
 | GET | `/api/v1/me` | Current migration identity | #55 |
+| GET | `/api/v1/auth/status` | Local-auth bootstrap status | #31 |
+| POST | `/api/v1/auth/bootstrap` | First local administrator | #31 |
+| POST | `/api/v1/auth/login` | Local session creation | #31 |
+| POST | `/api/v1/auth/logout` | Local session revocation | #31 |
+| GET | `/api/v1/auth/session` | Current local session | #31 |
+| POST | `/api/v1/auth/password/change` | Authenticated password change | #31 |
 | GET | `/api/v1/households` | Household list and restoration | #38 |
 | POST | `/api/v1/households` | Household creation | #38 |
 | GET | `/api/v1/households/{household_id}` | Selected household | #38 |
@@ -17,8 +23,8 @@ decorators, so route changes require an intentional matrix update.
 | GET | `/api/v1/households/{household_id}/people` | People list | #40 |
 | POST | `/api/v1/households/{household_id}/people` | Person creation | #40 |
 | GET | `/api/v1/lookups/{category}` | Shared reference controls | #39 |
-| GET | `/api/v1/countries` | Country controls | #39 |
-| GET | `/api/v1/currencies` | Currency controls | #39 |
+| GET | `/api/v1/reference/countries` | Country controls | #39 |
+| GET | `/api/v1/reference/currencies` | Currency controls | #39 |
 | GET | `/api/v1/people/{person_id}/income-sources` | Income-source list | #41 |
 | POST | `/api/v1/people/{person_id}/income-sources` | Dated income creation | #41 |
 | GET | `/api/v1/people/{person_id}/tax-profiles` | Tax-profile list | #41 |
