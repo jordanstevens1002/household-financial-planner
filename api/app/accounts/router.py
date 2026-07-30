@@ -5,7 +5,7 @@ import math
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, status
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.accounts.passwords import hash_password, password_hash_needs_rehash, verify_password
@@ -188,22 +188,25 @@ async def reset_password(
     database: AsyncSession = Depends(get_session),
 ) -> None:
     now = utc_now()
-    token = await database.scalar(
-        select(PasswordResetToken).where(
+    user_id = await database.scalar(
+        update(PasswordResetToken)
+        .where(
             PasswordResetToken.token_hash == hash_token(payload.token),
             PasswordResetToken.used_at.is_(None),
             PasswordResetToken.expires_at > now,
         )
+        .values(used_at=now)
+        .returning(PasswordResetToken.application_user_id)
+        .execution_options(synchronize_session=False)
     )
-    if token is None:
+    if user_id is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Reset token is invalid or expired")
-    user = await database.get(ApplicationUser, token.application_user_id)
+    user = await database.get(ApplicationUser, user_id)
     if user is None or not user.is_active:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Reset token is invalid or expired")
     user.password_hash = hash_password(payload.new_password)
     user.must_change_password = False
     user.password_expires_at = None
-    token.used_at = now
     await database.execute(
         delete(ApplicationSession).where(ApplicationSession.application_user_id == user.id)
     )

@@ -38,24 +38,33 @@ def response_for(user: ApplicationUser) -> AdminUserResponse:
     return AdminUserResponse.model_validate(user, from_attributes=True)
 
 
-async def ensure_another_active_admin(target: ApplicationUser, database: AsyncSession) -> None:
+async def ensure_another_recovery_capable_admin(
+    target: ApplicationUser, database: AsyncSession
+) -> None:
     if not target.is_active or target.global_role != GlobalRole.ADMIN:
         return
-    active_admin_ids = (
+    now = utc_now()
+    usable_admin_ids = (
         await database.scalars(
             select(ApplicationUser.id)
             .where(
                 ApplicationUser.username.is_not(None),
                 ApplicationUser.is_active.is_(True),
                 ApplicationUser.global_role == GlobalRole.ADMIN,
+                ApplicationUser.password_hash.is_not(None),
+                ApplicationUser.must_change_password.is_(False),
+                (
+                    ApplicationUser.password_expires_at.is_(None)
+                    | (ApplicationUser.password_expires_at > now)
+                ),
             )
             .with_for_update()
         )
     ).all()
-    if not any(user_id != target.id for user_id in active_admin_ids):
+    if not any(user_id != target.id for user_id in usable_admin_ids):
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            "The final active administrator cannot be disabled or demoted",
+            "Another recovery-capable administrator is required",
         )
 
 
@@ -121,8 +130,14 @@ async def update_user(
     demoting = payload.global_role is not None and payload.global_role != GlobalRole.ADMIN
     disabling = payload.is_active is False
     if demoting or disabling:
-        await ensure_another_active_admin(user, database)
-    for field in payload.model_fields_set:
+        if user.id == actor.id and not payload.confirm_self_lockout:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                "Self-disable or self-demotion requires confirm_self_lockout=true",
+            )
+        await ensure_another_recovery_capable_admin(user, database)
+    mutable_fields = payload.model_fields_set - {"confirm_self_lockout"}
+    for field in mutable_fields:
         setattr(user, field, getattr(payload, field))
     if disabling:
         await database.execute(
@@ -138,7 +153,7 @@ async def update_user(
         "admin_user_updated",
         actor_user_id=str(actor.id),
         target_user_id=str(user.id),
-        changed_fields=sorted(payload.model_fields_set),
+        changed_fields=sorted(mutable_fields),
     )
     return response_for(user)
 

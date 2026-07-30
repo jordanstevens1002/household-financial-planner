@@ -1228,6 +1228,11 @@ export interface components {
         };
         /** AdminUserUpdate */
         AdminUserUpdate: {
+            /**
+             * Confirm Self Lockout
+             * @default false
+             */
+            confirm_self_lockout: boolean;
             /** Display Name */
             display_name?: string | null;
             /** Email */

@@ -44,10 +44,12 @@ class AdminUserUpdate(BaseModel):
     email: str | None = Field(default=None, max_length=320)
     global_role: GlobalRole | None = None
     is_active: bool | None = None
+    confirm_self_lockout: bool = False
 
     @model_validator(mode="after")
     def validate_update(self) -> AdminUserUpdate:
-        if not self.model_fields_set:
+        mutable_fields = self.model_fields_set - {"confirm_self_lockout"}
+        if not mutable_fields:
             raise ValueError("At least one field must be supplied")
         for required_field in ("username", "global_role", "is_active"):
             if required_field in self.model_fields_set and getattr(self, required_field) is None:

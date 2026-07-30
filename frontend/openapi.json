@@ -191,6 +191,11 @@
       },
       "AdminUserUpdate": {
         "properties": {
+          "confirm_self_lockout": {
+            "default": false,
+            "title": "Confirm Self Lockout",
+            "type": "boolean"
+          },
           "display_name": {
             "anyOf": [
               {
