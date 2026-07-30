@@ -43,19 +43,3 @@ Recovery performs one database transaction that:
 After recovery, sign in with the temporary password and immediately complete the required password
 change. Preserve the API container log containing the audit event according to your normal
 security-log retention process.
-
-## Manual review
-
-1. Bootstrap or sign in as a global administrator and retain the cookie jar and CSRF token.
-2. `POST /api/v1/admin/users` and confirm the temporary password appears in that response.
-3. `GET /api/v1/admin/users` and confirm the account appears without any password or token.
-4. Sign in with the temporary password and confirm ordinary APIs require a password change.
-5. Change the password, then confirm the account can use APIs allowed by its household membership.
-6. Issue `/password-reset`, confirm the prior session stops working, and consume the returned token.
-7. Confirm a second use of that token fails.
-8. Try to disable or demote your own account without `confirm_self_lockout` and confirm the API
-   returns `409`.
-9. Repeat with confirmation but no other recovery-capable administrator and confirm it still
-   returns `409`.
-10. Run the emergency recovery command in a disposable local environment and confirm the selected
-    account must change its password and its old sessions no longer work.
