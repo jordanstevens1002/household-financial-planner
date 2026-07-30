@@ -252,6 +252,16 @@ def downgrade() -> None:
     op.drop_column("application_users", "global_role")
     op.drop_column("application_users", "password_hash")
     op.drop_column("application_users", "username")
+    # The preceding OIDC-only schema requires every user to have a subject. Preserve
+    # local-only user rows and their household memberships under a deterministic
+    # placeholder instead of deleting financial-data relationships on rollback.
+    op.execute(
+        sa.text(
+            "UPDATE application_users "
+            "SET oidc_subject = 'local-account:' || id::text "
+            "WHERE oidc_subject IS NULL"
+        )
+    )
     op.alter_column("application_users", "oidc_subject", nullable=False)
 
     sa.Enum(name="global_role").drop(op.get_bind(), checkfirst=True)
