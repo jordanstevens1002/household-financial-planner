@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import Identity, get_identity
 from app.core.database import get_session
-from app.models import ApplicationUser, HouseholdMembership, HouseholdRole
+from app.models import ApplicationUser, GlobalRole, HouseholdMembership, HouseholdRole
 
 ROLE_LEVEL = {
     HouseholdRole.VIEWER: 0,
@@ -26,6 +26,10 @@ async def current_user(
         user = await session.get(ApplicationUser, uuid.UUID(identity.application_user_id))
         if user is None:
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Authentication required")
+        if not user.is_active:
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Authentication required")
+        if user.must_change_password:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Password change required")
         return user
     user = await session.scalar(
         select(ApplicationUser).where(ApplicationUser.oidc_subject == identity.subject)
@@ -37,6 +41,14 @@ async def current_user(
         session.add(user)
         await session.commit()
         await session.refresh(user)
+    return user
+
+
+async def require_global_admin(
+    user: ApplicationUser = Depends(current_user),
+) -> ApplicationUser:
+    if user.global_role != GlobalRole.ADMIN:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Global administrator required")
     return user
 
 

@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     session_absolute_hours: int = Field(default=12, gt=0)
     login_max_attempts: int = Field(default=5, gt=0)
     login_block_minutes: int = Field(default=15, gt=0)
+    reset_token_minutes: int = Field(default=30, gt=0)
+    temp_password_hours: int = Field(default=24, gt=0)
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     log_format: Literal["json", "console"] = "json"
 

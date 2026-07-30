@@ -96,6 +96,8 @@ No credentials, household IDs or financial values are included in the committed 
 | `SESSION_ABSOLUTE_HOURS` | Maximum local-session lifetime; defaults to 12 hours |
 | `LOGIN_MAX_ATTEMPTS` | Failed attempts before local login is temporarily blocked |
 | `LOGIN_BLOCK_MINUTES` | Local-login blocking and attempt-window duration |
+| `RESET_TOKEN_MINUTES` | Lifetime of an administrator-issued password reset link; defaults to 30 minutes |
+| `TEMP_PASSWORD_HOURS` | Lifetime of a newly generated temporary password; defaults to 24 hours |
 | `LOG_LEVEL` | `DEBUG`, `INFO`, `WARNING`, `ERROR` or `CRITICAL` |
 | `LOG_FORMAT` | `json` or local-friendly `console` |
 | `APPSMITH_VERSION` | Pinned Appsmith Community Edition image version |

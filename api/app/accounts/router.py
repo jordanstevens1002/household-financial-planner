@@ -15,6 +15,7 @@ from app.accounts.schemas import (
     BootstrapStatusResponse,
     Credentials,
     PasswordChangeRequest,
+    PasswordResetRequest,
     SessionResponse,
 )
 from app.accounts.sessions import (
@@ -25,13 +26,22 @@ from app.accounts.sessions import (
     set_session_cookies,
     utc_now,
 )
+from app.accounts.tokens import hash_token
 from app.accounts.usernames import normalise_username
 from app.core.config import Settings, get_settings
 from app.core.database import get_session
-from app.models import ApplicationSession, ApplicationUser, GlobalRole, LoginThrottle
+from app.core.logging import get_logger
+from app.models import (
+    ApplicationSession,
+    ApplicationUser,
+    GlobalRole,
+    LoginThrottle,
+    PasswordResetToken,
+)
 
 router = APIRouter(prefix="/api/v1/auth", tags=["authentication"])
 DUMMY_PASSWORD_HASH = hash_password("authentication timing comparison only")
+logger = get_logger(component="authentication")
 
 
 def account_response(user: ApplicationUser) -> AccountResponse:
@@ -140,6 +150,13 @@ async def login(
     candidate_hash = user.password_hash if user and user.password_hash else DUMMY_PASSWORD_HASH
     password_matches = verify_password(candidate_hash, payload.password)
     valid = bool(user and user.is_active and user.password_hash and password_matches)
+    if (
+        valid
+        and user is not None
+        and user.password_expires_at is not None
+        and as_utc(user.password_expires_at) <= now
+    ):
+        valid = False
     if not valid:
         await record_login_failure(username, database, settings)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid username or password")
@@ -163,6 +180,35 @@ async def current_session(
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Authentication required")
     user, _ = resolved
     return SessionResponse(account=account_response(user))
+
+
+@router.post("/password/reset", status_code=status.HTTP_204_NO_CONTENT)
+async def reset_password(
+    payload: PasswordResetRequest,
+    database: AsyncSession = Depends(get_session),
+) -> None:
+    now = utc_now()
+    token = await database.scalar(
+        select(PasswordResetToken).where(
+            PasswordResetToken.token_hash == hash_token(payload.token),
+            PasswordResetToken.used_at.is_(None),
+            PasswordResetToken.expires_at > now,
+        )
+    )
+    if token is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Reset token is invalid or expired")
+    user = await database.get(ApplicationUser, token.application_user_id)
+    if user is None or not user.is_active:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Reset token is invalid or expired")
+    user.password_hash = hash_password(payload.new_password)
+    user.must_change_password = False
+    user.password_expires_at = None
+    token.used_at = now
+    await database.execute(
+        delete(ApplicationSession).where(ApplicationSession.application_user_id == user.id)
+    )
+    await database.commit()
+    logger.info("password_reset_completed", target_user_id=str(user.id))
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
