@@ -38,6 +38,12 @@ def test_bootstrap_token_rejects_short_secrets() -> None:
         Settings(local_auth_bootstrap_token="too-short")
 
 
+def test_session_timeout_defaults_are_bounded() -> None:
+    settings = Settings()
+    assert settings.session_idle_minutes == 60
+    assert settings.session_absolute_hours == 12
+
+
 def test_connection_and_identity_settings_are_required(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

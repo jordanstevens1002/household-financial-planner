@@ -22,6 +22,6 @@ cookie. Browser clients must copy the CSRF value into `X-CSRF-Token` for every
 cookie-authenticated mutation. Cookies use SameSite=Lax and Path=/; production cookies are Secure.
 Raw session and CSRF tokens are never stored in the database.
 
-Local sessions expire after 12 idle hours by default and always expire after seven days. Failed
+Local sessions expire after one idle hour by default and always expire after 12 hours. Failed
 logins are temporarily blocked after the configured attempt limit, and blocked responses include
 `Retry-After`. Password changes invalidate every other session for the account.

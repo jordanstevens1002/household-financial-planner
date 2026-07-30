@@ -92,8 +92,8 @@ No credentials, household IDs or financial values are included in the committed 
 | `ALLOW_DEVELOPMENT_AUTH` | Enables explicit local development identities |
 | `LOCAL_AUTH_BOOTSTRAP_TOKEN` | One-time secret required to create the first local administrator |
 | `SESSION_COOKIE_SECURE` | Requires HTTPS for local-session cookies; disable only for local HTTP |
-| `SESSION_IDLE_MINUTES` | Sliding local-session idle timeout; defaults to 720 minutes |
-| `SESSION_ABSOLUTE_HOURS` | Maximum local-session lifetime; defaults to 168 hours |
+| `SESSION_IDLE_MINUTES` | Sliding local-session idle timeout; defaults to 60 minutes |
+| `SESSION_ABSOLUTE_HOURS` | Maximum local-session lifetime; defaults to 12 hours |
 | `LOGIN_MAX_ATTEMPTS` | Failed attempts before local login is temporarily blocked |
 | `LOGIN_BLOCK_MINUTES` | Local-login blocking and attempt-window duration |
 | `LOG_LEVEL` | `DEBUG`, `INFO`, `WARNING`, `ERROR` or `CRITICAL` |
