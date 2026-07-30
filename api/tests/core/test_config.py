@@ -19,6 +19,31 @@ def test_invalid_log_level_is_rejected() -> None:
         Settings(log_level="VERBOSE")  # type: ignore[arg-type]
 
 
+@pytest.mark.parametrize(
+    "field",
+    (
+        "session_idle_minutes",
+        "session_absolute_hours",
+        "login_max_attempts",
+        "login_block_minutes",
+    ),
+)
+def test_authentication_limits_must_be_positive(field: str) -> None:
+    with pytest.raises(ValidationError):
+        Settings(**{field: 0})  # type: ignore[arg-type]
+
+
+def test_bootstrap_token_rejects_short_secrets() -> None:
+    with pytest.raises(ValidationError):
+        Settings(local_auth_bootstrap_token="too-short")
+
+
+def test_session_timeout_defaults_are_bounded() -> None:
+    settings = Settings()
+    assert settings.session_idle_minutes == 60
+    assert settings.session_absolute_hours == 12
+
+
 def test_connection_and_identity_settings_are_required(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

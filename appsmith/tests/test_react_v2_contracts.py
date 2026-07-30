@@ -22,7 +22,21 @@ def application_routes() -> set[tuple[str, str]]:
 
     for source in sources:
         tree = ast.parse(source.read_text(encoding="utf-8"))
-        prefix = "" if source.name == "main.py" else "/api/v1"
+        prefix = ""
+        for node in tree.body:
+            if (
+                isinstance(node, ast.Assign)
+                and any(
+                    isinstance(target, ast.Name) and target.id == "router"
+                    for target in node.targets
+                )
+                and isinstance(node.value, ast.Call)
+                and isinstance(node.value.func, ast.Name)
+                and node.value.func.id == "APIRouter"
+            ):
+                for keyword in node.value.keywords:
+                    if keyword.arg == "prefix":
+                        prefix = ast.literal_eval(keyword.value)
         for node in ast.walk(tree):
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
