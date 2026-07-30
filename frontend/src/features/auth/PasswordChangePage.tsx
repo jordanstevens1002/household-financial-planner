@@ -20,7 +20,7 @@ const schema = z
     currentPassword: z.string().min(1, 'Enter your temporary password'),
     newPassword: z
       .string()
-      .min(12, 'New password must contain at least 12 characters'),
+      .min(6, 'New password must contain at least 6 characters'),
   })
   .refine((value) => value.newPassword === value.confirmPassword, {
     message: 'Passwords do not match',

@@ -255,7 +255,7 @@
           },
           "password": {
             "maxLength": 1024,
-            "minLength": 12,
+            "minLength": 6,
             "title": "Password",
             "type": "string"
           },
@@ -593,7 +593,7 @@
         "properties": {
           "password": {
             "maxLength": 1024,
-            "minLength": 12,
+            "minLength": 6,
             "title": "Password",
             "type": "string"
           },
@@ -3422,7 +3422,7 @@
           },
           "new_password": {
             "maxLength": 1024,
-            "minLength": 12,
+            "minLength": 6,
             "title": "New Password",
             "type": "string"
           }

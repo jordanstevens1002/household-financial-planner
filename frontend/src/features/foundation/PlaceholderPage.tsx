@@ -23,7 +23,7 @@ export function PlaceholderPage() {
   return (
     <EmptyState
       description="This area is reserved in the application shell. Keep using Appsmith until its tested React migration is complete."
-      title={`${title} is coming next`}
+      title={`${title} is coming soon`}
     />
   );
 }

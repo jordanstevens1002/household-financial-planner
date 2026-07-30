@@ -40,7 +40,7 @@ test('bootstraps the first administrator', async ({ page }) => {
   await page.getByLabel('Password').fill('correct horse battery staple');
   await page.getByRole('button', { name: 'Create administrator' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Properties is coming next' }),
+    page.getByRole('heading', { name: 'Properties is coming soon' }),
   ).toBeVisible();
   await expect(page).toHaveURL(/\/properties$/);
 });
@@ -74,7 +74,7 @@ test('shows login failure and then restores the intended route', async ({
   await page.getByLabel('Password').fill('correct horse battery staple');
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Retirement is coming next' }),
+    page.getByRole('heading', { name: 'Retirement is coming soon' }),
   ).toBeVisible();
 });
 

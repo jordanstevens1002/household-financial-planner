@@ -93,10 +93,7 @@ describe('local authentication flow', () => {
       screen.getByLabelText('Bootstrap token'),
       'operator-bootstrap-token-value',
     );
-    await user.type(
-      screen.getByLabelText('Password'),
-      'correct horse battery staple',
-    );
+    await user.type(screen.getByLabelText('Password'), 'secret');
     await user.click(
       screen.getByRole('button', { name: 'Create administrator' }),
     );
@@ -147,7 +144,7 @@ describe('local authentication flow', () => {
     );
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(
-      await screen.findByRole('heading', { name: 'Properties is coming next' }),
+      await screen.findByRole('heading', { name: 'Properties is coming soon' }),
     ).toBeInTheDocument();
   });
 

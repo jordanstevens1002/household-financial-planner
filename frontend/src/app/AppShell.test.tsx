@@ -66,7 +66,7 @@ describe('application shell', () => {
     await user.click(screen.getByRole('link', { name: 'Properties' }));
     expect(
       await screen.findByRole('heading', {
-        name: 'Properties is coming next',
+        name: 'Properties is coming soon',
       }),
     ).toBeInTheDocument();
   });

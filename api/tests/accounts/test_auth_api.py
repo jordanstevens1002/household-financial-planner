@@ -2,10 +2,13 @@
 
 from datetime import timedelta
 
+import pytest
 from httpx import AsyncClient
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.accounts.schemas import Credentials, PasswordChangeRequest
 from app.accounts.sessions import utc_now
 from app.core.auth import get_identity
 from app.core.config import Settings, get_settings
@@ -15,6 +18,18 @@ from app.models import ApplicationSession, ApplicationUser, GlobalRole
 BOOTSTRAP_TOKEN = "test-bootstrap-token-that-is-long-enough"
 PASSWORD = "correct horse battery staple"
 NEW_PASSWORD = "new correct horse battery staple"
+
+
+def test_password_contract_accepts_six_characters_and_rejects_five() -> None:
+    assert Credentials(username="person", password="secret").password == "secret"
+    assert (
+        PasswordChangeRequest(current_password="old", new_password="newone").new_password
+        == "newone"
+    )
+    with pytest.raises(ValidationError):
+        Credentials(username="person", password="short")
+    with pytest.raises(ValidationError):
+        PasswordChangeRequest(current_password="old", new_password="short")
 
 
 def local_settings(**overrides: object) -> Settings:

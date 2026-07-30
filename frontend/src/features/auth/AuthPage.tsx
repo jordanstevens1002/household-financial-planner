@@ -19,7 +19,7 @@ import { useAuth } from './AuthContext';
 const schema = z.object({
   bootstrapToken: z.string(),
   displayName: z.string().max(200),
-  password: z.string().min(12, 'Password must contain at least 12 characters'),
+  password: z.string().min(6, 'Password must contain at least 6 characters'),
   username: z.string().min(1, 'Enter your username').max(320),
 });
 type FormValues = z.infer<typeof schema>;
