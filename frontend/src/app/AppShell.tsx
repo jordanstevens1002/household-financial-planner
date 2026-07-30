@@ -10,6 +10,8 @@ import {
 } from '@mui/material';
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 
+import { useAuth } from '../features/auth/AuthContext';
+
 const drawerWidth = 224;
 
 const navigation = [
@@ -26,6 +28,7 @@ const navigation = [
 ] as const;
 
 export function AppShell() {
+  const auth = useAuth();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -49,8 +52,17 @@ export function AppShell() {
           </Typography>
           <Box sx={{ flexGrow: 1 }} />
           <Typography color="text.secondary" variant="body2">
-            React preview
+            {auth.account?.display_name || auth.account?.username}
           </Typography>
+          <Button
+            color="inherit"
+            onClick={() => {
+              void auth.logout();
+            }}
+            sx={{ ml: 2 }}
+          >
+            Sign out
+          </Button>
         </Toolbar>
       </AppBar>
       <Drawer

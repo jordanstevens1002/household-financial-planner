@@ -8,6 +8,10 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { NotificationProvider } from '../shared/NotificationProvider';
+import {
+  AuthContext,
+  type AuthContextValue,
+} from '../features/auth/AuthContext';
 import { createAppRouter } from './router';
 import { appTheme } from './theme';
 
@@ -21,7 +25,9 @@ async function renderRoute(path = '/') {
     <ThemeProvider theme={appTheme}>
       <CssBaseline />
       <NotificationProvider>
-        <RouterProvider router={router as AnyRouter} />
+        <AuthContext.Provider value={authenticated}>
+          <RouterProvider router={router as AnyRouter} />
+        </AuthContext.Provider>
       </NotificationProvider>
     </ThemeProvider>,
   );
@@ -29,6 +35,23 @@ async function renderRoute(path = '/') {
     expect(router.state.status).toBe('idle');
   });
 }
+
+const authenticated: AuthContextValue = {
+  account: {
+    display_name: 'Test User',
+    email: null,
+    global_role: 'USER',
+    id: '00000000-0000-0000-0000-000000000001',
+    must_change_password: false,
+    username: 'test-user',
+  },
+  bootstrap: vi.fn(),
+  changePassword: vi.fn(),
+  expired: false,
+  loading: false,
+  login: vi.fn(),
+  logout: vi.fn(),
+};
 
 describe('application shell', () => {
   it('renders the overview and supports desktop navigation', async () => {

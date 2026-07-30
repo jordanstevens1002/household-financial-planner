@@ -5,6 +5,7 @@ import { RouterProvider } from '@tanstack/react-router';
 import { createRoot } from 'react-dom/client';
 
 import { queryClient } from './api/queryClient';
+import { AuthProvider } from './features/auth/AuthProvider';
 import { NotificationProvider } from './shared/NotificationProvider';
 import { router } from './app/router';
 import { appTheme } from './app/theme';
@@ -21,7 +22,9 @@ createRoot(root).render(
       <CssBaseline />
       <NotificationProvider>
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <AuthProvider>
+            <RouterProvider router={router} />
+          </AuthProvider>
         </QueryClientProvider>
       </NotificationProvider>
     </ThemeProvider>

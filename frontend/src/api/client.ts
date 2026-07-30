@@ -20,6 +20,13 @@ interface FastApiValidationProblem {
 
 export interface ApiRequestOptions extends RequestInit {
   csrfToken?: string;
+  suppressUnauthorisedEvent?: boolean;
+}
+
+let unauthorisedHandler: (() => void) | undefined;
+
+export function setUnauthorisedHandler(handler?: () => void): void {
+  unauthorisedHandler = handler;
 }
 
 export class ApiError extends Error {
@@ -107,7 +114,12 @@ export async function apiRequest<T>(
   path: `/api/${string}`,
   options: ApiRequestOptions = {},
 ): Promise<T> {
-  const { csrfToken, headers: suppliedHeaders, ...requestOptions } = options;
+  const {
+    csrfToken,
+    headers: suppliedHeaders,
+    suppressUnauthorisedEvent,
+    ...requestOptions
+  } = options;
   const method = (requestOptions.method ?? 'GET').toUpperCase();
   const headers = new Headers(suppliedHeaders);
   headers.set('Accept', 'application/json');
@@ -143,6 +155,9 @@ export async function apiRequest<T>(
   }
 
   const body = await responseBody(response);
+  if (response.status === 401 && !suppressUnauthorisedEvent) {
+    unauthorisedHandler?.();
+  }
   const requestId = response.headers.get('X-Request-ID') ?? undefined;
   const validation =
     typeof body === 'object' && body !== null && 'detail' in body
