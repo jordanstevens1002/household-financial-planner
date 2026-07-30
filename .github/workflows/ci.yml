@@ -138,6 +138,7 @@ jobs:
       - run: git diff --exit-code -- ../frontend/openapi.json
       - run: sh scripts/check.sh
       - run: alembic upgrade head
+      - run: python scripts/check_local_account_migration.py
       - run: alembic check
 
   frontend-quality:

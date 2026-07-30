@@ -17,8 +17,9 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
+from app.accounts.usernames import normalise_username as normalise_local_username
 from app.core.database import Base
 
 
@@ -27,6 +28,11 @@ class HouseholdRole(StrEnum):
     ADMIN = "ADMIN"
     EDITOR = "EDITOR"
     VIEWER = "VIEWER"
+
+
+class GlobalRole(StrEnum):
+    ADMIN = "ADMIN"
+    USER = "USER"
 
 
 class ValuationType(StrEnum):
@@ -82,10 +88,24 @@ class RetirementEventType(StrEnum):
 class ApplicationUser(Base):
     __tablename__ = "application_users"
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    oidc_subject: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    oidc_subject: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)
+    username: Mapped[str | None] = mapped_column(String(320), unique=True, index=True)
+    password_hash: Mapped[str | None] = mapped_column(String(512))
+    global_role: Mapped[GlobalRole] = mapped_column(
+        Enum(GlobalRole, name="global_role"), default=GlobalRole.USER
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    must_change_password: Mapped[bool] = mapped_column(Boolean, default=False)
+    password_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     email: Mapped[str | None] = mapped_column(String(320))
     display_name: Mapped[str | None] = mapped_column(String(200))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    @validates("username")
+    def normalise_username(self, _: str, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return normalise_local_username(value)
 
 
 class Household(Base):
@@ -109,6 +129,78 @@ class HouseholdMembership(Base):
         ForeignKey("application_users.id", ondelete="CASCADE"), index=True
     )
     role: Mapped[HouseholdRole] = mapped_column(Enum(HouseholdRole, name="household_role"))
+
+
+class ApplicationSession(Base):
+    __tablename__ = "application_sessions"
+    __table_args__ = (CheckConstraint("idle_expires_at <= absolute_expires_at"),)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    application_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("application_users.id", ondelete="CASCADE"), index=True
+    )
+    session_token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    csrf_token_hash: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    idle_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    absolute_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    application_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("application_users.id", ondelete="CASCADE"), index=True
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class LoginThrottle(Base):
+    __tablename__ = "login_throttles"
+    __table_args__ = (CheckConstraint("failed_attempts >= 0"),)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    username: Mapped[str] = mapped_column(String(320), unique=True, index=True)
+    failed_attempts: Mapped[int] = mapped_column(default=0)
+    window_started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    blocked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    @validates("username")
+    def normalise_username(self, _: str, value: str) -> str:
+        return normalise_local_username(value)
+
+
+class LegacyIdentity(Base):
+    __tablename__ = "legacy_identities"
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    source_application_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("application_users.id", ondelete="CASCADE"), unique=True, index=True
+    )
+    oidc_subject: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    email: Mapped[str | None] = mapped_column(String(320))
+    display_name: Mapped[str | None] = mapped_column(String(200))
+    captured_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class LegacyIdentityMapping(Base):
+    __tablename__ = "legacy_identity_mappings"
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    legacy_identity_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("legacy_identities.id", ondelete="CASCADE"), unique=True, index=True
+    )
+    application_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("application_users.id", ondelete="RESTRICT"), index=True
+    )
+    mapped_by_application_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("application_users.id", ondelete="RESTRICT"), index=True
+    )
+    mapped_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class Person(Base):
