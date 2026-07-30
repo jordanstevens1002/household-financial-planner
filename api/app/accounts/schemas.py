@@ -22,6 +22,11 @@ class PasswordChangeRequest(BaseModel):
     new_password: str = Field(min_length=6, max_length=1024)
 
 
+class PasswordResetRequest(BaseModel):
+    token: str = Field(min_length=1, max_length=1024)
+    new_password: str = Field(min_length=6, max_length=1024)
+
+
 class AccountResponse(BaseModel):
     id: uuid.UUID
     username: str

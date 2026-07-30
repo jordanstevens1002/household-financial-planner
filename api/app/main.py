@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.base import RequestResponseEndpoint
 
 from app.accounts.router import router as accounts_router
+from app.admin.router import router as admin_router
 from app.core.config import get_settings
 from app.core.database import get_session
 from app.core.logging import configure_logging, get_logger
@@ -42,6 +43,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="Household Financial Planner API", version="1.0.0", lifespan=lifespan)
 app.include_router(accounts_router)
+app.include_router(admin_router)
 app.include_router(households_router)
 app.include_router(properties_router)
 app.include_router(events_router)

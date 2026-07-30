@@ -42,6 +42,8 @@ def test_session_timeout_defaults_are_bounded() -> None:
     settings = Settings()
     assert settings.session_idle_minutes == 60
     assert settings.session_absolute_hours == 12
+    assert settings.reset_token_minutes == 30
+    assert settings.temp_password_hours == 24
 
 
 def test_connection_and_identity_settings_are_required(

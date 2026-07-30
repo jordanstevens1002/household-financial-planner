@@ -16,6 +16,11 @@ decorators, so route changes require an intentional matrix update.
 | POST | `/api/v1/auth/logout` | Local session revocation | #31 |
 | GET | `/api/v1/auth/session` | Current local session | #31 |
 | POST | `/api/v1/auth/password/change` | Authenticated password change | #31 |
+| POST | `/api/v1/auth/password/reset` | One-time local password reset | #33 |
+| GET | `/api/v1/admin/users` | Local account administration list | #33 |
+| POST | `/api/v1/admin/users` | Local account creation | #33 |
+| PATCH | `/api/v1/admin/users/{user_id}` | Local account and role update | #33 |
+| POST | `/api/v1/admin/users/{user_id}/password-reset` | Reset-link issuance | #33 |
 | GET | `/api/v1/households` | Household list and restoration | #38 |
 | POST | `/api/v1/households` | Household creation | #38 |
 | GET | `/api/v1/households/{household_id}` | Selected household | #38 |
