@@ -4,6 +4,108 @@
  */
 
 export interface paths {
+    "/api/v1/auth/bootstrap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bootstrap */
+        post: operations["bootstrap_api_v1_auth_bootstrap_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Login */
+        post: operations["login_api_v1_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Logout */
+        post: operations["logout_api_v1_auth_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password/change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change Password */
+        post: operations["change_password_api_v1_auth_password_change_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Current Session */
+        get: operations["current_session_api_v1_auth_session_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Auth Status */
+        get: operations["auth_status_api_v1_auth_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/calculations/tax": {
         parameters: {
             query?: never;
@@ -995,6 +1097,23 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccountResponse */
+        AccountResponse: {
+            /** Display Name */
+            display_name: string | null;
+            /** Email */
+            email: string | null;
+            global_role: components["schemas"]["GlobalRole"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Must Change Password */
+            must_change_password: boolean;
+            /** Username */
+            username: string;
+        };
         /** AppliedEventOverride */
         AppliedEventOverride: {
             /** Operation */
@@ -1062,6 +1181,22 @@ export interface components {
              * Format: uuid
              */
             status_id: string;
+        };
+        /** BootstrapRequest */
+        BootstrapRequest: {
+            /** Display Name */
+            display_name?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Password */
+            password: string;
+            /** Username */
+            username: string;
+        };
+        /** BootstrapStatusResponse */
+        BootstrapStatusResponse: {
+            /** Bootstrap Required */
+            bootstrap_required: boolean;
         };
         /** CalculatedCost */
         CalculatedCost: {
@@ -1168,6 +1303,13 @@ export interface components {
             display_name: string;
             /** Flag */
             flag: string;
+        };
+        /** Credentials */
+        Credentials: {
+            /** Password */
+            password: string;
+            /** Username */
+            username: string;
         };
         /** CurrencyRead */
         CurrencyRead: {
@@ -1383,6 +1525,11 @@ export interface components {
             /** Source Type */
             source_type: string;
         };
+        /**
+         * GlobalRole
+         * @enum {string}
+         */
+        GlobalRole: "ADMIN" | "USER";
         /** GoalCreate */
         GoalCreate: {
             /** Display Name */
@@ -2099,6 +2246,13 @@ export interface components {
             total_percentage: string;
             /** Warnings */
             warnings: string[];
+        };
+        /** PasswordChangeRequest */
+        PasswordChangeRequest: {
+            /** Current Password */
+            current_password: string;
+            /** New Password */
+            new_password: string;
         };
         /**
          * PaymentFrequency
@@ -3096,6 +3250,12 @@ export interface components {
             /** Repayment */
             repayment: string;
         };
+        /** SessionResponse */
+        SessionResponse: {
+            account: components["schemas"]["AccountResponse"];
+            /** Csrf Token */
+            csrf_token?: string | null;
+        };
         /** TargetCalculationRead */
         TargetCalculationRead: {
             /** Estimated Payoff Date */
@@ -3416,6 +3576,165 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    bootstrap_api_v1_auth_bootstrap_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Bootstrap-Token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BootstrapRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    login_api_v1_auth_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Credentials"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logout_api_v1_auth_logout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    change_password_api_v1_auth_password_change_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    current_session_api_v1_auth_session_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+        };
+    };
+    auth_status_api_v1_auth_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BootstrapStatusResponse"];
+                };
+            };
+        };
+    };
     calculate_tax_api_v1_calculations_tax_post: {
         parameters: {
             query?: never;

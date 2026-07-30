@@ -22,6 +22,11 @@ ROLE_LEVEL = {
 async def current_user(
     identity: Identity = Depends(get_identity), session: AsyncSession = Depends(get_session)
 ) -> ApplicationUser:
+    if identity.application_user_id is not None:
+        user = await session.get(ApplicationUser, uuid.UUID(identity.application_user_id))
+        if user is None:
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Authentication required")
+        return user
     user = await session.scalar(
         select(ApplicationUser).where(ApplicationUser.oidc_subject == identity.subject)
     )

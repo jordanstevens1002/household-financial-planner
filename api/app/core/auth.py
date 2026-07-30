@@ -3,10 +3,13 @@
 from dataclasses import dataclass
 
 import jwt
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.accounts.sessions import resolve_session
 from app.core.config import Settings, get_settings
+from app.core.database import get_session
 
 
 @dataclass(frozen=True)
@@ -14,16 +17,28 @@ class Identity:
     subject: str
     email: str | None = None
     display_name: str | None = None
+    application_user_id: str | None = None
 
 
 bearer = HTTPBearer(auto_error=False)
 
 
 async def get_identity(
+    request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
     development_subject: str | None = Header(default=None, alias="X-Development-Subject"),
     settings: Settings = Depends(get_settings),
+    session: AsyncSession = Depends(get_session),
 ) -> Identity:
+    local = await resolve_session(request, session, settings)
+    if local is not None:
+        user, _ = local
+        return Identity(
+            subject=f"local:{user.id}",
+            email=user.email,
+            display_name=user.display_name,
+            application_user_id=str(user.id),
+        )
     if settings.allow_development_auth and development_subject:
         return Identity(subject=development_subject)
     if credentials is None:
