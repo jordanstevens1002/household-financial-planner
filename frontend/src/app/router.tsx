@@ -5,11 +5,11 @@ import {
   lazyRouteComponent,
 } from '@tanstack/react-router';
 
-import { AppShell } from './AppShell';
+import { AuthenticatedApp } from '../features/auth/AuthenticatedApp';
 import { RouteError } from './RouteError';
 
 const rootRoute = createRootRoute({
-  component: AppShell,
+  component: AuthenticatedApp,
   errorComponent: RouteError,
   notFoundComponent: lazyRouteComponent(
     () => import('../features/foundation/NotFoundPage'),

@@ -9,7 +9,7 @@ from app.models import GlobalRole
 
 class Credentials(BaseModel):
     username: str = Field(min_length=1, max_length=320)
-    password: str = Field(min_length=12, max_length=1024)
+    password: str = Field(min_length=6, max_length=1024)
 
 
 class BootstrapRequest(Credentials):
@@ -19,7 +19,7 @@ class BootstrapRequest(Credentials):
 
 class PasswordChangeRequest(BaseModel):
     current_password: str = Field(min_length=1, max_length=1024)
-    new_password: str = Field(min_length=12, max_length=1024)
+    new_password: str = Field(min_length=6, max_length=1024)
 
 
 class AccountResponse(BaseModel):
