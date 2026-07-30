@@ -138,6 +138,7 @@ jobs:
       - run: git diff --exit-code -- ../frontend/openapi.json
       - run: sh scripts/check.sh
       - run: alembic upgrade head
+      - run: python scripts/check_local_account_migration.py
       - run: alembic check
 
   frontend-quality:
@@ -185,6 +186,9 @@ jobs:
       - run: cp .env.example .env
       - run: docker compose config --quiet
       - run: docker build --target runtime --tag household-financial-planner-api:${{ github.sha }} ./api
+      - run: >-
+          docker run --rm household-financial-planner-api:${{ github.sha }}
+          python scripts/check_runtime_dependencies.py
       - uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: household-financial-planner-api:${{ github.sha }}
