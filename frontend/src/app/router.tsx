@@ -26,6 +26,21 @@ const indexRoute = createRoute({
   path: '/',
 });
 
+const administrationRoute = createRoute({
+  component: lazyRouteComponent(
+    () => import('../features/admin/AdminUsersPage'),
+    'AdminUsersPage',
+  ),
+  getParentRoute: () => rootRoute,
+  path: '/administration',
+});
+
+const resetPasswordRoute = createRoute({
+  component: () => null,
+  getParentRoute: () => rootRoute,
+  path: '/reset-password',
+});
+
 function placeholderRoute(
   path:
     | '/cash-flow'
@@ -50,6 +65,8 @@ function placeholderRoute(
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  administrationRoute,
+  resetPasswordRoute,
   placeholderRoute('/households'),
   placeholderRoute('/people'),
   placeholderRoute('/cash-flow'),

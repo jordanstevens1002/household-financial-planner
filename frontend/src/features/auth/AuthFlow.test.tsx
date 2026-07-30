@@ -269,4 +269,41 @@ describe('local authentication flow', () => {
       ),
     ).toBeInTheDocument();
   });
+
+  it('consumes a single-use password reset path', async () => {
+    const user = userEvent.setup();
+    let submitted: Record<string, unknown> | undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        if (pathOf(input).endsWith('/password/reset')) {
+          submitted = JSON.parse(
+            typeof init?.body === 'string' ? init.body : '{}',
+          ) as Record<string, unknown>;
+          return Promise.resolve(response(null, 204));
+        }
+        return Promise.resolve(
+          response({ detail: 'Authentication required' }, 401),
+        );
+      }),
+    );
+    await renderApplication('/reset-password?token=single-use-value');
+
+    await user.type(
+      await screen.findByLabelText('New password'),
+      'replacement',
+    );
+    await user.type(
+      screen.getByLabelText('Confirm new password'),
+      'replacement',
+    );
+    await user.click(screen.getByRole('button', { name: 'Reset password' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Password updated' }),
+    ).toBeVisible();
+    expect(submitted).toEqual({
+      new_password: 'replacement',
+      token: 'single-use-value',
+    });
+  });
 });

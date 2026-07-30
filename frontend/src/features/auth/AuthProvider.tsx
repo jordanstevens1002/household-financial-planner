@@ -112,6 +112,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
         acceptSession(response);
       },
+      csrfToken() {
+        return csrfToken.current;
+      },
       async login(username: string, password: string) {
         const response = await apiRequest<SessionResponse>(
           '/api/v1/auth/login',
