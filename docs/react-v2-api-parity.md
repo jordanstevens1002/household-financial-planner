@@ -80,6 +80,7 @@ decorators, so route changes require an intentional matrix update.
 | GET | `/api/v1/households/{household_id}/purchase-plans` | Purchase-plan list | #47 |
 | POST | `/api/v1/households/{household_id}/purchase-plans` | Plan and funding | #47 |
 | POST | `/api/v1/purchase-plans/{plan_id}/calculate` | Purchase feasibility | #47 |
+| GET | `/api/v1/purchase-providers` | Installed purchase-provider discovery | #39, #47 |
 | GET | `/api/v1/retirement-providers` | Provider discovery | #48 |
 | GET | `/api/v1/households/{household_id}/retirement-accounts` | Account list | #48 |
 | POST | `/api/v1/households/{household_id}/retirement-accounts` | Account creation | #48 |

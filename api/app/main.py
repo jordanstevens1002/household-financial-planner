@@ -17,6 +17,7 @@ from app.admin.router import router as admin_router
 from app.core.config import get_settings
 from app.core.database import get_session
 from app.core.logging import configure_logging, get_logger
+from app.core.version import APPLICATION_VERSION
 from app.events.router import router as events_router
 from app.households.router import router as households_router
 from app.income.router import router as income_router
@@ -35,14 +36,18 @@ logger = get_logger(component="api")
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    logger.info("application_started", version="1.0.0")
+    logger.info("application_started", version=APPLICATION_VERSION)
     try:
         yield
     finally:
         logger.info("application_stopped")
 
 
-app = FastAPI(title="Household Financial Planner API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(
+    title="Household Financial Planner API",
+    version=APPLICATION_VERSION,
+    lifespan=lifespan,
+)
 app.include_router(accounts_router)
 app.include_router(admin_router)
 app.include_router(legacy_identity_router)
@@ -90,7 +95,7 @@ async def log_request(request: Request, call_next: RequestResponseEndpoint) -> R
 
 @app.get("/health/live", tags=["health"])
 async def live() -> dict[str, str]:
-    return {"status": "ok"}
+    return {"status": "ok", "version": APPLICATION_VERSION}
 
 
 @app.get("/health/ready", tags=["health"])

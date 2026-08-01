@@ -1026,6 +1026,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/purchase-providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Purchase Providers */
+        get: operations["list_purchase_providers_api_v1_purchase_providers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reference/countries": {
         parameters: {
             query?: never;
@@ -1554,6 +1571,8 @@ export interface components {
             display_name: string;
             /** Flag */
             flag: string;
+            /** Recommended Currency */
+            recommended_currency: string | null;
         };
         /** Credentials */
         Credentials: {
@@ -3130,6 +3149,13 @@ export interface components {
             target_price_max: string;
             /** Target Price Min */
             target_price_min: string;
+        };
+        /** PurchaseProviderRead */
+        PurchaseProviderRead: {
+            /** Code */
+            code: string;
+            /** Display Name */
+            display_name: string;
         };
         /** RefinanceCreate */
         RefinanceCreate: {
@@ -6656,6 +6682,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FeasibilityRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_purchase_providers_api_v1_purchase_providers_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseProviderRead"][];
                 };
             };
             /** @description Validation Error */

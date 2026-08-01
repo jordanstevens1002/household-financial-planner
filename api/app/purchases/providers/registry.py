@@ -34,6 +34,9 @@ class PurchaseProviderRegistry:
                 f"No purchase provider is installed for code: {code}"
             ) from exc
 
+    def providers(self) -> tuple[PurchaseProvider, ...]:
+        return tuple(self._providers[code] for code in sorted(self._providers))
+
 
 def _external_providers() -> list[PurchaseProvider]:
     result: list[PurchaseProvider] = []

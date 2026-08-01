@@ -12,7 +12,7 @@ def test_api_reports_release_version() -> None:
 async def test_liveness_does_not_require_database(client: AsyncClient) -> None:
     response = await client.get("/health/live")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json() == {"status": "ok", "version": "1.0.0"}
 
 
 async def test_readiness_checks_database(client: AsyncClient) -> None:

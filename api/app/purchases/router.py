@@ -27,17 +27,32 @@ from app.models import (
 )
 from app.purchases.calculations import calculate_feasibility, money
 from app.purchases.providers.base import PurchaseContext
-from app.purchases.providers.registry import PurchaseProviderError, get_purchase_provider
+from app.purchases.providers.registry import (
+    PurchaseProviderError,
+    get_purchase_provider,
+    get_registry,
+)
 from app.purchases.schemas import (
     CalculatedCost,
     FeasibilityRead,
     FeasibilityRequest,
     PurchasePlanCreate,
     PurchasePlanRead,
+    PurchaseProviderRead,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["purchase planning"])
 logger = get_logger(component="purchases")
+
+
+@router.get("/purchase-providers", response_model=list[PurchaseProviderRead])
+async def list_purchase_providers(
+    _: ApplicationUser = Depends(current_user),
+) -> list[PurchaseProviderRead]:
+    return [
+        PurchaseProviderRead(code=provider.code, display_name=provider.display_name)
+        for provider in get_registry().providers()
+    ]
 
 
 async def _plan_with_access(

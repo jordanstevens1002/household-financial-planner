@@ -784,12 +784,24 @@
           "flag": {
             "title": "Flag",
             "type": "string"
+          },
+          "recommended_currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended Currency"
           }
         },
         "required": [
           "code",
           "display_name",
-          "flag"
+          "flag",
+          "recommended_currency"
         ],
         "title": "CountryRead",
         "type": "object"
@@ -5553,6 +5565,24 @@
           "notes"
         ],
         "title": "PurchasePlanRead",
+        "type": "object"
+      },
+      "PurchaseProviderRead": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "display_name"
+        ],
+        "title": "PurchaseProviderRead",
         "type": "object"
       },
       "RefinanceCreate": {
@@ -13283,6 +13313,64 @@
           }
         ],
         "summary": "Calculate Purchase Plan",
+        "tags": [
+          "purchase planning"
+        ]
+      }
+    },
+    "/api/v1/purchase-providers": {
+      "get": {
+        "operationId": "list_purchase_providers_api_v1_purchase_providers_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PurchaseProviderRead"
+                  },
+                  "title": "Response List Purchase Providers Api V1 Purchase Providers Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Purchase Providers",
         "tags": [
           "purchase planning"
         ]
