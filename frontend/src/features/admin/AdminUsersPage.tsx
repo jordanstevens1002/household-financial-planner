@@ -15,6 +15,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -309,14 +310,23 @@ export function AdminUsersPage() {
         to a user.
       </Alert>
       <Box>
-        <Button
-          onClick={() => {
-            setCreateOpen(true);
-          }}
-          variant="contained"
-        >
-          Add user
-        </Button>
+        <Stack direction="row" spacing={2}>
+          <Button
+            onClick={() => {
+              setCreateOpen(true);
+            }}
+            variant="contained"
+          >
+            Add user
+          </Button>
+          <Button
+            component={Link}
+            to="/administration/legacy-identities"
+            variant="outlined"
+          >
+            Migrate legacy logins
+          </Button>
+        </Stack>
       </Box>
       {users.isLoading ? <CircularProgress aria-label="Loading users" /> : null}
       {users.error ? (
