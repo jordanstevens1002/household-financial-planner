@@ -9,6 +9,11 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.models import OwnerType
 
 
+class PurchaseProviderRead(BaseModel):
+    code: str
+    display_name: str
+
+
 class FundingSourceCreate(BaseModel):
     display_name: str = Field(min_length=1, max_length=200)
     source_type: str = Field(min_length=1, max_length=80)

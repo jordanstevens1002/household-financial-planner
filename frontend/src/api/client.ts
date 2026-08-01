@@ -111,7 +111,7 @@ function detailMessage(body: unknown, fallback: string): string {
 }
 
 export async function apiRequest<T>(
-  path: `/api/${string}`,
+  path: `/api/${string}` | `/health/${string}`,
   options: ApiRequestOptions = {},
 ): Promise<T> {
   const {

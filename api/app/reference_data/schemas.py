@@ -7,6 +7,7 @@ class CountryRead(BaseModel):
     code: str
     display_name: str
     flag: str
+    recommended_currency: str | None
 
 
 class CurrencyRead(BaseModel):

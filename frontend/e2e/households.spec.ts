@@ -58,3 +58,57 @@ test('selects a household and restores it after a new session', async ({
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Selected' })).toBeVisible();
 });
+
+test('recommends a country currency while allowing an override', async ({
+  page,
+}) => {
+  await page.route('**/api/v1/auth/session', (route) =>
+    route.fulfill({ contentType: 'application/json', json: { account } }),
+  );
+  await page.route('**/api/v1/households', (route) =>
+    route.fulfill({ contentType: 'application/json', json: [] }),
+  );
+  await page.route('**/api/v1/reference/countries', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      json: [
+        {
+          code: 'NZ',
+          display_name: 'New Zealand',
+          flag: '🇳🇿',
+          recommended_currency: 'NZD',
+        },
+      ],
+    }),
+  );
+  await page.route('**/api/v1/reference/currencies', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      json: [
+        {
+          code: 'NZD',
+          display_name: 'New Zealand Dollar',
+          numeric_code: '554',
+        },
+        {
+          code: 'USD',
+          display_name: 'US Dollar',
+          numeric_code: '840',
+        },
+      ],
+    }),
+  );
+
+  await page.goto('/households');
+  await page.getByRole('button', { name: 'Create household' }).click();
+  await page.getByLabel('Country').click();
+  await page.getByText('🇳🇿 New Zealand').click();
+  await expect(page.getByLabel('Currency')).toHaveValue(
+    'NZD — New Zealand Dollar',
+  );
+  await page.getByLabel('Currency').click();
+  await page.getByText('USD — US Dollar').click();
+  await expect(
+    page.getByText('Using your chosen household currency.'),
+  ).toBeVisible();
+});

@@ -1026,6 +1026,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/purchase-providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Purchase Providers */
+        get: operations["list_purchase_providers_api_v1_purchase_providers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reference/countries": {
         parameters: {
             query?: never;
@@ -1233,6 +1250,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/system/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * System Status
+         * @description Check database readiness for an authenticated application user.
+         */
+        get: operations["system_status_api_v1_system_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tax-providers": {
         parameters: {
             query?: never;
@@ -1259,23 +1296,6 @@ export interface paths {
         };
         /** Live */
         get: operations["live_health_live_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/health/ready": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Ready */
-        get: operations["ready_health_ready_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1554,6 +1574,8 @@ export interface components {
             display_name: string;
             /** Flag */
             flag: string;
+            /** Recommended Currency */
+            recommended_currency: string | null;
         };
         /** Credentials */
         Credentials: {
@@ -3131,6 +3153,13 @@ export interface components {
             /** Target Price Min */
             target_price_min: string;
         };
+        /** PurchaseProviderRead */
+        PurchaseProviderRead: {
+            /** Code */
+            code: string;
+            /** Display Name */
+            display_name: string;
+        };
         /** RefinanceCreate */
         RefinanceCreate: {
             /**
@@ -3686,6 +3715,16 @@ export interface components {
             account: components["schemas"]["AccountResponse"];
             /** Csrf Token */
             csrf_token?: string | null;
+        };
+        /** SystemStatusRead */
+        SystemStatusRead: {
+            /**
+             * Status
+             * @constant
+             */
+            status: "ready";
+            /** Version */
+            version: string;
         };
         /** TargetCalculationRead */
         TargetCalculationRead: {
@@ -6669,6 +6708,37 @@ export interface operations {
             };
         };
     };
+    list_purchase_providers_api_v1_purchase_providers_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseProviderRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_countries_api_v1_reference_countries_get: {
         parameters: {
             query?: never;
@@ -7171,6 +7241,37 @@ export interface operations {
             };
         };
     };
+    system_status_api_v1_system_status_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemStatusRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_tax_providers_api_v1_tax_providers_get: {
         parameters: {
             query?: never;
@@ -7203,28 +7304,6 @@ export interface operations {
         };
     };
     live_health_live_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: string;
-                    };
-                };
-            };
-        };
-    };
-    ready_health_ready_get: {
         parameters: {
             query?: never;
             header?: never;

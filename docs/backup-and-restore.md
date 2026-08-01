@@ -38,7 +38,7 @@ The Compose project name affects the volume name. Confirm it with `docker volume
 2. Start PostgreSQL and create an empty target database.
 3. Restore with `pg_restore --clean --if-exists` only when intentionally replacing that database.
 4. Restore the Appsmith archive into an empty Appsmith volume.
-5. Start the API, allow forward migrations to complete, and check `/health/ready`.
+5. Start the API, allow forward migrations to complete, and confirm the API container is healthy with `docker compose ps`. An authenticated user can then confirm database readiness from Settings.
 6. Verify household access, counts and representative calculations before resuming normal use.
 
 Test this procedure regularly. An untested backup should not be considered recoverable.

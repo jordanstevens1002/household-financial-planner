@@ -3,6 +3,7 @@
 from typing import Any
 
 import pycountry
+from babel.numbers import get_territory_currencies
 from fastapi import APIRouter, Depends
 
 from app.core.dependencies import current_user
@@ -16,6 +17,12 @@ def _flag(code: str) -> str:
     return "".join(chr(127397 + ord(character)) for character in code)
 
 
+def _recommended_currency(code: str) -> str | None:
+    """Return a recommendation only when CLDR reports one current tender currency."""
+    currencies = get_territory_currencies(code)
+    return currencies[0] if len(currencies) == 1 else None
+
+
 def countries() -> list[CountryRead]:
     records: list[Any] = list(pycountry.countries)
     return sorted(
@@ -24,6 +31,7 @@ def countries() -> list[CountryRead]:
                 code=record.alpha_2,
                 display_name=record.name,
                 flag=_flag(record.alpha_2),
+                recommended_currency=_recommended_currency(record.alpha_2),
             )
             for record in records
         ),

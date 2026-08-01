@@ -68,6 +68,7 @@ export function HouseholdsPage() {
   const queryClient = useQueryClient();
   const { notify } = useNotification();
   const [createOpen, setCreateOpen] = useState(false);
+  const [currencyAutomatic, setCurrencyAutomatic] = useState(true);
   const [memberOpen, setMemberOpen] = useState(false);
   const [pendingRemoval, setPendingRemoval] = useState<Membership | null>(null);
   const [pendingRoleChange, setPendingRoleChange] =
@@ -121,6 +122,7 @@ export function HouseholdsPage() {
       household.add(created);
       household.select(created);
       householdForm.reset();
+      setCurrencyAutomatic(true);
       setCreateOpen(false);
       notify('Household created', 'success');
     },
@@ -397,7 +399,16 @@ export function HouseholdsPage() {
                         (item) => item.code === field.value,
                       ) ?? null
                     }
-                    onChange={(_, option) => field.onChange(option?.code ?? '')}
+                    onChange={(_, option) => {
+                      field.onChange(option?.code ?? '');
+                      if (currencyAutomatic) {
+                        householdForm.setValue(
+                          'currency',
+                          option?.recommended_currency ?? '',
+                          { shouldValidate: true },
+                        );
+                      }
+                    }}
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -423,13 +434,21 @@ export function HouseholdsPage() {
                         (item) => item.code === field.value,
                       ) ?? null
                     }
-                    onChange={(_, option) => field.onChange(option?.code ?? '')}
+                    onChange={(_, option) => {
+                      setCurrencyAutomatic(false);
+                      field.onChange(option?.code ?? '');
+                    }}
                     renderInput={(params) => (
                       <TextField
                         {...params}
                         label="Currency"
                         error={Boolean(fieldState.error)}
-                        helperText={fieldState.error?.message}
+                        helperText={
+                          fieldState.error?.message ??
+                          (currencyAutomatic
+                            ? 'Recommended from the selected country; you can choose another.'
+                            : 'Using your chosen household currency.')
+                        }
                       />
                     )}
                   />

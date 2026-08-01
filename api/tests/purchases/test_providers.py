@@ -4,9 +4,19 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
+from httpx import AsyncClient
 
 from app.purchases.providers.base import PurchaseContext, PurchaseProviderResult
 from app.purchases.providers.registry import PurchaseProviderError, PurchaseProviderRegistry
+
+
+async def test_purchase_provider_catalogue_is_discoverable(client: AsyncClient) -> None:
+    response = await client.get("/api/v1/purchase-providers")
+
+    assert response.status_code == 200
+    assert response.json() == [
+        {"code": "AU_PURCHASE", "display_name": "Australian purchase-cost example"}
+    ]
 
 
 class ExampleProvider:
@@ -38,6 +48,7 @@ def test_non_australian_purchase_provider_uses_generic_contract() -> None:
         {},
     )
     assert result.assumptions == ["Example XYZ"]
+    assert [item.code for item in registry.providers()] == ["EX_PURCHASE"]
 
 
 def test_purchase_provider_registry_rejects_missing_and_duplicates() -> None:

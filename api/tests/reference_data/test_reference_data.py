@@ -19,7 +19,12 @@ async def test_country_reference_is_sorted_and_includes_flag_labels(
         "code": "AU",
         "display_name": "Australia",
         "flag": "🇦🇺",
+        "recommended_currency": "AUD",
     }
+    new_zealand = next(item for item in records if item["code"] == "NZ")
+    assert new_zealand["recommended_currency"] == "NZD"
+    ambiguous = next(item for item in records if item["code"] == "PS")
+    assert ambiguous["recommended_currency"] is None
     assert not any(item["code"] == "" for item in records)
 
 
