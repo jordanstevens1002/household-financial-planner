@@ -45,6 +45,13 @@ expired temporary password, is disabled, or otherwise lacks usable local credent
 must use `unresolved_count`, `activation_pending_count`, and `cutover_ready` together rather than
 treating the existence of a mapping as proof that a user can sign in.
 
+Completing the administrator review calls `POST /api/v1/admin/legacy-identities/review`. The API
+records the administrator, timestamp, exact unresolved identity IDs and whether loss of login
+access was accepted. It rejects a stale unresolved-ID list and only reports the latest review as
+active while its migration-state hash still matches the current identities, mappings, account
+usability and household roles. Review history remains available through
+`GET /api/v1/admin/legacy-identities/reviews` for audit purposes.
+
 Household access inherited from OIDC identities has separate provenance from memberships already
 held by the local account. Run `POST /api/v1/admin/legacy-identities/reconcile` immediately before
 cutover. It applies newly added memberships, role reductions, and removals while preserving the

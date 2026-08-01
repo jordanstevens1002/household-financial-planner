@@ -150,6 +150,7 @@ describe('legacy identity mapping wizard', () => {
         }
         return Promise.resolve(
           response({
+            active_review: null,
             activation_pending_count: 0,
             cutover_ready: false,
             identities: [legacyIdentity],
@@ -170,6 +171,12 @@ describe('legacy identity mapping wizard', () => {
     expect(
       screen.getByRole('heading', { name: 'Confirm identity mapping' }),
     ).toBeVisible();
+    expect(
+      screen.getByText(/legacy identity: Legacy Person/i),
+    ).toHaveTextContent('Target local account: Legacy Person (legacy-local)');
+    expect(screen.getByText(/Household roles transferred/i)).toHaveTextContent(
+      'Personal household: OWNER',
+    );
     await user.click(screen.getByRole('button', { name: 'Confirm mapping' }));
 
     expect(
@@ -188,7 +195,7 @@ describe('legacy identity mapping wizard', () => {
         screen.queryByLabelText('One-time temporary password'),
       ).not.toBeVisible(),
     );
-  });
+  }, 10_000);
 
   it('reconciles and corrects an activation-pending mapping', async () => {
     const user = userEvent.setup();
@@ -208,6 +215,7 @@ describe('legacy identity mapping wizard', () => {
       status: 'ACTIVATION_PENDING',
     } as const;
     const currentList = () => ({
+      active_review: null,
       activation_pending_count: mappingActive ? 1 : 0,
       cutover_ready: false,
       identities: [
@@ -247,11 +255,107 @@ describe('legacy identity mapping wizard', () => {
     await waitFor(() => expect(reconcileRequests).toBe(1));
     await user.click(screen.getByRole('button', { name: 'Correct mapping' }));
     expect(
-      screen.getByText(/removes access inherited through this mapping/i),
-    ).toBeVisible();
+      screen.getByText(/remove the mapping from Legacy Person/i),
+    ).toHaveTextContent('to Local Administrator');
     await user.click(screen.getByRole('button', { name: 'Revoke mapping' }));
     expect(
       await screen.findByRole('button', { name: 'Map login' }),
     ).toBeVisible();
+  });
+
+  it('allows many legacy identities to share a target and persists loss acceptance', async () => {
+    const user = userEvent.setup();
+    const sharedTarget = {
+      ...administrator,
+      display_name: 'Shared Local Person',
+      global_role: 'USER',
+      id: '00000000-0000-0000-0000-000000000050',
+      username: 'shared-local',
+    } as const;
+    const mappedIdentity = {
+      ...legacyIdentity,
+      id: '00000000-0000-0000-0000-000000000021',
+      mapping: {
+        application_user_id: sharedTarget.id,
+        display_name: sharedTarget.display_name,
+        id: '00000000-0000-0000-0000-000000000041',
+        last_reconciled_at: '2026-08-01T00:00:00Z',
+        mapped_at: '2026-08-01T00:00:00Z',
+        mapped_by_application_user_id: administrator.id,
+        username: sharedTarget.username,
+      },
+      status: 'READY',
+    } as const;
+    let reviewBody: unknown;
+    const identityList = {
+      active_review: null,
+      activation_pending_count: 0,
+      cutover_ready: false,
+      identities: [mappedIdentity, legacyIdentity],
+      unresolved_count: 1,
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/auth/session')) {
+          return Promise.resolve(response({ account: administrator }));
+        }
+        if (path.endsWith('/admin/users')) {
+          return Promise.resolve(response([administrator, sharedTarget]));
+        }
+        if (path.endsWith('/review') && init?.method === 'POST') {
+          if (typeof init.body !== 'string') {
+            throw new Error('Expected a JSON review body');
+          }
+          reviewBody = JSON.parse(init.body);
+          return Promise.resolve(
+            response({
+              ...identityList,
+              active_review: {
+                accepted_login_loss: true,
+                id: '00000000-0000-0000-0000-000000000060',
+                reviewed_at: '2026-08-01T00:00:00Z',
+                reviewed_by_application_user_id: administrator.id,
+                unresolved_identity_ids: [legacyIdentity.id],
+              },
+            }),
+          );
+        }
+        return Promise.resolve(response(identityList));
+      }),
+    );
+
+    await renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Map login' }));
+    await user.click(screen.getByLabelText('Local account'));
+    await user.click(
+      screen.getByRole('option', { name: /Shared Local Person/ }),
+    );
+    expect(screen.getByLabelText('Local account')).toHaveTextContent(
+      'Shared Local Person',
+    );
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('heading', { name: 'Map legacy login' }),
+      ).not.toBeInTheDocument(),
+    );
+
+    await user.click(
+      screen.getByLabelText(
+        'Accept that 1 unresolved login(s) will lose access',
+      ),
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Record completed review' }),
+    );
+    expect(
+      await screen.findByText(/review recorded acceptance that 1 unresolved/i),
+    ).toBeVisible();
+    expect(reviewBody).toEqual({
+      accept_login_loss: true,
+      unresolved_identity_ids: [legacyIdentity.id],
+    });
   });
 });

@@ -251,6 +251,22 @@ class LegacyMembershipGrant(Base):
     )
 
 
+class LegacyMigrationReview(Base):
+    __tablename__ = "legacy_migration_reviews"
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    reviewed_by_application_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("application_users.id", ondelete="RESTRICT"), index=True
+    )
+    reviewed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    unresolved_identity_ids: Mapped[list[str]] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql")
+    )
+    accepted_login_loss: Mapped[bool] = mapped_column(Boolean)
+    migration_state_hash: Mapped[str] = mapped_column(String(64), index=True)
+
+
 class Person(Base):
     __tablename__ = "people"
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)

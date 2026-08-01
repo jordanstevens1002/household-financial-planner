@@ -56,6 +56,13 @@ function identity(
 function list(identities: ReturnType<typeof identity>[]) {
   const unresolved = identities.filter((item) => item.status !== 'READY');
   return {
+    active_review: null as null | {
+      accepted_login_loss: boolean;
+      id: string;
+      reviewed_at: string;
+      reviewed_by_application_user_id: string;
+      unresolved_identity_ids: string[];
+    },
     activation_pending_count: unresolved.filter(
       (item) => item.status === 'ACTIVATION_PENDING',
     ).length,
@@ -96,6 +103,18 @@ test('completes a confirmed mapping and reports cutover readiness', async ({
       });
       return;
     }
+    if (request.method() === 'POST' && request.url().endsWith('/review')) {
+      const reviewed = list(identities);
+      reviewed.active_review = {
+        accepted_login_loss: false,
+        id: 'review-1',
+        reviewed_at: '2026-08-01T00:00:00Z',
+        reviewed_by_application_user_id: administrator.id,
+        unresolved_identity_ids: [],
+      };
+      await route.fulfill({ contentType: 'application/json', json: reviewed });
+      return;
+    }
     await route.fulfill({
       contentType: 'application/json',
       json: list(identities),
@@ -115,12 +134,12 @@ test('completes a confirmed mapping and reports cutover readiness', async ({
 
   await expect(page.getByText('1 of 1 ready')).toBeVisible();
   await expect(
-    page.getByText('Every legacy login has a usable local account.'),
+    page.getByText(/record an administrator review to make the migration/i),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Complete review' }).click();
+  await page.getByRole('button', { name: 'Record completed review' }).click();
   await expect(
     page.getByText(
-      'Every captured legacy login is mapped to a usable local account.',
+      'The review recorded that every captured legacy login is mapped to a usable local account.',
     ),
   ).toBeVisible();
 });
@@ -133,13 +152,28 @@ test('blocks a partial migration until login loss is explicitly accepted', async
     identity('legacy-1', 'READY'),
     identity('legacy-2', 'ACTIVATION_PENDING'),
   ];
-  await page.route('**/api/v1/admin/legacy-identities**', (route) =>
-    route.fulfill({ contentType: 'application/json', json: list(identities) }),
-  );
+  await page.route('**/api/v1/admin/legacy-identities**', (route) => {
+    const response = list(identities);
+    if (
+      route.request().method() === 'POST' &&
+      route.request().url().endsWith('/review')
+    ) {
+      response.active_review = {
+        accepted_login_loss: true,
+        id: 'review-2',
+        reviewed_at: '2026-08-01T00:00:00Z',
+        reviewed_by_application_user_id: administrator.id,
+        unresolved_identity_ids: ['legacy-2'],
+      };
+    }
+    return route.fulfill({ contentType: 'application/json', json: response });
+  });
 
   await page.goto('/administration/legacy-identities');
   await expect(page.getByText('1 of 2 ready')).toBeVisible();
-  const complete = page.getByRole('button', { name: 'Complete review' });
+  const complete = page.getByRole('button', {
+    name: 'Record completed review',
+  });
   await expect(complete).toBeDisabled();
   await page
     .getByLabel('Accept that 1 unresolved login(s) will lose access')
@@ -147,7 +181,9 @@ test('blocks a partial migration until login loss is explicitly accepted', async
   await expect(complete).toBeEnabled();
   await complete.click();
   await expect(
-    page.getByText('You accepted that 1 unresolved login(s) may lose access.'),
+    page.getByText(
+      'The review recorded acceptance that 1 unresolved login(s) may lose access.',
+    ),
   ).toBeVisible();
 });
 

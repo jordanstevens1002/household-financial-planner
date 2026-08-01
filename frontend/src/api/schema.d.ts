@@ -38,6 +38,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/legacy-identities/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Migration Review */
+        post: operations["record_migration_review_api_v1_admin_legacy_identities_review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/legacy-identities/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Migration Review History */
+        get: operations["migration_review_history_api_v1_admin_legacy_identities_reviews_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/legacy-identities/{legacy_identity_id}/mapping": {
         parameters: {
             query?: never;
@@ -2021,6 +2055,7 @@ export interface components {
         LegacyIdentityListResponse: {
             /** Activation Pending Count */
             activation_pending_count: number;
+            active_review?: components["schemas"]["LegacyMigrationReviewSummary"] | null;
             /** Cutover Ready */
             cutover_ready: boolean;
             /** Identities */
@@ -2125,6 +2160,43 @@ export interface components {
             /** Household Name */
             household_name: string;
             role: components["schemas"]["HouseholdRole"];
+        };
+        /** LegacyMigrationReviewHistory */
+        LegacyMigrationReviewHistory: {
+            /** Reviews */
+            reviews: components["schemas"]["LegacyMigrationReviewSummary"][];
+        };
+        /** LegacyMigrationReviewRequest */
+        LegacyMigrationReviewRequest: {
+            /**
+             * Accept Login Loss
+             * @default false
+             */
+            accept_login_loss: boolean;
+            /** Unresolved Identity Ids */
+            unresolved_identity_ids: string[];
+        };
+        /** LegacyMigrationReviewSummary */
+        LegacyMigrationReviewSummary: {
+            /** Accepted Login Loss */
+            accepted_login_loss: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Reviewed At
+             * Format: date-time
+             */
+            reviewed_at: string;
+            /**
+             * Reviewed By Application User Id
+             * Format: uuid
+             */
+            reviewed_by_application_user_id: string;
+            /** Unresolved Identity Ids */
+            unresolved_identity_ids: string[];
         };
         /** LoanCreate */
         LoanCreate: {
@@ -3949,6 +4021,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LegacyIdentityListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_migration_review_api_v1_admin_legacy_identities_review_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegacyMigrationReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegacyIdentityListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    migration_review_history_api_v1_admin_legacy_identities_reviews_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegacyMigrationReviewHistory"];
                 };
             };
             /** @description Validation Error */

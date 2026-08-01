@@ -32,6 +32,7 @@ type Identity = components['schemas']['LegacyIdentityResponse'];
 type IdentityList = components['schemas']['LegacyIdentityListResponse'];
 type MapRequest = components['schemas']['LegacyIdentityMapRequest'];
 type MapResult = components['schemas']['LegacyIdentityMappedResponse'];
+type ReviewRequest = components['schemas']['LegacyMigrationReviewRequest'];
 
 type TargetMode = 'existing' | 'new';
 
@@ -129,6 +130,19 @@ export function LegacyIdentityMigrationPage() {
       await refresh();
     },
   });
+  const completeReview = useMutation({
+    mutationFn: (payload: ReviewRequest) =>
+      apiRequest<IdentityList>('/api/v1/admin/legacy-identities/review', {
+        body: JSON.stringify(payload),
+        csrfToken: auth.csrfToken(),
+        method: 'POST',
+      }),
+    onSuccess: (result) => {
+      queryClient.setQueryData(['legacy-identities'], result);
+      setCompletionOpen(true);
+      setAcceptLoginLoss(false);
+    },
+  });
   const revoke = useMutation({
     mutationFn: (identity: Identity) =>
       apiRequest<void>(
@@ -155,14 +169,7 @@ export function LegacyIdentityMigrationPage() {
   const progress = data?.identities.length
     ? (mappedCount / data.identities.length) * 100
     : 0;
-  const availableUsers =
-    users.data?.filter(
-      (user) =>
-        user.is_active &&
-        !data?.identities.some(
-          (identity) => identity.mapping?.application_user_id === user.id,
-        ),
-    ) ?? [];
+  const availableUsers = users.data?.filter((user) => user.is_active) ?? [];
   const draftValid =
     draft.mode === 'existing'
       ? draft.existingAccountId !== ''
@@ -177,6 +184,26 @@ export function LegacyIdentityMigrationPage() {
             username: draft.username,
           },
         };
+  const selectedTarget =
+    draft.mode === 'existing'
+      ? availableUsers.find((user) => user.id === draft.existingAccountId)
+      : null;
+  const targetDescription =
+    draft.mode === 'existing'
+      ? selectedTarget
+        ? `${selectedTarget.display_name || selectedTarget.username} (${selectedTarget.username})`
+        : 'No local account selected'
+      : `${draft.displayName || draft.username} (${draft.username})`;
+  const selectedIdentityDescription =
+    selected?.display_name ||
+    selected?.email ||
+    selected?.oidc_subject ||
+    'Unknown identity';
+  const membershipDescription = selected?.memberships.length
+    ? selected.memberships
+        .map((membership) => `${membership.household_name}: ${membership.role}`)
+        .join('; ')
+    : 'No household memberships';
 
   return (
     <Stack spacing={3}>
@@ -322,7 +349,20 @@ export function LegacyIdentityMigrationPage() {
             <Typography component="h2" variant="h6">
               Complete migration review
             </Typography>
-            {!data.cutover_ready ? (
+            {data.active_review ? (
+              <Alert
+                severity={
+                  data.active_review.accepted_login_loss ? 'warning' : 'success'
+                }
+              >
+                Review recorded on{' '}
+                {new Date(data.active_review.reviewed_at).toLocaleString()}.
+                {data.active_review.accepted_login_loss
+                  ? ` Login loss was accepted for ${data.active_review.unresolved_identity_ids.length} identity or identities.`
+                  : ' No unresolved logins were accepted.'}
+              </Alert>
+            ) : null}
+            {data.unresolved_count > 0 ? (
               <FormControlLabel
                 control={
                   <Checkbox
@@ -334,9 +374,14 @@ export function LegacyIdentityMigrationPage() {
                 }
                 label={`Accept that ${data.unresolved_count} unresolved login(s) will lose access`}
               />
-            ) : (
+            ) : data.active_review ? (
               <Alert severity="success">
                 Every legacy login has a usable local account.
+              </Alert>
+            ) : (
+              <Alert severity="info">
+                Every login is usable. Record an administrator review to make
+                the migration cutover-ready.
               </Alert>
             )}
             <Stack direction="row" spacing={1}>
@@ -348,15 +393,30 @@ export function LegacyIdentityMigrationPage() {
                 Reconcile memberships
               </Button>
               <Button
-                disabled={!data.cutover_ready && !acceptLoginLoss}
-                onClick={() => setCompletionOpen(true)}
+                disabled={
+                  completeReview.isPending ||
+                  (data.unresolved_count > 0 && !acceptLoginLoss)
+                }
+                onClick={() =>
+                  completeReview.mutate({
+                    accept_login_loss: acceptLoginLoss,
+                    unresolved_identity_ids: data.identities
+                      .filter((identity) => identity.status !== 'READY')
+                      .map((identity) => identity.id),
+                  })
+                }
                 variant="contained"
               >
-                Complete review
+                Record completed review
               </Button>
             </Stack>
             {reconcile.error ? (
               <Alert severity="error">{errorMessage(reconcile.error)}</Alert>
+            ) : null}
+            {completeReview.error ? (
+              <Alert severity="error">
+                {errorMessage(completeReview.error)}
+              </Alert>
             ) : null}
           </Stack>
         </Paper>
@@ -438,7 +498,7 @@ export function LegacyIdentityMigrationPage() {
 
       <ConfirmDialog
         confirmLabel="Confirm mapping"
-        description={`This will transfer ${selected?.memberships.length ?? 0} household membership(s) to the selected local account. Confirm that this is the correct person.`}
+        description={`Legacy identity: ${selectedIdentityDescription}. Target local account: ${targetDescription}. Household roles transferred: ${membershipDescription}. Confirm that these logins belong to the same person.`}
         onCancel={() => setConfirmMapping(false)}
         onConfirm={() => {
           if (selected)
@@ -450,7 +510,7 @@ export function LegacyIdentityMigrationPage() {
       />
       <ConfirmDialog
         confirmLabel="Revoke mapping"
-        description="This removes access inherited through this mapping and retains an audit record. You can then select the correct account."
+        description={`Remove the mapping from ${revokeIdentity?.display_name || revokeIdentity?.email || revokeIdentity?.oidc_subject || 'this legacy identity'} to ${revokeIdentity?.mapping?.display_name || revokeIdentity?.mapping?.username || 'the local account'}. This removes access inherited through the mapping and retains an audit record.`}
         onCancel={() => setRevokeIdentity(null)}
         onConfirm={() => {
           if (revokeIdentity) revoke.mutate(revokeIdentity);
@@ -487,10 +547,14 @@ export function LegacyIdentityMigrationPage() {
       <Dialog open={completionOpen}>
         <DialogTitle>Migration review complete</DialogTitle>
         <DialogContent>
-          <Alert severity={data?.cutover_ready ? 'success' : 'warning'}>
-            {data?.cutover_ready
-              ? 'Every captured legacy login is mapped to a usable local account.'
-              : `You accepted that ${data?.unresolved_count ?? 0} unresolved login(s) may lose access.`}
+          <Alert
+            severity={
+              data?.active_review?.accepted_login_loss ? 'warning' : 'success'
+            }
+          >
+            {data?.active_review?.accepted_login_loss
+              ? `The review recorded acceptance that ${data.active_review.unresolved_identity_ids.length} unresolved login(s) may lose access.`
+              : 'The review recorded that every captured legacy login is mapped to a usable local account.'}
           </Alert>
           <Typography sx={{ mt: 2 }}>
             Run membership reconciliation again immediately before the later

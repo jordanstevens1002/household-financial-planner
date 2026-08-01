@@ -22,6 +22,8 @@ decorators, so route changes require an intentional matrix update.
 | PATCH | `/api/v1/admin/users/{user_id}` | Local account and role update | #33 |
 | POST | `/api/v1/admin/users/{user_id}/password-reset` | Reset-link issuance | #33 |
 | GET | `/api/v1/admin/legacy-identities` | Legacy identity list and unresolved count | #35 |
+| POST | `/api/v1/admin/legacy-identities/review` | Persist an administrator's cutover review and exact unresolved identities | #36 |
+| GET | `/api/v1/admin/legacy-identities/reviews` | Audited migration review history | #36 |
 | POST | `/api/v1/admin/legacy-identities/reconcile` | Final legacy membership reconciliation | #35 |
 | POST | `/api/v1/admin/legacy-identities/{legacy_identity_id}/mapping` | Legacy identity mapping | #35 |
 | DELETE | `/api/v1/admin/legacy-identities/{legacy_identity_id}/mapping` | Audited mapping revocation | #35 |

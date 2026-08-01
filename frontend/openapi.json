@@ -2353,6 +2353,16 @@
             "title": "Activation Pending Count",
             "type": "integer"
           },
+          "active_review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LegacyMigrationReviewSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "cutover_ready": {
             "title": "Cutover Ready",
             "type": "boolean"
@@ -2672,6 +2682,84 @@
           "role"
         ],
         "title": "LegacyMembershipSummary",
+        "type": "object"
+      },
+      "LegacyMigrationReviewHistory": {
+        "properties": {
+          "reviews": {
+            "items": {
+              "$ref": "#/components/schemas/LegacyMigrationReviewSummary"
+            },
+            "title": "Reviews",
+            "type": "array"
+          }
+        },
+        "required": [
+          "reviews"
+        ],
+        "title": "LegacyMigrationReviewHistory",
+        "type": "object"
+      },
+      "LegacyMigrationReviewRequest": {
+        "properties": {
+          "accept_login_loss": {
+            "default": false,
+            "title": "Accept Login Loss",
+            "type": "boolean"
+          },
+          "unresolved_identity_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Unresolved Identity Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "unresolved_identity_ids"
+        ],
+        "title": "LegacyMigrationReviewRequest",
+        "type": "object"
+      },
+      "LegacyMigrationReviewSummary": {
+        "properties": {
+          "accepted_login_loss": {
+            "title": "Accepted Login Loss",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "reviewed_at": {
+            "format": "date-time",
+            "title": "Reviewed At",
+            "type": "string"
+          },
+          "reviewed_by_application_user_id": {
+            "format": "uuid",
+            "title": "Reviewed By Application User Id",
+            "type": "string"
+          },
+          "unresolved_identity_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Unresolved Identity Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "reviewed_by_application_user_id",
+          "reviewed_at",
+          "unresolved_identity_ids",
+          "accepted_login_loss"
+        ],
+        "title": "LegacyMigrationReviewSummary",
         "type": "object"
       },
       "LoanCreate": {
@@ -8070,6 +8158,124 @@
           }
         ],
         "summary": "Reconcile Legacy Memberships",
+        "tags": [
+          "administration"
+        ]
+      }
+    },
+    "/api/v1/admin/legacy-identities/review": {
+      "post": {
+        "operationId": "record_migration_review_api_v1_admin_legacy_identities_review_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegacyMigrationReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyIdentityListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Record Migration Review",
+        "tags": [
+          "administration"
+        ]
+      }
+    },
+    "/api/v1/admin/legacy-identities/reviews": {
+      "get": {
+        "operationId": "migration_review_history_api_v1_admin_legacy_identities_reviews_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyMigrationReviewHistory"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Migration Review History",
         "tags": [
           "administration"
         ]
