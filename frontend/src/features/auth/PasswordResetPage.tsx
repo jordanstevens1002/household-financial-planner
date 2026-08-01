@@ -28,7 +28,14 @@ type Fields = z.infer<typeof schema>;
 
 export function PasswordResetPage() {
   const href = useRouterState({ select: (state) => state.location.href });
-  const token = new URL(href, window.location.origin).searchParams.get('token');
+  const [token] = useState(() => {
+    const location = new URL(href, window.location.origin);
+    const resetToken = new URLSearchParams(location.hash.slice(1)).get('token');
+    if (location.hash) {
+      window.history.replaceState(window.history.state, '', '/reset-password');
+    }
+    return resetToken;
+  });
   const [error, setError] = useState<string>();
   const [complete, setComplete] = useState(false);
   const form = useForm<Fields>({

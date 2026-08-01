@@ -165,7 +165,11 @@ async def issue_password_reset(
     database: AsyncSession = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> PasswordResetIssued:
-    user = await database.get(ApplicationUser, user_id)
+    # Serialise reset issuance for this account so concurrent requests cannot
+    # leave more than one active reset token behind.
+    user = await database.scalar(
+        select(ApplicationUser).where(ApplicationUser.id == user_id).with_for_update()
+    )
     if user is None or user.username is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Local user not found")
     if not user.is_active:
@@ -197,6 +201,6 @@ async def issue_password_reset(
         expires_at=expires_at.isoformat(),
     )
     return PasswordResetIssued(
-        reset_path=f"/reset-password?token={raw_token}",
+        reset_path=f"/reset-password#token={raw_token}",
         expires_at=expires_at,
     )

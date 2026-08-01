@@ -13,6 +13,7 @@ interface ConfirmDialogProps {
   onCancel: () => void;
   onConfirm: () => void;
   open: boolean;
+  pending?: boolean;
   title: string;
 }
 
@@ -22,6 +23,7 @@ export function ConfirmDialog({
   onCancel,
   onConfirm,
   open,
+  pending = false,
   title,
 }: ConfirmDialogProps) {
   return (
@@ -33,8 +35,15 @@ export function ConfirmDialog({
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button color="error" onClick={onConfirm} variant="contained">
+        <Button disabled={pending} onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button
+          color="error"
+          disabled={pending}
+          onClick={onConfirm}
+          variant="contained"
+        >
           {confirmLabel}
         </Button>
       </DialogActions>

@@ -5,7 +5,13 @@ import {
   createMemoryHistory,
   type AnyRouter,
 } from '@tanstack/react-router';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { createAppRouter } from '../../app/router';
@@ -203,7 +209,7 @@ describe('local user administration', () => {
           return Promise.resolve(
             response({
               expires_at: '2026-07-30T00:30:00Z',
-              reset_path: '/reset-password?token=one-use-token',
+              reset_path: '/reset-password#token=one-use-token',
             }),
           );
         }
@@ -219,8 +225,49 @@ describe('local user administration', () => {
       screen.getByRole('button', { name: 'Generate reset path' }),
     );
     expect(
-      await screen.findByDisplayValue(/\/reset-password\?token=one-use-token$/),
+      await screen.findByDisplayValue(/\/reset-password#token=one-use-token$/),
     ).toBeVisible();
+  });
+
+  it('issues only one reset when confirmation is clicked rapidly', async () => {
+    const user = userEvent.setup();
+    let resetRequests = 0;
+    let resolveReset: ((response: Response) => void) | undefined;
+    const resetResponse = new Promise<Response>((resolve) => {
+      resolveReset = resolve;
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/auth/session')) {
+          return Promise.resolve(response({ account: administrator }));
+        }
+        if (path.endsWith('/password-reset') && init?.method === 'POST') {
+          resetRequests += 1;
+          return resetResponse;
+        }
+        return Promise.resolve(response([administrator]));
+      }),
+    );
+    await renderPage();
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Reset password' }),
+    );
+    const confirm = screen.getByRole('button', { name: 'Generate reset path' });
+    fireEvent.click(confirm);
+    fireEvent.click(confirm);
+    await waitFor(() => expect(resetRequests).toBe(1));
+    expect(confirm).toBeDisabled();
+
+    resolveReset?.(
+      response({
+        expires_at: '2026-07-30T00:30:00Z',
+        reset_path: '/reset-password#token=only-token',
+      }),
+    );
+    expect(await screen.findByDisplayValue(/#token=only-token$/)).toBeVisible();
   });
 
   it('promotes, disables and re-enables an account', async () => {

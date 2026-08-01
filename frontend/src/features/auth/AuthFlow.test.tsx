@@ -287,7 +287,10 @@ describe('local authentication flow', () => {
         );
       }),
     );
-    await renderApplication('/reset-password?token=single-use-value');
+    await renderApplication('/reset-password#token=single-use-value');
+
+    expect(window.location.pathname).toBe('/reset-password');
+    expect(window.location.hash).toBe('');
 
     await user.type(
       await screen.findByLabelText('New password'),

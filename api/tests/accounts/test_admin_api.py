@@ -205,7 +205,7 @@ async def test_reset_link_is_single_use_and_invalidates_sessions(
             select(ApplicationSession).where(ApplicationSession.application_user_id == user_uuid)
         )
     ).all()
-    raw_token = reset.json()["reset_path"].split("token=", 1)[1]
+    raw_token = reset.json()["reset_path"].split("#token=", 1)[1]
     stored = await session.scalar(
         select(PasswordResetToken).where(PasswordResetToken.application_user_id == user_uuid)
     )
@@ -233,6 +233,45 @@ async def test_reset_link_is_single_use_and_invalidates_sessions(
     )
     assert login.status_code == 200
     assert login.json()["account"]["must_change_password"] is False
+
+
+async def test_reissuing_password_reset_leaves_only_latest_token_active(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    configure(local_settings())
+    await bootstrap(client)
+    created = await create_local_user(client, "reset-reissue")
+    user_id = uuid.UUID(created["account"]["id"])
+    headers = {"X-CSRF-Token": client.cookies["hfp_csrf"]}
+
+    first = await client.post(f"/api/v1/admin/users/{user_id}/password-reset", headers=headers)
+    second = await client.post(f"/api/v1/admin/users/{user_id}/password-reset", headers=headers)
+    assert first.status_code == second.status_code == 200
+    first_token = first.json()["reset_path"].split("#token=", 1)[1]
+    second_token = second.json()["reset_path"].split("#token=", 1)[1]
+
+    active_tokens = (
+        await session.scalars(
+            select(PasswordResetToken).where(
+                PasswordResetToken.application_user_id == user_id,
+                PasswordResetToken.used_at.is_(None),
+            )
+        )
+    ).all()
+    assert len(active_tokens) == 1
+    assert active_tokens[0].token_hash == hash_token(second_token)
+
+    client.cookies.clear()
+    rejected = await client.post(
+        "/api/v1/auth/password/reset",
+        json={"token": first_token, "new_password": "rejected-password"},
+    )
+    accepted = await client.post(
+        "/api/v1/auth/password/reset",
+        json={"token": second_token, "new_password": "accepted-password"},
+    )
+    assert rejected.status_code == 400
+    assert accepted.status_code == 204
 
 
 async def test_account_audit_logs_do_not_contain_returned_secrets(

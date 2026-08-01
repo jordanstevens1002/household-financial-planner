@@ -15,7 +15,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -65,6 +65,7 @@ export function AdminUsersPage() {
   const [oneTimeResult, setOneTimeResult] = useState<OneTimeResult | null>(
     null,
   );
+  const resetRequestStarted = useRef(false);
   const form = useForm<CreateFields>({
     defaultValues: {
       displayName: '',
@@ -138,6 +139,9 @@ export function AdminUsersPage() {
     onError: () => {
       setPending(null);
     },
+    onSettled: () => {
+      resetRequestStarted.current = false;
+    },
   });
 
   if (auth.account?.global_role !== 'ADMIN') {
@@ -155,21 +159,30 @@ export function AdminUsersPage() {
   }
 
   const performPending = () => {
-    if (pending === null) return;
-    if (pending.kind === 'reset') {
-      resetPassword.mutate(pending.user);
+    if (
+      pending === null ||
+      resetRequestStarted.current ||
+      resetPassword.isPending ||
+      updateUser.isPending
+    )
+      return;
+    const action = pending;
+    setPending(null);
+    if (action.kind === 'reset') {
+      resetRequestStarted.current = true;
+      resetPassword.mutate(action.user);
       return;
     }
     updateUser.mutate({
-      id: pending.user.id,
+      id: action.user.id,
       payload:
-        pending.kind === 'disable'
+        action.kind === 'disable'
           ? {
-              confirm_self_lockout: pending.user.id === auth.account?.id,
+              confirm_self_lockout: action.user.id === auth.account?.id,
               is_active: false,
             }
           : {
-              confirm_self_lockout: pending.user.id === auth.account?.id,
+              confirm_self_lockout: action.user.id === auth.account?.id,
               global_role: 'USER',
             },
     });
@@ -434,6 +447,7 @@ export function AdminUsersPage() {
         onCancel={() => setPending(null)}
         onConfirm={performPending}
         open={pending !== null}
+        pending={resetPassword.isPending || updateUser.isPending}
         title="Confirm account change"
       />
     </Stack>
