@@ -86,7 +86,7 @@ describe('local user administration', () => {
             }),
           );
         }
-        adminRequests += 1;
+        if (path.includes('/admin/')) adminRequests += 1;
         return Promise.resolve(response([]));
       }),
     );

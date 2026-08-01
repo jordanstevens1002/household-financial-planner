@@ -50,6 +50,15 @@ const resetPasswordRoute = createRoute({
   path: '/reset-password',
 });
 
+const householdsRoute = createRoute({
+  component: lazyRouteComponent(
+    () => import('../features/households/HouseholdsPage'),
+    'HouseholdsPage',
+  ),
+  getParentRoute: () => rootRoute,
+  path: '/households',
+});
+
 function placeholderRoute(
   path:
     | '/cash-flow'
@@ -77,7 +86,7 @@ const routeTree = rootRoute.addChildren([
   administrationRoute,
   legacyIdentityMigrationRoute,
   resetPasswordRoute,
-  placeholderRoute('/households'),
+  householdsRoute,
   placeholderRoute('/people'),
   placeholderRoute('/cash-flow'),
   placeholderRoute('/properties'),

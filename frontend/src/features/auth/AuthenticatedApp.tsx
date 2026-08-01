@@ -6,6 +6,7 @@ import { useAuth } from './AuthContext';
 import { AuthPage } from './AuthPage';
 import { PasswordChangePage } from './PasswordChangePage';
 import { PasswordResetPage } from './PasswordResetPage';
+import { HouseholdProvider } from '../households/HouseholdContext';
 
 export function AuthenticatedApp() {
   const auth = useAuth();
@@ -32,5 +33,9 @@ export function AuthenticatedApp() {
   }
   if (auth.account === null) return <AuthPage />;
   if (auth.account.must_change_password) return <PasswordChangePage />;
-  return <AppShell />;
+  return (
+    <HouseholdProvider key={auth.account.id} sessionAccountId={auth.account.id}>
+      <AppShell />
+    </HouseholdProvider>
+  );
 }

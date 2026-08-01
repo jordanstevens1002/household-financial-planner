@@ -30,8 +30,7 @@ export function DataTable<Row>({
 }: DataTableProps<Row>) {
   return (
     <TableContainer component={Paper} variant="outlined">
-      <Table>
-        <caption>{caption}</caption>
+      <Table aria-label={caption}>
         <TableHead>
           <TableRow>
             {columns.map((column) => (

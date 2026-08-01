@@ -11,6 +11,7 @@ import {
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 
 import { useAuth } from '../features/auth/AuthContext';
+import { useHousehold } from '../features/households/HouseholdContext';
 
 const drawerWidth = 224;
 
@@ -29,6 +30,7 @@ const navigation = [
 
 export function AppShell() {
   const auth = useAuth();
+  const household = useHousehold();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -51,6 +53,11 @@ export function AppShell() {
             Household Financial Planner
           </Typography>
           <Box sx={{ flexGrow: 1 }} />
+          {household.selected ? (
+            <Typography color="text.secondary" sx={{ mr: 3 }} variant="body2">
+              {household.selected.display_name}
+            </Typography>
+          ) : null}
           <Typography color="text.secondary" variant="body2">
             {auth.account?.display_name || auth.account?.username}
           </Typography>
