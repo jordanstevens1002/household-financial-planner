@@ -7227,6 +7227,25 @@
         "title": "SessionResponse",
         "type": "object"
       },
+      "SystemStatusRead": {
+        "properties": {
+          "status": {
+            "const": "ready",
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "version"
+        ],
+        "title": "SystemStatusRead",
+        "type": "object"
+      },
       "TargetCalculationRead": {
         "properties": {
           "estimated_payoff_date": {
@@ -14340,6 +14359,61 @@
         ]
       }
     },
+    "/api/v1/system/status": {
+      "get": {
+        "description": "Check database readiness for an authenticated application user.",
+        "operationId": "system_status_api_v1_system_status_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemStatusRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "System Status",
+        "tags": [
+          "system"
+        ]
+      }
+    },
     "/api/v1/tax-providers": {
       "get": {
         "operationId": "list_tax_providers_api_v1_tax_providers_get",
@@ -14418,31 +14492,6 @@
           }
         },
         "summary": "Live",
-        "tags": [
-          "health"
-        ]
-      }
-    },
-    "/health/ready": {
-      "get": {
-        "operationId": "ready_health_ready_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "title": "Response Ready Health Ready Get",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Ready",
         "tags": [
           "health"
         ]

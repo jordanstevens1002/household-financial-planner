@@ -1,3 +1,5 @@
-"""Single source of truth for the application release version."""
+"""Application release metadata sourced from the installed package."""
 
-APPLICATION_VERSION = "1.0.0"
+from importlib.metadata import version
+
+APPLICATION_VERSION = version("household-financial-planner-api")

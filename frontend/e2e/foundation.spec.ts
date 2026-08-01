@@ -57,8 +57,8 @@ test('shows installation health and provider metadata in settings', async ({
   await page.route('**/health/live', (route) =>
     route.fulfill({ json: { status: 'ok', version: '1.0.0' } }),
   );
-  await page.route('**/health/ready', (route) =>
-    route.fulfill({ json: { status: 'ready' } }),
+  await page.route('**/api/v1/system/status', (route) =>
+    route.fulfill({ json: { status: 'ready', version: '1.0.0' } }),
   );
   await page.route('**/api/v1/reference/countries', (route) =>
     route.fulfill({ json: [] }),

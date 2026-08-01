@@ -68,8 +68,10 @@ describe('settings and installation metadata', () => {
         const path = pathOf(input);
         if (path.endsWith('/health/live'))
           return Promise.resolve(response({ status: 'ok', version: '1.0.0' }));
-        if (path.endsWith('/health/ready'))
-          return Promise.resolve(response({ status: 'ready' }));
+        if (path.endsWith('/api/v1/system/status'))
+          return Promise.resolve(
+            response({ status: 'ready', version: '1.0.0' }),
+          );
         if (path.endsWith('/reference/countries'))
           return Promise.resolve(
             response([
@@ -141,7 +143,7 @@ describe('settings and installation metadata', () => {
       'fetch',
       vi.fn<typeof fetch>((input) => {
         const path = pathOf(input);
-        if (path.endsWith('/health/ready'))
+        if (path.endsWith('/api/v1/system/status'))
           return Promise.resolve(
             response(
               { detail: 'Database unavailable' },

@@ -49,7 +49,7 @@ export function SettingsPage() {
     retry: false,
   });
   const ready = useQuery({
-    queryFn: () => apiRequest<HealthResponse>('/health/ready'),
+    queryFn: () => apiRequest<HealthResponse>('/api/v1/system/status'),
     queryKey: ['health', 'ready'],
     retry: false,
   });
@@ -158,7 +158,8 @@ export function SettingsPage() {
               />
             </Stack>
             <Typography>
-              Application version: {live.data?.version ?? 'Unknown'}
+              Application version:{' '}
+              {ready.data?.version ?? live.data?.version ?? 'Unknown'}
             </Typography>
           </Stack>
         </Paper>

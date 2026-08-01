@@ -8,7 +8,7 @@ decorators, so route changes require an intentional matrix update.
 | Method | API route | React responsibility | Owner |
 | --- | --- | --- | --- |
 | GET | `/health/live` | API liveness | #39 |
-| GET | `/health/ready` | API and database readiness | #39 |
+| GET | `/api/v1/system/status` | Authenticated API and database readiness | #39 |
 | GET | `/api/v1/me` | Current migration identity | #55 |
 | GET | `/api/v1/auth/status` | Local-auth bootstrap status | #31 |
 | POST | `/api/v1/auth/bootstrap` | First local administrator | #31 |
