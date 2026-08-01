@@ -5,6 +5,7 @@ from datetime import date
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.accounts.usernames import normalise_username
 from app.models import HouseholdRole
 
 
@@ -36,6 +37,23 @@ class MembershipRead(ORMModel):
     id: uuid.UUID
     household_id: uuid.UUID
     application_user_id: uuid.UUID
+    role: HouseholdRole
+    username: str | None
+    display_name: str | None
+    is_active: bool
+
+
+class MembershipCreate(BaseModel):
+    username: str = Field(min_length=1, max_length=320)
+    role: HouseholdRole
+
+    @model_validator(mode="after")
+    def normalise(self) -> MembershipCreate:
+        self.username = normalise_username(self.username)
+        return self
+
+
+class MembershipUpdate(BaseModel):
     role: HouseholdRole
 
 

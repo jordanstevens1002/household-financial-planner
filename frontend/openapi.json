@@ -3726,12 +3726,42 @@
         "title": "LookupRead",
         "type": "object"
       },
+      "MembershipCreate": {
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/HouseholdRole"
+          },
+          "username": {
+            "maxLength": 320,
+            "minLength": 1,
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "role"
+        ],
+        "title": "MembershipCreate",
+        "type": "object"
+      },
       "MembershipRead": {
         "properties": {
           "application_user_id": {
             "format": "uuid",
             "title": "Application User Id",
             "type": "string"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
           },
           "household_id": {
             "format": "uuid",
@@ -3743,17 +3773,47 @@
             "title": "Id",
             "type": "string"
           },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
           "role": {
             "$ref": "#/components/schemas/HouseholdRole"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
           }
         },
         "required": [
           "id",
           "household_id",
           "application_user_id",
-          "role"
+          "role",
+          "username",
+          "display_name",
+          "is_active"
         ],
         "title": "MembershipRead",
+        "type": "object"
+      },
+      "MembershipUpdate": {
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/HouseholdRole"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "MembershipUpdate",
         "type": "object"
       },
       "OverrideCreate": {
@@ -10196,6 +10256,227 @@
           }
         ],
         "summary": "List Memberships",
+        "tags": [
+          "households"
+        ]
+      },
+      "post": {
+        "operationId": "create_membership_api_v1_households__household_id__memberships_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "household_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Household Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MembershipCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Membership",
+        "tags": [
+          "households"
+        ]
+      }
+    },
+    "/api/v1/households/{household_id}/memberships/{membership_id}": {
+      "delete": {
+        "operationId": "delete_membership_api_v1_households__household_id__memberships__membership_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "household_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Household Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "membership_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Membership Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Membership",
+        "tags": [
+          "households"
+        ]
+      },
+      "patch": {
+        "operationId": "update_membership_api_v1_households__household_id__memberships__membership_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "household_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Household Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "membership_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Membership Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MembershipUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Membership",
         "tags": [
           "households"
         ]
