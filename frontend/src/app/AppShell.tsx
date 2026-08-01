@@ -96,14 +96,28 @@ export function AppShell() {
             </Button>
           ))}
           {auth.account?.global_role === 'ADMIN' ? (
-            <Button
-              component={Link}
-              sx={{ justifyContent: 'flex-start' }}
-              to="/administration"
-              variant={pathname === '/administration' ? 'contained' : 'text'}
-            >
-              User administration
-            </Button>
+            <>
+              <Button
+                component={Link}
+                sx={{ justifyContent: 'flex-start' }}
+                to="/administration"
+                variant={pathname === '/administration' ? 'contained' : 'text'}
+              >
+                User administration
+              </Button>
+              <Button
+                component={Link}
+                sx={{ justifyContent: 'flex-start', pl: 3 }}
+                to="/administration/legacy-identities"
+                variant={
+                  pathname === '/administration/legacy-identities'
+                    ? 'contained'
+                    : 'text'
+                }
+              >
+                Legacy login migration
+              </Button>
+            </>
           ) : null}
         </Stack>
       </Drawer>

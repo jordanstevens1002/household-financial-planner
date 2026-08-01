@@ -35,6 +35,15 @@ const administrationRoute = createRoute({
   path: '/administration',
 });
 
+const legacyIdentityMigrationRoute = createRoute({
+  component: lazyRouteComponent(
+    () => import('../features/admin/LegacyIdentityMigrationPage'),
+    'LegacyIdentityMigrationPage',
+  ),
+  getParentRoute: () => rootRoute,
+  path: '/administration/legacy-identities',
+});
+
 const resetPasswordRoute = createRoute({
   component: () => null,
   getParentRoute: () => rootRoute,
@@ -66,6 +75,7 @@ function placeholderRoute(
 const routeTree = rootRoute.addChildren([
   indexRoute,
   administrationRoute,
+  legacyIdentityMigrationRoute,
   resetPasswordRoute,
   placeholderRoute('/households'),
   placeholderRoute('/people'),

@@ -1,5 +1,7 @@
 """Administrative migration of legacy OIDC identities."""
 
+import hashlib
+import json
 import uuid
 from collections import defaultdict
 from datetime import timedelta
@@ -22,6 +24,9 @@ from app.admin.legacy_schemas import (
     LegacyMappingHistoryResponse,
     LegacyMappingSummary,
     LegacyMembershipSummary,
+    LegacyMigrationReviewHistory,
+    LegacyMigrationReviewRequest,
+    LegacyMigrationReviewSummary,
 )
 from app.core.config import Settings, get_settings
 from app.core.database import get_session
@@ -34,6 +39,7 @@ from app.models import (
     HouseholdMembership,
     LegacyIdentity,
     LegacyIdentityMapping,
+    LegacyMigrationReview,
 )
 
 router = APIRouter(prefix="/api/v1/admin/legacy-identities", tags=["administration"])
@@ -42,7 +48,9 @@ logger = get_logger(component="legacy_identity_migration")
 
 async def _identity_responses(database: AsyncSession) -> list[LegacyIdentityResponse]:
     identities = list(
-        await database.scalars(select(LegacyIdentity).order_by(LegacyIdentity.captured_at))
+        await database.scalars(
+            select(LegacyIdentity).order_by(LegacyIdentity.captured_at, LegacyIdentity.id)
+        )
     )
     if not identities:
         return []
@@ -121,22 +129,106 @@ async def _identity_responses(database: AsyncSession) -> list[LegacyIdentityResp
     ]
 
 
+def _migration_state_hash(identities: list[LegacyIdentityResponse]) -> str:
+    state = [identity.model_dump(mode="json") for identity in identities]
+    encoded = json.dumps(state, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _review_summary(review: LegacyMigrationReview) -> LegacyMigrationReviewSummary:
+    return LegacyMigrationReviewSummary(
+        id=review.id,
+        reviewed_by_application_user_id=review.reviewed_by_application_user_id,
+        reviewed_at=review.reviewed_at,
+        unresolved_identity_ids=[uuid.UUID(value) for value in review.unresolved_identity_ids],
+        accepted_login_loss=review.accepted_login_loss,
+    )
+
+
+async def _list_response(database: AsyncSession) -> LegacyIdentityListResponse:
+    identities = await _identity_responses(database)
+    unresolved_count = sum(identity.status != LegacyIdentityStatus.READY for identity in identities)
+    latest_review = await database.scalar(
+        select(LegacyMigrationReview)
+        .order_by(LegacyMigrationReview.reviewed_at.desc(), LegacyMigrationReview.id.desc())
+        .limit(1)
+    )
+    active_review = (
+        _review_summary(latest_review)
+        if latest_review is not None
+        and latest_review.migration_state_hash == _migration_state_hash(identities)
+        else None
+    )
+    return LegacyIdentityListResponse(
+        identities=identities,
+        unresolved_count=unresolved_count,
+        activation_pending_count=sum(
+            identity.status == LegacyIdentityStatus.ACTIVATION_PENDING for identity in identities
+        ),
+        cutover_ready=active_review is not None
+        and (unresolved_count == 0 or active_review.accepted_login_loss),
+        active_review=active_review,
+    )
+
+
 @router.get("", response_model=LegacyIdentityListResponse)
 async def list_legacy_identities(
     _: ApplicationUser = Depends(require_global_admin),
     database: AsyncSession = Depends(get_session),
 ) -> LegacyIdentityListResponse:
+    return await _list_response(database)
+
+
+@router.post("/review", response_model=LegacyIdentityListResponse)
+async def record_migration_review(
+    payload: LegacyMigrationReviewRequest,
+    actor: ApplicationUser = Depends(require_global_admin),
+    database: AsyncSession = Depends(get_session),
+) -> LegacyIdentityListResponse:
     identities = await _identity_responses(database)
-    unresolved_count = sum(identity.status != LegacyIdentityStatus.READY for identity in identities)
-    activation_pending_count = sum(
-        identity.status == LegacyIdentityStatus.ACTIVATION_PENDING for identity in identities
+    unresolved_ids = {
+        identity.id for identity in identities if identity.status != LegacyIdentityStatus.READY
+    }
+    provided_ids = set(payload.unresolved_identity_ids)
+    if len(provided_ids) != len(payload.unresolved_identity_ids) or provided_ids != unresolved_ids:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Migration state changed; refresh before completing the review",
+        )
+    if unresolved_ids and not payload.accept_login_loss:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Explicit acceptance is required while legacy logins remain unresolved",
+        )
+    review = LegacyMigrationReview(
+        reviewed_by_application_user_id=actor.id,
+        reviewed_at=utc_now(),
+        unresolved_identity_ids=sorted(str(identity_id) for identity_id in unresolved_ids),
+        accepted_login_loss=payload.accept_login_loss,
+        migration_state_hash=_migration_state_hash(identities),
     )
-    return LegacyIdentityListResponse(
-        identities=identities,
-        unresolved_count=unresolved_count,
-        activation_pending_count=activation_pending_count,
-        cutover_ready=unresolved_count == 0,
+    database.add(review)
+    await database.commit()
+    logger.warning(
+        "legacy_migration_review_recorded",
+        actor_user_id=str(actor.id),
+        accepted_login_loss=payload.accept_login_loss,
+        unresolved_identity_ids=review.unresolved_identity_ids,
     )
+    return await _list_response(database)
+
+
+@router.get("/reviews", response_model=LegacyMigrationReviewHistory)
+async def migration_review_history(
+    _: ApplicationUser = Depends(require_global_admin),
+    database: AsyncSession = Depends(get_session),
+) -> LegacyMigrationReviewHistory:
+    reviews = list(
+        await database.scalars(
+            select(LegacyMigrationReview).order_by(LegacyMigrationReview.reviewed_at.desc())
+        )
+    )
+    return LegacyMigrationReviewHistory(reviews=[_review_summary(review) for review in reviews])
 
 
 @router.post(
@@ -249,16 +341,7 @@ async def reconcile_legacy_memberships(
         actor_user_id=str(actor.id),
         mapping_count=len(mappings),
     )
-    identities = await _identity_responses(database)
-    unresolved_count = sum(identity.status != LegacyIdentityStatus.READY for identity in identities)
-    return LegacyIdentityListResponse(
-        identities=identities,
-        unresolved_count=unresolved_count,
-        activation_pending_count=sum(
-            identity.status == LegacyIdentityStatus.ACTIVATION_PENDING for identity in identities
-        ),
-        cutover_ready=unresolved_count == 0,
-    )
+    return await _list_response(database)
 
 
 @router.delete("/{legacy_identity_id}/mapping", status_code=status.HTTP_204_NO_CONTENT)

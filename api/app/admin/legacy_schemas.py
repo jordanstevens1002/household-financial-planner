@@ -45,11 +45,29 @@ class LegacyIdentityResponse(BaseModel):
     status: LegacyIdentityStatus
 
 
+class LegacyMigrationReviewRequest(BaseModel):
+    unresolved_identity_ids: list[uuid.UUID]
+    accept_login_loss: bool = False
+
+
+class LegacyMigrationReviewSummary(BaseModel):
+    id: uuid.UUID
+    reviewed_by_application_user_id: uuid.UUID
+    reviewed_at: datetime
+    unresolved_identity_ids: list[uuid.UUID]
+    accepted_login_loss: bool
+
+
+class LegacyMigrationReviewHistory(BaseModel):
+    reviews: list[LegacyMigrationReviewSummary]
+
+
 class LegacyIdentityListResponse(BaseModel):
     identities: list[LegacyIdentityResponse]
     unresolved_count: int
     activation_pending_count: int
     cutover_ready: bool
+    active_review: LegacyMigrationReviewSummary | None = None
 
 
 class LegacyLocalAccountCreate(BaseModel):

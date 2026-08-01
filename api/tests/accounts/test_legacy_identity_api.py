@@ -73,6 +73,7 @@ async def test_list_exposes_only_identity_and_household_mapping_context(
     assert response.json()["unresolved_count"] == 1
     assert response.json()["activation_pending_count"] == 0
     assert response.json()["cutover_ready"] is False
+    assert response.json()["active_review"] is None
     listed = response.json()["identities"]
     assert len(listed) == 1
     assert listed[0] == {
@@ -162,7 +163,71 @@ async def test_mapping_existing_account_preserves_strongest_roles_and_is_auditab
     assert duplicate.status_code == 409
     listed = await client.get("/api/v1/admin/legacy-identities")
     assert listed.json()["unresolved_count"] == 0
-    assert listed.json()["cutover_ready"] is True
+    assert listed.json()["cutover_ready"] is False
+
+
+async def test_review_is_audited_and_invalidated_when_migration_state_changes(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    configure(local_settings())
+    administrator = await bootstrap(client)
+    identity, _, _ = await legacy_households(session)
+    headers = {"X-CSRF-Token": client.cookies["hfp_csrf"]}
+
+    missing_acceptance = await client.post(
+        "/api/v1/admin/legacy-identities/review",
+        headers=headers,
+        json={"unresolved_identity_ids": [str(identity.id)], "accept_login_loss": False},
+    )
+    assert missing_acceptance.status_code == 409
+    reviewed = await client.post(
+        "/api/v1/admin/legacy-identities/review",
+        headers=headers,
+        json={"unresolved_identity_ids": [str(identity.id)], "accept_login_loss": True},
+    )
+    assert reviewed.status_code == 200
+    active_review = reviewed.json()["active_review"]
+    assert active_review["reviewed_by_application_user_id"] == administrator["account"]["id"]
+    assert active_review["unresolved_identity_ids"] == [str(identity.id)]
+    assert active_review["accepted_login_loss"] is True
+    assert reviewed.json()["cutover_ready"] is True
+
+    history = await client.get("/api/v1/admin/legacy-identities/reviews")
+    assert history.status_code == 200
+    historical_review = history.json()["reviews"][0]
+    assert historical_review["id"] == active_review["id"]
+    assert historical_review["reviewed_by_application_user_id"] == administrator["account"]["id"]
+    assert historical_review["unresolved_identity_ids"] == [str(identity.id)]
+    assert historical_review["accepted_login_loss"] is True
+
+    target = ApplicationUser(
+        username="review-target", password_hash="stored-hash", must_change_password=False
+    )
+    session.add(target)
+    await session.commit()
+    mapped = await client.post(
+        f"/api/v1/admin/legacy-identities/{identity.id}/mapping",
+        headers=headers,
+        json={"application_user_id": str(target.id)},
+    )
+    assert mapped.status_code == 201
+    changed = await client.get("/api/v1/admin/legacy-identities")
+    assert changed.json()["active_review"] is None
+    assert changed.json()["cutover_ready"] is False
+
+    stale = await client.post(
+        "/api/v1/admin/legacy-identities/review",
+        headers=headers,
+        json={"unresolved_identity_ids": [str(identity.id)], "accept_login_loss": True},
+    )
+    assert stale.status_code == 409
+    ready_review = await client.post(
+        "/api/v1/admin/legacy-identities/review",
+        headers=headers,
+        json={"unresolved_identity_ids": [], "accept_login_loss": False},
+    )
+    assert ready_review.status_code == 200
+    assert ready_review.json()["cutover_ready"] is True
 
 
 async def test_mapping_can_create_a_non_admin_local_account(
