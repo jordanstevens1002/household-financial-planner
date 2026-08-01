@@ -513,11 +513,30 @@ export interface paths {
         /** List Memberships */
         get: operations["list_memberships_api_v1_households__household_id__memberships_get"];
         put?: never;
-        post?: never;
+        /** Create Membership */
+        post: operations["create_membership_api_v1_households__household_id__memberships_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/households/{household_id}/memberships/{membership_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Membership */
+        delete: operations["delete_membership_api_v1_households__household_id__memberships__membership_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Membership */
+        patch: operations["update_membership_api_v1_households__household_id__memberships__membership_id__patch"];
         trace?: never;
     };
     "/api/v1/households/{household_id}/people": {
@@ -2505,6 +2524,12 @@ export interface components {
             /** Is Occupied By Household */
             is_occupied_by_household: boolean | null;
         };
+        /** MembershipCreate */
+        MembershipCreate: {
+            role: components["schemas"]["HouseholdRole"];
+            /** Username */
+            username: string;
+        };
         /** MembershipRead */
         MembershipRead: {
             /**
@@ -2512,6 +2537,8 @@ export interface components {
              * Format: uuid
              */
             application_user_id: string;
+            /** Display Name */
+            display_name: string | null;
             /**
              * Household Id
              * Format: uuid
@@ -2522,6 +2549,14 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Is Active */
+            is_active: boolean;
+            role: components["schemas"]["HouseholdRole"];
+            /** Username */
+            username: string | null;
+        };
+        /** MembershipUpdate */
+        MembershipUpdate: {
             role: components["schemas"]["HouseholdRole"];
         };
         /** OverrideCreate */
@@ -5140,6 +5175,113 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MembershipRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_membership_api_v1_households__household_id__memberships_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                household_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MembershipCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_membership_api_v1_households__household_id__memberships__membership_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                household_id: string;
+                membership_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_membership_api_v1_households__household_id__memberships__membership_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                household_id: string;
+                membership_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MembershipUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipRead"];
                 };
             };
             /** @description Validation Error */
