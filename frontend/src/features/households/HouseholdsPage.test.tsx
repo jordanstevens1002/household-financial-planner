@@ -253,7 +253,14 @@ describe('household selection and membership', () => {
           return Promise.resolve(response({ account }));
         if (path.endsWith('/reference/countries'))
           return Promise.resolve(
-            response([{ code: 'NZ', display_name: 'New Zealand', flag: '🇳🇿' }]),
+            response([
+              {
+                code: 'NZ',
+                display_name: 'New Zealand',
+                flag: '🇳🇿',
+                recommended_currency: 'NZD',
+              },
+            ]),
           );
         if (path.endsWith('/reference/currencies'))
           return Promise.resolve(
@@ -315,8 +322,9 @@ describe('household selection and membership', () => {
     );
     await user.click(screen.getByLabelText('Country'));
     await user.click(await screen.findByText('🇳🇿 New Zealand'));
-    await user.click(screen.getByLabelText('Currency'));
-    await user.click(await screen.findByText('NZD — New Zealand Dollar'));
+    expect(screen.getByLabelText('Currency')).toHaveValue(
+      'NZD — New Zealand Dollar',
+    );
     await user.click(screen.getByRole('button', { name: 'Create' }));
     await waitFor(() =>
       expect(
@@ -326,4 +334,75 @@ describe('household selection and membership', () => {
     const table = await screen.findByRole('table', { name: 'Your households' });
     expect(within(table).getByText('Future household')).toBeVisible();
   }, 10_000);
+
+  it('keeps an explicitly selected currency when the country changes', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input) => {
+        const path = pathOf(input);
+        if (path.endsWith('/auth/session'))
+          return Promise.resolve(response({ account }));
+        if (path.endsWith('/households')) return Promise.resolve(response([]));
+        if (path.endsWith('/reference/countries'))
+          return Promise.resolve(
+            response([
+              {
+                code: 'AU',
+                display_name: 'Australia',
+                flag: '🇦🇺',
+                recommended_currency: 'AUD',
+              },
+              {
+                code: 'NZ',
+                display_name: 'New Zealand',
+                flag: '🇳🇿',
+                recommended_currency: 'NZD',
+              },
+            ]),
+          );
+        if (path.endsWith('/reference/currencies'))
+          return Promise.resolve(
+            response([
+              {
+                code: 'AUD',
+                display_name: 'Australian Dollar',
+                numeric_code: '036',
+              },
+              {
+                code: 'NZD',
+                display_name: 'New Zealand Dollar',
+                numeric_code: '554',
+              },
+              {
+                code: 'USD',
+                display_name: 'US Dollar',
+                numeric_code: '840',
+              },
+            ]),
+          );
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'Create household' }),
+    );
+
+    await user.click(screen.getByLabelText('Country'));
+    await user.click(await screen.findByText('🇳🇿 New Zealand'));
+    expect(screen.getByLabelText('Currency')).toHaveValue(
+      'NZD — New Zealand Dollar',
+    );
+
+    await user.click(screen.getByLabelText('Currency'));
+    await user.click(await screen.findByText('USD — US Dollar'));
+    await user.click(screen.getByLabelText('Country'));
+    await user.click(await screen.findByText('🇦🇺 Australia'));
+
+    expect(screen.getByLabelText('Currency')).toHaveValue('USD — US Dollar');
+    expect(
+      screen.getByText('Using your chosen household currency.'),
+    ).toBeVisible();
+  });
 });
