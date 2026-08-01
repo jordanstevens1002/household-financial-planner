@@ -134,6 +134,36 @@ describe('household selection and membership', () => {
     expect(localStorage.getItem(selectionKeys.property)).toBeNull();
   });
 
+  it('keeps household selection available without membership administration', async () => {
+    localStorage.setItem(selectionKeys.household, householdId);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input) => {
+        const path = pathOf(input);
+        if (path.endsWith('/auth/session'))
+          return Promise.resolve(response({ account }));
+        if (path.endsWith('/households'))
+          return Promise.resolve(response([household]));
+        if (path.endsWith('/memberships'))
+          return Promise.resolve(
+            response({ detail: 'Household administrator role required' }, 403),
+          );
+        return Promise.resolve(response([]));
+      }),
+    );
+    await renderPage();
+
+    expect(
+      await screen.findByText(
+        /only household owners and administrators can manage memberships/i,
+      ),
+    ).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Selected' })).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Add member' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('creates, selects, and manages a household member', async () => {
     const user = userEvent.setup();
     const households = [household];
