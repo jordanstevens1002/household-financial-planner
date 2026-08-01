@@ -15,6 +15,7 @@ export interface AuthContextValue {
     username: string;
   }): Promise<void>;
   changePassword(currentPassword: string, newPassword: string): Promise<void>;
+  csrfToken(): string | undefined;
   login(username: string, password: string): Promise<void>;
   logout(): Promise<void>;
 }

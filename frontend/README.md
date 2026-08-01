@@ -4,9 +4,10 @@ This directory contains the React v2 application. During the parallel migration 
 runs on <http://localhost:3000>, while Appsmith remains available on
 <http://localhost:8080>.
 
-The current screen is intentionally a foundation preview. Financial workflows are
-added only through their tested migration issues; continue using Appsmith for
-workflows that have not reached parity.
+The React application currently provides local authentication, password recovery
+and global user administration. Financial workflows are added only through their
+tested migration issues; continue using Appsmith for workflows that have not
+reached parity.
 
 ## Docker
 

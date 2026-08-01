@@ -95,6 +95,16 @@ export function AppShell() {
               {item.label}
             </Button>
           ))}
+          {auth.account?.global_role === 'ADMIN' ? (
+            <Button
+              component={Link}
+              sx={{ justifyContent: 'flex-start' }}
+              to="/administration"
+              variant={pathname === '/administration' ? 'contained' : 'text'}
+            >
+              User administration
+            </Button>
+          ) : null}
         </Stack>
       </Drawer>
       <Box

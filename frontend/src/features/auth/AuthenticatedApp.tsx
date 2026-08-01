@@ -1,12 +1,18 @@
 import { CircularProgress, Stack, Typography } from '@mui/material';
+import { useRouterState } from '@tanstack/react-router';
 
 import { AppShell } from '../../app/AppShell';
 import { useAuth } from './AuthContext';
 import { AuthPage } from './AuthPage';
 import { PasswordChangePage } from './PasswordChangePage';
+import { PasswordResetPage } from './PasswordResetPage';
 
 export function AuthenticatedApp() {
   const auth = useAuth();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  if (pathname === '/reset-password') return <PasswordResetPage />;
   if (auth.loading) {
     return (
       <Stack

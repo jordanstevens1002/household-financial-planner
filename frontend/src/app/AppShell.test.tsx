@@ -47,6 +47,7 @@ const authenticated: AuthContextValue = {
   },
   bootstrap: vi.fn(),
   changePassword: vi.fn(),
+  csrfToken: vi.fn(),
   expired: false,
   loading: false,
   login: vi.fn(),
@@ -62,6 +63,9 @@ describe('application shell', () => {
       await screen.findByRole('heading', { name: 'Household overview' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('navigation')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'User administration' }),
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('link', { name: 'Properties' }));
     expect(
