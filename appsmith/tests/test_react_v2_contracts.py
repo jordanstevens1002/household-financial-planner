@@ -17,8 +17,7 @@ ROUTE_ROW = re.compile(
 def application_routes() -> set[tuple[str, str]]:
     """Read literal FastAPI decorator routes without importing the application."""
     routes: set[tuple[str, str]] = set()
-    sources = sorted((ROOT / "api" / "app").rglob("*router.py"))
-    sources.append(ROOT / "api" / "app" / "main.py")
+    sources = sorted((ROOT / "api" / "app").rglob("*.py"))
 
     for source in sources:
         tree = ast.parse(source.read_text(encoding="utf-8"))
@@ -61,6 +60,10 @@ class ReactV2ContractTests(unittest.TestCase):
                 "POST",
                 "/api/v1/admin/legacy-identities/{legacy_identity_id}/mapping",
             ),
+            application_routes(),
+        )
+        self.assertIn(
+            ("GET", "/api/v1/system/status"),
             application_routes(),
         )
 
