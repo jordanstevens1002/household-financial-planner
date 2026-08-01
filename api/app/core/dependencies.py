@@ -9,7 +9,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import Identity, get_identity
 from app.core.database import get_session
-from app.models import ApplicationUser, GlobalRole, HouseholdMembership, HouseholdRole
+from app.models import (
+    ApplicationUser,
+    GlobalRole,
+    HouseholdMembership,
+    HouseholdRole,
+    LegacyIdentity,
+)
 
 ROLE_LEVEL = {
     HouseholdRole.VIEWER: 0,
@@ -39,6 +45,15 @@ async def current_user(
             oidc_subject=identity.subject, email=identity.email, display_name=identity.display_name
         )
         session.add(user)
+        await session.flush()
+        session.add(
+            LegacyIdentity(
+                source_application_user_id=user.id,
+                oidc_subject=identity.subject,
+                email=identity.email,
+                display_name=identity.display_name,
+            )
+        )
         await session.commit()
         await session.refresh(user)
     return user

@@ -2347,6 +2347,257 @@
         "title": "InterestCalculationMethod",
         "type": "string"
       },
+      "LegacyIdentityListResponse": {
+        "properties": {
+          "identities": {
+            "items": {
+              "$ref": "#/components/schemas/LegacyIdentityResponse"
+            },
+            "title": "Identities",
+            "type": "array"
+          },
+          "unresolved_count": {
+            "title": "Unresolved Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "identities",
+          "unresolved_count"
+        ],
+        "title": "LegacyIdentityListResponse",
+        "type": "object"
+      },
+      "LegacyIdentityMapRequest": {
+        "properties": {
+          "application_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Application User Id"
+          },
+          "new_account": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LegacyLocalAccountCreate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "LegacyIdentityMapRequest",
+        "type": "object"
+      },
+      "LegacyIdentityMappedResponse": {
+        "properties": {
+          "identity": {
+            "$ref": "#/components/schemas/LegacyIdentityResponse"
+          },
+          "temporary_password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temporary Password"
+          }
+        },
+        "required": [
+          "identity"
+        ],
+        "title": "LegacyIdentityMappedResponse",
+        "type": "object"
+      },
+      "LegacyIdentityResponse": {
+        "properties": {
+          "captured_at": {
+            "format": "date-time",
+            "title": "Captured At",
+            "type": "string"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "mapping": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LegacyMappingSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "memberships": {
+            "items": {
+              "$ref": "#/components/schemas/LegacyMembershipSummary"
+            },
+            "title": "Memberships",
+            "type": "array"
+          },
+          "oidc_subject": {
+            "title": "Oidc Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "oidc_subject",
+          "email",
+          "display_name",
+          "captured_at",
+          "memberships",
+          "mapping"
+        ],
+        "title": "LegacyIdentityResponse",
+        "type": "object"
+      },
+      "LegacyLocalAccountCreate": {
+        "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 320,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "username": {
+            "maxLength": 320,
+            "minLength": 1,
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username"
+        ],
+        "title": "LegacyLocalAccountCreate",
+        "type": "object"
+      },
+      "LegacyMappingSummary": {
+        "properties": {
+          "application_user_id": {
+            "format": "uuid",
+            "title": "Application User Id",
+            "type": "string"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "mapped_at": {
+            "format": "date-time",
+            "title": "Mapped At",
+            "type": "string"
+          },
+          "mapped_by_application_user_id": {
+            "format": "uuid",
+            "title": "Mapped By Application User Id",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "application_user_id",
+          "username",
+          "display_name",
+          "mapped_by_application_user_id",
+          "mapped_at"
+        ],
+        "title": "LegacyMappingSummary",
+        "type": "object"
+      },
+      "LegacyMembershipSummary": {
+        "properties": {
+          "household_id": {
+            "format": "uuid",
+            "title": "Household Id",
+            "type": "string"
+          },
+          "household_name": {
+            "title": "Household Name",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/HouseholdRole"
+          }
+        },
+        "required": [
+          "household_id",
+          "household_name",
+          "role"
+        ],
+        "title": "LegacyMembershipSummary",
+        "type": "object"
+      },
       "LoanCreate": {
         "properties": {
           "account_reference_masked": {
@@ -7640,6 +7891,134 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/admin/legacy-identities": {
+      "get": {
+        "operationId": "list_legacy_identities_api_v1_admin_legacy_identities_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyIdentityListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Legacy Identities",
+        "tags": [
+          "administration"
+        ]
+      }
+    },
+    "/api/v1/admin/legacy-identities/{legacy_identity_id}/mapping": {
+      "post": {
+        "operationId": "map_legacy_identity_api_v1_admin_legacy_identities__legacy_identity_id__mapping_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "legacy_identity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Legacy Identity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegacyIdentityMapRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyIdentityMappedResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Map Legacy Identity",
+        "tags": [
+          "administration"
+        ]
+      }
+    },
     "/api/v1/admin/users": {
       "get": {
         "operationId": "list_users_api_v1_admin_users_get",

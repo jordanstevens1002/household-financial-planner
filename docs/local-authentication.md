@@ -25,3 +25,18 @@ Raw session and CSRF tokens are never stored in the database.
 Local sessions expire after one idle hour by default and always expire after 12 hours. Failed
 logins are temporarily blocked after the configured attempt limit, and blocked responses include
 `Retry-After`. Password changes invalidate every other session for the account.
+
+## Legacy identity migration
+
+OIDC identities are captured for migration without copying household financial records into the
+identity API. A global administrator can list them through
+`GET /api/v1/admin/legacy-identities`; the response includes identity metadata, household names and
+roles, mapping status, and the unresolved count used by the eventual authentication cutover.
+
+`POST /api/v1/admin/legacy-identities/{legacy_identity_id}/mapping` maps one identity to either an
+existing local account or a newly created standard user account. Mapping copies the identity's
+household memberships to the selected account, retaining the strongest role when that account is
+already a member. The OIDC user's memberships remain operational during the parallel migration;
+the mapping record permanently identifies the target account and administrator who performed the
+mapping. A newly created account receives a temporary password once and must change it at first
+login.
