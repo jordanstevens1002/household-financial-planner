@@ -96,8 +96,8 @@ describe('legacy identity mapping wizard', () => {
             response({ account: { ...administrator, global_role: 'USER' } }),
           );
         }
-        adminRequests += 1;
-        return Promise.resolve(response({}));
+        if (path.includes('/admin/')) adminRequests += 1;
+        return Promise.resolve(response([]));
       }),
     );
 
