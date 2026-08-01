@@ -4,12 +4,14 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.accounts.sessions import utc_now
 from app.core.database import get_session
 from app.core.dependencies import current_user, require_household_role
+from app.core.logging import get_logger
 from app.households.schemas import (
     HouseholdCreate,
     HouseholdRead,
@@ -26,11 +28,15 @@ from app.models import (
     Household,
     HouseholdMembership,
     HouseholdRole,
+    LegacyIdentityMapping,
+    LegacyMembershipBaseline,
+    LegacyMembershipGrant,
     LookupItem,
     Person,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["households"])
+logger = get_logger(component="household_membership_administration")
 
 
 @router.get("/me", response_model=UserRead)
@@ -146,16 +152,71 @@ async def _protect_final_owner(
     await session.scalar(
         select(Household).where(Household.id == membership.household_id).with_for_update()
     )
+    now = utc_now()
     owner_count = await session.scalar(
         select(func.count())
         .select_from(HouseholdMembership)
+        .join(ApplicationUser, ApplicationUser.id == HouseholdMembership.application_user_id)
         .where(
             HouseholdMembership.household_id == membership.household_id,
             HouseholdMembership.role == HouseholdRole.OWNER,
+            ApplicationUser.is_active.is_(True),
+            or_(
+                ApplicationUser.oidc_subject.is_not(None),
+                and_(
+                    ApplicationUser.username.is_not(None),
+                    ApplicationUser.password_hash.is_not(None),
+                    ApplicationUser.must_change_password.is_(False),
+                    or_(
+                        ApplicationUser.password_expires_at.is_(None),
+                        ApplicationUser.password_expires_at > now,
+                    ),
+                ),
+            ),
         )
     )
     if owner_count == 1:
         raise HTTPException(409, "The final household owner cannot be removed or demoted")
+
+
+async def _direct_membership_baseline(
+    membership: HouseholdMembership,
+    session: AsyncSession,
+) -> LegacyMembershipBaseline | None:
+    baseline: LegacyMembershipBaseline | None = await session.scalar(
+        select(LegacyMembershipBaseline)
+        .where(
+            LegacyMembershipBaseline.application_user_id == membership.application_user_id,
+            LegacyMembershipBaseline.household_id == membership.household_id,
+        )
+        .with_for_update()
+    )
+    return baseline
+
+
+async def _reject_inherited_membership_mutation(
+    membership: HouseholdMembership,
+    session: AsyncSession,
+) -> None:
+    inherited = await session.scalar(
+        select(LegacyMembershipGrant.id)
+        .join(
+            LegacyIdentityMapping,
+            LegacyIdentityMapping.id == LegacyMembershipGrant.legacy_identity_mapping_id,
+        )
+        .where(
+            LegacyIdentityMapping.application_user_id == membership.application_user_id,
+            LegacyIdentityMapping.revoked_at.is_(None),
+            LegacyMembershipGrant.household_id == membership.household_id,
+            LegacyMembershipGrant.is_active.is_(True),
+        )
+        .limit(1)
+    )
+    if inherited is not None:
+        raise HTTPException(
+            409,
+            "Membership is inherited from a legacy identity; change the source membership first",
+        )
 
 
 @router.post(
@@ -192,12 +253,30 @@ async def create_membership(
         role=payload.role,
     )
     session.add(membership)
+    baseline = await session.scalar(
+        select(LegacyMembershipBaseline)
+        .where(
+            LegacyMembershipBaseline.application_user_id == user.id,
+            LegacyMembershipBaseline.household_id == household_id,
+        )
+        .with_for_update()
+    )
+    if baseline is not None:
+        baseline.original_role = payload.role
     try:
         await session.commit()
     except IntegrityError as exc:
         await session.rollback()
         raise HTTPException(409, "Account is already a household member") from exc
     await session.refresh(membership)
+    logger.info(
+        "household_membership_created",
+        actor_user_id=str(actor.application_user_id),
+        target_user_id=str(user.id),
+        household_id=str(household_id),
+        previous_role=None,
+        resulting_role=payload.role,
+    )
     return _membership_read(membership, user)
 
 
@@ -215,12 +294,25 @@ async def update_membership(
     _assert_role_can_be_managed(actor.role, payload.role)
     membership = await _membership_for_update(household_id, membership_id, session)
     _assert_role_can_be_managed(actor.role, membership.role)
+    await _reject_inherited_membership_mutation(membership, session)
     if membership.role == HouseholdRole.OWNER and payload.role != HouseholdRole.OWNER:
         await _protect_final_owner(membership, session)
+    previous_role = membership.role
+    baseline = await _direct_membership_baseline(membership, session)
+    if baseline is not None:
+        baseline.original_role = payload.role
     membership.role = payload.role
     await session.commit()
     user = await session.get(ApplicationUser, membership.application_user_id)
     assert user is not None
+    logger.info(
+        "household_membership_updated",
+        actor_user_id=str(actor.application_user_id),
+        target_user_id=str(user.id),
+        household_id=str(household_id),
+        previous_role=previous_role,
+        resulting_role=payload.role,
+    )
     return _membership_read(membership, user)
 
 
@@ -236,9 +328,23 @@ async def delete_membership(
 ) -> None:
     membership = await _membership_for_update(household_id, membership_id, session)
     _assert_role_can_be_managed(actor.role, membership.role)
+    await _reject_inherited_membership_mutation(membership, session)
     await _protect_final_owner(membership, session)
+    previous_role = membership.role
+    target_user_id = membership.application_user_id
+    baseline = await _direct_membership_baseline(membership, session)
+    if baseline is not None:
+        baseline.original_role = None
     await session.delete(membership)
     await session.commit()
+    logger.info(
+        "household_membership_deleted",
+        actor_user_id=str(actor.application_user_id),
+        target_user_id=str(target_user_id),
+        household_id=str(household_id),
+        previous_role=previous_role,
+        resulting_role=None,
+    )
 
 
 @router.get("/households/{household_id}/people", response_model=list[PersonRead])

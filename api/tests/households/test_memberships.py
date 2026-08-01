@@ -1,11 +1,15 @@
 """Household membership management integration tests."""
 
+import logging
 import uuid
+from datetime import timedelta
 
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.accounts.sessions import utc_now
+from app.admin.legacy_memberships import reconcile_mapping, revoke_mapping_memberships
 from app.core.auth import Identity, get_identity
 from app.main import app
 from app.models import (
@@ -13,6 +17,10 @@ from app.models import (
     GlobalRole,
     HouseholdMembership,
     HouseholdRole,
+    LegacyIdentity,
+    LegacyIdentityMapping,
+    LegacyMembershipBaseline,
+    LegacyMembershipGrant,
 )
 
 
@@ -189,11 +197,54 @@ async def test_final_owner_cannot_be_demoted_or_removed(
     assert removed.status_code == 409
 
 
+async def test_disabled_and_expired_local_owners_do_not_satisfy_final_owner_guard(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    for suffix, user_kwargs in (
+        ("disabled", {"is_active": False}),
+        ("expired", {}),
+    ):
+        household = await create_household(client)
+        local_owner = await create_local_user(session, f"{suffix}-owner", **user_kwargs)
+        local_owner.password_hash = "stored-hash"
+        local_owner.must_change_password = False
+        if suffix == "expired":
+            local_owner.password_expires_at = utc_now() - timedelta(minutes=1)
+        session.add(
+            HouseholdMembership(
+                household_id=uuid.UUID(household["id"]),
+                application_user_id=local_owner.id,
+                role=HouseholdRole.OWNER,
+            )
+        )
+        await session.commit()
+        accessible_owner = await session.scalar(
+            select(HouseholdMembership).where(
+                HouseholdMembership.household_id == uuid.UUID(household["id"]),
+                HouseholdMembership.application_user_id != local_owner.id,
+            )
+        )
+        assert accessible_owner is not None
+
+        demoted = await client.patch(
+            f"/api/v1/households/{household['id']}/memberships/{accessible_owner.id}",
+            json={"role": "ADMIN"},
+        )
+        removed = await client.delete(
+            f"/api/v1/households/{household['id']}/memberships/{accessible_owner.id}"
+        )
+        assert demoted.status_code == 409
+        assert removed.status_code == 409
+
+
 async def test_owner_can_demote_an_owner_when_another_owner_remains(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     household = await create_household(client)
     second_owner = await create_local_user(session, "second-owner")
+    second_owner.password_hash = "stored-hash"
+    second_owner.must_change_password = False
+    await session.commit()
     added = await client.post(
         f"/api/v1/households/{household['id']}/memberships",
         json={"username": second_owner.username, "role": "OWNER"},
@@ -264,3 +315,115 @@ async def test_unknown_inactive_and_duplicate_accounts_are_not_added(
     )
     assert first.status_code == 201
     assert duplicate.status_code == 409
+
+
+async def test_inherited_membership_rejects_direct_changes_and_revocation_preserves_baseline(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    household = await create_household(client)
+    actor_membership = await session.scalar(
+        select(HouseholdMembership).where(
+            HouseholdMembership.household_id == uuid.UUID(household["id"])
+        )
+    )
+    assert actor_membership is not None
+    source = ApplicationUser(oidc_subject="legacy-membership-source", is_active=True)
+    target = await create_local_user(session, "mapped-member")
+    target.password_hash = "stored-hash"
+    session.add(source)
+    await session.flush()
+    source_membership = HouseholdMembership(
+        household_id=uuid.UUID(household["id"]),
+        application_user_id=source.id,
+        role=HouseholdRole.OWNER,
+    )
+    session.add(source_membership)
+    identity = LegacyIdentity(
+        source_application_user_id=source.id,
+        oidc_subject=source.oidc_subject,
+    )
+    session.add(identity)
+    await session.flush()
+    mapping = LegacyIdentityMapping(
+        legacy_identity_id=identity.id,
+        application_user_id=target.id,
+        mapped_by_application_user_id=actor_membership.application_user_id,
+    )
+    session.add(mapping)
+    await session.flush()
+    baseline = LegacyMembershipBaseline(
+        application_user_id=target.id,
+        household_id=uuid.UUID(household["id"]),
+        original_role=HouseholdRole.EDITOR,
+    )
+    grant = LegacyMembershipGrant(
+        legacy_identity_mapping_id=mapping.id,
+        household_id=uuid.UUID(household["id"]),
+        role=HouseholdRole.OWNER,
+    )
+    inherited = HouseholdMembership(
+        household_id=uuid.UUID(household["id"]),
+        application_user_id=target.id,
+        role=HouseholdRole.OWNER,
+    )
+    session.add_all([baseline, grant, inherited])
+    await session.commit()
+
+    updated = await client.patch(
+        f"/api/v1/households/{household['id']}/memberships/{inherited.id}",
+        json={"role": "VIEWER"},
+    )
+    deleted = await client.delete(
+        f"/api/v1/households/{household['id']}/memberships/{inherited.id}"
+    )
+    assert updated.status_code == 409
+    assert deleted.status_code == 409
+    assert "legacy identity" in updated.json()["detail"]
+
+    source_membership.role = HouseholdRole.VIEWER
+    await reconcile_mapping(session, mapping)
+    await session.commit()
+    await session.refresh(inherited)
+    assert inherited.role == HouseholdRole.EDITOR
+
+    await revoke_mapping_memberships(session, mapping)
+    await session.commit()
+    await session.refresh(inherited)
+    assert inherited.role == HouseholdRole.EDITOR
+
+
+async def test_direct_membership_mutations_update_legacy_baseline_and_emit_audit_logs(
+    client: AsyncClient, session: AsyncSession, caplog
+) -> None:
+    household = await create_household(client)
+    member = await create_local_user(session, "audited-household-member")
+    baseline = LegacyMembershipBaseline(
+        application_user_id=member.id,
+        household_id=uuid.UUID(household["id"]),
+        original_role=None,
+    )
+    session.add(baseline)
+    await session.commit()
+
+    with caplog.at_level(logging.INFO):
+        created = await client.post(
+            f"/api/v1/households/{household['id']}/memberships",
+            json={"username": member.username, "role": "VIEWER"},
+        )
+        updated = await client.patch(
+            f"/api/v1/households/{household['id']}/memberships/{created.json()['id']}",
+            json={"role": "EDITOR"},
+        )
+        deleted = await client.delete(
+            f"/api/v1/households/{household['id']}/memberships/{created.json()['id']}"
+        )
+    assert [created.status_code, updated.status_code, deleted.status_code] == [201, 200, 204]
+    await session.refresh(baseline)
+    assert baseline.original_role is None
+    assert "household_membership_created" in caplog.text
+    assert "household_membership_updated" in caplog.text
+    assert "household_membership_deleted" in caplog.text
+    assert str(member.id) in caplog.text
+    assert household["id"] in caplog.text
+    assert "previous_role" in caplog.text
+    assert "resulting_role" in caplog.text
