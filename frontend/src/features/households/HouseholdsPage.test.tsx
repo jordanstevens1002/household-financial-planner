@@ -164,6 +164,83 @@ describe('household selection and membership', () => {
     ).not.toBeInTheDocument();
   });
 
+  it.each([401, 403, 500])(
+    'shows household loading failure for HTTP %s instead of an empty account',
+    async (status) => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn<typeof fetch>((input) => {
+          const path = pathOf(input);
+          if (path.endsWith('/auth/session'))
+            return Promise.resolve(response({ account }));
+          if (path.endsWith('/households'))
+            return Promise.resolve(
+              response(
+                { detail: `Household request failed (${status})` },
+                status,
+              ),
+            );
+          return Promise.resolve(response([]));
+        }),
+      );
+      await renderPage();
+
+      expect(
+        await screen.findByText(
+          new RegExp(`Could not load households.*${status}`),
+        ),
+      ).toBeVisible();
+      expect(screen.queryByText('No households yet')).not.toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Create household' }),
+      ).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Retry' })).toBeVisible();
+    },
+  );
+
+  it('requires confirmation before the current owner demotes themselves', async () => {
+    const user = userEvent.setup();
+    let patchRequests = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/auth/session'))
+          return Promise.resolve(response({ account }));
+        if (path.endsWith('/households'))
+          return Promise.resolve(response([household]));
+        if (path.endsWith('/memberships') && init?.method !== 'PATCH')
+          return Promise.resolve(response([owner]));
+        if (path.includes('/memberships/') && init?.method === 'PATCH') {
+          patchRequests += 1;
+          return Promise.resolve(response({ ...owner, role: 'ADMIN' }));
+        }
+        return Promise.resolve(response([]));
+      }),
+    );
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'Use household' }),
+    );
+    const role = await screen.findByRole('combobox', {
+      name: 'Role for owner',
+    });
+
+    await user.click(role);
+    await user.click(screen.getByRole('option', { name: 'ADMIN' }));
+    expect(
+      screen.getByRole('dialog', { name: 'Change your own household role?' }),
+    ).toBeVisible();
+    expect(screen.getByText(/immediately lose the ability/i)).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(patchRequests).toBe(0);
+
+    await user.click(role);
+    await user.click(screen.getByRole('option', { name: 'ADMIN' }));
+    await user.click(screen.getByRole('button', { name: 'Change role' }));
+    await waitFor(() => expect(patchRequests).toBe(1));
+  });
+
   it('creates, selects, and manages a household member', async () => {
     const user = userEvent.setup();
     const households = [household];

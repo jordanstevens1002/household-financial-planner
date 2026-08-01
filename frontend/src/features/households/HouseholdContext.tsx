@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { apiRequest } from '../../api/client';
 import type { components } from '../../api/schema';
@@ -8,13 +16,29 @@ export type Household = components['schemas']['HouseholdRead'];
 
 interface HouseholdContextValue {
   add: (household: Household) => void;
+  error: Error | null;
   households: Household[];
   loading: boolean;
+  reload: () => void;
   selected: Household | null;
   select: (household: Household | null) => void;
 }
 
 const HouseholdContext = createContext<HouseholdContextValue | null>(null);
+let lastSessionAccountId: string | null = null;
+
+function initialSelection(accountId: string): string | null {
+  const accountChanged =
+    lastSessionAccountId !== null && lastSessionAccountId !== accountId;
+  lastSessionAccountId = accountId;
+  if (accountChanged) {
+    saveSelection('household', null);
+    saveSelection('person', null);
+    saveSelection('property', null);
+    return null;
+  }
+  return loadSelection('household');
+}
 
 export function HouseholdProvider({
   children,
@@ -24,12 +48,21 @@ export function HouseholdProvider({
   sessionAccountId: string;
 }) {
   const [selectedId, setSelectedId] = useState(() =>
-    loadSelection('household'),
+    initialSelection(sessionAccountId),
   );
+  const selectedIdRef = useRef(selectedId);
   const [households, setHouseholds] = useState<Household[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [requestVersion, setRequestVersion] = useState(0);
   const selected =
     households.find((household) => household.id === selectedId) ?? null;
+
+  const reload = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    setRequestVersion((version) => version + 1);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -40,43 +73,58 @@ export function HouseholdProvider({
     })
       .then((accessible) => {
         if (!active) return;
-        if (!Array.isArray(accessible)) return;
+        if (!Array.isArray(accessible)) {
+          throw new Error('The household list response was not valid');
+        }
         setHouseholds(accessible);
         if (
-          selectedId !== null &&
-          !accessible.some((item) => item.id === selectedId)
+          selectedIdRef.current !== null &&
+          !accessible.some((item) => item.id === selectedIdRef.current)
         ) {
           saveSelection('household', null);
           saveSelection('person', null);
           saveSelection('property', null);
+          selectedIdRef.current = null;
           setSelectedId(null);
         }
       })
-      .catch(() => undefined)
+      .catch((requestError: unknown) => {
+        if (active) {
+          setError(
+            requestError instanceof Error
+              ? requestError
+              : new Error('The household list request failed'),
+          );
+        }
+      })
       .finally(() => {
         if (active) setLoading(false);
       });
     return () => {
       active = false;
     };
-  }, [selectedId, sessionAccountId]);
+  }, [requestVersion]);
 
   const value = useMemo<HouseholdContextValue>(
     () => ({
       add: (newHousehold) => {
         setHouseholds((current) => [...current, newHousehold]);
       },
+      error,
       households,
       loading,
+      reload,
       selected,
       select: (household) => {
-        setSelectedId(household?.id ?? null);
-        saveSelection('household', household?.id ?? null);
+        const nextId = household?.id ?? null;
+        selectedIdRef.current = nextId;
+        setSelectedId(nextId);
+        saveSelection('household', nextId);
         saveSelection('person', null);
         saveSelection('property', null);
       },
     }),
-    [households, loading, selected],
+    [error, households, loading, reload, selected],
   );
 
   return (

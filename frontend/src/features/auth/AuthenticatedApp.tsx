@@ -34,7 +34,7 @@ export function AuthenticatedApp() {
   if (auth.account === null) return <AuthPage />;
   if (auth.account.must_change_password) return <PasswordChangePage />;
   return (
-    <HouseholdProvider sessionAccountId={auth.account.id}>
+    <HouseholdProvider key={auth.account.id} sessionAccountId={auth.account.id}>
       <AppShell />
     </HouseholdProvider>
   );

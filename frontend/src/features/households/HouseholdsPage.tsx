@@ -46,6 +46,11 @@ const membershipSchema = z.object({
 type HouseholdFields = z.infer<typeof householdSchema>;
 type MembershipFields = z.infer<typeof membershipSchema>;
 
+interface PendingRoleChange {
+  member: Membership;
+  role: HouseholdRole;
+}
+
 const roleRank: Record<HouseholdRole, number> = {
   OWNER: 4,
   ADMIN: 3,
@@ -54,7 +59,7 @@ const roleRank: Record<HouseholdRole, number> = {
 };
 
 function message(error: unknown) {
-  return error instanceof ApiError ? error.message : 'The request failed';
+  return error instanceof Error ? error.message : 'The request failed';
 }
 
 export function HouseholdsPage() {
@@ -65,6 +70,8 @@ export function HouseholdsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [memberOpen, setMemberOpen] = useState(false);
   const [pendingRemoval, setPendingRemoval] = useState<Membership | null>(null);
+  const [pendingRoleChange, setPendingRoleChange] =
+    useState<PendingRoleChange | null>(null);
   const householdForm = useForm<HouseholdFields>({
     defaultValues: { currency: '', displayName: '', jurisdiction: '' },
     resolver: zodResolver(householdSchema),
@@ -146,6 +153,7 @@ export function HouseholdsPage() {
         },
       ),
     onSuccess: async () => {
+      setPendingRoleChange(null);
       notify('Household role updated', 'success');
       await refreshMembers();
     },
@@ -167,6 +175,18 @@ export function HouseholdsPage() {
     addMember.error ??
     updateMember.error ??
     removeMember.error;
+  const requestRoleChange = (member: Membership, role: HouseholdRole) => {
+    if (role === member.role) return;
+    const selfDemotion =
+      member.application_user_id === auth.account?.id &&
+      roleRank[role] < roleRank[member.role];
+    const changesOwnerRole = member.role === 'OWNER' || role === 'OWNER';
+    if (selfDemotion || changesOwnerRole) {
+      setPendingRoleChange({ member, role });
+      return;
+    }
+    updateMember.mutate({ id: member.id, role });
+  };
 
   const columns: DataColumn<Household>[] = [
     { key: 'name', label: 'Household', render: (row) => row.display_name },
@@ -202,16 +222,19 @@ export function HouseholdsPage() {
         canManage &&
         (actor?.role === 'OWNER' || roleRank[row.role] < roleRank.OWNER) ? (
           <TextField
-            aria-label={`Role for ${row.username ?? row.display_name}`}
             disabled={updateMember.isPending}
             onChange={(event) =>
-              updateMember.mutate({
-                id: row.id,
-                role: event.target.value as HouseholdRole,
-              })
+              requestRoleChange(row, event.target.value as HouseholdRole)
             }
             select
             size="small"
+            slotProps={{
+              select: {
+                inputProps: {
+                  'aria-label': `Role for ${row.username ?? row.display_name}`,
+                },
+              },
+            }}
             value={row.role}
           >
             {(['OWNER', 'ADMIN', 'EDITOR', 'VIEWER'] as HouseholdRole[])
@@ -259,12 +282,27 @@ export function HouseholdsPage() {
         <Alert severity="error">{message(actionError)}</Alert>
       ) : null}
       <Box>
-        <Button onClick={() => setCreateOpen(true)} variant="contained">
+        <Button
+          disabled={household.error !== null}
+          onClick={() => setCreateOpen(true)}
+          variant="contained"
+        >
           Create household
         </Button>
       </Box>
       {household.loading ? (
         <CircularProgress aria-label="Loading households" />
+      ) : household.error ? (
+        <Alert
+          action={
+            <Button color="inherit" onClick={household.reload} size="small">
+              Retry
+            </Button>
+          }
+          severity="error"
+        >
+          Could not load households. {message(household.error)}
+        </Alert>
       ) : household.households.length ? (
         <DataTable
           caption="Your households"
@@ -460,6 +498,29 @@ export function HouseholdsPage() {
           </DialogActions>
         </Box>
       </Dialog>
+      <ConfirmDialog
+        confirmLabel="Change role"
+        description={
+          pendingRoleChange?.member.application_user_id === auth.account?.id
+            ? `Change your role from ${pendingRoleChange?.member.role ?? ''} to ${pendingRoleChange?.role ?? ''}? You may immediately lose the ability to manage this household and will need another owner or administrator to restore access.`
+            : `Change ${pendingRoleChange?.member.display_name || pendingRoleChange?.member.username || 'this account'} from ${pendingRoleChange?.member.role ?? ''} to ${pendingRoleChange?.role ?? ''}? Owner access controls who can make the most sensitive household changes.`
+        }
+        onCancel={() => setPendingRoleChange(null)}
+        onConfirm={() =>
+          pendingRoleChange &&
+          updateMember.mutate({
+            id: pendingRoleChange.member.id,
+            role: pendingRoleChange.role,
+          })
+        }
+        open={pendingRoleChange !== null}
+        pending={updateMember.isPending}
+        title={
+          pendingRoleChange?.member.application_user_id === auth.account?.id
+            ? 'Change your own household role?'
+            : 'Change owner access?'
+        }
+      />
       <ConfirmDialog
         confirmLabel="Remove member"
         description={`Remove ${pendingRemoval?.display_name || pendingRemoval?.username || 'this account'} from ${household.selected?.display_name ?? 'this household'}?`}
