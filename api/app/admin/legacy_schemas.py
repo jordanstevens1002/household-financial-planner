@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime
+from enum import StrEnum
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -15,6 +16,12 @@ class LegacyMembershipSummary(BaseModel):
     role: HouseholdRole
 
 
+class LegacyIdentityStatus(StrEnum):
+    UNMAPPED = "UNMAPPED"
+    ACTIVATION_PENDING = "ACTIVATION_PENDING"
+    READY = "READY"
+
+
 class LegacyMappingSummary(BaseModel):
     id: uuid.UUID
     application_user_id: uuid.UUID
@@ -22,6 +29,9 @@ class LegacyMappingSummary(BaseModel):
     display_name: str | None
     mapped_by_application_user_id: uuid.UUID
     mapped_at: datetime
+    last_reconciled_at: datetime | None
+    revoked_at: datetime | None = None
+    revoked_by_application_user_id: uuid.UUID | None = None
 
 
 class LegacyIdentityResponse(BaseModel):
@@ -32,11 +42,14 @@ class LegacyIdentityResponse(BaseModel):
     captured_at: datetime
     memberships: list[LegacyMembershipSummary]
     mapping: LegacyMappingSummary | None
+    status: LegacyIdentityStatus
 
 
 class LegacyIdentityListResponse(BaseModel):
     identities: list[LegacyIdentityResponse]
     unresolved_count: int
+    activation_pending_count: int
+    cutover_ready: bool
 
 
 class LegacyLocalAccountCreate(BaseModel):
@@ -64,3 +77,7 @@ class LegacyIdentityMapRequest(BaseModel):
 class LegacyIdentityMappedResponse(BaseModel):
     identity: LegacyIdentityResponse
     temporary_password: str | None = None
+
+
+class LegacyMappingHistoryResponse(BaseModel):
+    mappings: list[LegacyMappingSummary]

@@ -11,10 +11,12 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    Index,
     Numeric,
     String,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
@@ -190,9 +192,18 @@ class LegacyIdentity(Base):
 
 class LegacyIdentityMapping(Base):
     __tablename__ = "legacy_identity_mappings"
+    __table_args__ = (
+        Index(
+            "uq_legacy_identity_mappings_active_identity",
+            "legacy_identity_id",
+            unique=True,
+            postgresql_where=text("revoked_at IS NULL"),
+            sqlite_where=text("revoked_at IS NULL"),
+        ),
+    )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     legacy_identity_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("legacy_identities.id", ondelete="CASCADE"), unique=True, index=True
+        ForeignKey("legacy_identities.id", ondelete="CASCADE"), index=True
     )
     application_user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("application_users.id", ondelete="RESTRICT"), index=True
@@ -201,6 +212,43 @@ class LegacyIdentityMapping(Base):
         ForeignKey("application_users.id", ondelete="RESTRICT"), index=True
     )
     mapped_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_reconciled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_by_application_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("application_users.id", ondelete="RESTRICT"), index=True
+    )
+
+
+class LegacyMembershipBaseline(Base):
+    __tablename__ = "legacy_membership_baselines"
+    __table_args__ = (UniqueConstraint("application_user_id", "household_id"),)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    application_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("application_users.id", ondelete="CASCADE"), index=True
+    )
+    household_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("households.id", ondelete="CASCADE"), index=True
+    )
+    original_role: Mapped[HouseholdRole | None] = mapped_column(
+        Enum(HouseholdRole, name="household_role")
+    )
+
+
+class LegacyMembershipGrant(Base):
+    __tablename__ = "legacy_membership_grants"
+    __table_args__ = (UniqueConstraint("legacy_identity_mapping_id", "household_id"),)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    legacy_identity_mapping_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("legacy_identity_mappings.id", ondelete="CASCADE"), index=True
+    )
+    household_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("households.id", ondelete="CASCADE"), index=True
+    )
+    role: Mapped[HouseholdRole] = mapped_column(Enum(HouseholdRole, name="household_role"))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
 
 class Person(Base):

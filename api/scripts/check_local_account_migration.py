@@ -95,6 +95,38 @@ async def seed_local_user() -> uuid.UUID:
     return user_id
 
 
+async def seed_mapping_history(legacy_user_id: uuid.UUID, local_user_id: uuid.UUID) -> None:
+    """Ensure the safety migration permits audited remapping before downgrade."""
+    engine = create_async_engine(get_settings().database_url)
+    async with engine.begin() as connection:
+        identity_id = await connection.scalar(
+            text(
+                "SELECT id FROM legacy_identities "
+                "WHERE source_application_user_id = :legacy_user_id"
+            ),
+            {"legacy_user_id": legacy_user_id},
+        )
+        assert identity_id is not None
+        await connection.execute(
+            text(
+                "INSERT INTO legacy_identity_mappings "
+                "(id, legacy_identity_id, application_user_id, "
+                "mapped_by_application_user_id, revoked_at, "
+                "revoked_by_application_user_id) VALUES "
+                "(:revoked_id, :identity_id, :local_user_id, :local_user_id, now(), "
+                ":local_user_id), "
+                "(:active_id, :identity_id, :local_user_id, :local_user_id, NULL, NULL)"
+            ),
+            {
+                "revoked_id": uuid.uuid4(),
+                "active_id": uuid.uuid4(),
+                "identity_id": identity_id,
+                "local_user_id": local_user_id,
+            },
+        )
+    await engine.dispose()
+
+
 async def verify_downgrade(
     legacy_user_id: uuid.UUID,
     local_user_id: uuid.UUID,
@@ -153,6 +185,7 @@ def main() -> None:
     command.upgrade(alembic, "head")
     asyncio.run(verify_upgrade(user_id))
     local_user_id = asyncio.run(seed_local_user())
+    asyncio.run(seed_mapping_history(user_id, local_user_id))
     command.downgrade(alembic, "0011_loan_repayment_payers")
     asyncio.run(verify_downgrade(user_id, local_user_id))
     command.upgrade(alembic, "head")

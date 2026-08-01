@@ -2349,6 +2349,14 @@
       },
       "LegacyIdentityListResponse": {
         "properties": {
+          "activation_pending_count": {
+            "title": "Activation Pending Count",
+            "type": "integer"
+          },
+          "cutover_ready": {
+            "title": "Cutover Ready",
+            "type": "boolean"
+          },
           "identities": {
             "items": {
               "$ref": "#/components/schemas/LegacyIdentityResponse"
@@ -2363,7 +2371,9 @@
         },
         "required": [
           "identities",
-          "unresolved_count"
+          "unresolved_count",
+          "activation_pending_count",
+          "cutover_ready"
         ],
         "title": "LegacyIdentityListResponse",
         "type": "object"
@@ -2473,6 +2483,9 @@
           "oidc_subject": {
             "title": "Oidc Subject",
             "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/LegacyIdentityStatus"
           }
         },
         "required": [
@@ -2482,10 +2495,20 @@
           "display_name",
           "captured_at",
           "memberships",
-          "mapping"
+          "mapping",
+          "status"
         ],
         "title": "LegacyIdentityResponse",
         "type": "object"
+      },
+      "LegacyIdentityStatus": {
+        "enum": [
+          "UNMAPPED",
+          "ACTIVATION_PENDING",
+          "READY"
+        ],
+        "title": "LegacyIdentityStatus",
+        "type": "string"
       },
       "LegacyLocalAccountCreate": {
         "properties": {
@@ -2526,6 +2549,22 @@
         "title": "LegacyLocalAccountCreate",
         "type": "object"
       },
+      "LegacyMappingHistoryResponse": {
+        "properties": {
+          "mappings": {
+            "items": {
+              "$ref": "#/components/schemas/LegacyMappingSummary"
+            },
+            "title": "Mappings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "mappings"
+        ],
+        "title": "LegacyMappingHistoryResponse",
+        "type": "object"
+      },
       "LegacyMappingSummary": {
         "properties": {
           "application_user_id": {
@@ -2549,6 +2588,18 @@
             "title": "Id",
             "type": "string"
           },
+          "last_reconciled_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Reconciled At"
+          },
           "mapped_at": {
             "format": "date-time",
             "title": "Mapped At",
@@ -2558,6 +2609,30 @@
             "format": "uuid",
             "title": "Mapped By Application User Id",
             "type": "string"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "revoked_by_application_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked By Application User Id"
           },
           "username": {
             "title": "Username",
@@ -2570,7 +2645,8 @@
           "username",
           "display_name",
           "mapped_by_application_user_id",
-          "mapped_at"
+          "mapped_at",
+          "last_reconciled_at"
         ],
         "title": "LegacyMappingSummary",
         "type": "object"
@@ -7945,7 +8021,116 @@
         ]
       }
     },
+    "/api/v1/admin/legacy-identities/reconcile": {
+      "post": {
+        "operationId": "reconcile_legacy_memberships_api_v1_admin_legacy_identities_reconcile_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyIdentityListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reconcile Legacy Memberships",
+        "tags": [
+          "administration"
+        ]
+      }
+    },
     "/api/v1/admin/legacy-identities/{legacy_identity_id}/mapping": {
+      "delete": {
+        "operationId": "revoke_legacy_mapping_api_v1_admin_legacy_identities__legacy_identity_id__mapping_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "legacy_identity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Legacy Identity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revoke Legacy Mapping",
+        "tags": [
+          "administration"
+        ]
+      },
       "post": {
         "operationId": "map_legacy_identity_api_v1_admin_legacy_identities__legacy_identity_id__mapping_post",
         "parameters": [
@@ -8014,6 +8199,70 @@
           }
         ],
         "summary": "Map Legacy Identity",
+        "tags": [
+          "administration"
+        ]
+      }
+    },
+    "/api/v1/admin/legacy-identities/{legacy_identity_id}/mapping-history": {
+      "get": {
+        "operationId": "legacy_mapping_history_api_v1_admin_legacy_identities__legacy_identity_id__mapping_history_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "legacy_identity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Legacy Identity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyMappingHistoryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Legacy Mapping History",
         "tags": [
           "administration"
         ]
