@@ -4,6 +4,75 @@
  */
 
 export interface paths {
+    "/api/v1/admin/legacy-identities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Legacy Identities */
+        get: operations["list_legacy_identities_api_v1_admin_legacy_identities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/legacy-identities/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reconcile Legacy Memberships */
+        post: operations["reconcile_legacy_memberships_api_v1_admin_legacy_identities_reconcile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/legacy-identities/{legacy_identity_id}/mapping": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Map Legacy Identity */
+        post: operations["map_legacy_identity_api_v1_admin_legacy_identities__legacy_identity_id__mapping_post"];
+        /** Revoke Legacy Mapping */
+        delete: operations["revoke_legacy_mapping_api_v1_admin_legacy_identities__legacy_identity_id__mapping_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/legacy-identities/{legacy_identity_id}/mapping-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Legacy Mapping History */
+        get: operations["legacy_mapping_history_api_v1_admin_legacy_identities__legacy_identity_id__mapping_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/users": {
         parameters: {
             query?: never;
@@ -1948,6 +2017,115 @@ export interface components {
          * @enum {string}
          */
         InterestCalculationMethod: "DAILY" | "MONTHLY";
+        /** LegacyIdentityListResponse */
+        LegacyIdentityListResponse: {
+            /** Activation Pending Count */
+            activation_pending_count: number;
+            /** Cutover Ready */
+            cutover_ready: boolean;
+            /** Identities */
+            identities: components["schemas"]["LegacyIdentityResponse"][];
+            /** Unresolved Count */
+            unresolved_count: number;
+        };
+        /** LegacyIdentityMapRequest */
+        LegacyIdentityMapRequest: {
+            /** Application User Id */
+            application_user_id?: string | null;
+            new_account?: components["schemas"]["LegacyLocalAccountCreate"] | null;
+        };
+        /** LegacyIdentityMappedResponse */
+        LegacyIdentityMappedResponse: {
+            identity: components["schemas"]["LegacyIdentityResponse"];
+            /** Temporary Password */
+            temporary_password?: string | null;
+        };
+        /** LegacyIdentityResponse */
+        LegacyIdentityResponse: {
+            /**
+             * Captured At
+             * Format: date-time
+             */
+            captured_at: string;
+            /** Display Name */
+            display_name: string | null;
+            /** Email */
+            email: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            mapping: components["schemas"]["LegacyMappingSummary"] | null;
+            /** Memberships */
+            memberships: components["schemas"]["LegacyMembershipSummary"][];
+            /** Oidc Subject */
+            oidc_subject: string;
+            status: components["schemas"]["LegacyIdentityStatus"];
+        };
+        /**
+         * LegacyIdentityStatus
+         * @enum {string}
+         */
+        LegacyIdentityStatus: "UNMAPPED" | "ACTIVATION_PENDING" | "READY";
+        /** LegacyLocalAccountCreate */
+        LegacyLocalAccountCreate: {
+            /** Display Name */
+            display_name?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Username */
+            username: string;
+        };
+        /** LegacyMappingHistoryResponse */
+        LegacyMappingHistoryResponse: {
+            /** Mappings */
+            mappings: components["schemas"]["LegacyMappingSummary"][];
+        };
+        /** LegacyMappingSummary */
+        LegacyMappingSummary: {
+            /**
+             * Application User Id
+             * Format: uuid
+             */
+            application_user_id: string;
+            /** Display Name */
+            display_name: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Last Reconciled At */
+            last_reconciled_at: string | null;
+            /**
+             * Mapped At
+             * Format: date-time
+             */
+            mapped_at: string;
+            /**
+             * Mapped By Application User Id
+             * Format: uuid
+             */
+            mapped_by_application_user_id: string;
+            /** Revoked At */
+            revoked_at?: string | null;
+            /** Revoked By Application User Id */
+            revoked_by_application_user_id?: string | null;
+            /** Username */
+            username: string;
+        };
+        /** LegacyMembershipSummary */
+        LegacyMembershipSummary: {
+            /**
+             * Household Id
+             * Format: uuid
+             */
+            household_id: string;
+            /** Household Name */
+            household_name: string;
+            role: components["schemas"]["HouseholdRole"];
+        };
         /** LoanCreate */
         LoanCreate: {
             /** Account Reference Masked */
@@ -3722,6 +3900,169 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_legacy_identities_api_v1_admin_legacy_identities_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegacyIdentityListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reconcile_legacy_memberships_api_v1_admin_legacy_identities_reconcile_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegacyIdentityListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    map_legacy_identity_api_v1_admin_legacy_identities__legacy_identity_id__mapping_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                legacy_identity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegacyIdentityMapRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegacyIdentityMappedResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_legacy_mapping_api_v1_admin_legacy_identities__legacy_identity_id__mapping_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                legacy_identity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    legacy_mapping_history_api_v1_admin_legacy_identities__legacy_identity_id__mapping_history_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                legacy_identity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegacyMappingHistoryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_users_api_v1_admin_users_get: {
         parameters: {
             query?: never;

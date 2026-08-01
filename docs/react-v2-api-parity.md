@@ -21,6 +21,11 @@ decorators, so route changes require an intentional matrix update.
 | POST | `/api/v1/admin/users` | Local account creation | #33 |
 | PATCH | `/api/v1/admin/users/{user_id}` | Local account and role update | #33 |
 | POST | `/api/v1/admin/users/{user_id}/password-reset` | Reset-link issuance | #33 |
+| GET | `/api/v1/admin/legacy-identities` | Legacy identity list and unresolved count | #35 |
+| POST | `/api/v1/admin/legacy-identities/reconcile` | Final legacy membership reconciliation | #35 |
+| POST | `/api/v1/admin/legacy-identities/{legacy_identity_id}/mapping` | Legacy identity mapping | #35 |
+| DELETE | `/api/v1/admin/legacy-identities/{legacy_identity_id}/mapping` | Audited mapping revocation | #35 |
+| GET | `/api/v1/admin/legacy-identities/{legacy_identity_id}/mapping-history` | Mapping audit history | #35 |
 | GET | `/api/v1/households` | Household list and restoration | #38 |
 | POST | `/api/v1/households` | Household creation | #38 |
 | GET | `/api/v1/households/{household_id}` | Selected household | #38 |

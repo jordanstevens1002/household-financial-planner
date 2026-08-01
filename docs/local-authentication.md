@@ -25,3 +25,33 @@ Raw session and CSRF tokens are never stored in the database.
 Local sessions expire after one idle hour by default and always expire after 12 hours. Failed
 logins are temporarily blocked after the configured attempt limit, and blocked responses include
 `Retry-After`. Password changes invalidate every other session for the account.
+
+## Legacy identity migration
+
+OIDC identities are captured for migration without copying household financial records into the
+identity API. A global administrator can list them through
+`GET /api/v1/admin/legacy-identities`; the response includes identity metadata, household names and
+roles, mapping status, and the unresolved count used by the eventual authentication cutover.
+
+`POST /api/v1/admin/legacy-identities/{legacy_identity_id}/mapping` maps one identity to either an
+existing local account or a newly created standard user account. Mapping copies the identity's
+household memberships to the selected account, retaining the strongest role when that account is
+already a member. The OIDC user's memberships remain operational during the parallel migration;
+the mapping record identifies the target account and administrator who performed the mapping. A
+newly created account receives a temporary password once and must change it at first login.
+
+Mapped identities remain unresolved while the target account requires a password change, has an
+expired temporary password, is disabled, or otherwise lacks usable local credentials. Operators
+must use `unresolved_count`, `activation_pending_count`, and `cutover_ready` together rather than
+treating the existence of a mapping as proof that a user can sign in.
+
+Household access inherited from OIDC identities has separate provenance from memberships already
+held by the local account. Run `POST /api/v1/admin/legacy-identities/reconcile` immediately before
+cutover. It applies newly added memberships, role reductions, and removals while preserving the
+local account's independent access.
+
+An incorrect active mapping can be revoked with
+`DELETE /api/v1/admin/legacy-identities/{legacy_identity_id}/mapping`. Revocation restores the
+target's independently held memberships and permits the identity to be mapped again. Mapping and
+revocation history remains available to global administrators through
+`GET /api/v1/admin/legacy-identities/{legacy_identity_id}/mapping-history` for audit purposes.

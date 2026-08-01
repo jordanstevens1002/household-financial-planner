@@ -17,7 +17,7 @@ ROUTE_ROW = re.compile(
 def application_routes() -> set[tuple[str, str]]:
     """Read literal FastAPI decorator routes without importing the application."""
     routes: set[tuple[str, str]] = set()
-    sources = sorted((ROOT / "api" / "app").glob("*/router.py"))
+    sources = sorted((ROOT / "api" / "app").rglob("*router.py"))
     sources.append(ROOT / "api" / "app" / "main.py")
 
     for source in sources:
@@ -55,6 +55,15 @@ def application_routes() -> set[tuple[str, str]]:
 
 
 class ReactV2ContractTests(unittest.TestCase):
+    def test_route_discovery_includes_descriptively_named_nested_routers(self) -> None:
+        self.assertIn(
+            (
+                "POST",
+                "/api/v1/admin/legacy-identities/{legacy_identity_id}/mapping",
+            ),
+            application_routes(),
+        )
+
     def test_architecture_contract_records_non_negotiable_boundaries(self) -> None:
         contract = ARCHITECTURE.read_text(encoding="utf-8")
         normalised_contract = " ".join(contract.split())

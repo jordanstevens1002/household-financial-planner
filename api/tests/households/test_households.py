@@ -7,7 +7,7 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import HouseholdMembership, HouseholdRole
+from app.models import HouseholdMembership, HouseholdRole, LegacyIdentity
 
 
 async def create_household(client: AsyncClient, name: str = "My household") -> dict[str, str]:
@@ -19,10 +19,17 @@ async def create_household(client: AsyncClient, name: str = "My household") -> d
     return response.json()
 
 
-async def test_first_authenticated_request_provisions_user(client: AsyncClient) -> None:
+async def test_first_authenticated_request_provisions_user_and_legacy_identity(
+    client: AsyncClient, session: AsyncSession
+) -> None:
     response = await client.get("/api/v1/me")
     assert response.status_code == 200
     assert response.json()["oidc_subject"] == "test-user"
+    legacy_identity = await session.scalar(
+        select(LegacyIdentity).where(LegacyIdentity.oidc_subject == "test-user")
+    )
+    assert legacy_identity is not None
+    assert legacy_identity.source_application_user_id == UUID(response.json()["id"])
 
 
 async def test_household_currency_is_explicit(client: AsyncClient) -> None:
