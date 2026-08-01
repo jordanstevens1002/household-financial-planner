@@ -9,7 +9,7 @@ import { NotificationProvider } from './NotificationProvider';
 import { useNotification } from './notificationContext';
 
 describe('shared design components', () => {
-  it('renders typed table rows and an accessible caption', () => {
+  it('renders typed table rows with a non-visual accessible name', () => {
     render(
       <DataTable
         caption="Example balances"
@@ -25,6 +25,7 @@ describe('shared design components', () => {
     expect(
       screen.getByRole('table', { name: 'Example balances' }),
     ).toBeInTheDocument();
+    expect(screen.queryByText('Example balances')).not.toBeInTheDocument();
     expect(screen.getByText('Everyday account')).toBeInTheDocument();
   });
 
