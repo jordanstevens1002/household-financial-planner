@@ -10,6 +10,8 @@ import {
   DialogTitle,
   MenuItem,
   Stack,
+  Tab,
+  Tabs,
   TextField,
   Typography,
 } from '@mui/material';
@@ -30,6 +32,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useHousehold } from '../households/HouseholdContext';
 import { localCalendarDate } from '../people/localDate';
 import { incomeSchema, type IncomeFields } from './incomeValidation';
+import { TaxProfilesPanel } from './TaxProfilesPanel';
 
 type Access = components['schemas']['HouseholdAccessRead'];
 type Income = components['schemas']['IncomeSourceRead'];
@@ -55,6 +58,7 @@ export function IncomePage() {
   const queryClient = useQueryClient();
   const { notify } = useNotification();
   const [createOpen, setCreateOpen] = useState(false);
+  const [section, setSection] = useState<'income' | 'tax'>('income');
   const selectedPersonId = loadSelection('person');
   const people = useQuery({
     enabled: household.selected !== null,
@@ -245,37 +249,50 @@ export function IncomePage() {
           so future projections can resolve the correct amount.
         </Typography>
       </Box>
-      {canEdit ? (
-        <Button
-          onClick={() => setCreateOpen(true)}
-          sx={{ alignSelf: 'flex-start' }}
-          variant="contained"
-        >
-          Add income source
-        </Button>
+      <Tabs
+        onChange={(_, value: 'income' | 'tax') => setSection(value)}
+        value={section}
+      >
+        <Tab label="Income sources" value="income" />
+        <Tab label="Tax settings" value="tax" />
+      </Tabs>
+      {section === 'income' ? (
+        <Stack spacing={2}>
+          {canEdit ? (
+            <Button
+              onClick={() => setCreateOpen(true)}
+              sx={{ alignSelf: 'flex-start' }}
+              variant="contained"
+            >
+              Add income source
+            </Button>
+          ) : (
+            <Alert severity="info">
+              You have view-only access to this person's income sources.
+            </Alert>
+          )}
+          {incomeSources.isPending ? (
+            <CircularProgress aria-label="Loading income sources" />
+          ) : incomeSources.error ? (
+            <Alert severity="error">
+              Could not load income sources. {errorMessage(incomeSources.error)}
+            </Alert>
+          ) : incomeSources.data?.length ? (
+            <DataTable
+              caption="Income sources"
+              columns={columns}
+              getRowKey={(row) => row.id}
+              rows={incomeSources.data}
+            />
+          ) : (
+            <EmptyState
+              description="Add recurring earnings such as salary, benefits or investment income."
+              title="No income sources yet"
+            />
+          )}
+        </Stack>
       ) : (
-        <Alert severity="info">
-          You have view-only access to this person's income sources.
-        </Alert>
-      )}
-      {incomeSources.isPending ? (
-        <CircularProgress aria-label="Loading income sources" />
-      ) : incomeSources.error ? (
-        <Alert severity="error">
-          Could not load income sources. {errorMessage(incomeSources.error)}
-        </Alert>
-      ) : incomeSources.data?.length ? (
-        <DataTable
-          caption="Income sources"
-          columns={columns}
-          getRowKey={(row) => row.id}
-          rows={incomeSources.data}
-        />
-      ) : (
-        <EmptyState
-          description="Add recurring earnings such as salary, benefits or investment income."
-          title="No income sources yet"
-        />
+        <TaxProfilesPanel canEdit={canEdit} personId={person.id} />
       )}
 
       <Dialog fullWidth open={createOpen} onClose={() => setCreateOpen(false)}>
