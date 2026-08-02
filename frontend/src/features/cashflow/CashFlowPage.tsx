@@ -167,6 +167,9 @@ export function CashFlowPage() {
               )
             : [...(current ?? []), saved],
       );
+      void queryClient.invalidateQueries({
+        queryKey: ['household-cashflow', householdId],
+      });
       setCreateOpen(false);
       setEditing(null);
       form.reset(defaults());
@@ -184,6 +187,9 @@ export function CashFlowPage() {
         ['household-expenses', householdId],
         (current) => (current ?? []).filter((item) => item.id !== deleted.id),
       );
+      void queryClient.invalidateQueries({
+        queryKey: ['household-cashflow', householdId],
+      });
       setDeleting(null);
       notify('Expense removed', 'success');
     },

@@ -37,7 +37,7 @@ const projection = {
       periodic_repayment: '1384.62',
       property_id: null,
       repayment_frequency: 'FORTNIGHTLY',
-      warnings: [],
+      warnings: ['Inactive payer remains historically responsible.'],
     },
   ],
   monthly_expenses: '3500.00',
@@ -95,7 +95,7 @@ describe('household cash-flow summary', () => {
     expect(screen.getByText('NZ$38,000.00')).toBeVisible();
     expect(screen.getByText('NZ$3,166.67')).toBeVisible();
     expect(
-      screen.getByText('Latest installed tax rules used for this future date.'),
+      screen.getByText(/Alex Planner: Latest installed tax rules used/i),
     ).toBeVisible();
     const people = screen.getByRole('table', {
       name: 'Person cash-flow projections',
@@ -110,6 +110,10 @@ describe('household cash-flow summary', () => {
     expect(loans).toHaveTextContent('NZ$3,000.00');
     expect(loans).toHaveTextContent('Alex Planner 100.00%');
     expect(loans).toHaveTextContent('Yes');
+    expect(loans).toHaveTextContent(
+      'Home loan: Inactive payer remains historically responsible.',
+    );
+    expect(screen.getByText('Results as of 2026-08-02.')).toBeVisible();
   });
 
   it('requests a newly selected position date', async () => {
@@ -139,6 +143,37 @@ describe('household cash-flow summary', () => {
         true,
       ),
     );
+  });
+
+  it('refetches when refreshing the currently selected date', async () => {
+    const user = userEvent.setup();
+    const request = vi.fn<typeof fetch>(() =>
+      Promise.resolve(response(projection)),
+    );
+    vi.stubGlobal('fetch', request);
+    renderSummary();
+    await screen.findByText('Results as of 2026-08-02.');
+
+    await user.click(screen.getByRole('button', { name: 'Refresh position' }));
+
+    await waitFor(() => expect(request).toHaveBeenCalledTimes(2));
+  });
+
+  it('marks edited dates as pending while retaining the result date', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>(() => Promise.resolve(response(projection))),
+    );
+    renderSummary();
+    await screen.findByText('Results as of 2026-08-02.');
+
+    const date = screen.getByLabelText('Position date');
+    await user.clear(date);
+    await user.type(date, '2028-07-01');
+
+    expect(screen.getByText(/position date has changed/i)).toBeVisible();
+    expect(screen.getByText(/Results as of 2026-08-02/i)).toBeVisible();
   });
 
   it('validates the position date without discarding the current result', async () => {

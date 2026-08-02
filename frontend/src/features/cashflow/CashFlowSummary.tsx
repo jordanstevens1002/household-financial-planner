@@ -69,6 +69,7 @@ export function CashFlowSummary({
     retry: false,
   });
   const displayCurrency = projection.data?.currency ?? currency;
+  const dateIsDirty = draftDate !== asOf;
 
   const applyDate = () => {
     if (!validDate(draftDate)) {
@@ -76,7 +77,11 @@ export function CashFlowSummary({
       return;
     }
     setDateError('');
-    setAsOf(draftDate);
+    if (draftDate === asOf) {
+      void projection.refetch();
+    } else {
+      setAsOf(draftDate);
+    }
   };
 
   const personColumns: DataColumn<PersonProjection>[] = [
@@ -106,6 +111,14 @@ export function CashFlowSummary({
       key: 'method',
       label: 'Tax method',
       render: (row) => row.calculation_mode,
+    },
+    {
+      key: 'warnings',
+      label: 'Warnings',
+      render: (row) =>
+        row.warnings.length
+          ? `${row.display_name}: ${row.warnings.join(' ')}`
+          : 'None',
     },
   ];
   const loanColumns: DataColumn<LoanProjection>[] = [
@@ -144,6 +157,14 @@ export function CashFlowSummary({
       label: 'Included in total',
       render: (row) => (row.included_in_household_total ? 'Yes' : 'No'),
     },
+    {
+      key: 'warnings',
+      label: 'Warnings',
+      render: (row) =>
+        row.warnings.length
+          ? `${row.display_name}: ${row.warnings.join(' ')}`
+          : 'None',
+    },
   ];
 
   return (
@@ -179,6 +200,12 @@ export function CashFlowSummary({
         </Alert>
       ) : projection.data ? (
         <Stack spacing={3}>
+          <Alert severity={dateIsDirty ? 'info' : 'success'}>
+            Results as of {projection.data.as_of}.
+            {dateIsDirty
+              ? ' The position date has changed; refresh to calculate it.'
+              : ''}
+          </Alert>
           {projection.data.currency !== currency ? (
             <Alert severity="warning">
               The calculation returned {projection.data.currency}, while this
@@ -244,11 +271,6 @@ export function CashFlowSummary({
               value={projection.data.monthly_surplus}
             />
           </Stack>
-          {projection.data.warnings.map((warning) => (
-            <Alert key={warning} severity="warning">
-              {warning}
-            </Alert>
-          ))}
           <Typography variant="h2">Income and tax by person</Typography>
           {projection.data.people.length ? (
             <DataTable
