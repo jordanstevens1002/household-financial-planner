@@ -12510,6 +12510,16 @@
             }
           },
           {
+            "in": "query",
+            "name": "replace_existing",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Replace Existing",
+              "type": "boolean"
+            }
+          },
+          {
             "in": "header",
             "name": "X-Development-Subject",
             "required": false,
