@@ -66,6 +66,10 @@ describe('application shell', () => {
       await screen.findByRole('heading', { name: 'Household overview' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('navigation')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Income & tax' })).toHaveAttribute(
+      'href',
+      '/income',
+    );
     expect(
       screen.queryByRole('link', { name: 'User administration' }),
     ).not.toBeInTheDocument();
