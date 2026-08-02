@@ -32,6 +32,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useHousehold } from '../households/HouseholdContext';
 import { localCalendarDate } from '../people/localDate';
 import { incomeSchema, type IncomeFields } from './incomeValidation';
+import { TaxCalculatorPanel } from './TaxCalculatorPanel';
 import { TaxProfilesPanel } from './TaxProfilesPanel';
 
 type Access = components['schemas']['HouseholdAccessRead'];
@@ -58,7 +59,9 @@ export function IncomePage() {
   const queryClient = useQueryClient();
   const { notify } = useNotification();
   const [createOpen, setCreateOpen] = useState(false);
-  const [section, setSection] = useState<'income' | 'tax'>('income');
+  const [section, setSection] = useState<'calculator' | 'income' | 'tax'>(
+    'income',
+  );
   const selectedPersonId = loadSelection('person');
   const people = useQuery({
     enabled: household.selected !== null,
@@ -250,11 +253,14 @@ export function IncomePage() {
         </Typography>
       </Box>
       <Tabs
-        onChange={(_, value: 'income' | 'tax') => setSection(value)}
+        onChange={(_, value: 'calculator' | 'income' | 'tax') =>
+          setSection(value)
+        }
         value={section}
       >
         <Tab label="Income sources" value="income" />
         <Tab label="Tax settings" value="tax" />
+        <Tab label="Tax estimate" value="calculator" />
       </Tabs>
       {section === 'income' ? (
         <Stack spacing={2}>
@@ -291,8 +297,10 @@ export function IncomePage() {
             />
           )}
         </Stack>
-      ) : (
+      ) : section === 'tax' ? (
         <TaxProfilesPanel canEdit={canEdit} personId={person.id} />
+      ) : (
+        <TaxCalculatorPanel />
       )}
 
       <Dialog fullWidth open={createOpen} onClose={() => setCreateOpen(false)}>
