@@ -135,6 +135,16 @@ class HouseholdExpenseCreate(DatedRecord):
     is_essential: bool
     notes: str | None = Field(default=None, max_length=2000)
 
+    @model_validator(mode="after")
+    def one_off_has_no_growth(self) -> HouseholdExpenseCreate:
+        if self.frequency == PaymentFrequency.ONCE and self.annual_growth_rate is not None:
+            raise ValueError("one-off expenses cannot have an annual growth rate")
+        return self
+
+
+class HouseholdExpenseUpdate(HouseholdExpenseCreate):
+    pass
+
 
 class HouseholdExpenseRead(HouseholdExpenseCreate, ORMModel):
     id: uuid.UUID

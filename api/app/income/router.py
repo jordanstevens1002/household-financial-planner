@@ -16,6 +16,7 @@ from app.income.schemas import (
     HouseholdCashflowRead,
     HouseholdExpenseCreate,
     HouseholdExpenseRead,
+    HouseholdExpenseUpdate,
     IncomeSourceCreate,
     IncomeSourceRead,
     LoanRepaymentAllocationRead,
@@ -420,7 +421,7 @@ async def list_household_expenses(
 async def create_household_expense(
     household_id: uuid.UUID,
     payload: HouseholdExpenseCreate,
-    _: HouseholdMembership = Depends(require_household_role(HouseholdRole.EDITOR)),
+    actor: HouseholdMembership = Depends(require_household_role(HouseholdRole.EDITOR)),
     session: AsyncSession = Depends(get_session),
 ) -> HouseholdExpense:
     await _validate_lookup(payload.category_id, "household_expense_type", session)
@@ -432,7 +433,96 @@ async def create_household_expense(
     session.add(record)
     await session.commit()
     await session.refresh(record)
+    logger.info(
+        "household_expense_created",
+        actor_user_id=str(actor.application_user_id),
+        household_id=str(household_id),
+        expense_id=str(record.id),
+        resulting_amount=str(record.amount),
+    )
     return record
+
+
+async def _household_expense(
+    household_id: uuid.UUID,
+    expense_id: uuid.UUID,
+    session: AsyncSession,
+) -> HouseholdExpense:
+    expense = await session.get(HouseholdExpense, expense_id)
+    if expense is None or expense.household_id != household_id:
+        raise HTTPException(404, "Household expense not found")
+    return expense
+
+
+async def _validate_expense_person(
+    household_id: uuid.UUID,
+    person_id: uuid.UUID | None,
+    session: AsyncSession,
+) -> None:
+    if person_id is None:
+        return
+    person = await session.get(Person, person_id)
+    if person is None or person.household_id != household_id:
+        raise HTTPException(422, "Expense person must belong to the household")
+
+
+@router.patch(
+    "/households/{household_id}/expenses/{expense_id}",
+    response_model=HouseholdExpenseRead,
+)
+async def update_household_expense(
+    household_id: uuid.UUID,
+    expense_id: uuid.UUID,
+    payload: HouseholdExpenseUpdate,
+    actor: HouseholdMembership = Depends(require_household_role(HouseholdRole.EDITOR)),
+    session: AsyncSession = Depends(get_session),
+) -> HouseholdExpense:
+    expense = await _household_expense(household_id, expense_id, session)
+    await _validate_lookup(payload.category_id, "household_expense_type", session)
+    await _validate_expense_person(household_id, payload.person_id, session)
+    previous_amount = expense.amount
+    previous_effective_to = expense.effective_to
+    for field, value in payload.model_dump().items():
+        setattr(expense, field, value)
+    await session.commit()
+    await session.refresh(expense)
+    logger.info(
+        "household_expense_updated",
+        actor_user_id=str(actor.application_user_id),
+        household_id=str(household_id),
+        expense_id=str(expense_id),
+        previous_amount=str(previous_amount),
+        resulting_amount=str(expense.amount),
+        previous_effective_to=str(previous_effective_to),
+        resulting_effective_to=str(expense.effective_to),
+    )
+    return expense
+
+
+@router.delete(
+    "/households/{household_id}/expenses/{expense_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_household_expense(
+    household_id: uuid.UUID,
+    expense_id: uuid.UUID,
+    actor: HouseholdMembership = Depends(require_household_role(HouseholdRole.EDITOR)),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    expense = await _household_expense(household_id, expense_id, session)
+    display_name = expense.display_name
+    amount = expense.amount
+    await session.delete(expense)
+    await session.commit()
+    logger.info(
+        "household_expense_deleted",
+        actor_user_id=str(actor.application_user_id),
+        household_id=str(household_id),
+        expense_id=str(expense_id),
+        display_name=display_name,
+        previous_amount=str(amount),
+        resulting_amount=None,
+    )
 
 
 async def _person_projection(

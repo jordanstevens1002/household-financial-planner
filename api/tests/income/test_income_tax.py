@@ -1,5 +1,6 @@
 """Income and tax API tests."""
 
+import logging
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 
@@ -84,6 +85,70 @@ async def test_tax_provider_discovery_uses_neutral_registry(client: AsyncClient)
             "supported_tax_years": ["2025-26"],
         }
     ]
+
+
+async def test_household_expense_can_be_corrected_deleted_and_audited(
+    client: AsyncClient,
+    finance_lookups: dict[str, LookupItem],
+    caplog,
+) -> None:
+    household, person = await create_person(client)
+    payload = {
+        "amount": 125.50,
+        "category_id": str(finance_lookups["expense"].id),
+        "display_name": "Groceries",
+        "effective_from": "2026-01-01",
+        "frequency": "WEEKLY",
+        "is_essential": True,
+        "person_id": person["id"],
+    }
+    with caplog.at_level(logging.INFO):
+        created = await client.post(f"/api/v1/households/{household['id']}/expenses", json=payload)
+        assert created.status_code == 201
+        expense_id = created.json()["id"]
+        corrected = await client.patch(
+            f"/api/v1/households/{household['id']}/expenses/{expense_id}",
+            json=payload
+            | {
+                "amount": 130,
+                "effective_to": "2026-12-31",
+                "person_id": None,
+            },
+        )
+        assert corrected.status_code == 200
+        assert corrected.json()["amount"] == "130.00"
+        assert corrected.json()["effective_to"] == "2026-12-31"
+        assert corrected.json()["person_id"] is None
+        deleted = await client.delete(f"/api/v1/households/{household['id']}/expenses/{expense_id}")
+        assert deleted.status_code == 204
+
+    listed = await client.get(f"/api/v1/households/{household['id']}/expenses")
+    assert listed.json() == []
+    assert "household_expense_created" in caplog.text
+    assert "household_expense_updated" in caplog.text
+    assert "household_expense_deleted" in caplog.text
+    assert expense_id in caplog.text
+    assert household["id"] in caplog.text
+
+
+async def test_one_off_expense_rejects_growth_assumption(
+    client: AsyncClient, finance_lookups: dict[str, LookupItem]
+) -> None:
+    household = await create_household(client)
+    response = await client.post(
+        f"/api/v1/households/{household['id']}/expenses",
+        json={
+            "amount": 500,
+            "annual_growth_rate": 3,
+            "category_id": str(finance_lookups["expense"].id),
+            "display_name": "Replacement appliance",
+            "effective_from": "2026-01-01",
+            "frequency": "ONCE",
+            "is_essential": True,
+        },
+    )
+    assert response.status_code == 422
+    assert "one-off expenses cannot have" in str(response.json())
 
 
 def test_australian_2025_26_tax_engine_includes_lito_medicare_and_help() -> None:

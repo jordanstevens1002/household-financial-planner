@@ -450,6 +450,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/households/{household_id}/expenses/{expense_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Household Expense */
+        delete: operations["delete_household_expense_api_v1_households__household_id__expenses__expense_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Household Expense */
+        patch: operations["update_household_expense_api_v1_households__household_id__expenses__expense_id__patch"];
+        trace?: never;
+    };
     "/api/v1/households/{household_id}/goals": {
         parameters: {
             query?: never;
@@ -2024,6 +2042,34 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Is Essential */
+            is_essential: boolean;
+            /** Notes */
+            notes?: string | null;
+            /** Person Id */
+            person_id?: string | null;
+        };
+        /** HouseholdExpenseUpdate */
+        HouseholdExpenseUpdate: {
+            /** Amount */
+            amount: number | string;
+            /** Annual Growth Rate */
+            annual_growth_rate?: number | string | null;
+            /**
+             * Category Id
+             * Format: uuid
+             */
+            category_id: string;
+            /** Display Name */
+            display_name: string;
+            /**
+             * Effective From
+             * Format: date
+             */
+            effective_from: string;
+            /** Effective To */
+            effective_to?: string | null;
+            frequency: components["schemas"]["PaymentFrequency"];
             /** Is Essential */
             is_essential: boolean;
             /** Notes */
@@ -5030,6 +5076,76 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdExpenseRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_household_expense_api_v1_households__household_id__expenses__expense_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                household_id: string;
+                expense_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_household_expense_api_v1_households__household_id__expenses__expense_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                household_id: string;
+                expense_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HouseholdExpenseUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
