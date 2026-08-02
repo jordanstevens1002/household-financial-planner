@@ -154,8 +154,11 @@ test('records a dated household expense', async ({ page }) => {
   await expect(
     page.getByRole('table', { name: 'Automatic loan repayments' }),
   ).toContainText('Browser home loan');
+  await page
+    .getByRole('button', { name: 'Warnings for Browser Person' })
+    .hover();
   await expect(
-    page.getByText(/Browser Person: Latest installed tax rules used\./),
+    page.getByText('Latest installed tax rules used.'),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Add expense' }).click();
   await page.getByLabel('Expense name').fill('Electricity');

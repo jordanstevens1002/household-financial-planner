@@ -94,9 +94,6 @@ describe('household cash-flow summary', () => {
     expect((await screen.findAllByText('NZ$80,000.00'))[0]).toBeVisible();
     expect(screen.getByText('NZ$38,000.00')).toBeVisible();
     expect(screen.getByText('NZ$3,166.67')).toBeVisible();
-    expect(
-      screen.getByText(/Alex Planner: Latest installed tax rules used/i),
-    ).toBeVisible();
     const people = screen.getByRole('table', {
       name: 'Person cash-flow projections',
     });
@@ -110,9 +107,23 @@ describe('household cash-flow summary', () => {
     expect(loans).toHaveTextContent('NZ$3,000.00');
     expect(loans).toHaveTextContent('Alex Planner 100.00%');
     expect(loans).toHaveTextContent('Yes');
-    expect(loans).toHaveTextContent(
-      'Home loan: Inactive payer remains historically responsible.',
+    await userEvent.hover(
+      within(people).getByRole('button', { name: 'Warnings for Alex Planner' }),
     );
+    expect(
+      await screen.findByText(/Latest installed tax rules used/i),
+    ).toBeVisible();
+    await userEvent.unhover(
+      within(people).getByRole('button', { name: 'Warnings for Alex Planner' }),
+    );
+    await userEvent.hover(
+      within(loans).getByRole('button', { name: 'Warnings for Home loan' }),
+    );
+    expect(
+      await screen.findByText(
+        'Inactive payer remains historically responsible.',
+      ),
+    ).toBeVisible();
     expect(screen.getByText('Results as of 2026-08-02.')).toBeVisible();
   });
 

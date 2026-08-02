@@ -2,9 +2,11 @@ import {
   Alert,
   Button,
   CircularProgress,
+  IconButton,
   Paper,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
@@ -47,6 +49,31 @@ function SummaryAmount({
         {formatCurrency(value, currency)}
       </Typography>
     </Paper>
+  );
+}
+
+function WarningInfo({ name, warnings }: { name: string; warnings: string[] }) {
+  if (!warnings.length) return '—';
+  return (
+    <Tooltip
+      arrow
+      describeChild
+      title={warnings.map((warning) => (
+        <Typography key={warning} variant="body2">
+          {warning}
+        </Typography>
+      ))}
+    >
+      <IconButton aria-label={`Warnings for ${name}`} size="small">
+        <Typography
+          aria-hidden="true"
+          component="span"
+          sx={{ fontWeight: 700, lineHeight: 1 }}
+        >
+          ⓘ
+        </Typography>
+      </IconButton>
+    </Tooltip>
   );
 }
 
@@ -115,10 +142,9 @@ export function CashFlowSummary({
     {
       key: 'warnings',
       label: 'Warnings',
-      render: (row) =>
-        row.warnings.length
-          ? `${row.display_name}: ${row.warnings.join(' ')}`
-          : 'None',
+      render: (row) => (
+        <WarningInfo name={row.display_name} warnings={row.warnings} />
+      ),
     },
   ];
   const loanColumns: DataColumn<LoanProjection>[] = [
@@ -160,10 +186,9 @@ export function CashFlowSummary({
     {
       key: 'warnings',
       label: 'Warnings',
-      render: (row) =>
-        row.warnings.length
-          ? `${row.display_name}: ${row.warnings.join(' ')}`
-          : 'None',
+      render: (row) => (
+        <WarningInfo name={row.display_name} warnings={row.warnings} />
+      ),
     },
   ];
 
