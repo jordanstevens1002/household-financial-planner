@@ -130,7 +130,7 @@ async function renderPage() {
   router.update({
     history: createMemoryHistory({ initialEntries: ['/properties'] }),
   });
-  render(
+  const view = render(
     <ThemeProvider theme={appTheme}>
       <CssBaseline />
       <NotificationProvider>
@@ -149,6 +149,7 @@ async function renderPage() {
   await waitFor(() => expect(router.state.status).toBe('idle'), {
     timeout: 10_000,
   });
+  return view;
 }
 
 describe('property overview workflows', () => {
@@ -320,15 +321,32 @@ describe('property overview workflows', () => {
 
   it('creates a current position with only its dated baseline fields', async () => {
     const user = userEvent.setup();
+    const createdPropertyId = 'd5dab911-5253-4cb1-b854-183faba41f4b';
     let saved: Record<string, unknown> | null = null;
     let created = false;
+    let refetchReleased = false;
+    let resolveRefetch!: (response: Response) => void;
+    const delayedSummary = new Promise<Response>((resolve) => {
+      resolveRefetch = resolve;
+    });
     const fallback = standardFetch([]);
     vi.stubGlobal(
       'fetch',
       vi.fn<typeof fetch>((input, init) => {
         const path = pathOf(input);
         if (path.endsWith('/property-summaries')) {
-          return Promise.resolve(response(created ? [summary] : []));
+          if (!created) return Promise.resolve(response([]));
+          return refetchReleased
+            ? Promise.resolve(
+                response([
+                  {
+                    ...summary,
+                    display_name: 'New current home',
+                    id: createdPropertyId,
+                  },
+                ]),
+              )
+            : delayedSummary;
         }
         if (path.endsWith('/reference/countries')) {
           return Promise.resolve(response([]));
@@ -344,12 +362,16 @@ describe('property overview workflows', () => {
                   id: '7023926d-f832-4190-94b6-6464df29dac2',
                   loan_balance_total: '310000.00',
                   notes: null,
-                  property_id: propertyId,
+                  property_id: createdPropertyId,
                   property_value: '780000.00',
                   status_id: statusId,
                 },
                 ownership: [],
-                property: detail,
+                property: {
+                  ...detail,
+                  display_name: 'New current home',
+                  id: createdPropertyId,
+                },
                 valuation: null,
                 warnings: [],
               },
@@ -357,10 +379,20 @@ describe('property overview workflows', () => {
             ),
           );
         }
+        if (path.endsWith(`/properties/${createdPropertyId}`)) {
+          return Promise.resolve(
+            response({ ...detail, id: createdPropertyId }),
+          );
+        }
+        if (path.includes(`/properties/${createdPropertyId}/state?`)) {
+          return Promise.resolve(
+            response({ ...resolvedState, property_id: createdPropertyId }),
+          );
+        }
         return fallback(input, init);
       }),
     );
-    await renderPage();
+    const view = await renderPage();
 
     await user.click(
       await screen.findByRole('button', { name: 'Add property' }),
@@ -378,7 +410,12 @@ describe('property overview workflows', () => {
     await user.click(screen.getByRole('button', { name: 'Save property' }));
 
     expect(await screen.findByText('Property added')).toBeVisible();
-    await screen.findByRole('table', { name: 'Household properties' });
+    expect(localStorage.getItem(selectionKeys.property)).toBe(
+      createdPropertyId,
+    );
+    expect(
+      await screen.findByRole('button', { name: 'Selected' }),
+    ).toBeVisible();
     expect(saved).toMatchObject({
       baseline: {
         loan_balance_total: '310000',
@@ -392,6 +429,27 @@ describe('property overview workflows', () => {
         purchase_price: null,
       },
     });
+    refetchReleased = true;
+    resolveRefetch(
+      response([
+        {
+          ...summary,
+          display_name: 'New current home',
+          id: createdPropertyId,
+        },
+      ]),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole('table')).toHaveTextContent('New current home'),
+    );
+    view.unmount();
+    await renderPage();
+    expect(
+      await screen.findByRole('button', { name: 'Selected' }),
+    ).toBeVisible();
+    expect(localStorage.getItem(selectionKeys.property)).toBe(
+      createdPropertyId,
+    );
   });
 
   it('creates purchase history without implying current value or debt', async () => {
@@ -403,7 +461,9 @@ describe('property overview workflows', () => {
       vi.fn<typeof fetch>((input, init) => {
         const path = pathOf(input);
         if (path.endsWith('/reference/countries')) {
-          return Promise.resolve(response([]));
+          return Promise.resolve(
+            response({ detail: 'Country catalogue unavailable' }, 503),
+          );
         }
         if (path.endsWith('/properties/wizard') && init?.method === 'POST') {
           saved = JSON.parse(init.body as string) as Record<string, unknown>;
@@ -437,6 +497,13 @@ describe('property overview workflows', () => {
     expect(
       screen.getByText(/does not mean the property is debt-free/i),
     ).toBeVisible();
+    expect(
+      await screen.findByText(/household country remains selected/i),
+    ).toBeVisible();
+    await user.click(screen.getByText(/Add the property address/i));
+    expect(screen.getByLabelText('Country (optional)')).toHaveValue(
+      '🌐 NZ (household country)',
+    );
     await user.type(screen.getByLabelText('Property name'), 'Earlier purchase');
     await user.click(screen.getByLabelText('Property type'));
     await user.click(screen.getByRole('option', { name: 'House' }));
@@ -451,6 +518,7 @@ describe('property overview workflows', () => {
       baseline: null,
       mode: 'HISTORICAL_PURCHASE',
       property: {
+        country_code: 'NZ',
         display_name: 'Earlier purchase',
         purchase_date: '2020-02-01',
         purchase_price: '520000',

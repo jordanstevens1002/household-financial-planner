@@ -298,7 +298,11 @@ export function PropertiesPage() {
         />
       ) : (
         <EmptyState
-          description="Property creation will be added in the next review slice."
+          description={
+            access.data?.can_edit
+              ? 'Use Add property to record where things stand now or enter purchase history.'
+              : 'No properties have been recorded for this household.'
+          }
           title="No properties recorded"
         />
       )}

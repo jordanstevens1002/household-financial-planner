@@ -25,6 +25,7 @@ import { localCalendarDate } from '../people/localDate';
 
 type Country = components['schemas']['CountryRead'];
 type Lookup = components['schemas']['LookupRead'];
+type PropertySummary = components['schemas']['PropertySummaryRead'];
 type PropertyWizard = components['schemas']['PropertyWizardRead'];
 
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
@@ -213,6 +214,28 @@ export function PropertyCreateDialog({
         },
       ),
     onSuccess: async (created) => {
+      const summary: PropertySummary = {
+        currency: created.property.default_currency,
+        current_status_id: created.property.current_status_id,
+        current_value: created.baseline?.property_value ?? null,
+        display_name: created.property.display_name,
+        id: created.property.id,
+        position_date: created.baseline?.baseline_date ?? null,
+        property_type_id: created.property.property_type_id,
+        purchase_date: created.property.purchase_date ?? null,
+        purchase_price: created.property.purchase_price ?? null,
+        setup_mode: created.baseline
+          ? 'CURRENT_SNAPSHOT'
+          : 'HISTORICAL_PURCHASE',
+        total_property_debt: created.baseline?.loan_balance_total ?? null,
+      };
+      queryClient.setQueryData<PropertySummary[]>(
+        ['property-summaries', householdId],
+        (current = []) => [
+          ...current.filter((property) => property.id !== summary.id),
+          summary,
+        ],
+      );
       onCreated(created.property.id);
       form.reset(defaults(jurisdiction));
       onClose();
@@ -374,26 +397,44 @@ export function PropertyCreateDialog({
                 <Controller
                   control={form.control}
                   name="countryCode"
-                  render={({ field }) => (
-                    <Autocomplete
-                      getOptionLabel={(option) =>
-                        `${option.flag} ${option.display_name}`
-                      }
-                      loading={countries.isPending}
-                      onChange={(_, option) =>
-                        field.onChange(option?.code ?? '')
-                      }
-                      options={countries.data ?? []}
-                      value={
-                        (countries.data ?? []).find(
-                          (country) => country.code === field.value,
-                        ) ?? null
-                      }
-                      renderInput={(params) => (
-                        <TextField {...params} label="Country (optional)" />
-                      )}
-                    />
-                  )}
+                  render={({ field }) => {
+                    const discovered = countries.data ?? [];
+                    const fallback =
+                      field.value &&
+                      !discovered.some(
+                        (country) => country.code === field.value,
+                      )
+                        ? {
+                            code: field.value,
+                            display_name: `${field.value} (household country)`,
+                            flag: '🌐',
+                            recommended_currency: null,
+                          }
+                        : null;
+                    const options = fallback
+                      ? [fallback, ...discovered]
+                      : discovered;
+                    return (
+                      <Autocomplete
+                        getOptionLabel={(option) =>
+                          `${option.flag} ${option.display_name}`
+                        }
+                        loading={countries.isPending}
+                        onChange={(_, option) =>
+                          field.onChange(option?.code ?? '')
+                        }
+                        options={options}
+                        value={
+                          options.find(
+                            (country) => country.code === field.value,
+                          ) ?? null
+                        }
+                        renderInput={(params) => (
+                          <TextField {...params} label="Country (optional)" />
+                        )}
+                      />
+                    );
+                  }}
                 />
                 <TextField
                   label="Notes (optional)"
@@ -405,8 +446,8 @@ export function PropertyCreateDialog({
             </AdvancedSection>
             {countries.error ? (
               <Alert severity="warning">
-                Countries could not be loaded. The property can still be saved
-                without a country.
+                Countries could not be loaded. The household country remains
+                selected; clear it if this property is elsewhere.
               </Alert>
             ) : null}
             {createProperty.error ? (
