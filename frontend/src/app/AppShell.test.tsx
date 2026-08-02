@@ -4,6 +4,7 @@ import {
   createMemoryHistory,
   type AnyRouter,
 } from '@tanstack/react-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -16,6 +17,9 @@ import { createAppRouter } from './router';
 import { appTheme } from './theme';
 
 async function renderRoute(path = '/') {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   const router = createAppRouter();
   router.update({
     history: createMemoryHistory({ initialEntries: [path] }),
@@ -25,9 +29,11 @@ async function renderRoute(path = '/') {
     <ThemeProvider theme={appTheme}>
       <CssBaseline />
       <NotificationProvider>
-        <AuthContext.Provider value={authenticated}>
-          <RouterProvider router={router as AnyRouter} />
-        </AuthContext.Provider>
+        <QueryClientProvider client={queryClient}>
+          <AuthContext.Provider value={authenticated}>
+            <RouterProvider router={router as AnyRouter} />
+          </AuthContext.Provider>
+        </QueryClientProvider>
       </NotificationProvider>
     </ThemeProvider>,
   );
@@ -76,10 +82,9 @@ describe('application shell', () => {
 
     await user.click(screen.getByRole('link', { name: 'Properties' }));
     expect(
-      await screen.findByRole('heading', {
-        name: 'Properties is coming soon',
-      }),
+      await screen.findByRole('heading', { name: 'Properties' }),
     ).toBeInTheDocument();
+    expect(screen.getByText('No household selected')).toBeInTheDocument();
   });
 
   it('shows preview details and notifications', async () => {

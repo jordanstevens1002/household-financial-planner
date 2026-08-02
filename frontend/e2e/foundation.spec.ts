@@ -30,9 +30,8 @@ test('serves the React application shell at a desktop viewport', async ({
   ).toBeVisible();
 
   await page.getByRole('link', { name: 'Properties' }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Properties is coming soon' }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Properties' })).toBeVisible();
+  await expect(page.getByText('No household selected')).toBeVisible();
   await expect(page).toHaveURL(/\/properties$/);
 });
 

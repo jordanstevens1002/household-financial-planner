@@ -130,7 +130,7 @@ describe('local authentication flow', () => {
         );
       }),
     );
-    await renderApplication('/properties');
+    await renderApplication('/retirement');
 
     await user.type(await screen.findByLabelText('Username'), 'administrator');
     await user.type(screen.getByLabelText('Password'), 'incorrect password');
@@ -147,7 +147,7 @@ describe('local authentication flow', () => {
     );
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(
-      await screen.findByRole('heading', { name: 'Properties is coming soon' }),
+      await screen.findByRole('heading', { name: 'Retirement is coming soon' }),
     ).toBeInTheDocument();
   });
 
