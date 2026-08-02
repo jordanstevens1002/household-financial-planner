@@ -7,6 +7,7 @@ test('selects and restores a dated property position', async ({ page }) => {
   const typeId = '16b3f01b-ff76-451f-a4bd-a2ddf89834fd';
   const statusId = '85e30193-a324-4d22-9065-e25d819f6530';
   const requestedDates: string[] = [];
+  let wizardPayload: Record<string, unknown> | null = null;
   await page.addInitScript((id) => {
     localStorage.setItem('hfp.selection.household', id);
   }, householdId);
@@ -41,6 +42,57 @@ test('selects and restores a dated property position', async ({ page }) => {
             jurisdiction: 'NZ',
           },
         ],
+      });
+      return;
+    }
+    if (path.endsWith(`/households/${householdId}/access`)) {
+      await route.fulfill({
+        contentType: 'application/json',
+        json: { can_edit: true, can_manage: true, role: 'OWNER' },
+      });
+      return;
+    }
+    if (path.endsWith('/reference/countries')) {
+      await route.fulfill({ contentType: 'application/json', json: [] });
+      return;
+    }
+    if (path.endsWith('/properties/wizard') && request.method() === 'POST') {
+      wizardPayload = request.postDataJSON() as Record<string, unknown>;
+      await route.fulfill({
+        contentType: 'application/json',
+        json: {
+          baseline: {
+            baseline_date: '2026-08-02',
+            id: '7023926d-f832-4190-94b6-6464df29dac2',
+            loan_balance_total: '250000.00',
+            notes: null,
+            property_id: propertyId,
+            property_value: '810000.00',
+            status_id: statusId,
+          },
+          ownership: [],
+          property: {
+            address_line_1: null,
+            address_line_2: null,
+            country_code: null,
+            current_status_id: statusId,
+            default_currency: 'NZD',
+            display_name: 'New current home',
+            household_id: householdId,
+            id: propertyId,
+            notes: null,
+            postal_code: null,
+            property_type_id: typeId,
+            purchase_date: null,
+            purchase_price: null,
+            sale_date: null,
+            state_or_region: null,
+            suburb_or_locality: null,
+          },
+          valuation: null,
+          warnings: [],
+        },
+        status: 201,
       });
       return;
     }
@@ -155,4 +207,30 @@ test('selects and restores a dated property position', async ({ page }) => {
   await page.getByRole('button', { name: 'Refresh position' }).click();
   await expect.poll(() => requestedDates).toContain('2028-07-01');
   await expect(page.getByText(/Results as of 2028-07-01/)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Add property' }).click();
+  await page.getByLabel('Property name').fill('New current home');
+  await page.getByLabel('Property type').click();
+  await page.getByRole('option', { name: 'House' }).click();
+  await page.getByLabel('Current use').click();
+  await page.getByRole('option', { name: 'Home' }).click();
+  await page.getByLabel('Property value (NZD)').fill('810000');
+  await page.getByLabel('Total property debt (NZD)').fill('250000');
+  await page.getByRole('button', { name: 'Save property' }).click();
+  await expect(page.getByText('Property added')).toBeVisible();
+  await expect
+    .poll(() => wizardPayload)
+    .toMatchObject({
+      baseline: {
+        loan_balance_total: '250000',
+        property_value: '810000',
+        status_id: statusId,
+      },
+      mode: 'CURRENT_SNAPSHOT',
+      property: {
+        display_name: 'New current home',
+        purchase_date: null,
+        purchase_price: null,
+      },
+    });
 });

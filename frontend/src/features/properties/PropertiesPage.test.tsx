@@ -99,6 +99,10 @@ function standardFetch(summaries: unknown = [summary]) {
       return Promise.resolve(response({ account }));
     if (path.endsWith('/households'))
       return Promise.resolve(response([household]));
+    if (path.endsWith(`/households/${householdId}/access`))
+      return Promise.resolve(
+        response({ can_edit: true, can_manage: true, role: 'OWNER' }),
+      );
     if (path.endsWith('/property-summaries'))
       return Promise.resolve(response(summaries));
     if (path.endsWith('/lookups/property_type'))
@@ -230,6 +234,10 @@ describe('property overview workflows', () => {
           return Promise.resolve(response({ account }));
         if (path.endsWith('/households'))
           return Promise.resolve(response([household]));
+        if (path.endsWith(`/households/${householdId}/access`))
+          return Promise.resolve(
+            response({ can_edit: true, can_manage: true, role: 'OWNER' }),
+          );
         if (path.endsWith('/property-summaries'))
           return Promise.resolve(response({ detail: 'Unavailable' }, 500));
         if (path.includes('/lookups/')) return Promise.resolve(response([]));
@@ -255,6 +263,10 @@ describe('property overview workflows', () => {
           return Promise.resolve(response({ account }));
         if (path.endsWith('/households'))
           return Promise.resolve(response([household]));
+        if (path.endsWith(`/households/${householdId}/access`))
+          return Promise.resolve(
+            response({ can_edit: true, can_manage: true, role: 'OWNER' }),
+          );
         if (path.endsWith('/property-summaries'))
           return Promise.resolve(response([summary]));
         if (path.endsWith('/lookups/property_type')) {
@@ -304,5 +316,169 @@ describe('property overview workflows', () => {
       ).toBeNull(),
     );
     expect(screen.getByRole('table')).toHaveTextContent('House');
+  });
+
+  it('creates a current position with only its dated baseline fields', async () => {
+    const user = userEvent.setup();
+    let saved: Record<string, unknown> | null = null;
+    let created = false;
+    const fallback = standardFetch([]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/property-summaries')) {
+          return Promise.resolve(response(created ? [summary] : []));
+        }
+        if (path.endsWith('/reference/countries')) {
+          return Promise.resolve(response([]));
+        }
+        if (path.endsWith('/properties/wizard') && init?.method === 'POST') {
+          saved = JSON.parse(init.body as string) as Record<string, unknown>;
+          created = true;
+          return Promise.resolve(
+            response(
+              {
+                baseline: {
+                  baseline_date: '2026-08-02',
+                  id: '7023926d-f832-4190-94b6-6464df29dac2',
+                  loan_balance_total: '310000.00',
+                  notes: null,
+                  property_id: propertyId,
+                  property_value: '780000.00',
+                  status_id: statusId,
+                },
+                ownership: [],
+                property: detail,
+                valuation: null,
+                warnings: [],
+              },
+              201,
+            ),
+          );
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Add property' }),
+    );
+    await user.type(screen.getByLabelText('Property name'), 'Harbour home');
+    await user.click(screen.getByLabelText('Property type'));
+    await user.click(screen.getByRole('option', { name: 'House' }));
+    await user.click(screen.getByLabelText('Current use'));
+    await user.click(screen.getByRole('option', { name: 'Home' }));
+    await user.type(screen.getByLabelText('Property value (NZD)'), '780000');
+    await user.type(
+      screen.getByLabelText('Total property debt (NZD)'),
+      '310000',
+    );
+    await user.click(screen.getByRole('button', { name: 'Save property' }));
+
+    expect(await screen.findByText('Property added')).toBeVisible();
+    await screen.findByRole('table', { name: 'Household properties' });
+    expect(saved).toMatchObject({
+      baseline: {
+        loan_balance_total: '310000',
+        property_value: '780000',
+        status_id: statusId,
+      },
+      mode: 'CURRENT_SNAPSHOT',
+      property: {
+        display_name: 'Harbour home',
+        purchase_date: null,
+        purchase_price: null,
+      },
+    });
+  });
+
+  it('creates purchase history without implying current value or debt', async () => {
+    const user = userEvent.setup();
+    let saved: Record<string, unknown> | null = null;
+    const fallback = standardFetch([]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/reference/countries')) {
+          return Promise.resolve(response([]));
+        }
+        if (path.endsWith('/properties/wizard') && init?.method === 'POST') {
+          saved = JSON.parse(init.body as string) as Record<string, unknown>;
+          return Promise.resolve(
+            response(
+              {
+                baseline: null,
+                ownership: [],
+                property: detail,
+                valuation: {
+                  id: '95a93508-f1fc-421f-a56d-16e6fd9e557d',
+                },
+                warnings: [],
+              },
+              201,
+            ),
+          );
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Add property' }),
+    );
+    await user.click(screen.getByLabelText('How would you like to start?'));
+    await user.click(
+      screen.getByRole('option', { name: 'Record purchase history' }),
+    );
+    expect(
+      screen.getByText(/does not mean the property is debt-free/i),
+    ).toBeVisible();
+    await user.type(screen.getByLabelText('Property name'), 'Earlier purchase');
+    await user.click(screen.getByLabelText('Property type'));
+    await user.click(screen.getByRole('option', { name: 'House' }));
+    await user.click(screen.getByLabelText('Current use'));
+    await user.click(screen.getByRole('option', { name: 'Home' }));
+    await user.type(screen.getByLabelText('Purchase date'), '2020-02-01');
+    await user.type(screen.getByLabelText('Purchase price (NZD)'), '520000');
+    await user.click(screen.getByRole('button', { name: 'Save property' }));
+
+    expect(await screen.findByText('Property added')).toBeVisible();
+    expect(saved).toMatchObject({
+      baseline: null,
+      mode: 'HISTORICAL_PURCHASE',
+      property: {
+        display_name: 'Earlier purchase',
+        purchase_date: '2020-02-01',
+        purchase_price: '520000',
+      },
+    });
+    expect(saved).not.toHaveProperty('property.current_value');
+    expect(saved).not.toHaveProperty('property.total_property_debt');
+  });
+
+  it('does not offer creation to a view-only household member', async () => {
+    const fallback = standardFetch([]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith(`/households/${householdId}/access`)) {
+          return Promise.resolve(
+            response({ can_edit: false, can_manage: false, role: 'VIEWER' }),
+          );
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+
+    expect(
+      await screen.findByText(/view-only access to properties/i),
+    ).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Add property' })).toBeNull();
   });
 });
