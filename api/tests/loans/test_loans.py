@@ -293,6 +293,66 @@ async def test_advanced_repayment_responsibility_is_optional_dated_attribution(
     assert rejected.status_code == 422
 
 
+async def test_cashflow_preserves_inactive_repayment_responsibility(
+    client: AsyncClient, loan_setup: dict[str, str]
+) -> None:
+    loan = await create_loan(client, loan_setup)
+    inactive = await client.post(
+        f"/api/v1/households/{loan_setup['household_id']}/people",
+        json={
+            "display_name": "Historical payer",
+            "effective_from": "2019-01-01",
+            "effective_to": "2019-12-31",
+        },
+    )
+    active = await client.post(
+        f"/api/v1/households/{loan_setup['household_id']}/people",
+        json={"display_name": "Current payer", "effective_from": "2020-01-01"},
+    )
+    assert inactive.status_code == active.status_code == 201
+    assigned = await client.post(
+        f"/api/v1/loans/{loan['id']}/repayment-responsibilities",
+        json={
+            "person_id": inactive.json()["id"],
+            "responsibility_percentage": 100,
+            "effective_from": "2020-01-01",
+        },
+    )
+    assert assigned.status_code == 201
+
+    fully_inactive = await client.get(
+        f"/api/v1/households/{loan_setup['household_id']}/cashflow",
+        params={"as_of": "2020-02-01"},
+    )
+    projection = fully_inactive.json()["loan_repayments"][0]
+    assert projection["allocations"][0]["display_name"] == "Historical payer"
+    assert projection["allocations"][0]["responsibility_percentage"] == "100.00"
+    assert "inactive people" in projection["warnings"][0]
+    assert "Historical payer" in projection["warnings"][0]
+
+    for person, percentage in ((inactive, 60), (active, 40)):
+        response = await client.post(
+            f"/api/v1/loans/{loan['id']}/repayment-responsibilities",
+            json={
+                "person_id": person.json()["id"],
+                "responsibility_percentage": percentage,
+                "effective_from": "2021-01-01",
+            },
+        )
+        assert response.status_code == 201
+    partially_inactive = await client.get(
+        f"/api/v1/households/{loan_setup['household_id']}/cashflow",
+        params={"as_of": "2021-02-01"},
+    )
+    projection = partially_inactive.json()["loan_repayments"][0]
+    allocations = {
+        item["display_name"]: item["responsibility_percentage"]
+        for item in projection["allocations"]
+    }
+    assert allocations == {"Historical payer": "60.00", "Current payer": "40.00"}
+    assert any("Historical payer" in warning for warning in projection["warnings"])
+
+
 async def test_schedule_applies_offsets_rate_changes_lump_sums_and_redraw(
     client: AsyncClient, loan_setup: dict[str, str]
 ) -> None:

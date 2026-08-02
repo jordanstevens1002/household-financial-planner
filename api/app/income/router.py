@@ -160,10 +160,33 @@ async def _loan_repayment_projection(
             f"{loan.display_name} repayment responsibility totals "
             f"{responsibility_total:.2f}% rather than 100.00%."
         )
+    responsibility_people = dict(people_by_id)
+    inactive_person_ids = {
+        item.person_id for item in responsibilities if item.person_id not in responsibility_people
+    }
+    if inactive_person_ids:
+        responsibility_people.update(
+            {
+                person.id: person
+                for person in await session.scalars(
+                    select(Person).where(Person.id.in_(inactive_person_ids))
+                )
+            }
+        )
+        inactive_names = [
+            responsibility_people[person_id].display_name
+            for person_id in inactive_person_ids
+            if person_id in responsibility_people
+        ]
+        if inactive_names:
+            warnings.append(
+                f"{loan.display_name} has repayment responsibility assigned to "
+                f"inactive people at {as_of.isoformat()}: {', '.join(sorted(inactive_names))}."
+            )
     allocations = [
         LoanRepaymentAllocationRead(
             person_id=item.person_id,
-            display_name=people_by_id[item.person_id].display_name,
+            display_name=responsibility_people[item.person_id].display_name,
             responsibility_percentage=item.responsibility_percentage,
             annual_amount=_money(annual * item.responsibility_percentage / Decimal("100")),
             monthly_amount=_money(
@@ -171,7 +194,7 @@ async def _loan_repayment_projection(
             ),
         )
         for item in responsibilities
-        if item.person_id in people_by_id
+        if item.person_id in responsibility_people
     ]
     return LoanRepaymentProjectionRead(
         loan_id=loan.id,
