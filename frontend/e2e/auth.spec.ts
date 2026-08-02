@@ -39,9 +39,8 @@ test('bootstraps the first administrator', async ({ page }) => {
   await page.getByLabel('Bootstrap token').fill('operator-bootstrap-token');
   await page.getByLabel('Password').fill('correct horse battery staple');
   await page.getByRole('button', { name: 'Create administrator' }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Properties is coming soon' }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Properties' })).toBeVisible();
+  await expect(page.getByText('No household selected')).toBeVisible();
   await expect(page).toHaveURL(/\/properties$/);
 });
 

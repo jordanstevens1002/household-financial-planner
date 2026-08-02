@@ -39,10 +39,12 @@ function optionalDate(value: string | null | undefined) {
 
 function PositionAmount({
   currency,
+  description,
   label,
   value,
 }: {
   currency: string;
+  description?: string;
   label: string;
   value: string | null;
 }) {
@@ -54,6 +56,11 @@ function PositionAmount({
       <Typography sx={{ fontWeight: 700 }} variant="h6">
         {optionalMoney(value, currency)}
       </Typography>
+      {description ? (
+        <Typography color="text.secondary" variant="body2">
+          {description}
+        </Typography>
+      ) : null}
     </Paper>
   );
 }
@@ -137,8 +144,16 @@ export function PropertiesPage() {
     );
   }
 
-  const lookupName = (items: Lookup[] | undefined, id: string) =>
-    items?.find((item) => item.id === id)?.display_name ?? 'Unavailable';
+  const lookupName = (
+    items: Lookup[] | undefined,
+    id: string,
+    isPending = false,
+    hasError = false,
+  ) => {
+    if (isPending) return 'Loading…';
+    if (hasError) return 'Reference data unavailable';
+    return items?.find((item) => item.id === id)?.display_name ?? 'Unavailable';
+  };
   const selectProperty = (property: PropertySummary) => {
     setSelectedId(property.id);
     saveSelection('property', property.id);
@@ -157,12 +172,24 @@ export function PropertiesPage() {
     {
       key: 'type',
       label: 'Type',
-      render: (row) => lookupName(propertyTypes.data, row.property_type_id),
+      render: (row) =>
+        lookupName(
+          propertyTypes.data,
+          row.property_type_id,
+          propertyTypes.isPending,
+          Boolean(propertyTypes.error),
+        ),
     },
     {
       key: 'status',
       label: 'Current use',
-      render: (row) => lookupName(statuses.data, row.current_status_id),
+      render: (row) =>
+        lookupName(
+          statuses.data,
+          row.current_status_id,
+          statuses.isPending,
+          Boolean(statuses.error),
+        ),
     },
     {
       key: 'purchase',
@@ -171,13 +198,18 @@ export function PropertiesPage() {
     },
     {
       key: 'value',
-      label: 'Current value',
+      label: 'Recorded value',
       render: (row) => optionalMoney(row.current_value, row.currency),
     },
     {
       key: 'debt',
-      label: 'Total debt',
+      label: 'Recorded debt',
       render: (row) => optionalMoney(row.total_property_debt, row.currency),
+    },
+    {
+      key: 'position-date',
+      label: 'Recorded at',
+      render: (row) => optionalDate(row.position_date),
     },
     {
       key: 'action',
@@ -231,6 +263,34 @@ export function PropertiesPage() {
           title="No properties recorded"
         />
       )}
+      {propertyTypes.error ? (
+        <Alert
+          action={
+            <Button
+              color="inherit"
+              onClick={() => void propertyTypes.refetch()}
+            >
+              Retry property types
+            </Button>
+          }
+          severity="warning"
+        >
+          Property types could not be loaded.{' '}
+          {errorMessage(propertyTypes.error)}
+        </Alert>
+      ) : null}
+      {statuses.error ? (
+        <Alert
+          action={
+            <Button color="inherit" onClick={() => void statuses.refetch()}>
+              Retry property uses
+            </Button>
+          }
+          severity="warning"
+        >
+          Property uses could not be loaded. {errorMessage(statuses.error)}
+        </Alert>
+      ) : null}
       {selectedSummary ? (
         <Stack spacing={2}>
           <Typography variant="h2">{selectedSummary.display_name}</Typography>
@@ -270,11 +330,13 @@ export function PropertiesPage() {
             />
             <PositionAmount
               currency={selectedSummary.currency}
+              description={`Recorded ${optionalDate(selectedSummary.position_date)}`}
               label="Latest recorded value"
               value={selectedSummary.current_value}
             />
             <PositionAmount
               currency={selectedSummary.currency}
+              description={`Recorded ${optionalDate(selectedSummary.position_date)}`}
               label="Latest recorded debt"
               value={selectedSummary.total_property_debt}
             />
@@ -322,8 +384,14 @@ export function PropertiesPage() {
                 />
               </Stack>
               <Typography>
-                Status: {lookupName(statuses.data, state.data.status_id)} ·
-                Active asset:{' '}
+                Status:{' '}
+                {lookupName(
+                  statuses.data,
+                  state.data.status_id,
+                  statuses.isPending,
+                  Boolean(statuses.error),
+                )}{' '}
+                · Active asset:{' '}
                 {state.data.is_active_asset === null
                   ? 'Unknown'
                   : state.data.is_active_asset

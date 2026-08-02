@@ -64,7 +64,7 @@ const detail = {
   suburb_or_locality: 'Island Bay',
 };
 const resolvedState = {
-  applied_event_ids: [],
+  applied_event_ids: ['f24b092f-ef89-480d-8eab-f2c93e68f53a'],
   as_of: '2026-08-02',
   baseline_date: '2026-06-30',
   baseline_id: '7023926d-f832-4190-94b6-6464df29dac2',
@@ -155,7 +155,7 @@ describe('property overview workflows', () => {
     vi.unstubAllGlobals();
   });
 
-  it('keeps purchase price, current value and total debt distinct', async () => {
+  it('labels baseline amounts with their recorded date', async () => {
     vi.stubGlobal('fetch', standardFetch());
     await renderPage();
 
@@ -168,10 +168,14 @@ describe('property overview workflows', () => {
     expect(table).toHaveTextContent('NZ$520,000.00');
     expect(table).toHaveTextContent('NZ$780,000.00');
     expect(table).toHaveTextContent('NZ$310,000.00');
+    expect(table).toHaveTextContent('Recorded value');
+    expect(table).toHaveTextContent('Recorded debt');
+    expect(table).toHaveTextContent('Recorded at');
+    expect(table).toHaveTextContent('Jun 30, 2026');
     expect(screen.getByText(/choose a property/i)).toBeVisible();
   });
 
-  it('selects and restores a property with its resolved position', async () => {
+  it('shows an event-adjusted position separately from its older baseline', async () => {
     const user = userEvent.setup();
     vi.stubGlobal('fetch', standardFetch());
     await renderPage();
@@ -187,6 +191,7 @@ describe('property overview workflows', () => {
     expect(await screen.findByText(/Results as of 2026-08-02/)).toBeVisible();
     expect(screen.getByText('NZ$790,000.00')).toBeVisible();
     expect(screen.getByText('NZ$305,000.00')).toBeVisible();
+    expect(screen.getAllByText('Recorded Jun 30, 2026')).toHaveLength(2);
     expect(screen.getByText(/Status: Home · Active asset: Yes/)).toBeVisible();
   });
 
@@ -237,5 +242,67 @@ describe('property overview workflows', () => {
       await screen.findByText(/Properties could not be loaded/),
     ).toBeVisible();
     expect(screen.queryByText('No properties recorded')).toBeNull();
+  });
+
+  it('reports reference-data failures and retries them', async () => {
+    const user = userEvent.setup();
+    let typeAttempts = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input) => {
+        const path = pathOf(input);
+        if (path.endsWith('/auth/session'))
+          return Promise.resolve(response({ account }));
+        if (path.endsWith('/households'))
+          return Promise.resolve(response([household]));
+        if (path.endsWith('/property-summaries'))
+          return Promise.resolve(response([summary]));
+        if (path.endsWith('/lookups/property_type')) {
+          typeAttempts += 1;
+          return Promise.resolve(
+            typeAttempts === 1
+              ? response({ detail: 'Catalogue unavailable' }, 503)
+              : response([
+                  {
+                    id: typeId,
+                    code: 'HOUSE',
+                    display_name: 'House',
+                    is_active: true,
+                  },
+                ]),
+          );
+        }
+        if (path.endsWith('/lookups/property_status')) {
+          return Promise.resolve(
+            response([
+              {
+                id: statusId,
+                code: 'HOME',
+                display_name: 'Home',
+                is_active: true,
+              },
+            ]),
+          );
+        }
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    await renderPage();
+
+    expect(
+      await screen.findByText(/Property types could not be loaded/),
+    ).toBeVisible();
+    expect(screen.getByRole('table')).toHaveTextContent(
+      'Reference data unavailable',
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Retry property types' }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByText(/Property types could not be loaded/),
+      ).toBeNull(),
+    );
+    expect(screen.getByRole('table')).toHaveTextContent('House');
   });
 });
