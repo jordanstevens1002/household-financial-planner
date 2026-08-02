@@ -17,7 +17,6 @@ import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 
 import { apiRequest } from '../../api/client';
 import type { components } from '../../api/schema';
@@ -30,51 +29,13 @@ import { useNotification } from '../../shared/notificationContext';
 import { useAuth } from '../auth/AuthContext';
 import { useHousehold } from '../households/HouseholdContext';
 import { localCalendarDate } from '../people/localDate';
+import { incomeSchema, type IncomeFields } from './incomeValidation';
 
 type Access = components['schemas']['HouseholdAccessRead'];
 type Income = components['schemas']['IncomeSourceRead'];
 type Lookup = components['schemas']['LookupRead'];
 type Person = components['schemas']['PersonRead'];
 type Frequency = components['schemas']['PaymentFrequency'];
-
-const optionalDate = z
-  .string()
-  .refine((value) => value === '' || /^\d{4}-\d{2}-\d{2}$/.test(value), {
-    message: 'Use YYYY-MM-DD',
-  });
-const optionalNumber = z
-  .string()
-  .refine((value) => value === '' || Number.isFinite(Number(value)), {
-    message: 'Enter a number',
-  });
-const incomeSchema = z
-  .object({
-    annualGrowthRate: optionalNumber,
-    displayName: z.string().trim().min(1, 'Enter a name').max(200),
-    effectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD'),
-    effectiveTo: optionalDate,
-    frequency: z.enum([
-      'WEEKLY',
-      'FORTNIGHTLY',
-      'MONTHLY',
-      'QUARTERLY',
-      'ANNUAL',
-    ]),
-    grossAmount: z.string().refine((value) => Number(value) >= 0, {
-      message: 'Enter an amount of zero or more',
-    }),
-    incomeTypeId: z.string().min(1, 'Choose an income type'),
-    notes: z.string().max(2000),
-    salarySacrificeAmount: optionalNumber,
-    taxable: z.enum(['true', 'false']),
-  })
-  .refine(
-    ({ effectiveFrom, effectiveTo }) =>
-      effectiveTo === '' || effectiveTo >= effectiveFrom,
-    { message: 'End date must not precede start date', path: ['effectiveTo'] },
-  );
-
-type IncomeFields = z.infer<typeof incomeSchema>;
 
 const frequencies: { label: string; value: Frequency }[] = [
   { label: 'Weekly', value: 'WEEKLY' },
@@ -123,6 +84,7 @@ export function IncomePage() {
     enabled: createOpen,
     queryFn: () => apiRequest<Lookup[]>('/api/v1/lookups/income_type'),
     queryKey: ['lookups', 'income_type'],
+    retry: false,
   });
   const form = useForm<IncomeFields>({
     defaultValues: {
@@ -179,7 +141,7 @@ export function IncomePage() {
     },
   });
 
-  if (!household.selected || (!people.isPending && !person)) {
+  if (!household.selected) {
     return (
       <Stack spacing={3}>
         <Typography component="h1" variant="h4">
@@ -187,9 +149,7 @@ export function IncomePage() {
         </Typography>
         <EmptyState
           description={
-            household.selected
-              ? 'Choose a person before recording their income.'
-              : 'Choose a household and person first.'
+            'Choose a household and person before recording their income.'
           }
           title="No person selected"
         />
@@ -204,14 +164,44 @@ export function IncomePage() {
       </Stack>
     );
   }
-  if (people.isPending || access.isPending) {
+  if (people.isPending) {
     return <CircularProgress aria-label="Loading income sources" />;
   }
-  if (people.error || access.error) {
+  if (people.error) {
     return (
       <Alert severity="error">
-        Could not load income access.{' '}
-        {errorMessage(people.error ?? access.error)}
+        Could not load people for income. {errorMessage(people.error)}
+      </Alert>
+    );
+  }
+  if (!person) {
+    return (
+      <Stack spacing={3}>
+        <Typography component="h1" variant="h4">
+          Income &amp; tax
+        </Typography>
+        <EmptyState
+          description="Choose a person before recording their income."
+          title="No person selected"
+        />
+        <Button
+          component={Link}
+          sx={{ alignSelf: 'flex-start' }}
+          to="/people"
+          variant="contained"
+        >
+          Choose a person
+        </Button>
+      </Stack>
+    );
+  }
+  if (access.isPending) {
+    return <CircularProgress aria-label="Loading income access" />;
+  }
+  if (access.error) {
+    return (
+      <Alert severity="error">
+        Could not load income access. {errorMessage(access.error)}
       </Alert>
     );
   }
@@ -251,7 +241,7 @@ export function IncomePage() {
           Income &amp; tax
         </Typography>
         <Typography color="text.secondary">
-          Record recurring income for {person!.display_name} using dated values
+          Record recurring income for {person.display_name} using dated values
           so future projections can resolve the correct amount.
         </Typography>
       </Box>
@@ -300,20 +290,44 @@ export function IncomePage() {
         >
           <DialogContent>
             <Stack spacing={2}>
-              <TextField
-                defaultValue=""
-                error={Boolean(form.formState.errors.incomeTypeId)}
-                helperText={form.formState.errors.incomeTypeId?.message}
-                label="Income type"
-                select
-                {...form.register('incomeTypeId')}
-              >
-                {(incomeTypes.data ?? []).map((item) => (
-                  <MenuItem key={item.id} value={item.id}>
-                    {item.display_name}
-                  </MenuItem>
-                ))}
-              </TextField>
+              {incomeTypes.isPending ? (
+                <CircularProgress aria-label="Loading income types" size={24} />
+              ) : incomeTypes.error ? (
+                <Alert
+                  action={
+                    <Button
+                      color="inherit"
+                      onClick={() => void incomeTypes.refetch()}
+                      size="small"
+                    >
+                      Retry
+                    </Button>
+                  }
+                  severity="error"
+                >
+                  Could not load income types. {errorMessage(incomeTypes.error)}
+                </Alert>
+              ) : incomeTypes.data?.length ? (
+                <TextField
+                  defaultValue=""
+                  error={Boolean(form.formState.errors.incomeTypeId)}
+                  helperText={form.formState.errors.incomeTypeId?.message}
+                  label="Income type"
+                  select
+                  {...form.register('incomeTypeId')}
+                >
+                  {incomeTypes.data.map((item) => (
+                    <MenuItem key={item.id} value={item.id}>
+                      {item.display_name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              ) : (
+                <Alert severity="warning">
+                  No active income types are installed. Add one before recording
+                  income.
+                </Alert>
+              )}
               <TextField
                 error={Boolean(form.formState.errors.displayName)}
                 helperText={form.formState.errors.displayName?.message}
@@ -362,10 +376,16 @@ export function IncomePage() {
               <AdvancedSection>
                 <Stack spacing={2}>
                   <TextField
+                    error={Boolean(form.formState.errors.annualGrowthRate)}
+                    helperText={form.formState.errors.annualGrowthRate?.message}
                     label="Annual growth % (optional)"
                     {...form.register('annualGrowthRate')}
                   />
                   <TextField
+                    error={Boolean(form.formState.errors.salarySacrificeAmount)}
+                    helperText={
+                      form.formState.errors.salarySacrificeAmount?.message
+                    }
                     label="Pre-tax contribution (optional)"
                     {...form.register('salarySacrificeAmount')}
                   />
@@ -386,7 +406,12 @@ export function IncomePage() {
           <DialogActions>
             <Button onClick={() => setCreateOpen(false)}>Cancel</Button>
             <Button
-              disabled={createIncome.isPending}
+              disabled={
+                createIncome.isPending ||
+                incomeTypes.isPending ||
+                Boolean(incomeTypes.error) ||
+                !incomeTypes.data?.length
+              }
               type="submit"
               variant="contained"
             >

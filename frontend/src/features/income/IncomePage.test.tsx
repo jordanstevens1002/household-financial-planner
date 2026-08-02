@@ -5,7 +5,7 @@ import {
   createMemoryHistory,
   type AnyRouter,
 } from '@tanstack/react-router';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { createAppRouter } from '../../app/router';
@@ -13,6 +13,7 @@ import { selectionKeys } from '../../app/selectionStorage';
 import { appTheme } from '../../app/theme';
 import { NotificationProvider } from '../../shared/NotificationProvider';
 import { AuthProvider } from '../auth/AuthProvider';
+import { incomeSchema } from './incomeValidation';
 
 const householdId = 'dccc2857-cf74-4863-9f00-c99a9f815495';
 const personId = '85e30193-a324-4d22-9065-e25d819f6530';
@@ -110,6 +111,7 @@ async function renderPage() {
 function standardFetch(
   incomes: unknown = [income],
   access: unknown = editorAccess,
+  peopleResult: unknown = [person],
 ) {
   return vi.fn<typeof fetch>((input) => {
     const path = pathOf(input);
@@ -117,7 +119,12 @@ function standardFetch(
       return Promise.resolve(response({ account }));
     if (path.endsWith('/households'))
       return Promise.resolve(response([household]));
-    if (path.endsWith('/people')) return Promise.resolve(response([person]));
+    if (path.endsWith('/people'))
+      return Promise.resolve(
+        peopleResult instanceof Response
+          ? peopleResult
+          : response(peopleResult),
+      );
     if (path.endsWith('/access')) return Promise.resolve(response(access));
     if (path.endsWith('/income-sources'))
       return Promise.resolve(
@@ -147,6 +154,32 @@ describe('person income workflows', () => {
       screen.getByRole('link', { name: 'Choose a person' }),
     ).toHaveAttribute('href', '/people');
   });
+
+  it.each([403, 500])(
+    'shows an HTTP %s people failure instead of a missing-person state',
+    async (status) => {
+      localStorage.setItem(selectionKeys.person, personId);
+      vi.stubGlobal(
+        'fetch',
+        standardFetch(
+          [],
+          editorAccess,
+          response({ detail: `People unavailable (${status})` }, status),
+        ),
+      );
+
+      await renderPage();
+
+      expect(
+        await screen.findByText(
+          new RegExp(
+            `Could not load people.*People unavailable \\(${status}\\)`,
+          ),
+        ),
+      ).toBeVisible();
+      expect(screen.queryByText('No person selected')).toBeNull();
+    },
+  );
 
   it('lets a viewer read income without offering creation', async () => {
     localStorage.setItem(selectionKeys.person, personId);
@@ -182,6 +215,88 @@ describe('person income workflows', () => {
       await screen.findByText(/Could not load income sources/i),
     ).toBeVisible();
     expect(screen.queryByText('No income sources yet')).toBeNull();
+  });
+
+  it('explains an income-type failure and allows retry', async () => {
+    const user = userEvent.setup();
+    const baseFetch = standardFetch([]);
+    let lookupAttempts = 0;
+    localStorage.setItem(selectionKeys.person, personId);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/lookups/income_type')) {
+          lookupAttempts += 1;
+          return Promise.resolve(
+            lookupAttempts === 1
+              ? response({ detail: 'Catalogue unavailable' }, 500)
+              : response([
+                  {
+                    category: 'income_type',
+                    code: 'SALARY',
+                    display_name: 'Salary or wages',
+                    id: incomeTypeId,
+                    is_active: true,
+                  },
+                ]),
+          );
+        }
+        return baseFetch(input, init);
+      }),
+    );
+
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'Add income source' }),
+    );
+
+    expect(
+      await screen.findByText(/Could not load income types/i),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Add income source' }),
+    ).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(await screen.findByLabelText('Income type')).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Add income source' }),
+    ).toBeEnabled();
+  });
+
+  it('disables creation while income types are loading or empty', async () => {
+    const user = userEvent.setup();
+    const baseFetch = standardFetch([]);
+    let resolveLookup!: (value: Response) => void;
+    const lookup = new Promise<Response>((resolve) => {
+      resolveLookup = resolve;
+    });
+    localStorage.setItem(selectionKeys.person, personId);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        if (pathOf(input).endsWith('/lookups/income_type')) return lookup;
+        return baseFetch(input, init);
+      }),
+    );
+
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'Add income source' }),
+    );
+
+    expect(screen.getByLabelText('Loading income types')).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Add income source' }),
+    ).toBeDisabled();
+    await act(async () => {
+      resolveLookup(response([]));
+      await lookup;
+    });
+    expect(await screen.findByText(/No active income types/i)).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Add income source' }),
+    ).toBeDisabled();
   });
 
   it('validates and creates a dated recurring income source', async () => {
@@ -252,5 +367,45 @@ describe('person income workflows', () => {
     expect(await screen.findByText('Income source added')).toBeVisible();
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(screen.getByRole('table', { name: 'Income sources' })).toBeVisible();
+  });
+});
+
+const validIncome = {
+  annualGrowthRate: '',
+  displayName: 'Salary',
+  effectiveFrom: '2026-08-02',
+  effectiveTo: '',
+  frequency: 'MONTHLY',
+  grossAmount: '5000',
+  incomeTypeId,
+  notes: '',
+  salarySacrificeAmount: '',
+  taxable: 'true',
+} as const;
+
+describe('income numeric validation', () => {
+  it.each([
+    ['blank gross amount', { grossAmount: '   ' }],
+    ['negative pre-tax contribution', { salarySacrificeAmount: '-0.01' }],
+    ['growth below the API minimum', { annualGrowthRate: '-100.0001' }],
+    ['growth above the API maximum', { annualGrowthRate: '100.0001' }],
+    ['gross precision above two places', { grossAmount: '1.001' }],
+  ])('rejects %s', (_, changes) => {
+    expect(incomeSchema.safeParse({ ...validIncome, ...changes }).success).toBe(
+      false,
+    );
+  });
+
+  it.each([
+    { annualGrowthRate: '-100', grossAmount: '0', salarySacrificeAmount: '0' },
+    {
+      annualGrowthRate: '100.0000',
+      grossAmount: '0.01',
+      salarySacrificeAmount: '0.01',
+    },
+  ])('accepts API boundary values', (changes) => {
+    expect(incomeSchema.safeParse({ ...validIncome, ...changes }).success).toBe(
+      true,
+    );
   });
 });
