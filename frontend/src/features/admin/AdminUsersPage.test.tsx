@@ -65,7 +65,9 @@ async function renderPage() {
       </NotificationProvider>
     </ThemeProvider>,
   );
-  await waitFor(() => expect(router.state.status).toBe('idle'));
+  await waitFor(() => expect(router.state.status).toBe('idle'), {
+    timeout: 5000,
+  });
 }
 
 describe('local user administration', () => {

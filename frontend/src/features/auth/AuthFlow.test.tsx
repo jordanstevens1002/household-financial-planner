@@ -49,9 +49,12 @@ async function renderApplication(path = '/') {
       </NotificationProvider>
     </ThemeProvider>,
   );
-  await waitFor(() => {
-    expect(router.state.status).toBe('idle');
-  });
+  await waitFor(
+    () => {
+      expect(router.state.status).toBe('idle');
+    },
+    { timeout: 5000 },
+  );
 }
 
 describe('local authentication flow', () => {

@@ -78,8 +78,38 @@ async def test_viewer_cannot_add_person(client: AsyncClient, session: AsyncSessi
     membership.role = HouseholdRole.VIEWER
     await session.commit()
 
+    access = await client.get(f"/api/v1/households/{household['id']}/access")
+    assert access.status_code == 200
+    assert access.json() == {
+        "role": "VIEWER",
+        "can_view": True,
+        "can_edit": False,
+        "can_administer": False,
+        "can_manage_owners": False,
+    }
+
     response = await client.post(
         f"/api/v1/households/{household['id']}/people",
         json={"display_name": "Blocked member", "effective_from": "2025-01-01"},
     )
     assert response.status_code == 403
+
+
+async def test_editor_access_can_create_people(client: AsyncClient, session: AsyncSession) -> None:
+    household = await create_household(client)
+    membership = await session.scalar(
+        select(HouseholdMembership).where(HouseholdMembership.household_id == UUID(household["id"]))
+    )
+    assert membership is not None
+    membership.role = HouseholdRole.EDITOR
+    await session.commit()
+
+    access = await client.get(f"/api/v1/households/{household['id']}/access")
+    assert access.status_code == 200
+    assert access.json()["can_edit"] is True
+
+    response = await client.post(
+        f"/api/v1/households/{household['id']}/people",
+        json={"display_name": "Editor addition", "effective_from": "2026-08-02"},
+    )
+    assert response.status_code == 201
