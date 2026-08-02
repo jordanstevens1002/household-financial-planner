@@ -53,6 +53,25 @@ const editorAccess = {
   can_view: true,
   role: 'EDITOR',
 };
+const emptyCashflow = {
+  annual_expenses: '0.00',
+  annual_gross_income: '0.00',
+  annual_loan_repayments: '0.00',
+  annual_net_income: '0.00',
+  annual_ordinary_expenses: '0.00',
+  annual_surplus: '0.00',
+  as_of: '2026-08-02',
+  currency: 'NZD',
+  household_id: householdId,
+  loan_repayments: [],
+  monthly_expenses: '0.00',
+  monthly_loan_repayments: '0.00',
+  monthly_net_income: '0.00',
+  monthly_ordinary_expenses: '0.00',
+  monthly_surplus: '0.00',
+  people: [],
+  warnings: [],
+};
 
 function response(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -90,7 +109,9 @@ async function renderPage() {
       </NotificationProvider>
     </ThemeProvider>,
   );
-  await waitFor(() => expect(router.state.status).toBe('idle'));
+  await waitFor(() => expect(router.state.status).toBe('idle'), {
+    timeout: 10_000,
+  });
 }
 
 function standardFetch(
@@ -118,6 +139,8 @@ function standardFetch(
         ]),
       );
     if (path.endsWith('/people')) return Promise.resolve(response([]));
+    if (path.includes('/cashflow?'))
+      return Promise.resolve(response(emptyCashflow));
     throw new Error(`Unexpected request: ${path}`);
   });
 }
@@ -208,6 +231,8 @@ describe('household expense workflows', () => {
           return Promise.resolve(response({ ...expense, ...requestBody }, 201));
         }
         if (path.endsWith('/expenses')) return Promise.resolve(response([]));
+        if (path.includes('/cashflow?'))
+          return Promise.resolve(response(emptyCashflow));
         throw new Error(`Unexpected request: ${path}`);
       }),
     );
@@ -273,6 +298,8 @@ describe('household expense workflows', () => {
           return Promise.resolve(response({ ...expense, ...requestBody }, 201));
         }
         if (path.endsWith('/expenses')) return Promise.resolve(response([]));
+        if (path.includes('/cashflow?'))
+          return Promise.resolve(response(emptyCashflow));
         throw new Error(`Unexpected request: ${path}`);
       }),
     );
@@ -326,6 +353,8 @@ describe('household expense workflows', () => {
         }
         if (path.endsWith('/expenses'))
           return Promise.resolve(response([expense]));
+        if (path.includes('/cashflow?'))
+          return Promise.resolve(response(emptyCashflow));
         throw new Error(`Unexpected request: ${path}`);
       }),
     );
