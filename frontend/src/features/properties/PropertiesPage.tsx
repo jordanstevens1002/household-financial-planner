@@ -19,11 +19,13 @@ import { EmptyState } from '../../shared/EmptyState';
 import { formatCurrency, formatDate } from '../../shared/format';
 import { useHousehold } from '../households/HouseholdContext';
 import { localCalendarDate } from '../people/localDate';
+import { PropertyCreateDialog } from './PropertyCreateDialog';
 
 type Lookup = components['schemas']['LookupRead'];
 type Property = components['schemas']['PropertyRead'];
 type PropertySummary = components['schemas']['PropertySummaryRead'];
 type PropertyState = components['schemas']['ResolvedPropertyState'];
+type HouseholdAccess = components['schemas']['HouseholdAccessRead'];
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'The request failed';
@@ -69,6 +71,7 @@ export function PropertiesPage() {
   const household = useHousehold();
   const householdId = household.selected?.id ?? null;
   const [selectedId, setSelectedId] = useState(() => loadSelection('property'));
+  const [createOpen, setCreateOpen] = useState(false);
   const [asOf, setAsOf] = useState(localCalendarDate());
   const [draftDate, setDraftDate] = useState(asOf);
   const [dateError, setDateError] = useState('');
@@ -91,6 +94,13 @@ export function PropertiesPage() {
     enabled: householdId !== null,
     queryFn: () => apiRequest<Lookup[]>('/api/v1/lookups/property_status'),
     queryKey: ['lookups', 'property_status'],
+    retry: false,
+  });
+  const access = useQuery({
+    enabled: householdId !== null,
+    queryFn: () =>
+      apiRequest<HouseholdAccess>(`/api/v1/households/${householdId}/access`),
+    queryKey: ['household-access', householdId],
     retry: false,
   });
   const validSelectedId =
@@ -237,6 +247,35 @@ export function PropertiesPage() {
           your household property position.
         </Typography>
       </Stack>
+      {access.isPending ? (
+        <CircularProgress
+          aria-label="Checking property permissions"
+          size={24}
+        />
+      ) : access.error ? (
+        <Alert severity="error">
+          Property permissions could not be checked.{' '}
+          {errorMessage(access.error)}
+        </Alert>
+      ) : access.data?.can_edit ? (
+        <Button
+          disabled={
+            propertyTypes.isPending ||
+            statuses.isPending ||
+            Boolean(propertyTypes.error) ||
+            Boolean(statuses.error)
+          }
+          onClick={() => setCreateOpen(true)}
+          sx={{ alignSelf: 'flex-start' }}
+          variant="contained"
+        >
+          Add property
+        </Button>
+      ) : (
+        <Alert severity="info">
+          You have view-only access to properties in this household.
+        </Alert>
+      )}
       {properties.isPending ? (
         <CircularProgress aria-label="Loading properties" />
       ) : properties.error ? (
@@ -259,7 +298,11 @@ export function PropertiesPage() {
         />
       ) : (
         <EmptyState
-          description="Property creation will be added in the next review slice."
+          description={
+            access.data?.can_edit
+              ? 'Use Add property to record where things stand now or enter purchase history.'
+              : 'No properties have been recorded for this household.'
+          }
           title="No properties recorded"
         />
       )}
@@ -411,6 +454,20 @@ export function PropertiesPage() {
           Choose a property to review its details and dated position.
         </Alert>
       ) : null}
+      <PropertyCreateDialog
+        currency={household.selected.currency}
+        householdId={household.selected.id}
+        jurisdiction={household.selected.jurisdiction}
+        onClose={() => setCreateOpen(false)}
+        onCreated={(propertyId) => {
+          setSelectedId(propertyId);
+          saveSelection('property', propertyId);
+        }}
+        open={createOpen}
+        properties={properties.data ?? []}
+        propertyTypes={propertyTypes.data ?? []}
+        statuses={statuses.data ?? []}
+      />
     </Stack>
   );
 }
