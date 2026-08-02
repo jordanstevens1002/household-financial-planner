@@ -43,6 +43,13 @@ export const expenseSchema = z
       message: 'End date cannot be before start date',
       path: ['effectiveTo'],
     },
+  )
+  .refine(
+    (fields) => fields.frequency !== 'ONCE' || fields.annualGrowthRate === '',
+    {
+      message: 'Growth does not apply to a one-off expense',
+      path: ['annualGrowthRate'],
+    },
   );
 
 export type ExpenseFields = z.infer<typeof expenseSchema>;

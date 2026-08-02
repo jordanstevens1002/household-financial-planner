@@ -105,6 +105,19 @@ function standardFetch(
       return Promise.resolve(response([household]));
     if (path.endsWith('/expenses')) return Promise.resolve(response(expenses));
     if (path.endsWith('/access')) return Promise.resolve(response(access));
+    if (path.endsWith('/lookups/household_expense_type'))
+      return Promise.resolve(
+        response([
+          {
+            category: 'household_expense_type',
+            code: 'UTILITIES',
+            display_name: 'Utilities',
+            id: categoryId,
+            is_active: true,
+          },
+        ]),
+      );
+    if (path.endsWith('/people')) return Promise.resolve(response([]));
     throw new Error(`Unexpected request: ${path}`);
   });
 }
@@ -129,7 +142,10 @@ describe('household expense workflows', () => {
     expect(table).toHaveTextContent('Groceries');
     expect(table).toHaveTextContent('NZ$125.50');
     expect(table).toHaveTextContent('Weekly');
-    expect(table).toHaveTextContent('Yes');
+    expect(table).toHaveTextContent('Utilities');
+    expect(table).toHaveTextContent('Whole household');
+    expect(table).toHaveTextContent('Ongoing');
+    expect(table).toHaveTextContent('Essential · No growth');
   });
 
   it('does not offer expense creation to viewers', async () => {
@@ -222,6 +238,135 @@ describe('household expense workflows', () => {
     });
     expect(await screen.findByText('Expense added')).toBeVisible();
   }, 10_000);
+
+  it('allows household-level creation when people cannot be loaded', async () => {
+    const user = userEvent.setup();
+    let requestBody: Record<string, unknown> | undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/auth/session'))
+          return Promise.resolve(response({ account }));
+        if (path.endsWith('/households'))
+          return Promise.resolve(response([household]));
+        if (path.endsWith('/access'))
+          return Promise.resolve(response(editorAccess));
+        if (path.endsWith('/lookups/household_expense_type'))
+          return Promise.resolve(
+            response([
+              {
+                category: 'household_expense_type',
+                code: 'UTILITIES',
+                display_name: 'Utilities',
+                id: categoryId,
+                is_active: true,
+              },
+            ]),
+          );
+        if (path.endsWith('/people'))
+          return Promise.resolve(response({ detail: 'Unavailable' }, 500));
+        if (path.endsWith('/expenses') && init?.method === 'POST') {
+          if (typeof init.body !== 'string')
+            throw new Error('Expected a JSON request body');
+          requestBody = JSON.parse(init.body) as Record<string, unknown>;
+          return Promise.resolve(response({ ...expense, ...requestBody }, 201));
+        }
+        if (path.endsWith('/expenses')) return Promise.resolve(response([]));
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'Add expense' }),
+    );
+    expect(
+      await screen.findByText(/will apply to the whole household/i),
+    ).toBeVisible();
+    await user.type(screen.getByLabelText('Expense name'), 'Water');
+    await user.click(screen.getByLabelText('Category'));
+    await user.click(await screen.findByText('Utilities'));
+    await user.type(screen.getByLabelText('Amount (NZD)'), '80');
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Add expense',
+      }),
+    );
+    await waitFor(() => expect(requestBody).toBeDefined());
+    expect(requestBody?.person_id).toBeNull();
+  }, 10_000);
+
+  it('edits and removes an existing expense with confirmation', async () => {
+    const user = userEvent.setup();
+    let method: string | undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/auth/session'))
+          return Promise.resolve(response({ account }));
+        if (path.endsWith('/households'))
+          return Promise.resolve(response([household]));
+        if (path.endsWith('/access'))
+          return Promise.resolve(response(editorAccess));
+        if (path.endsWith('/lookups/household_expense_type'))
+          return Promise.resolve(
+            response([{ id: categoryId, display_name: 'Utilities' }]),
+          );
+        if (path.endsWith('/people')) return Promise.resolve(response([]));
+        if (path.endsWith(`/expenses/${expense.id}`)) {
+          method = init?.method;
+          if (method === 'DELETE')
+            return Promise.resolve(new Response(null, { status: 204 }));
+          if (typeof init?.body !== 'string')
+            throw new Error('Expected a JSON request body');
+          return Promise.resolve(
+            response({ ...expense, ...JSON.parse(init.body) }, 200),
+          );
+        }
+        if (path.endsWith('/expenses'))
+          return Promise.resolve(response([expense]));
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    await renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Edit' }));
+    await user.clear(screen.getByLabelText('Amount (NZD)'));
+    await user.type(screen.getByLabelText('Amount (NZD)'), '130');
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Save changes',
+      }),
+    );
+    expect(await screen.findByText('Expense updated')).toBeVisible();
+    expect(method).toBe('PATCH');
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await user.click(await screen.findByRole('button', { name: 'Remove' }));
+    await user.click(screen.getByRole('button', { name: 'Remove expense' }));
+    expect(await screen.findByText('Expense removed')).toBeVisible();
+    expect(method).toBe('DELETE');
+    expect(screen.queryByText('Groceries')).toBeNull();
+  }, 15_000);
+
+  it('clears and hides growth when frequency changes to one-off', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('fetch', standardFetch([]));
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'Add expense' }),
+    );
+    await user.click(screen.getByText('Advanced'));
+    await user.type(
+      screen.getByLabelText('Annual growth rate % (optional)'),
+      '3',
+    );
+    await user.click(screen.getByLabelText('Frequency'));
+    await user.click(screen.getByText('One-off'));
+    expect(
+      screen.queryByLabelText('Annual growth rate % (optional)'),
+    ).toBeNull();
+    expect(screen.getByText(/Growth does not apply/i)).toBeVisible();
+  });
 });
 
 describe('expense validation', () => {
@@ -243,6 +388,16 @@ describe('expense validation', () => {
     expect(
       expenseSchema.safeParse({ ...valid, frequency: 'ONCE' }).success,
     ).toBe(true);
+  });
+
+  it('rejects growth for a one-off expense', () => {
+    expect(
+      expenseSchema.safeParse({
+        ...valid,
+        annualGrowthRate: '3',
+        frequency: 'ONCE',
+      }).success,
+    ).toBe(false);
   });
 
   it.each([

@@ -49,6 +49,8 @@ decorators, so route changes require an intentional matrix update.
 | POST | `/api/v1/calculations/tax` | Standalone tax calculation | #41 |
 | GET | `/api/v1/households/{household_id}/expenses` | Household-expense list | #42 |
 | POST | `/api/v1/households/{household_id}/expenses` | Dated household expense | #42 |
+| PATCH | `/api/v1/households/{household_id}/expenses/{expense_id}` | Correct household expense | #42 |
+| DELETE | `/api/v1/households/{household_id}/expenses/{expense_id}` | Remove household expense | #42 |
 | GET | `/api/v1/households/{household_id}/income-projection` | Compatibility cash-flow alias | #42 |
 | GET | `/api/v1/households/{household_id}/cashflow` | Household cash flow | #42 |
 | GET | `/api/v1/households/{household_id}/properties` | Property list | #43 |
