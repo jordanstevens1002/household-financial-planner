@@ -25,7 +25,7 @@ export const taxProfileSchema = z
     manualJurisdiction: z.string().trim().max(50),
     manualTaxYear: z.string().trim().max(20),
     mode: z.enum(['AUTOMATIC', 'MANUAL_NET']),
-    parameters: z.string().refine(isJsonObject, 'Enter a JSON object'),
+    parameters: z.string(),
     providerYear: z.string(),
   })
   .superRefine((values, context) => {
@@ -36,12 +36,21 @@ export const taxProfileSchema = z
         path: ['effectiveTo'],
       });
     }
-    if (values.mode === 'AUTOMATIC' && values.providerYear === '') {
-      context.addIssue({
-        code: 'custom',
-        message: 'Choose an installed provider and tax year',
-        path: ['providerYear'],
-      });
+    if (values.mode === 'AUTOMATIC') {
+      if (values.providerYear === '') {
+        context.addIssue({
+          code: 'custom',
+          message: 'Choose an installed provider and tax year',
+          path: ['providerYear'],
+        });
+      }
+      if (!isJsonObject(values.parameters)) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Enter a JSON object',
+          path: ['parameters'],
+        });
+      }
     }
     if (values.mode === 'MANUAL_NET') {
       if (values.manualJurisdiction.length < 2) {

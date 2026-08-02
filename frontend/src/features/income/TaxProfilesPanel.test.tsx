@@ -167,6 +167,55 @@ describe('tax profile workflows', () => {
     expect(screen.getByRole('table', { name: 'Tax settings' })).toBeVisible();
   });
 
+  it('requires explicit confirmation before replacing settings on the same date', async () => {
+    const user = userEvent.setup();
+    const postedPaths: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/tax-providers'))
+          return Promise.resolve(response([provider]));
+        if (path.includes('/tax-profiles?replace_existing=true')) {
+          postedPaths.push(path);
+          return Promise.resolve(response(automaticProfile));
+        }
+        if (path.endsWith('/tax-profiles') && init?.method !== 'POST')
+          return Promise.resolve(response([automaticProfile]));
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+
+    renderPanel();
+    await user.click(
+      await screen.findByRole('button', { name: 'Add tax settings' }),
+    );
+    await user.click(screen.getByLabelText('Provider and tax year'));
+    await user.click(screen.getByText(`${provider.display_name} — 2026`));
+    await user.click(screen.getByRole('button', { name: 'Save tax settings' }));
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Replace tax settings for this date?',
+      }),
+    ).toBeVisible();
+    expect(postedPaths).toHaveLength(0);
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(postedPaths).toHaveLength(0);
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('heading', {
+          name: 'Replace tax settings for this date?',
+        }),
+      ).toBeNull(),
+    );
+    await user.click(screen.getByRole('button', { name: 'Save tax settings' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Replace tax settings' }),
+    );
+    await waitFor(() => expect(postedPaths).toHaveLength(1));
+  });
+
   it('keeps manual net income usable when provider discovery fails', async () => {
     const user = userEvent.setup();
     let requestBody: Record<string, unknown> | undefined;
@@ -208,6 +257,10 @@ describe('tax profile workflows', () => {
       await screen.findByText(/Installed tax providers could not be loaded/i),
     ).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Add tax settings' }));
+    await user.click(screen.getByText('Advanced'));
+    fireEvent.change(screen.getByLabelText('Provider settings as JSON'), {
+      target: { value: '{broken' },
+    });
     await user.click(screen.getByLabelText('Calculation method'));
     await user.click(screen.getByText('Manual annual net income'));
     await user.type(screen.getByLabelText('Jurisdiction'), 'ca');
@@ -225,6 +278,34 @@ describe('tax profile workflows', () => {
       tax_year: '2026',
     });
   });
+
+  it.each([
+    ['failed', 500, { detail: 'Unavailable' }],
+    ['empty', 200, []],
+  ])(
+    'does not call an automatic profile installed when discovery is %s',
+    async (_, status, body) => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn<typeof fetch>((input) => {
+          const path = pathOf(input);
+          if (path.endsWith('/tax-providers'))
+            return Promise.resolve(response(body, status));
+          if (path.endsWith('/tax-profiles'))
+            return Promise.resolve(response([automaticProfile]));
+          throw new Error(`Unexpected request: ${path}`);
+        }),
+      );
+
+      renderPanel(false);
+
+      const table = await screen.findByRole('table', { name: 'Tax settings' });
+      expect(
+        within(table).getByText('Provider unavailable or not discovered'),
+      ).toBeVisible();
+      expect(within(table).queryByText('Installed provider')).toBeNull();
+    },
+  );
 });
 
 const validProfile = {

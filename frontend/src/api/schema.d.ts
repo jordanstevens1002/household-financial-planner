@@ -6310,7 +6310,9 @@ export interface operations {
     };
     create_tax_profile_api_v1_people__person_id__tax_profiles_post: {
         parameters: {
-            query?: never;
+            query?: {
+                replace_existing?: boolean;
+            };
             header?: {
                 "X-Development-Subject"?: string | null;
             };

@@ -18,6 +18,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import { apiRequest } from '../../api/client';
 import type { components } from '../../api/schema';
 import { AdvancedSection } from '../../shared/AdvancedSection';
+import { ConfirmDialog } from '../../shared/ConfirmDialog';
 import { DataTable, type DataColumn } from '../../shared/DataTable';
 import { EmptyState } from '../../shared/EmptyState';
 import { formatDate } from '../../shared/format';
@@ -53,6 +54,7 @@ export function TaxProfilesPanel({
   const queryClient = useQueryClient();
   const { notify } = useNotification();
   const [createOpen, setCreateOpen] = useState(false);
+  const [replacement, setReplacement] = useState<TaxProfileFields | null>(null);
   const profiles = useQuery({
     queryFn: () =>
       apiRequest<Profile[]>(`/api/v1/people/${personId}/tax-profiles`),
@@ -89,12 +91,19 @@ export function TaxProfilesPanel({
   });
   const mode = useWatch({ control: form.control, name: 'mode' });
   const createProfile = useMutation({
-    mutationFn: (fields: TaxProfileFields) => {
+    mutationFn: ({
+      fields,
+      replace,
+    }: {
+      fields: TaxProfileFields;
+      replace: boolean;
+    }) => {
       const automatic = fields.mode === 'AUTOMATIC';
       const [jurisdiction, taxYear] = automatic
         ? splitProvider(fields.providerYear)
         : [fields.manualJurisdiction.toUpperCase(), fields.manualTaxYear];
-      return apiRequest<Profile>(`/api/v1/people/${personId}/tax-profiles`, {
+      const path: `/api/${string}` = `/api/v1/people/${personId}/tax-profiles${replace ? '?replace_existing=true' : ''}`;
+      return apiRequest<Profile>(path, {
         body: JSON.stringify({
           effective_from: fields.effectiveFrom,
           effective_to: fields.effectiveTo || null,
@@ -117,8 +126,14 @@ export function TaxProfilesPanel({
     onSuccess: (created) => {
       queryClient.setQueryData<Profile[]>(
         ['tax-profiles', personId],
-        (current) => [...(current ?? []), created],
+        (current) => [
+          ...(current ?? []).filter(
+            (profile) => profile.effective_from !== created.effective_from,
+          ),
+          created,
+        ],
       );
+      setReplacement(null);
       setCreateOpen(false);
       form.reset({
         effectiveFrom: localCalendarDate(),
@@ -136,6 +151,9 @@ export function TaxProfilesPanel({
   const providerName = (jurisdiction: string) =>
     providers.data?.find((provider) => provider.jurisdiction === jurisdiction)
       ?.display_name ?? jurisdiction;
+  const providerAvailable = (jurisdiction: string) =>
+    providers.isSuccess &&
+    providers.data.some((provider) => provider.jurisdiction === jurisdiction);
   const columns: DataColumn<Profile>[] = [
     {
       key: 'provider',
@@ -152,7 +170,9 @@ export function TaxProfilesPanel({
       render: (row) =>
         row.settings.calculation_mode === 'MANUAL_NET'
           ? 'Manual annual net income'
-          : 'Installed provider',
+          : providerAvailable(row.jurisdiction)
+            ? 'Installed provider'
+            : 'Provider unavailable or not discovered',
     },
     {
       key: 'effective',
@@ -217,9 +237,17 @@ export function TaxProfilesPanel({
         <DialogTitle>Add tax settings</DialogTitle>
         <form
           onSubmit={(event) =>
-            void form.handleSubmit((fields) => createProfile.mutate(fields))(
-              event,
-            )
+            void form.handleSubmit((fields) => {
+              if (
+                profiles.data?.some(
+                  (profile) => profile.effective_from === fields.effectiveFrom,
+                )
+              ) {
+                setReplacement(fields);
+              } else {
+                createProfile.mutate({ fields, replace: false });
+              }
+            })(event)
           }
         >
           <DialogContent>
@@ -332,6 +360,18 @@ export function TaxProfilesPanel({
           </DialogActions>
         </form>
       </Dialog>
+      <ConfirmDialog
+        confirmLabel="Replace tax settings"
+        description={`Tax settings already exist from ${replacement?.effectiveFrom ?? ''}. Replace that profile with these values?`}
+        onCancel={() => setReplacement(null)}
+        onConfirm={() => {
+          if (replacement)
+            createProfile.mutate({ fields: replacement, replace: true });
+        }}
+        open={replacement !== null}
+        pending={createProfile.isPending}
+        title="Replace tax settings for this date?"
+      />
     </Stack>
   );
 }

@@ -239,6 +239,49 @@ async def test_automatic_tax_profile_drives_income_projection(
     assert body["people"][0]["calculation_mode"] == "AUTOMATIC"
 
 
+async def test_tax_profile_same_date_requires_explicit_replacement(
+    client: AsyncClient, finance_lookups: dict[str, LookupItem]
+) -> None:
+    household, person = await create_person(client)
+    await client.post(
+        f"/api/v1/people/{person['id']}/income-sources",
+        json=income_payload(finance_lookups["salary"], "Salary", 100_000, "ANNUAL"),
+    )
+    path = f"/api/v1/people/{person['id']}/tax-profiles"
+    automatic = {
+        "jurisdiction": "AU",
+        "tax_year": "2025-26",
+        "effective_from": "2025-07-01",
+        "settings": {},
+    }
+    assert (await client.post(path, json=automatic)).status_code == 201
+    manual = automatic | {
+        "jurisdiction": "NZ",
+        "tax_year": "2026",
+        "settings": {
+            "calculation_mode": "MANUAL_NET",
+            "manual_annual_net_income": 70_000,
+        },
+    }
+
+    collision = await client.post(path, json=manual)
+    assert collision.status_code == 409
+    replacement = await client.post(path, params={"replace_existing": True}, json=manual)
+    assert replacement.status_code == 200
+    profiles = (await client.get(path)).json()
+    assert len(profiles) == 1
+    assert profiles[0]["settings"]["calculation_mode"] == "MANUAL_NET"
+
+    projection = (
+        await client.get(
+            f"/api/v1/households/{household['id']}/income-projection",
+            params={"as_of": "2025-07-01"},
+        )
+    ).json()
+    assert projection["people"][0]["calculation_mode"] == "MANUAL_NET"
+    assert projection["people"][0]["annual_net_income"] == "70000.00"
+
+
 async def test_latest_tax_rules_are_used_as_future_planning_fallback(
     client: AsyncClient, finance_lookups: dict[str, LookupItem]
 ) -> None:

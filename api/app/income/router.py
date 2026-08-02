@@ -4,8 +4,9 @@ import uuid
 from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -271,7 +272,10 @@ async def list_tax_profiles(
     return list(
         await session.scalars(
             select(PersonTaxProfile)
-            .where(PersonTaxProfile.person_id == person_id)
+            .where(
+                PersonTaxProfile.person_id == person_id,
+                PersonTaxProfile.superseded_at.is_(None),
+            )
             .order_by(PersonTaxProfile.effective_from)
         )
     )
@@ -299,6 +303,8 @@ async def list_tax_providers(
 async def create_tax_profile(
     person_id: uuid.UUID,
     payload: TaxProfileCreate,
+    response: Response,
+    replace_existing: bool = Query(False),
     user: ApplicationUser = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ) -> PersonTaxProfile:
@@ -310,17 +316,38 @@ async def create_tax_profile(
             settings["parameters"] = engine.validate_parameters(payload.settings.parameters)
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
-    record = PersonTaxProfile(
-        person_id=person_id,
-        jurisdiction=payload.jurisdiction,
-        tax_year=payload.tax_year,
-        settings=settings,
-        effective_from=payload.effective_from,
-        effective_to=payload.effective_to,
+    existing = await session.scalar(
+        select(PersonTaxProfile)
+        .where(
+            PersonTaxProfile.person_id == person_id,
+            PersonTaxProfile.effective_from == payload.effective_from,
+            PersonTaxProfile.superseded_at.is_(None),
+        )
+        .with_for_update()
     )
+    if existing is not None and not replace_existing:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Tax settings already exist for this effective date; confirm replacement",
+        )
+    record = existing or PersonTaxProfile(person_id=person_id)
+    record.jurisdiction = payload.jurisdiction
+    record.tax_year = payload.tax_year
+    record.settings = settings
+    record.effective_from = payload.effective_from
+    record.effective_to = payload.effective_to
     session.add(record)
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError as exc:
+        await session.rollback()
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Tax settings already exist for this effective date; confirm replacement",
+        ) from exc
     await session.refresh(record)
+    if existing is not None:
+        response.status_code = status.HTTP_200_OK
     return record
 
 
@@ -441,10 +468,11 @@ async def _person_projection(
         select(PersonTaxProfile)
         .where(
             PersonTaxProfile.person_id == person.id,
+            PersonTaxProfile.superseded_at.is_(None),
             PersonTaxProfile.effective_from <= as_of,
             or_(PersonTaxProfile.effective_to.is_(None), PersonTaxProfile.effective_to >= as_of),
         )
-        .order_by(PersonTaxProfile.effective_from.desc())
+        .order_by(PersonTaxProfile.effective_from.desc(), PersonTaxProfile.id.desc())
     )
     if profile is None:
         return PersonIncomeProjection(

@@ -573,7 +573,17 @@ class IncomeSource(Base):
 
 class PersonTaxProfile(Base):
     __tablename__ = "person_tax_profiles"
-    __table_args__ = (CheckConstraint("effective_to IS NULL OR effective_to >= effective_from"),)
+    __table_args__ = (
+        CheckConstraint("effective_to IS NULL OR effective_to >= effective_from"),
+        Index(
+            "uq_person_tax_profiles_active_date",
+            "person_id",
+            "effective_from",
+            unique=True,
+            postgresql_where=text("superseded_at IS NULL"),
+            sqlite_where=text("superseded_at IS NULL"),
+        ),
+    )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     person_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("people.id", ondelete="CASCADE"), index=True
@@ -583,6 +593,7 @@ class PersonTaxProfile(Base):
     settings: Mapped[dict[str, object]] = mapped_column(JSON().with_variant(JSONB, "postgresql"))
     effective_from: Mapped[date] = mapped_column(Date, index=True)
     effective_to: Mapped[date | None] = mapped_column(Date)
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class HouseholdExpense(Base):
