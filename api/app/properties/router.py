@@ -167,7 +167,9 @@ async def list_property_summaries(
                 id=property_record.id,
                 display_name=property_record.display_name,
                 property_type_id=property_record.property_type_id,
-                current_status_id=property_record.current_status_id,
+                current_status_id=(
+                    baseline.status_id if baseline else property_record.current_status_id
+                ),
                 currency=property_record.default_currency,
                 purchase_date=property_record.purchase_date,
                 purchase_price=property_record.purchase_price,

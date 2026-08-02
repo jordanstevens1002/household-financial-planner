@@ -464,6 +464,7 @@ export function PropertiesPage() {
           saveSelection('property', propertyId);
         }}
         open={createOpen}
+        properties={properties.data ?? []}
         propertyTypes={propertyTypes.data ?? []}
         statuses={statuses.data ?? []}
       />

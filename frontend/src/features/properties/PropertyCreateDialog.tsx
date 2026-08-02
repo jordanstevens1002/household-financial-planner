@@ -24,6 +24,7 @@ import { useAuth } from '../auth/AuthContext';
 import { localCalendarDate } from '../people/localDate';
 
 type Country = components['schemas']['CountryRead'];
+type Baseline = components['schemas']['BaselineRead'];
 type Lookup = components['schemas']['LookupRead'];
 type PropertySummary = components['schemas']['PropertySummaryRead'];
 type PropertyWizard = components['schemas']['PropertyWizardRead'];
@@ -58,12 +59,13 @@ const propertySchema = z
     countryCode: z.string(),
     currentStatusId: z.string().min(1, 'Choose the current use'),
     currentValue: z.string(),
-    displayName: z.string().trim().min(1, 'Enter a property name').max(200),
+    displayName: z.string().trim().max(200),
+    existingPropertyId: z.string(),
     mode: z.enum(['CURRENT_SNAPSHOT', 'HISTORICAL_PURCHASE']),
     notes: z.string().trim().max(2000),
     positionDate: z.string(),
     postalCode: z.string().trim().max(20),
-    propertyTypeId: z.string().min(1, 'Choose a property type'),
+    propertyTypeId: z.string(),
     purchaseDate: z.string(),
     purchasePrice: z.string(),
     stateOrRegion: z.string().trim().max(120),
@@ -71,6 +73,22 @@ const propertySchema = z
     totalDebt: z.string(),
   })
   .superRefine((fields, context) => {
+    const createsProperty =
+      fields.mode === 'HISTORICAL_PURCHASE' || !fields.existingPropertyId;
+    if (createsProperty && !fields.displayName) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Enter a property name',
+        path: ['displayName'],
+      });
+    }
+    if (createsProperty && !fields.propertyTypeId) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Choose a property type',
+        path: ['propertyTypeId'],
+      });
+    }
     if (fields.mode === 'CURRENT_SNAPSHOT') {
       if (!validDate(fields.positionDate)) {
         context.addIssue({
@@ -120,6 +138,7 @@ function defaults(jurisdiction: string | null): PropertyFields {
     currentStatusId: '',
     currentValue: '',
     displayName: '',
+    existingPropertyId: '',
     mode: 'CURRENT_SNAPSHOT',
     notes: '',
     positionDate: localCalendarDate(),
@@ -148,6 +167,7 @@ export function PropertyCreateDialog({
   onClose,
   onCreated,
   open,
+  properties,
   propertyTypes,
   statuses,
 }: {
@@ -157,6 +177,7 @@ export function PropertyCreateDialog({
   onClose: () => void;
   onCreated: (propertyId: string) => void;
   open: boolean;
+  properties: PropertySummary[];
   propertyTypes: Lookup[];
   statuses: Lookup[];
 }) {
@@ -168,14 +189,51 @@ export function PropertyCreateDialog({
     resolver: zodResolver(propertySchema),
   });
   const mode = useWatch({ control: form.control, name: 'mode' });
+  const existingPropertyId = useWatch({
+    control: form.control,
+    name: 'existingPropertyId',
+  });
   const countries = useQuery({
-    enabled: open,
+    enabled:
+      open &&
+      (mode === 'HISTORICAL_PURCHASE' || existingPropertyId.length === 0),
     queryFn: () => apiRequest<Country[]>('/api/v1/reference/countries'),
     queryKey: ['reference', 'countries'],
   });
   const createProperty = useMutation({
-    mutationFn: (fields: PropertyFields) =>
-      apiRequest<PropertyWizard>(
+    mutationFn: async (fields: PropertyFields) => {
+      if (fields.mode === 'CURRENT_SNAPSHOT' && fields.existingPropertyId) {
+        const property = properties.find(
+          (item) => item.id === fields.existingPropertyId,
+        );
+        if (!property) throw new Error('Choose an accessible property');
+        const baseline = await apiRequest<Baseline>(
+          `/api/v1/properties/${property.id}/baselines`,
+          {
+            body: JSON.stringify({
+              baseline_date: fields.positionDate,
+              loan_balance_total: fields.totalDebt,
+              property_value: fields.currentValue,
+              status_id: fields.currentStatusId,
+            }),
+            csrfToken: auth.csrfToken(),
+            method: 'POST',
+          },
+        );
+        return {
+          notification: 'Current position recorded',
+          propertyId: property.id,
+          summary: {
+            ...property,
+            current_status_id: baseline.status_id,
+            current_value: baseline.property_value,
+            position_date: baseline.baseline_date,
+            setup_mode: 'CURRENT_SNAPSHOT' as const,
+            total_property_debt: baseline.loan_balance_total,
+          },
+        };
+      }
+      const created = await apiRequest<PropertyWizard>(
         `/api/v1/households/${householdId}/properties/wizard`,
         {
           body: JSON.stringify({
@@ -212,8 +270,7 @@ export function PropertyCreateDialog({
           csrfToken: auth.csrfToken(),
           method: 'POST',
         },
-      ),
-    onSuccess: async (created) => {
+      );
       const summary: PropertySummary = {
         currency: created.property.default_currency,
         current_status_id: created.property.current_status_id,
@@ -229,6 +286,13 @@ export function PropertyCreateDialog({
           : 'HISTORICAL_PURCHASE',
         total_property_debt: created.baseline?.loan_balance_total ?? null,
       };
+      return {
+        notification: 'Property added',
+        propertyId: created.property.id,
+        summary,
+      };
+    },
+    onSuccess: async ({ notification, propertyId, summary }) => {
       queryClient.setQueryData<PropertySummary[]>(
         ['property-summaries', householdId],
         (current = []) => [
@@ -236,10 +300,10 @@ export function PropertyCreateDialog({
           summary,
         ],
       );
-      onCreated(created.property.id);
+      onCreated(propertyId);
       form.reset(defaults(jurisdiction));
       onClose();
-      notify('Property added', 'success');
+      notify(notification, 'success');
       await queryClient.invalidateQueries({
         queryKey: ['property-summaries', householdId],
       });
@@ -262,7 +326,9 @@ export function PropertyCreateDialog({
           );
         }}
       >
-        <DialogTitle>Add a property</DialogTitle>
+        <DialogTitle>
+          {existingPropertyId ? 'Record current position' : 'Add a property'}
+        </DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             <Controller
@@ -274,11 +340,9 @@ export function PropertyCreateDialog({
                   label="How would you like to start?"
                   select
                 >
-                  <MenuItem value="CURRENT_SNAPSHOT">
-                    Record where things stand now
-                  </MenuItem>
+                  <MenuItem value="CURRENT_SNAPSHOT">Current position</MenuItem>
                   <MenuItem value="HISTORICAL_PURCHASE">
-                    Record purchase history
+                    Historical purchase
                   </MenuItem>
                 </TextField>
               )}
@@ -288,28 +352,45 @@ export function PropertyCreateDialog({
                 ? 'Record a dated property value and its total debt. Individual loans can be added separately.'
                 : 'Record what was paid and when. Purchase history does not mean the property is debt-free.'}
             </Alert>
-            <TextField
-              autoFocus
-              error={Boolean(form.formState.errors.displayName)}
-              helperText={form.formState.errors.displayName?.message}
-              label="Property name"
-              {...form.register('displayName')}
-            />
-            <Stack direction="row" spacing={2}>
+            {mode === 'CURRENT_SNAPSHOT' && properties.length ? (
               <TextField
-                error={Boolean(form.formState.errors.propertyTypeId)}
-                fullWidth
-                helperText={form.formState.errors.propertyTypeId?.message}
-                label="Property type"
+                label="Property to update"
                 select
-                {...form.register('propertyTypeId')}
+                {...form.register('existingPropertyId')}
               >
-                {propertyTypes.map((item) => (
-                  <MenuItem key={item.id} value={item.id}>
-                    {item.display_name}
+                <MenuItem value="">Create a new property</MenuItem>
+                {properties.map((property) => (
+                  <MenuItem key={property.id} value={property.id}>
+                    {property.display_name}
                   </MenuItem>
                 ))}
               </TextField>
+            ) : null}
+            {!existingPropertyId || mode === 'HISTORICAL_PURCHASE' ? (
+              <>
+                <TextField
+                  autoFocus
+                  error={Boolean(form.formState.errors.displayName)}
+                  helperText={form.formState.errors.displayName?.message}
+                  label="Property name"
+                  {...form.register('displayName')}
+                />
+                <TextField
+                  error={Boolean(form.formState.errors.propertyTypeId)}
+                  helperText={form.formState.errors.propertyTypeId?.message}
+                  label="Property type"
+                  select
+                  {...form.register('propertyTypeId')}
+                >
+                  {propertyTypes.map((item) => (
+                    <MenuItem key={item.id} value={item.id}>
+                      {item.display_name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </>
+            ) : null}
+            <Stack>
               <TextField
                 error={Boolean(form.formState.errors.currentStatusId)}
                 fullWidth
@@ -371,79 +452,81 @@ export function PropertyCreateDialog({
                 />
               </Stack>
             )}
-            <AdvancedSection description="Add the property address and notes when they are useful to your household.">
-              <Stack spacing={2}>
-                <TextField
-                  label="Street address (optional)"
-                  {...form.register('addressLine1')}
-                />
-                <Stack direction="row" spacing={2}>
+            {existingPropertyId && mode === 'CURRENT_SNAPSHOT' ? null : (
+              <AdvancedSection description="Add the property address and notes when they are useful to your household.">
+                <Stack spacing={2}>
                   <TextField
-                    fullWidth
-                    label="Suburb or locality (optional)"
-                    {...form.register('suburbOrLocality')}
+                    label="Street address (optional)"
+                    {...form.register('addressLine1')}
+                  />
+                  <Stack direction="row" spacing={2}>
+                    <TextField
+                      fullWidth
+                      label="Suburb or locality (optional)"
+                      {...form.register('suburbOrLocality')}
+                    />
+                    <TextField
+                      fullWidth
+                      label="State or region (optional)"
+                      {...form.register('stateOrRegion')}
+                    />
+                    <TextField
+                      fullWidth
+                      label="Postal code (optional)"
+                      {...form.register('postalCode')}
+                    />
+                  </Stack>
+                  <Controller
+                    control={form.control}
+                    name="countryCode"
+                    render={({ field }) => {
+                      const discovered = countries.data ?? [];
+                      const fallback =
+                        field.value &&
+                        !discovered.some(
+                          (country) => country.code === field.value,
+                        )
+                          ? {
+                              code: field.value,
+                              display_name: `${field.value} (household country)`,
+                              flag: '🌐',
+                              recommended_currency: null,
+                            }
+                          : null;
+                      const options = fallback
+                        ? [fallback, ...discovered]
+                        : discovered;
+                      return (
+                        <Autocomplete
+                          getOptionLabel={(option) =>
+                            `${option.flag} ${option.display_name}`
+                          }
+                          loading={countries.isPending}
+                          onChange={(_, option) =>
+                            field.onChange(option?.code ?? '')
+                          }
+                          options={options}
+                          value={
+                            options.find(
+                              (country) => country.code === field.value,
+                            ) ?? null
+                          }
+                          renderInput={(params) => (
+                            <TextField {...params} label="Country (optional)" />
+                          )}
+                        />
+                      );
+                    }}
                   />
                   <TextField
-                    fullWidth
-                    label="State or region (optional)"
-                    {...form.register('stateOrRegion')}
-                  />
-                  <TextField
-                    fullWidth
-                    label="Postal code (optional)"
-                    {...form.register('postalCode')}
+                    label="Notes (optional)"
+                    minRows={2}
+                    multiline
+                    {...form.register('notes')}
                   />
                 </Stack>
-                <Controller
-                  control={form.control}
-                  name="countryCode"
-                  render={({ field }) => {
-                    const discovered = countries.data ?? [];
-                    const fallback =
-                      field.value &&
-                      !discovered.some(
-                        (country) => country.code === field.value,
-                      )
-                        ? {
-                            code: field.value,
-                            display_name: `${field.value} (household country)`,
-                            flag: '🌐',
-                            recommended_currency: null,
-                          }
-                        : null;
-                    const options = fallback
-                      ? [fallback, ...discovered]
-                      : discovered;
-                    return (
-                      <Autocomplete
-                        getOptionLabel={(option) =>
-                          `${option.flag} ${option.display_name}`
-                        }
-                        loading={countries.isPending}
-                        onChange={(_, option) =>
-                          field.onChange(option?.code ?? '')
-                        }
-                        options={options}
-                        value={
-                          options.find(
-                            (country) => country.code === field.value,
-                          ) ?? null
-                        }
-                        renderInput={(params) => (
-                          <TextField {...params} label="Country (optional)" />
-                        )}
-                      />
-                    );
-                  }}
-                />
-                <TextField
-                  label="Notes (optional)"
-                  minRows={2}
-                  multiline
-                  {...form.register('notes')}
-                />
-              </Stack>
-            </AdvancedSection>
+              </AdvancedSection>
+            )}
             {countries.error ? (
               <Alert severity="warning">
                 Countries could not be loaded. The household country remains
@@ -464,7 +547,7 @@ export function PropertyCreateDialog({
             type="submit"
             variant="contained"
           >
-            Save property
+            {existingPropertyId ? 'Save current position' : 'Save property'}
           </Button>
         </DialogActions>
       </Box>

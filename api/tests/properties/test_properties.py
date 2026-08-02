@@ -98,7 +98,7 @@ async def test_current_snapshot_wizard_accepts_no_loan_and_warns_on_incomplete_o
 
 
 async def test_property_summaries_distinguish_snapshot_debt_from_unrecorded_history(
-    client: AsyncClient, property_lookups: dict[str, str]
+    client: AsyncClient, property_lookups: dict[str, str], session: AsyncSession
 ) -> None:
     household = await create_household(client)
     snapshot = await client.post(
@@ -127,13 +127,22 @@ async def test_property_summaries_distinguish_snapshot_debt_from_unrecorded_hist
         },
     )
     assert snapshot.status_code == history.status_code == 201
+    rented = LookupItem(
+        category="property_status",
+        code="RENTED_LATER",
+        display_name="Rented later",
+        is_active=True,
+        is_active_asset=True,
+    )
+    session.add(rented)
+    await session.commit()
     later_baseline = await client.post(
         f"/api/v1/properties/{snapshot.json()['property']['id']}/baselines",
         json={
             "baseline_date": "2026-08-27",
             "property_value": "860000.00",
             "loan_balance_total": "300000.00",
-            "status_id": property_lookups["status"],
+            "status_id": str(rented.id),
         },
     )
     assert later_baseline.status_code == 201
@@ -147,6 +156,7 @@ async def test_property_summaries_distinguish_snapshot_debt_from_unrecorded_hist
     assert by_name["Current home"]["position_date"] == "2026-08-27"
     assert by_name["Current home"]["current_value"] == "860000.00"
     assert by_name["Current home"]["total_property_debt"] == "300000.00"
+    assert by_name["Current home"]["current_status_id"] == str(rented.id)
     assert by_name["Earlier purchase"]["setup_mode"] == "HISTORICAL_PURCHASE"
     assert by_name["Earlier purchase"]["purchase_price"] == "520000.00"
     assert by_name["Earlier purchase"]["current_value"] is None

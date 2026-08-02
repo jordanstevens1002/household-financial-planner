@@ -492,7 +492,7 @@ describe('property overview workflows', () => {
     );
     await user.click(screen.getByLabelText('How would you like to start?'));
     await user.click(
-      screen.getByRole('option', { name: 'Record purchase history' }),
+      screen.getByRole('option', { name: 'Historical purchase' }),
     );
     expect(
       screen.getByText(/does not mean the property is debt-free/i),
@@ -526,6 +526,89 @@ describe('property overview workflows', () => {
     });
     expect(saved).not.toHaveProperty('property.current_value');
     expect(saved).not.toHaveProperty('property.total_property_debt');
+  });
+
+  it('adds a current position to an existing property record', async () => {
+    const user = userEvent.setup();
+    let saved: Record<string, unknown> | null = null;
+    let updated = false;
+    const fallback = standardFetch();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/reference/countries')) {
+          return Promise.resolve(response([]));
+        }
+        if (path.endsWith('/property-summaries') && updated) {
+          return Promise.resolve(
+            response([
+              {
+                ...summary,
+                current_value: '825000.00',
+                position_date: '2026-09-01',
+                total_property_debt: '295000.00',
+              },
+            ]),
+          );
+        }
+        if (
+          path.endsWith(`/properties/${propertyId}/baselines`) &&
+          init?.method === 'POST'
+        ) {
+          saved = JSON.parse(init.body as string) as Record<string, unknown>;
+          updated = true;
+          return Promise.resolve(
+            response(
+              {
+                baseline_date: '2026-09-01',
+                id: 'd054419c-1ff9-48ec-a8ea-d5d5468d05c5',
+                loan_balance_total: '295000.00',
+                notes: null,
+                property_id: propertyId,
+                property_value: '825000.00',
+                status_id: statusId,
+              },
+              201,
+            ),
+          );
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Add property' }),
+    );
+    await user.click(screen.getByLabelText('Property to update'));
+    await user.click(screen.getByRole('option', { name: 'Harbour home' }));
+    expect(screen.queryByLabelText('Property name')).toBeNull();
+    expect(screen.queryByLabelText('Property type')).toBeNull();
+    await user.click(screen.getByLabelText('Current use'));
+    await user.click(screen.getByRole('option', { name: 'Home' }));
+    await user.clear(screen.getByLabelText('Position date'));
+    await user.type(screen.getByLabelText('Position date'), '2026-09-01');
+    await user.type(screen.getByLabelText('Property value (NZD)'), '825000');
+    await user.type(
+      screen.getByLabelText('Total property debt (NZD)'),
+      '295000',
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Save current position' }),
+    );
+
+    expect(await screen.findByText('Current position recorded')).toBeVisible();
+    expect(saved).toEqual({
+      baseline_date: '2026-09-01',
+      loan_balance_total: '295000',
+      property_value: '825000',
+      status_id: statusId,
+    });
+    const table = await screen.findByRole('table');
+    expect(table).toHaveTextContent('NZ$825,000.00');
+    expect(table).toHaveTextContent('NZ$295,000.00');
+    expect(localStorage.getItem(selectionKeys.property)).toBe(propertyId);
   });
 
   it('does not offer creation to a view-only household member', async () => {
