@@ -30,6 +30,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useHousehold } from '../households/HouseholdContext';
 import { localCalendarDate } from '../people/localDate';
 import { expenseSchema, type ExpenseFields } from './expenseValidation';
+import { CashFlowSummary } from './CashFlowSummary';
 
 type Access = components['schemas']['HouseholdAccessRead'];
 type Expense = components['schemas']['HouseholdExpenseRead'];
@@ -308,10 +309,15 @@ export function CashFlowPage() {
           Cash flow
         </Typography>
         <Typography color="text.secondary">
-          Record household spending as dated recurring or one-off expenses.
-          Calculated summaries will be added in the next review slice.
+          Review income, spending and loan repayments together, then record
+          household expenses as dated recurring or one-off costs.
         </Typography>
       </Box>
+      <CashFlowSummary
+        currency={selectedHousehold.currency}
+        householdId={selectedHousehold.id}
+      />
+      <Typography variant="h2">Household expenses</Typography>
       {canEdit ? (
         <Button
           onClick={openCreate}
