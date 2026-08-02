@@ -279,7 +279,7 @@ async def test_tax_profile_same_date_requires_explicit_replacement(
         )
     ).json()
     assert projection["people"][0]["calculation_mode"] == "MANUAL_NET"
-    assert projection["people"][0]["annual_net_income"] == "70000.00"
+    assert projection["people"][0]["net_income"] == "70000.00"
 
 
 async def test_latest_tax_rules_are_used_as_future_planning_fallback(
