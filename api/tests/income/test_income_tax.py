@@ -317,12 +317,18 @@ async def test_tax_calculation_rejects_unsupported_year_and_accepts_manual_net(
 ) -> None:
     unsupported = await client.post(
         "/api/v1/calculations/tax",
-        json={"jurisdiction": "AU", "tax_year": "2026-27", "gross_taxable_income": 80_000},
+        json={
+            "currency": "AUD",
+            "jurisdiction": "AU",
+            "tax_year": "2026-27",
+            "gross_taxable_income": 80_000,
+        },
     )
     assert unsupported.status_code == 422
     manual = await client.post(
         "/api/v1/calculations/tax",
         json={
+            "currency": "nzd",
             "jurisdiction": "NZ",
             "tax_year": "2025-26",
             "gross_taxable_income": 80_000,
@@ -333,8 +339,41 @@ async def test_tax_calculation_rejects_unsupported_year_and_accepts_manual_net(
         },
     )
     assert manual.status_code == 200
+    assert manual.json()["currency"] == "NZD"
     assert manual.json()["net_income"] == "65000"
     assert "Manual net income" in manual.json()["warnings"][0]
+
+    equal = await client.post(
+        "/api/v1/calculations/tax",
+        json={
+            "currency": "NZD",
+            "jurisdiction": "NZ",
+            "tax_year": "2025-26",
+            "gross_taxable_income": 80_000,
+            "settings": {
+                "calculation_mode": "MANUAL_NET",
+                "manual_annual_net_income": 80_000,
+            },
+        },
+    )
+    assert equal.status_code == 200
+    assert equal.json()["total"] == "0"
+
+    over_gross = await client.post(
+        "/api/v1/calculations/tax",
+        json={
+            "currency": "NZD",
+            "jurisdiction": "NZ",
+            "tax_year": "2025-26",
+            "gross_taxable_income": 80_000,
+            "settings": {
+                "calculation_mode": "MANUAL_NET",
+                "manual_annual_net_income": 80_001,
+            },
+        },
+    )
+    assert over_gross.status_code == 422
+    assert "must not exceed" in str(over_gross.json())
 
 
 async def test_australian_provider_rejects_unknown_country_parameters(
@@ -343,6 +382,7 @@ async def test_australian_provider_rejects_unknown_country_parameters(
     response = await client.post(
         "/api/v1/calculations/tax",
         json={
+            "currency": "AUD",
             "jurisdiction": "au",
             "tax_year": "2025-26",
             "gross_taxable_income": 80_000,

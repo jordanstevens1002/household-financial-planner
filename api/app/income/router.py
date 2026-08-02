@@ -21,6 +21,7 @@ from app.income.schemas import (
     LoanRepaymentAllocationRead,
     LoanRepaymentProjectionRead,
     PersonIncomeProjection,
+    StandaloneTaxCalculationRead,
     TaxCalculationRead,
     TaxCalculationRequest,
     TaxProfileCreate,
@@ -370,16 +371,17 @@ def _automatic_tax(
     return TaxCalculationRead.model_validate(result, from_attributes=True)
 
 
-@router.post("/calculations/tax", response_model=TaxCalculationRead)
+@router.post("/calculations/tax", response_model=StandaloneTaxCalculationRead)
 async def calculate_tax(
     payload: TaxCalculationRequest,
     _: ApplicationUser = Depends(current_user),
-) -> TaxCalculationRead:
+) -> StandaloneTaxCalculationRead:
     if payload.settings.calculation_mode == "MANUAL_NET":
         net = payload.settings.manual_annual_net_income
         assert net is not None
         total = max(payload.gross_taxable_income - net, Decimal("0"))
-        return TaxCalculationRead(
+        return StandaloneTaxCalculationRead(
+            currency=payload.currency,
             jurisdiction=payload.jurisdiction,
             tax_year=payload.tax_year,
             ruleset_version="manual",
@@ -389,9 +391,10 @@ async def calculate_tax(
             net_income=net,
             warnings=["Manual net income used; tax components are not calculated."],
         )
-    return _automatic_tax(
+    result = _automatic_tax(
         payload.jurisdiction, payload.tax_year, payload.gross_taxable_income, payload.settings
     )
+    return StandaloneTaxCalculationRead(currency=payload.currency, **result.model_dump())
 
 
 @router.get("/households/{household_id}/expenses", response_model=list[HouseholdExpenseRead])

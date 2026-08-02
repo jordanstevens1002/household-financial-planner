@@ -7259,6 +7259,68 @@
         "title": "SessionResponse",
         "type": "object"
       },
+      "StandaloneTaxCalculationRead": {
+        "properties": {
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/TaxComponentRead"
+            },
+            "title": "Components",
+            "type": "array"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "jurisdiction": {
+            "title": "Jurisdiction",
+            "type": "string"
+          },
+          "net_income": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Net Income",
+            "type": "string"
+          },
+          "ruleset_version": {
+            "title": "Ruleset Version",
+            "type": "string"
+          },
+          "tax_year": {
+            "title": "Tax Year",
+            "type": "string"
+          },
+          "taxable_income": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Taxable Income",
+            "type": "string"
+          },
+          "total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "jurisdiction",
+          "tax_year",
+          "ruleset_version",
+          "taxable_income",
+          "components",
+          "total",
+          "net_income",
+          "warnings",
+          "currency"
+        ],
+        "title": "StandaloneTaxCalculationRead",
+        "type": "object"
+      },
       "SystemStatusRead": {
         "properties": {
           "status": {
@@ -7352,65 +7414,15 @@
         "title": "TargetCalculationRequest",
         "type": "object"
       },
-      "TaxCalculationRead": {
-        "properties": {
-          "components": {
-            "items": {
-              "$ref": "#/components/schemas/TaxComponentRead"
-            },
-            "title": "Components",
-            "type": "array"
-          },
-          "jurisdiction": {
-            "title": "Jurisdiction",
-            "type": "string"
-          },
-          "net_income": {
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Net Income",
-            "type": "string"
-          },
-          "ruleset_version": {
-            "title": "Ruleset Version",
-            "type": "string"
-          },
-          "tax_year": {
-            "title": "Tax Year",
-            "type": "string"
-          },
-          "taxable_income": {
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Taxable Income",
-            "type": "string"
-          },
-          "total": {
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Total",
-            "type": "string"
-          },
-          "warnings": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Warnings",
-            "type": "array"
-          }
-        },
-        "required": [
-          "jurisdiction",
-          "tax_year",
-          "ruleset_version",
-          "taxable_income",
-          "components",
-          "total",
-          "net_income",
-          "warnings"
-        ],
-        "title": "TaxCalculationRead",
-        "type": "object"
-      },
       "TaxCalculationRequest": {
         "properties": {
+          "currency": {
+            "maxLength": 3,
+            "minLength": 3,
+            "pattern": "^[A-Za-z]{3}$",
+            "title": "Currency",
+            "type": "string"
+          },
           "gross_taxable_income": {
             "anyOf": [
               {
@@ -7441,6 +7453,7 @@
           }
         },
         "required": [
+          "currency",
           "jurisdiction",
           "tax_year",
           "gross_taxable_income"
@@ -9140,7 +9153,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TaxCalculationRead"
+                  "$ref": "#/components/schemas/StandaloneTaxCalculationRead"
                 }
               }
             },
