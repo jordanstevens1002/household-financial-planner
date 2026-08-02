@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Alert,
+  Autocomplete,
   Button,
   CircularProgress,
   MenuItem,
@@ -10,22 +11,25 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useEffect, useMemo } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 
 import { apiRequest } from '../../api/client';
 import type { components } from '../../api/schema';
 import { AdvancedSection } from '../../shared/AdvancedSection';
 import { DataTable, type DataColumn } from '../../shared/DataTable';
+import { formatCurrency } from '../../shared/format';
 import { useAuth } from '../auth/AuthContext';
 import {
   taxCalculationSchema,
   type TaxCalculationFields,
 } from './taxCalculationValidation';
+import { taxCalculationProvenance } from './taxCalculationProvenance';
 import { parseProviderParameters } from './taxProfileValidation';
 
-type Calculation = components['schemas']['TaxCalculationRead'];
+type Calculation = components['schemas']['StandaloneTaxCalculationRead'];
 type Component = components['schemas']['TaxComponentRead'];
+type Currency = components['schemas']['CurrencyRead'];
 type Provider = components['schemas']['TaxProviderRead'];
 
 function message(error: unknown) {
@@ -37,18 +41,16 @@ function splitProvider(value: string): [string, string] {
   return [value.slice(0, separator), value.slice(separator + 1)];
 }
 
-function formatAmount(value: number | string) {
-  return new Intl.NumberFormat(undefined, {
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2,
-  }).format(Number(value));
-}
-
 export function TaxCalculatorPanel() {
   const auth = useAuth();
   const providers = useQuery({
     queryFn: () => apiRequest<Provider[]>('/api/v1/tax-providers'),
     queryKey: ['providers', 'tax'],
+    retry: false,
+  });
+  const currencies = useQuery({
+    queryFn: () => apiRequest<Currency[]>('/api/v1/reference/currencies'),
+    queryKey: ['reference', 'currencies'],
     retry: false,
   });
   const providerOptions = useMemo(
@@ -65,6 +67,7 @@ export function TaxCalculatorPanel() {
   );
   const form = useForm<TaxCalculationFields>({
     defaultValues: {
+      currency: '',
       grossTaxableIncome: '',
       manualAnnualNetIncome: '',
       manualJurisdiction: '',
@@ -76,6 +79,25 @@ export function TaxCalculatorPanel() {
     resolver: zodResolver(taxCalculationSchema),
   });
   const mode = useWatch({ control: form.control, name: 'mode' });
+  const currency = useWatch({ control: form.control, name: 'currency' });
+  const gross = useWatch({ control: form.control, name: 'grossTaxableIncome' });
+  const manualNet = useWatch({
+    control: form.control,
+    name: 'manualAnnualNetIncome',
+  });
+  const manualJurisdiction = useWatch({
+    control: form.control,
+    name: 'manualJurisdiction',
+  });
+  const manualTaxYear = useWatch({
+    control: form.control,
+    name: 'manualTaxYear',
+  });
+  const parameters = useWatch({ control: form.control, name: 'parameters' });
+  const providerYear = useWatch({
+    control: form.control,
+    name: 'providerYear',
+  });
   const calculate = useMutation({
     mutationFn: (fields: TaxCalculationFields) => {
       const automatic = fields.mode === 'AUTOMATIC';
@@ -84,6 +106,7 @@ export function TaxCalculatorPanel() {
         : [fields.manualJurisdiction.toUpperCase(), fields.manualTaxYear];
       return apiRequest<Calculation>('/api/v1/calculations/tax', {
         body: JSON.stringify({
+          currency: fields.currency,
           gross_taxable_income: fields.grossTaxableIncome,
           jurisdiction,
           settings: automatic
@@ -102,18 +125,31 @@ export function TaxCalculatorPanel() {
       });
     },
   });
+  const resetCalculation = calculate.reset;
+  useEffect(() => {
+    resetCalculation();
+  }, [
+    currency,
+    gross,
+    manualJurisdiction,
+    manualNet,
+    manualTaxYear,
+    mode,
+    parameters,
+    providerYear,
+    resetCalculation,
+  ]);
   const result = calculate.data;
-  const providerName = result
-    ? providers.data?.find(
-        (provider) => provider.jurisdiction === result.jurisdiction,
-      )?.display_name
-    : undefined;
+  const provenance = result
+    ? taxCalculationProvenance(result, providers.data ?? [])
+    : '';
   const columns: DataColumn<Component>[] = [
     { key: 'component', label: 'Component', render: (row) => row.display_name },
     {
       key: 'amount',
       label: 'Amount',
-      render: (row) => formatAmount(row.amount),
+      render: (row) =>
+        result ? formatCurrency(row.amount, result.currency) : row.amount,
     },
   ];
 
@@ -140,6 +176,22 @@ export function TaxCalculatorPanel() {
           remains available. {message(providers.error)}
         </Alert>
       ) : null}
+      {currencies.error ? (
+        <Alert
+          action={
+            <Button
+              color="inherit"
+              onClick={() => void currencies.refetch()}
+              size="small"
+            >
+              Retry
+            </Button>
+          }
+          severity="error"
+        >
+          Currency choices could not be loaded. {message(currencies.error)}
+        </Alert>
+      ) : null}
       <form
         onSubmit={(event) =>
           void form.handleSubmit((fields) => calculate.mutate(fields))(event)
@@ -155,10 +207,36 @@ export function TaxCalculatorPanel() {
             <MenuItem value="AUTOMATIC">Installed tax provider</MenuItem>
             <MenuItem value="MANUAL_NET">Manual annual net income</MenuItem>
           </TextField>
+          <Controller
+            control={form.control}
+            name="currency"
+            render={({ field, fieldState }) => (
+              <Autocomplete
+                getOptionLabel={(option) =>
+                  `${option.code} — ${option.display_name}`
+                }
+                loading={currencies.isPending}
+                onChange={(_, option) => field.onChange(option?.code ?? '')}
+                options={currencies.data ?? []}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    error={Boolean(fieldState.error)}
+                    helperText={fieldState.error?.message}
+                    label="Currency"
+                  />
+                )}
+                value={
+                  currencies.data?.find((item) => item.code === field.value) ??
+                  null
+                }
+              />
+            )}
+          />
           <TextField
             error={Boolean(form.formState.errors.grossTaxableIncome)}
             helperText={form.formState.errors.grossTaxableIncome?.message}
-            label="Gross taxable income"
+            label={`Gross taxable income${currency ? ` (${currency})` : ''}`}
             {...form.register('grossTaxableIncome')}
           />
           {mode === 'AUTOMATIC' ? (
@@ -220,7 +298,7 @@ export function TaxCalculatorPanel() {
                 helperText={
                   form.formState.errors.manualAnnualNetIncome?.message
                 }
-                label="Annual net income"
+                label={`Annual net income${currency ? ` (${currency})` : ''}`}
                 {...form.register('manualAnnualNetIncome')}
               />
             </>
@@ -233,6 +311,8 @@ export function TaxCalculatorPanel() {
           <Button
             disabled={
               calculate.isPending ||
+              currencies.isPending ||
+              !currencies.data?.length ||
               (mode === 'AUTOMATIC' &&
                 (providers.isPending || providerOptions.length === 0))
             }
@@ -253,20 +333,20 @@ export function TaxCalculatorPanel() {
           <Stack spacing={2}>
             <Typography variant="h2">Estimated result</Typography>
             <Typography>
-              Provider:{' '}
-              {providerName ??
-                `${result.jurisdiction} (not currently discovered)`}
+              Method: {provenance}
               {' · '}Tax year: {result.tax_year}
               {' · '}Ruleset: {result.ruleset_version}
             </Typography>
             <Typography>
-              Taxable income: {formatAmount(result.taxable_income)}
+              Taxable income:{' '}
+              {formatCurrency(result.taxable_income, result.currency)}
             </Typography>
             <Typography>
-              Tax and repayments: {formatAmount(result.total)}
+              Tax and repayments:{' '}
+              {formatCurrency(result.total, result.currency)}
             </Typography>
             <Typography>
-              Net income: {formatAmount(result.net_income)}
+              Net income: {formatCurrency(result.net_income, result.currency)}
             </Typography>
             {result.warnings.map((warning) => (
               <Alert key={warning} severity="warning">

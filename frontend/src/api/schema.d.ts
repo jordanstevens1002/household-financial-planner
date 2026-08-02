@@ -3745,6 +3745,27 @@ export interface components {
             /** Csrf Token */
             csrf_token?: string | null;
         };
+        /** StandaloneTaxCalculationRead */
+        StandaloneTaxCalculationRead: {
+            /** Components */
+            components: components["schemas"]["TaxComponentRead"][];
+            /** Currency */
+            currency: string;
+            /** Jurisdiction */
+            jurisdiction: string;
+            /** Net Income */
+            net_income: string;
+            /** Ruleset Version */
+            ruleset_version: string;
+            /** Tax Year */
+            tax_year: string;
+            /** Taxable Income */
+            taxable_income: string;
+            /** Total */
+            total: string;
+            /** Warnings */
+            warnings: string[];
+        };
         /** SystemStatusRead */
         SystemStatusRead: {
             /**
@@ -3790,27 +3811,10 @@ export interface components {
              */
             goal_id: string;
         };
-        /** TaxCalculationRead */
-        TaxCalculationRead: {
-            /** Components */
-            components: components["schemas"]["TaxComponentRead"][];
-            /** Jurisdiction */
-            jurisdiction: string;
-            /** Net Income */
-            net_income: string;
-            /** Ruleset Version */
-            ruleset_version: string;
-            /** Tax Year */
-            tax_year: string;
-            /** Taxable Income */
-            taxable_income: string;
-            /** Total */
-            total: string;
-            /** Warnings */
-            warnings: string[];
-        };
         /** TaxCalculationRequest */
         TaxCalculationRequest: {
+            /** Currency */
+            currency: string;
             /** Gross Taxable Income */
             gross_taxable_income: number | string;
             /** Jurisdiction */
@@ -4651,7 +4655,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaxCalculationRead"];
+                    "application/json": components["schemas"]["StandaloneTaxCalculationRead"];
                 };
             };
             /** @description Validation Error */

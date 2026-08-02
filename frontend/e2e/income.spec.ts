@@ -230,6 +230,19 @@ test('calculates a provider tax estimate without saving household data', async (
       });
       return;
     }
+    if (path.endsWith('/reference/currencies')) {
+      await route.fulfill({
+        contentType: 'application/json',
+        json: [
+          {
+            code: 'NZD',
+            display_name: 'New Zealand Dollar',
+            numeric_code: '554',
+          },
+        ],
+      });
+      return;
+    }
     if (path.endsWith('/calculations/tax')) {
       calculation = request.postDataJSON() as Record<string, unknown>;
       await route.fulfill({
@@ -242,6 +255,7 @@ test('calculates a provider tax estimate without saving household data', async (
               display_name: 'Income tax',
             },
           ],
+          currency: 'NZD',
           jurisdiction: 'NZ',
           net_income: '80000.00',
           ruleset_version: 'NZ-2026-example',
@@ -258,6 +272,8 @@ test('calculates a provider tax estimate without saving household data', async (
 
   await page.goto('/income');
   await page.getByRole('tab', { name: 'Tax estimate' }).click();
+  await page.getByLabel('Currency').click();
+  await page.getByText('NZD — New Zealand Dollar').click();
   await page.getByLabel('Gross taxable income').fill('100000');
   await page.getByLabel('Provider and tax year').click();
   await page.getByText('Example New Zealand tax — 2026').click();
@@ -270,6 +286,7 @@ test('calculates a provider tax estimate without saving household data', async (
     'Example provider warning',
   );
   expect(calculation).toMatchObject({
+    currency: 'NZD',
     gross_taxable_income: '100000',
     jurisdiction: 'NZ',
     tax_year: '2026',

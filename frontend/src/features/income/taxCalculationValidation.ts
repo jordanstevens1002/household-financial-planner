@@ -17,6 +17,7 @@ function isJsonObject(value: string) {
 
 export const taxCalculationSchema = z
   .object({
+    currency: z.string().regex(/^[A-Z]{3}$/, 'Choose a currency'),
     grossTaxableIncome: z.string().trim(),
     manualAnnualNetIncome: z.string().trim(),
     manualJurisdiction: z.string().trim().max(50),
@@ -68,6 +69,15 @@ export const taxCalculationSchema = z
       context.addIssue({
         code: 'custom',
         message: 'Enter a non-negative annual net income',
+        path: ['manualAnnualNetIncome'],
+      });
+    } else if (
+      isNonNegativeDecimal(values.grossTaxableIncome) &&
+      Number(values.manualAnnualNetIncome) > Number(values.grossTaxableIncome)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Annual net income cannot exceed gross taxable income',
         path: ['manualAnnualNetIncome'],
       });
     }

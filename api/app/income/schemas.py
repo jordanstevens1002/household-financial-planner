@@ -82,15 +82,26 @@ class TaxProviderRead(BaseModel):
 
 
 class TaxCalculationRequest(BaseModel):
+    currency: str = Field(min_length=3, max_length=3, pattern=r"^[A-Za-z]{3}$")
     jurisdiction: str = Field(min_length=2, max_length=50)
     tax_year: str = Field(min_length=1, max_length=20)
     gross_taxable_income: Decimal = Field(ge=0)
     settings: TaxSettings = Field(default_factory=TaxSettings)
 
-    @field_validator("jurisdiction")
+    @field_validator("currency", "jurisdiction")
     @classmethod
-    def normalize_jurisdiction(cls, value: str) -> str:
+    def normalize_code(cls, value: str) -> str:
         return value.strip().upper()
+
+    @model_validator(mode="after")
+    def manual_net_does_not_exceed_gross(self) -> TaxCalculationRequest:
+        if (
+            self.settings.calculation_mode == "MANUAL_NET"
+            and self.settings.manual_annual_net_income is not None
+            and self.settings.manual_annual_net_income > self.gross_taxable_income
+        ):
+            raise ValueError("manual_annual_net_income must not exceed gross_taxable_income")
+        return self
 
 
 class TaxComponentRead(BaseModel):
@@ -108,6 +119,10 @@ class TaxCalculationRead(BaseModel):
     total: Decimal
     net_income: Decimal
     warnings: list[str]
+
+
+class StandaloneTaxCalculationRead(TaxCalculationRead):
+    currency: str
 
 
 class HouseholdExpenseCreate(DatedRecord):

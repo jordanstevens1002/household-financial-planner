@@ -12,12 +12,18 @@ import userEvent from '@testing-library/user-event';
 import { appTheme } from '../../app/theme';
 import { AuthContext, type AuthContextValue } from '../auth/AuthContext';
 import { TaxCalculatorPanel } from './TaxCalculatorPanel';
+import { taxCalculationProvenance } from './taxCalculationProvenance';
 import { taxCalculationSchema } from './taxCalculationValidation';
 
 const provider = {
   display_name: 'Example New Zealand tax',
   jurisdiction: 'NZ',
   supported_tax_years: ['2026'],
+};
+const currency = {
+  code: 'NZD',
+  display_name: 'New Zealand Dollar',
+  numeric_code: '554',
 };
 const authenticated: AuthContextValue = {
   account: {
@@ -80,6 +86,8 @@ describe('standalone tax calculation', () => {
         const path = pathOf(input);
         if (path.endsWith('/tax-providers'))
           return Promise.resolve(response([provider]));
+        if (path.endsWith('/reference/currencies'))
+          return Promise.resolve(response([currency]));
         if (path.endsWith('/calculations/tax') && init?.method === 'POST') {
           if (typeof init.body !== 'string')
             throw new Error('Expected a JSON request body');
@@ -93,6 +101,7 @@ describe('standalone tax calculation', () => {
                   display_name: 'Income tax',
                 },
               ],
+              currency: 'NZD',
               jurisdiction: 'NZ',
               net_income: '80000.00',
               ruleset_version: 'NZ-2026-example',
@@ -113,6 +122,8 @@ describe('standalone tax calculation', () => {
     );
     expect(providerSelect).not.toHaveTextContent(provider.display_name);
     await user.type(screen.getByLabelText('Gross taxable income'), '100000');
+    await user.click(screen.getByLabelText('Currency'));
+    await user.click(await screen.findByText('NZD — New Zealand Dollar'));
     await user.click(providerSelect);
     await user.click(screen.getByText(`${provider.display_name} — 2026`));
     await user.click(screen.getByText('Advanced'));
@@ -125,6 +136,7 @@ describe('standalone tax calculation', () => {
 
     await waitFor(() => expect(requestBody).toBeDefined());
     expect(requestBody).toEqual({
+      currency: 'NZD',
       gross_taxable_income: '100000',
       jurisdiction: 'NZ',
       settings: {
@@ -139,8 +151,14 @@ describe('standalone tax calculation', () => {
     expect(result).toHaveTextContent('Example provider warning');
     expect(
       within(result).getByRole('table', { name: 'Tax estimate components' }),
-    ).toHaveTextContent('Income tax');
-  });
+    ).toHaveTextContent('NZ$20,000.00');
+    await user.clear(screen.getByLabelText('Gross taxable income (NZD)'));
+    await user.type(
+      screen.getByLabelText('Gross taxable income (NZD)'),
+      '100001',
+    );
+    expect(screen.queryByLabelText('Tax estimate result')).toBeNull();
+  }, 20_000);
 
   it('keeps manual calculation available when provider discovery fails', async () => {
     const user = userEvent.setup();
@@ -151,6 +169,8 @@ describe('standalone tax calculation', () => {
         const path = pathOf(input);
         if (path.endsWith('/tax-providers'))
           return Promise.resolve(response({ detail: 'Unavailable' }, 500));
+        if (path.endsWith('/reference/currencies'))
+          return Promise.resolve(response([currency]));
         if (path.endsWith('/calculations/tax') && init?.method === 'POST') {
           if (typeof init.body !== 'string')
             throw new Error('Expected a JSON request body');
@@ -158,6 +178,7 @@ describe('standalone tax calculation', () => {
           return Promise.resolve(
             response({
               components: [],
+              currency: 'NZD',
               jurisdiction: 'CA',
               net_income: '60000.00',
               ruleset_version: 'manual',
@@ -185,15 +206,18 @@ describe('standalone tax calculation', () => {
     await user.click(screen.getByLabelText('Calculation method'));
     await user.click(screen.getByText('Manual annual net income'));
     await user.type(screen.getByLabelText('Gross taxable income'), '80000');
+    await user.click(screen.getByLabelText('Currency'));
+    await user.click(await screen.findByText('NZD — New Zealand Dollar'));
     await user.type(screen.getByLabelText('Jurisdiction'), 'ca');
     await user.type(screen.getByLabelText('Tax year'), '2026');
-    await user.type(screen.getByLabelText('Annual net income'), '60000');
+    await user.type(screen.getByLabelText(/Annual net income/), '60000');
     await user.click(
       screen.getByRole('button', { name: 'Calculate estimate' }),
     );
 
     await waitFor(() => expect(requestBody).toBeDefined());
     expect(requestBody).toMatchObject({
+      currency: 'NZD',
       gross_taxable_income: '80000',
       jurisdiction: 'CA',
       settings: {
@@ -203,10 +227,13 @@ describe('standalone tax calculation', () => {
       tax_year: '2026',
     });
     const result = await screen.findByLabelText('Tax estimate result');
-    expect(result).toHaveTextContent('CA (not currently discovered)');
+    expect(result).toHaveTextContent('Manual annual net income — CA');
     expect(result).toHaveTextContent('No component breakdown is available');
     expect(result).toHaveTextContent('Manual net income used');
-  });
+    await user.click(screen.getByLabelText('Calculation method'));
+    await user.click(screen.getByText('Installed tax provider'));
+    expect(screen.queryByLabelText('Tax estimate result')).toBeNull();
+  }, 10_000);
 
   it('shows API calculation failures without discarding the form', async () => {
     const user = userEvent.setup();
@@ -216,6 +243,8 @@ describe('standalone tax calculation', () => {
         const path = pathOf(input);
         if (path.endsWith('/tax-providers'))
           return Promise.resolve(response([provider]));
+        if (path.endsWith('/reference/currencies'))
+          return Promise.resolve(response([currency]));
         if (path.endsWith('/calculations/tax'))
           return Promise.resolve(response({ detail: 'Unsupported year' }, 422));
         throw new Error(`Unexpected request: ${path}`);
@@ -224,6 +253,8 @@ describe('standalone tax calculation', () => {
 
     renderPanel();
     await user.type(screen.getByLabelText('Gross taxable income'), '90000');
+    await user.click(screen.getByLabelText('Currency'));
+    await user.click(await screen.findByText('NZD — New Zealand Dollar'));
     await user.click(await screen.findByLabelText('Provider and tax year'));
     await user.click(screen.getByText(`${provider.display_name} — 2026`));
     await user.click(
@@ -231,11 +262,14 @@ describe('standalone tax calculation', () => {
     );
 
     expect(await screen.findByText(/Unsupported year/i)).toBeVisible();
-    expect(screen.getByLabelText('Gross taxable income')).toHaveValue('90000');
-  });
+    expect(screen.getByLabelText('Gross taxable income (NZD)')).toHaveValue(
+      '90000',
+    );
+  }, 10_000);
 });
 
 const validCalculation = {
+  currency: 'NZD',
   grossTaxableIncome: '100000',
   manualAnnualNetIncome: '',
   manualJurisdiction: '',
@@ -276,5 +310,43 @@ describe('tax calculation validation', () => {
         providerYear: '',
       }).success,
     ).toBe(true);
+  });
+
+  it('accepts equal manual gross and net income but rejects net above gross', () => {
+    const manual = {
+      ...validCalculation,
+      grossTaxableIncome: '80000',
+      manualAnnualNetIncome: '80000',
+      manualJurisdiction: 'NZ',
+      manualTaxYear: '2026',
+      mode: 'MANUAL_NET' as const,
+      providerYear: '',
+    };
+    expect(taxCalculationSchema.safeParse(manual).success).toBe(true);
+    expect(
+      taxCalculationSchema.safeParse({
+        ...manual,
+        manualAnnualNetIncome: '80000.01',
+      }).success,
+    ).toBe(false);
+  });
+
+  it('does not attribute a manual result to a discovered provider', () => {
+    expect(
+      taxCalculationProvenance(
+        {
+          components: [],
+          currency: 'NZD',
+          jurisdiction: 'NZ',
+          net_income: '60000',
+          ruleset_version: 'manual',
+          tax_year: '2026',
+          taxable_income: '80000',
+          total: '20000',
+          warnings: [],
+        },
+        [provider],
+      ),
+    ).toBe('Manual annual net income — NZ');
   });
 });
