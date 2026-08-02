@@ -19,6 +19,7 @@ const navigation = [
   { label: 'Overview', to: '/' },
   { label: 'Households', to: '/households' },
   { label: 'People', to: '/people' },
+  { label: 'Income & tax', to: '/income' },
   { label: 'Cash flow', to: '/cash-flow' },
   { label: 'Properties', to: '/properties' },
   { label: 'Purchase plans', to: '/purchases' },

@@ -77,6 +77,15 @@ const peopleRoute = createRoute({
   path: '/people',
 });
 
+const incomeRoute = createRoute({
+  component: lazyRouteComponent(
+    () => import('../features/income/IncomePage'),
+    'IncomePage',
+  ),
+  getParentRoute: () => rootRoute,
+  path: '/income',
+});
+
 function placeholderRoute(
   path:
     | '/cash-flow'
@@ -104,6 +113,7 @@ const routeTree = rootRoute.addChildren([
   resetPasswordRoute,
   householdsRoute,
   peopleRoute,
+  incomeRoute,
   placeholderRoute('/cash-flow'),
   placeholderRoute('/properties'),
   placeholderRoute('/purchases'),
