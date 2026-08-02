@@ -14,7 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -28,9 +28,11 @@ import { formatDate } from '../../shared/format';
 import { useNotification } from '../../shared/notificationContext';
 import { useAuth } from '../auth/AuthContext';
 import { useHousehold } from '../households/HouseholdContext';
+import { localCalendarDate } from './localDate';
 
 type Country = components['schemas']['CountryRead'];
 type Person = components['schemas']['PersonRead'];
+type HouseholdAccess = components['schemas']['HouseholdAccessRead'];
 
 const optionalDate = z
   .string()
@@ -61,10 +63,6 @@ const personSchema = z
 
 type PersonFields = z.infer<typeof personSchema>;
 
-function today() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function message(error: unknown) {
   return error instanceof Error ? error.message : 'The request failed';
 }
@@ -80,7 +78,7 @@ export function PeoplePage() {
     defaultValues: {
       dateOfBirth: '',
       displayName: '',
-      effectiveFrom: today(),
+      effectiveFrom: localCalendarDate(),
       effectiveTo: '',
       legalName: '',
       notes: '',
@@ -91,20 +89,20 @@ export function PeoplePage() {
   });
   const people = useQuery({
     enabled: household.selected !== null,
-    queryFn: async () => {
-      const accessible = await apiRequest<Person[]>(
+    queryFn: () =>
+      apiRequest<Person[]>(
         `/api/v1/households/${household.selected!.id}/people`,
-      );
-      const storedPersonId = loadSelection('person');
-      if (
-        storedPersonId !== null &&
-        !accessible.some((person) => person.id === storedPersonId)
-      ) {
-        saveSelection('person', null);
-      }
-      return accessible;
-    },
+      ),
     queryKey: ['people', household.selected?.id],
+    retry: false,
+  });
+  const access = useQuery({
+    enabled: household.selected !== null,
+    queryFn: () =>
+      apiRequest<HouseholdAccess>(
+        `/api/v1/households/${household.selected!.id}/access`,
+      ),
+    queryKey: ['household-access', household.selected?.id],
     retry: false,
   });
   const countries = useQuery({
@@ -117,6 +115,21 @@ export function PeoplePage() {
     people.data?.some((person) => person.id === selectionCandidate) === true
       ? selectionCandidate
       : null;
+
+  useEffect(() => {
+    if (
+      people.data &&
+      selectionCandidate !== null &&
+      validSelectedId === null
+    ) {
+      saveSelection('person', null);
+    }
+  }, [
+    household.selected?.id,
+    people.data,
+    selectionCandidate,
+    validSelectedId,
+  ]);
 
   const createPerson = useMutation({
     mutationFn: (fields: PersonFields) => {
@@ -146,7 +159,7 @@ export function PeoplePage() {
       form.reset({
         dateOfBirth: '',
         displayName: '',
-        effectiveFrom: today(),
+        effectiveFrom: localCalendarDate(),
         effectiveTo: '',
         legalName: '',
         notes: '',
@@ -224,11 +237,23 @@ export function PeoplePage() {
           expenses and other financial details are added separately.
         </Typography>
       </Box>
-      <Box>
-        <Button onClick={() => setCreateOpen(true)} variant="contained">
-          Add person
-        </Button>
-      </Box>
+      {access.isPending ? (
+        <CircularProgress aria-label="Checking people permissions" size={24} />
+      ) : access.error ? (
+        <Alert severity="error">
+          Could not check people permissions. {message(access.error)}
+        </Alert>
+      ) : access.data?.can_edit ? (
+        <Box>
+          <Button onClick={() => setCreateOpen(true)} variant="contained">
+            Add person
+          </Button>
+        </Box>
+      ) : (
+        <Alert severity="info">
+          You have view-only access to people in this household.
+        </Alert>
+      )}
       {people.isPending ? (
         <CircularProgress aria-label="Loading people" />
       ) : people.error ? (
@@ -242,11 +267,16 @@ export function PeoplePage() {
           getRowKey={(row) => row.id}
           rows={people.data}
         />
-      ) : (
+      ) : access.data?.can_edit ? (
         <EmptyState
           actionLabel="Add the first person"
           description="Add a person to start recording their part of the household plan."
           onAction={() => setCreateOpen(true)}
+          title="No people recorded"
+        />
+      ) : (
+        <EmptyState
+          description="No people have been added by a household editor yet."
           title="No people recorded"
         />
       )}

@@ -5,7 +5,7 @@ import {
   createMemoryHistory,
   type AnyRouter,
 } from '@tanstack/react-router';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { createAppRouter } from '../../app/router';
@@ -56,6 +56,13 @@ const countries = [
     recommended_currency: 'NZD',
   },
 ];
+const editorAccess = {
+  can_administer: false,
+  can_edit: true,
+  can_manage_owners: false,
+  can_view: true,
+  role: 'EDITOR',
+};
 
 function response(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -98,13 +105,17 @@ async function renderPage() {
   });
 }
 
-function standardFetch(people: unknown = [person]) {
+function standardFetch(
+  people: unknown = [person],
+  access: unknown = editorAccess,
+) {
   return vi.fn<typeof fetch>((input) => {
     const path = pathOf(input);
     if (path.endsWith('/auth/session'))
       return Promise.resolve(response({ account }));
     if (path.endsWith('/households'))
       return Promise.resolve(response([household]));
+    if (path.endsWith('/access')) return Promise.resolve(response(access));
     if (path.endsWith('/people')) return Promise.resolve(response(people));
     if (path.endsWith('/reference/countries'))
       return Promise.resolve(response(countries));
@@ -149,6 +160,24 @@ describe('household people workflows', () => {
     expect(screen.getByText(/records their identity only/i)).toBeVisible();
   });
 
+  it('does not offer person creation to a viewer', async () => {
+    localStorage.setItem(selectionKeys.household, householdId);
+    vi.stubGlobal(
+      'fetch',
+      standardFetch([person], {
+        ...editorAccess,
+        can_edit: false,
+        role: 'VIEWER',
+      }),
+    );
+
+    await renderPage();
+
+    expect(await screen.findByText('Alex Example')).toBeVisible();
+    expect(screen.getByText(/view-only access/i)).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Add person' })).toBeNull();
+  });
+
   it('does not restore a saved person outside the selected household', async () => {
     localStorage.setItem(selectionKeys.household, householdId);
     localStorage.setItem(
@@ -164,6 +193,72 @@ describe('household people workflows', () => {
     expect(screen.queryByRole('button', { name: 'Selected' })).toBeNull();
   });
 
+  it('does not let a stale household response clear the current person selection', async () => {
+    const user = userEvent.setup();
+    const otherHousehold = {
+      ...household,
+      display_name: 'Second household',
+      id: '91e3979f-990b-457f-b300-3d0998c7c190',
+    };
+    const otherPerson = {
+      ...person,
+      display_name: 'Blair Example',
+      household_id: otherHousehold.id,
+      id: '285eb0ba-5557-4f67-af80-1e893a878a2d',
+    };
+    let resolveFirstPeople!: (value: Response) => void;
+    const firstPeople = new Promise<Response>((resolve) => {
+      resolveFirstPeople = resolve;
+    });
+    let firstPeopleRequested = false;
+    localStorage.setItem(selectionKeys.household, householdId);
+    localStorage.setItem(selectionKeys.person, person.id);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input) => {
+        const path = pathOf(input);
+        if (path.endsWith('/auth/session'))
+          return Promise.resolve(response({ account }));
+        if (path.endsWith('/households'))
+          return Promise.resolve(response([household, otherHousehold]));
+        if (path.endsWith('/access'))
+          return Promise.resolve(response(editorAccess));
+        if (path.endsWith(`/${householdId}/people`)) {
+          firstPeopleRequested = true;
+          return firstPeople;
+        }
+        if (path.endsWith(`/${otherHousehold.id}/people`))
+          return Promise.resolve(response([otherPerson]));
+        if (path.endsWith('/reference/countries'))
+          return Promise.resolve(response(countries));
+        if (path.endsWith('/reference/currencies'))
+          return Promise.resolve(response([]));
+        if (path.endsWith('/memberships'))
+          return Promise.resolve(response({ detail: 'Forbidden' }, 403));
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+
+    await renderPage();
+    await waitFor(() => expect(firstPeopleRequested).toBe(true));
+    await user.click(screen.getByRole('link', { name: 'Households' }));
+    const secondRow = await screen.findByRole('row', {
+      name: /Second household/,
+    });
+    await user.click(
+      within(secondRow).getByRole('button', { name: 'Use household' }),
+    );
+    await user.click(screen.getByRole('link', { name: 'People' }));
+    await user.click(await screen.findByRole('button', { name: 'Use person' }));
+    expect(localStorage.getItem(selectionKeys.person)).toBe(otherPerson.id);
+
+    await act(async () => {
+      resolveFirstPeople(response([person]));
+      await firstPeople;
+    });
+    expect(localStorage.getItem(selectionKeys.person)).toBe(otherPerson.id);
+  });
+
   it('returns to sign in when the people request reports an expired session', async () => {
     localStorage.setItem(selectionKeys.household, householdId);
     vi.stubGlobal(
@@ -174,6 +269,8 @@ describe('household people workflows', () => {
           return Promise.resolve(response({ account }));
         if (path.endsWith('/households'))
           return Promise.resolve(response([household]));
+        if (path.endsWith('/access'))
+          return Promise.resolve(response(editorAccess));
         if (path.endsWith('/people'))
           return Promise.resolve(response({ detail: 'Session expired' }, 401));
         if (path.endsWith('/auth/status'))
@@ -203,6 +300,8 @@ describe('household people workflows', () => {
             return Promise.resolve(response({ account }));
           if (path.endsWith('/households'))
             return Promise.resolve(response([household]));
+          if (path.endsWith('/access'))
+            return Promise.resolve(response(editorAccess));
           if (path.endsWith('/people'))
             return Promise.resolve(
               response({ detail: `People request failed (${status})` }, status),
@@ -237,6 +336,8 @@ describe('household people workflows', () => {
           return Promise.resolve(response({ account }));
         if (path.endsWith('/households'))
           return Promise.resolve(response([household]));
+        if (path.endsWith('/access'))
+          return Promise.resolve(response(editorAccess));
         if (path.endsWith('/reference/countries'))
           return Promise.resolve(response(countries));
         if (path.endsWith('/people') && init?.method === 'POST') {

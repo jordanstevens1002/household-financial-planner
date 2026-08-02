@@ -27,6 +27,18 @@ test('creates and restores a household person', async ({ page }) => {
   await page.route('**/api/v1/households', (route) =>
     route.fulfill({ contentType: 'application/json', json: [household] }),
   );
+  await page.route('**/api/v1/households/*/access', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      json: {
+        can_administer: false,
+        can_edit: true,
+        can_manage_owners: false,
+        can_view: true,
+        role: 'EDITOR',
+      },
+    }),
+  );
   await page.route('**/api/v1/reference/countries', (route) =>
     route.fulfill({
       contentType: 'application/json',

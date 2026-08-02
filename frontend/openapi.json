@@ -1743,6 +1743,38 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "HouseholdAccessRead": {
+        "properties": {
+          "can_administer": {
+            "title": "Can Administer",
+            "type": "boolean"
+          },
+          "can_edit": {
+            "title": "Can Edit",
+            "type": "boolean"
+          },
+          "can_manage_owners": {
+            "title": "Can Manage Owners",
+            "type": "boolean"
+          },
+          "can_view": {
+            "title": "Can View",
+            "type": "boolean"
+          },
+          "role": {
+            "$ref": "#/components/schemas/HouseholdRole"
+          }
+        },
+        "required": [
+          "role",
+          "can_view",
+          "can_edit",
+          "can_administer",
+          "can_manage_owners"
+        ],
+        "title": "HouseholdAccessRead",
+        "type": "object"
+      },
       "HouseholdCashflowRead": {
         "properties": {
           "annual_expenses": {
@@ -9521,6 +9553,70 @@
           }
         ],
         "summary": "Get Household",
+        "tags": [
+          "households"
+        ]
+      }
+    },
+    "/api/v1/households/{household_id}/access": {
+      "get": {
+        "operationId": "get_household_access_api_v1_households__household_id__access_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "household_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Household Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HouseholdAccessRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Household Access",
         "tags": [
           "households"
         ]

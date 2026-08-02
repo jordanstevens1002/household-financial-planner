@@ -31,6 +31,7 @@ decorators, so route changes require an intentional matrix update.
 | GET | `/api/v1/households` | Household list and restoration | #38 |
 | POST | `/api/v1/households` | Household creation | #38 |
 | GET | `/api/v1/households/{household_id}` | Selected household | #38 |
+| GET | `/api/v1/households/{household_id}/access` | Current member role and capabilities | #40 |
 | GET | `/api/v1/households/{household_id}/memberships` | Membership list | #37, #38 |
 | POST | `/api/v1/households/{household_id}/memberships` | Membership creation | #37, #38 |
 | PATCH | `/api/v1/households/{household_id}/memberships/{membership_id}` | Membership role update | #37, #38 |

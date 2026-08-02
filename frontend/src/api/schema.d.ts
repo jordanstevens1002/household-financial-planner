@@ -381,6 +381,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/households/{household_id}/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Household Access */
+        get: operations["get_household_access_api_v1_households__household_id__access_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/households/{household_id}/cashflow": {
         parameters: {
             query?: never;
@@ -1883,6 +1900,18 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HouseholdAccessRead */
+        HouseholdAccessRead: {
+            /** Can Administer */
+            can_administer: boolean;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Manage Owners */
+            can_manage_owners: boolean;
+            /** Can View */
+            can_view: boolean;
+            role: components["schemas"]["HouseholdRole"];
         };
         /** HouseholdCashflowRead */
         HouseholdCashflowRead: {
@@ -4827,6 +4856,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HouseholdRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_household_access_api_v1_households__household_id__access_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                household_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdAccessRead"];
                 };
             };
             /** @description Validation Error */

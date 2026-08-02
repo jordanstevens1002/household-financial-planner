@@ -13,6 +13,7 @@ from app.core.database import get_session
 from app.core.dependencies import current_user, require_household_role
 from app.core.logging import get_logger
 from app.households.schemas import (
+    HouseholdAccessRead,
     HouseholdCreate,
     HouseholdRead,
     LookupRead,
@@ -88,6 +89,31 @@ async def get_household(
     if household is None:
         raise HTTPException(404, "Household not found")
     return household
+
+
+@router.get(
+    "/households/{household_id}/access",
+    response_model=HouseholdAccessRead,
+)
+async def get_household_access(
+    membership: Annotated[
+        HouseholdMembership,
+        Depends(require_household_role(HouseholdRole.VIEWER)),
+    ],
+) -> HouseholdAccessRead:
+    role_level = {
+        HouseholdRole.VIEWER: 0,
+        HouseholdRole.EDITOR: 1,
+        HouseholdRole.ADMIN: 2,
+        HouseholdRole.OWNER: 3,
+    }[membership.role]
+    return HouseholdAccessRead(
+        role=membership.role,
+        can_view=True,
+        can_edit=role_level >= 1,
+        can_administer=role_level >= 2,
+        can_manage_owners=membership.role == HouseholdRole.OWNER,
+    )
 
 
 @router.get("/households/{household_id}/memberships", response_model=list[MembershipRead])

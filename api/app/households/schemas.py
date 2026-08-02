@@ -33,6 +33,14 @@ class HouseholdRead(ORMModel):
     jurisdiction: str | None
 
 
+class HouseholdAccessRead(BaseModel):
+    role: HouseholdRole
+    can_view: bool
+    can_edit: bool
+    can_administer: bool
+    can_manage_owners: bool
+
+
 class MembershipRead(ORMModel):
     id: uuid.UUID
     household_id: uuid.UUID
