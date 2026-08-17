@@ -21,6 +21,7 @@ import { useHousehold } from '../households/HouseholdContext';
 import { localCalendarDate } from '../people/localDate';
 import { PropertyCreateDialog } from './PropertyCreateDialog';
 import { OwnershipPanel } from './OwnershipPanel';
+import { RentalProfilesPanel } from './RentalProfilesPanel';
 import { PropertyRecordDialog } from './PropertyRecordDialog';
 
 type Lookup = components['schemas']['LookupRead'];
@@ -469,6 +470,11 @@ export function PropertiesPage() {
           <OwnershipPanel
             canEdit={access.data?.can_edit === true}
             householdId={household.selected.id}
+            propertyId={selectedSummary.id}
+          />
+          <RentalProfilesPanel
+            canEdit={access.data?.can_edit === true}
+            currency={selectedSummary.currency}
             propertyId={selectedSummary.id}
           />
         </Stack>

@@ -10,6 +10,7 @@ test('selects and restores a dated property position', async ({ page }) => {
   let valuationAdded = false;
   let valuationPayload: Record<string, unknown> | null = null;
   let ownershipPayload: Record<string, unknown> | null = null;
+  let rentalPayload: Record<string, unknown> | null = null;
   let wizardPayload: Record<string, unknown> | null = null;
   await page.addInitScript((id) => {
     localStorage.setItem('hfp.selection.household', id);
@@ -262,6 +263,23 @@ test('selects and restores a dated property position', async ({ page }) => {
       }
       return;
     }
+    if (path.endsWith(`/properties/${propertyId}/rental-profiles`)) {
+      if (request.method() === 'POST') {
+        rentalPayload = request.postDataJSON() as Record<string, unknown>;
+        await route.fulfill({
+          contentType: 'application/json',
+          json: {
+            ...rentalPayload,
+            id: 'a57994c3-76a7-475f-ae76-bf17228f04b4',
+            property_id: propertyId,
+          },
+          status: 201,
+        });
+      } else {
+        await route.fulfill({ contentType: 'application/json', json: [] });
+      }
+      return;
+    }
     await route.abort();
   });
 
@@ -339,6 +357,30 @@ test('selects and restores a dated property position', async ({ page }) => {
       owner_type: 'PERSON',
       ownership_percentage: '60',
       person_id: '8a76ff72-b719-4ca9-9f77-b66f901fb56f',
+    });
+
+  await page.getByRole('button', { name: 'Add rental arrangement' }).click();
+  const rentalDialog = page.getByRole('dialog', {
+    name: 'Add rental arrangement',
+  });
+  await rentalDialog.getByLabel('Rental scope').click();
+  await page.getByRole('option', { name: 'Part of the property' }).click();
+  await rentalDialog.getByLabel('Rental area name').fill('Granny flat');
+  await rentalDialog.getByLabel('Property share (%)').fill('30');
+  await rentalDialog.getByLabel('Rent charged (NZD)').fill('350');
+  await rentalDialog.getByLabel('Effective from').fill('2026-09-01');
+  await rentalDialog
+    .getByRole('button', { name: 'Save rental arrangement' })
+    .click();
+  await expect(page.getByText('Rental arrangement saved')).toBeVisible();
+  await expect
+    .poll(() => rentalPayload)
+    .toMatchObject({
+      charged_rent_amount: '350',
+      display_name: 'Granny flat',
+      effective_from: '2026-09-01',
+      frequency: 'WEEKLY',
+      rental_share_percentage: '30',
     });
 
   await page.getByRole('button', { name: 'Add property' }).click();

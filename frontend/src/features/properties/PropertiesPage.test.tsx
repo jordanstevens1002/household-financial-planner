@@ -149,6 +149,8 @@ function standardFetch(summaries: unknown = [summary]) {
           ],
         }),
       );
+    if (path.endsWith(`/properties/${propertyId}/rental-profiles`))
+      return Promise.resolve(response([]));
     throw new Error(`Unexpected request: ${path}`);
   });
 }
@@ -981,6 +983,80 @@ describe('property overview workflows', () => {
     });
   });
 
+  it('adds a partial rental arrangement with explicit household assumptions', async () => {
+    const user = userEvent.setup();
+    let saved: Record<string, unknown> | null = null;
+    const fallback = standardFetch();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (
+          path.endsWith(`/properties/${propertyId}/rental-profiles`) &&
+          init?.method === 'POST'
+        ) {
+          saved = JSON.parse(init.body as string) as Record<string, unknown>;
+          return Promise.resolve(
+            response(
+              {
+                ...saved,
+                id: 'a57994c3-76a7-475f-ae76-bf17228f04b4',
+                property_id: propertyId,
+              },
+              201,
+            ),
+          );
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'View' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Add rental arrangement' }),
+    );
+    await user.click(screen.getByLabelText('Rental scope'));
+    await user.click(
+      screen.getByRole('option', { name: 'Part of the property' }),
+    );
+    await user.type(screen.getByLabelText('Rental area name'), 'Granny flat');
+    await user.type(screen.getByLabelText('Property share (%)'), '30');
+    await user.type(screen.getByLabelText('Rent charged (NZD)'), '350');
+    await user.type(
+      screen.getByLabelText('Comparable market rent (NZD, optional)'),
+      '400',
+    );
+    await user.clear(screen.getByLabelText('Vacancy allowance (%)'));
+    await user.type(screen.getByLabelText('Vacancy allowance (%)'), '3');
+    await user.clear(screen.getByLabelText('Management fee (%)'));
+    await user.type(screen.getByLabelText('Management fee (%)'), '7.5');
+    await user.type(
+      screen.getByLabelText('Letting fee (NZD, optional)'),
+      '200',
+    );
+    await user.clear(screen.getByLabelText('Effective from'));
+    await user.type(screen.getByLabelText('Effective from'), '2026-09-01');
+    await user.click(
+      screen.getByRole('button', { name: 'Save rental arrangement' }),
+    );
+
+    expect(await screen.findByText('Rental arrangement saved')).toBeVisible();
+    expect(saved).toEqual({
+      charged_rent_amount: '350',
+      display_name: 'Granny flat',
+      effective_from: '2026-09-01',
+      effective_to: null,
+      frequency: 'WEEKLY',
+      letting_fee: '200',
+      management_fee_rate: '7.5',
+      market_rent_amount: '400',
+      notes: null,
+      rental_share_percentage: '30',
+      vacancy_rate: '3',
+    });
+  });
+
   it('does not offer creation to a view-only household member', async () => {
     const fallback = standardFetch();
     vi.stubGlobal(
@@ -1009,6 +1085,9 @@ describe('property overview workflows', () => {
       .click(await screen.findByRole('button', { name: 'View' }));
     expect(
       screen.queryByRole('button', { name: 'Add ownership record' }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Add rental arrangement' }),
     ).toBeNull();
   });
 });
