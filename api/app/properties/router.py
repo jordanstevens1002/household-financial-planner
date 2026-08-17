@@ -41,6 +41,7 @@ from app.properties.schemas import (
     ValuationCreate,
     ValuationRead,
 )
+from app.properties.valuations import valuation_priority_expression
 
 router = APIRouter(prefix="/api/v1", tags=["properties"])
 logger = get_logger(component="properties")
@@ -156,6 +157,22 @@ async def list_property_summaries(
             .order_by(PropertyBaseline.baseline_date.desc(), PropertyBaseline.id.desc())
             .limit(1)
         )
+        valuation = await session.scalar(
+            select(PropertyValuation)
+            .where(
+                PropertyValuation.property_id == property_record.id,
+                PropertyValuation.valuation_type != ValuationType.SCENARIO_VALUE,
+            )
+            .order_by(
+                PropertyValuation.valuation_date.desc(),
+                valuation_priority_expression().desc(),
+                PropertyValuation.id.desc(),
+            )
+            .limit(1)
+        )
+        valuation_is_latest = valuation is not None and (
+            baseline is None or valuation.valuation_date > baseline.baseline_date
+        )
         if baseline is not None:
             setup_mode = PropertySetupMode.CURRENT_SNAPSHOT
         elif property_record.purchase_date is not None:
@@ -174,8 +191,20 @@ async def list_property_summaries(
                 purchase_date=property_record.purchase_date,
                 purchase_price=property_record.purchase_price,
                 setup_mode=setup_mode,
-                position_date=baseline.baseline_date if baseline else None,
-                current_value=baseline.property_value if baseline else None,
+                position_date=(
+                    valuation.valuation_date
+                    if valuation_is_latest and valuation is not None
+                    else baseline.baseline_date
+                    if baseline
+                    else None
+                ),
+                current_value=(
+                    valuation.value
+                    if valuation_is_latest and valuation is not None
+                    else baseline.property_value
+                    if baseline
+                    else None
+                ),
                 total_property_debt=baseline.loan_balance_total if baseline else None,
             )
         )

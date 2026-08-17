@@ -35,7 +35,9 @@ from app.models import (
     Property,
     PropertyBaseline,
     PropertyValuation,
+    ValuationType,
 )
+from app.properties.valuations import valuation_priority_expression
 
 router = APIRouter(prefix="/api/v1", tags=["events"])
 logger = get_logger(component="events")
@@ -300,8 +302,13 @@ async def resolve_property_state(
         .where(
             PropertyValuation.property_id == property_id,
             PropertyValuation.valuation_date <= as_of,
+            PropertyValuation.valuation_type != ValuationType.SCENARIO_VALUE,
         )
-        .order_by(PropertyValuation.valuation_date.desc(), PropertyValuation.id.desc())
+        .order_by(
+            PropertyValuation.valuation_date.desc(),
+            valuation_priority_expression().desc(),
+            PropertyValuation.id.desc(),
+        )
         .limit(1)
     )
     if baseline is not None:
@@ -348,7 +355,7 @@ async def resolve_property_state(
     for event, event_type in rows:
         if (
             pending_valuation is not None
-            and event.effective_at.date() > pending_valuation.valuation_date
+            and event.effective_at.date() >= pending_valuation.valuation_date
         ):
             state["property_value"] = pending_valuation.value
             pending_valuation = None

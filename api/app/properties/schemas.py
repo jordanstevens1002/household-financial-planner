@@ -8,6 +8,7 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.models import OwnerType, ValuationType
+from app.properties.valuations import VALUATION_ESTIMATE_BY_TYPE
 
 
 class ORMModel(BaseModel):
@@ -50,6 +51,14 @@ class ValuationCreate(BaseModel):
     source: str | None = Field(default=None, max_length=200)
     is_estimate: bool
     notes: str | None = Field(default=None, max_length=2000)
+
+    @model_validator(mode="after")
+    def estimate_matches_valuation_type(self) -> ValuationCreate:
+        expected = VALUATION_ESTIMATE_BY_TYPE[self.valuation_type]
+        if self.is_estimate is not expected:
+            label = "an estimate" if expected else "not an estimate"
+            raise ValueError(f"{self.valuation_type.value} must be recorded as {label}")
+        return self
 
 
 class ValuationRead(ValuationCreate, ORMModel):

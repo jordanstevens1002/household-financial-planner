@@ -3,12 +3,10 @@ import {
   Alert,
   Box,
   Button,
-  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
   MenuItem,
   Stack,
   TextField,
@@ -34,7 +32,6 @@ const recordSchema = z
     accumulatedCostBase: z.string(),
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Enter a record date'),
     debt: z.string(),
-    isEstimate: z.boolean(),
     notes: z.string().trim().max(2000),
     recordType: z.enum(['VALUATION', 'BASELINE']),
     source: z.string().trim().max(200),
@@ -93,12 +90,15 @@ const valuationTypes: Array<[RecordFields['valuationType'], string]> = [
   ['AUTOMATED_ESTIMATE', 'Automated estimate'],
 ];
 
+function valuationTypeIsEstimate(valuationType: RecordFields['valuationType']) {
+  return valuationType !== 'FORMAL_VALUATION';
+}
+
 function defaults(): RecordFields {
   return {
     accumulatedCostBase: '',
     date: localCalendarDate(),
     debt: '',
-    isEstimate: true,
     notes: '',
     recordType: 'VALUATION',
     source: '',
@@ -135,12 +135,16 @@ export function PropertyRecordDialog({
     resolver: zodResolver(recordSchema),
   });
   const recordType = useWatch({ control: form.control, name: 'recordType' });
+  const valuationType = useWatch({
+    control: form.control,
+    name: 'valuationType',
+  });
   const saveRecord = useMutation<Valuation | Baseline, Error, RecordFields>({
     mutationFn: (fields: RecordFields) =>
       fields.recordType === 'VALUATION'
         ? apiRequest<Valuation>(`/api/v1/properties/${propertyId}/valuations`, {
             body: JSON.stringify({
-              is_estimate: fields.isEstimate,
+              is_estimate: valuationTypeIsEstimate(fields.valuationType),
               notes: optional(fields.notes),
               source: optional(fields.source),
               valuation_date: fields.date,
@@ -243,10 +247,11 @@ export function PropertyRecordDialog({
                     </MenuItem>
                   ))}
                 </TextField>
-                <FormControlLabel
-                  control={<Checkbox {...form.register('isEstimate')} />}
-                  label="This value is an estimate"
-                />
+                <Alert severity="info">
+                  {valuationTypeIsEstimate(valuationType)
+                    ? 'This valuation type is recorded as an estimate.'
+                    : 'A formal valuation is recorded as a non-estimate.'}
+                </Alert>
               </>
             ) : (
               <>

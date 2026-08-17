@@ -391,7 +391,7 @@ export function PropertiesPage() {
             />
             <PositionAmount
               currency={selectedSummary.currency}
-              description={`Recorded ${optionalDate(selectedSummary.position_date)}`}
+              description="From the latest complete position"
               label="Latest recorded debt"
               value={selectedSummary.total_property_debt}
             />

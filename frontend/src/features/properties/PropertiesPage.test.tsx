@@ -200,7 +200,8 @@ describe('property overview workflows', () => {
     expect(await screen.findByText(/Results as of 2026-08-02/)).toBeVisible();
     expect(screen.getByText('NZ$790,000.00')).toBeVisible();
     expect(screen.getByText('NZ$305,000.00')).toBeVisible();
-    expect(screen.getAllByText('Recorded Jun 30, 2026')).toHaveLength(2);
+    expect(screen.getByText('Recorded Jun 30, 2026')).toBeVisible();
+    expect(screen.getByText('From the latest complete position')).toBeVisible();
     expect(screen.getByText(/Status: Home · Active asset: Yes/)).toBeVisible();
   });
 
@@ -661,6 +662,17 @@ describe('property overview workflows', () => {
             }),
           );
         }
+        if (valuationAdded && path.endsWith('/property-summaries')) {
+          return Promise.resolve(
+            response([
+              {
+                ...summary,
+                current_value: '805000.00',
+                position_date: '2026-07-15',
+              },
+            ]),
+          );
+        }
         return fallback(input, init);
       }),
     );
@@ -673,7 +685,9 @@ describe('property overview workflows', () => {
     await user.type(screen.getByLabelText('Property value (NZD)'), '805000');
     await user.click(screen.getByLabelText('Valuation type'));
     await user.click(screen.getByRole('option', { name: 'Formal valuation' }));
-    await user.click(screen.getByLabelText('This value is an estimate'));
+    expect(
+      screen.getByText('A formal valuation is recorded as a non-estimate.'),
+    ).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Advanced' }));
     await user.type(
       screen.getByLabelText('Source (optional)'),
@@ -693,7 +707,7 @@ describe('property overview workflows', () => {
     expect(
       await screen.findByText('Valuation recorded Jul 15, 2026'),
     ).toBeVisible();
-    expect(screen.getByText('NZ$805,000.00')).toBeVisible();
+    expect(screen.getAllByText('NZ$805,000.00')).toHaveLength(3);
   });
 
   it('records a complete baseline with explicit debt and status', async () => {
