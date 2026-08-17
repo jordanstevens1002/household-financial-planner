@@ -395,6 +395,56 @@ async def test_ownership_position_respects_effective_range(
     assert ended.json()["warnings"]
 
 
+async def test_same_owner_cannot_have_overlapping_ownership_records(
+    client: AsyncClient, property_lookups: dict[str, str]
+) -> None:
+    household = await create_household(client)
+    created = await client.post(
+        f"/api/v1/households/{household['id']}/properties",
+        json=property_payload(property_lookups),
+    )
+    person = await client.post(
+        f"/api/v1/households/{household['id']}/people",
+        json={"display_name": "Tom", "effective_from": "2020-01-01"},
+    )
+    endpoint = f"/api/v1/properties/{created.json()['id']}/ownership"
+    first = await client.post(
+        endpoint,
+        json={
+            "owner_type": "PERSON",
+            "person_id": person.json()["id"],
+            "ownership_percentage": 40,
+            "effective_from": "2020-01-01",
+            "effective_to": "2024-12-31",
+        },
+    )
+    duplicate = await client.post(
+        endpoint,
+        json={
+            "owner_type": "PERSON",
+            "person_id": person.json()["id"],
+            "ownership_percentage": 60,
+            "effective_from": "2024-01-01",
+        },
+    )
+    later = await client.post(
+        endpoint,
+        json={
+            "owner_type": "PERSON",
+            "person_id": person.json()["id"],
+            "ownership_percentage": 100,
+            "effective_from": "2025-01-01",
+        },
+    )
+
+    assert first.status_code == 201
+    assert duplicate.status_code == 409
+    assert "Choose another owner" in duplicate.json()["detail"]
+    assert later.status_code == 201
+    listed = await client.get(endpoint)
+    assert len(listed.json()) == 2
+
+
 async def test_property_from_another_household_is_hidden(
     client: AsyncClient, session: AsyncSession, property_lookups: dict[str, str]
 ) -> None:

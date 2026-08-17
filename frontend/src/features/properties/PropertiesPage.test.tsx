@@ -841,6 +841,7 @@ describe('property overview workflows', () => {
     await renderPage();
 
     await user.click(await screen.findByRole('button', { name: 'View' }));
+    await user.click(screen.getByRole('button', { name: 'Refresh ownership' }));
     await user.click(
       screen.getByRole('button', { name: 'Add ownership record' }),
     );
@@ -867,6 +868,53 @@ describe('property overview workflows', () => {
       ownership_percentage: '60',
       person_id: '8a76ff72-b719-4ca9-9f77-b66f901fb56f',
     });
+  });
+
+  it('explains owner choices and reports a duplicate owner conflict', async () => {
+    const user = userEvent.setup();
+    const fallback = standardFetch();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (
+          path.endsWith(`/properties/${propertyId}/ownership`) &&
+          init?.method === 'POST'
+        ) {
+          return Promise.resolve(
+            response(
+              {
+                detail:
+                  'This owner already has an ownership record for the selected dates. Choose another owner instead of adding the same owner twice.',
+              },
+              409,
+            ),
+          );
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'View' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Add ownership record' }),
+    );
+    expect(
+      screen.getByText('Household jointly', { selector: 'strong' }),
+    ).toBeVisible();
+    expect(screen.getByText(/records one combined share/)).toBeVisible();
+    await user.click(screen.getByLabelText('Owner'));
+    await user.click(screen.getByRole('option', { name: 'Someone else' }));
+    expect(screen.getByLabelText('Owner name')).toBeVisible();
+    await user.click(screen.getByLabelText('Owner'));
+    await user.click(screen.getByRole('option', { name: 'Household jointly' }));
+    await user.type(screen.getByLabelText('Ownership percentage'), '60');
+    await user.click(screen.getByRole('button', { name: 'Save ownership' }));
+
+    expect(
+      await screen.findByText(/Choose another owner instead of adding/),
+    ).toBeVisible();
   });
 
   it('does not offer creation to a view-only household member', async () => {

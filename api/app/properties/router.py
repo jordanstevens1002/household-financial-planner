@@ -107,6 +107,30 @@ def _ownership_warnings(total: Decimal) -> list[str]:
     return [f"Ownership totals {total:.2f}% rather than 100.00% for the effective date"]
 
 
+async def _ownership_overlaps_same_owner(
+    property_id: uuid.UUID, payload: OwnershipCreate, session: AsyncSession
+) -> bool:
+    conditions = [
+        PropertyOwnershipInterest.property_id == property_id,
+        PropertyOwnershipInterest.owner_type == payload.owner_type,
+        or_(
+            PropertyOwnershipInterest.effective_to.is_(None),
+            PropertyOwnershipInterest.effective_to >= payload.effective_from,
+        ),
+    ]
+    if payload.effective_to is not None:
+        conditions.append(PropertyOwnershipInterest.effective_from <= payload.effective_to)
+    if payload.owner_type == OwnerType.PERSON:
+        conditions.append(PropertyOwnershipInterest.person_id == payload.person_id)
+    elif payload.owner_type != OwnerType.HOUSEHOLD:
+        assert payload.external_owner_name is not None
+        conditions.append(
+            func.lower(func.trim(PropertyOwnershipInterest.external_owner_name))
+            == payload.external_owner_name.strip().lower()
+        )
+    return await session.scalar(select(PropertyOwnershipInterest.id).where(*conditions)) is not None
+
+
 async def _create_property(
     household_id: uuid.UUID, payload: PropertyCreate, session: AsyncSession
 ) -> Property:
@@ -261,6 +285,12 @@ async def create_ownership(
         person = await session.get(Person, payload.person_id)
         if person is None or person.household_id != property_record.household_id:
             raise HTTPException(422, "Owner person must belong to the property household")
+    if await _ownership_overlaps_same_owner(property_id, payload, session):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "This owner already has an ownership record for the selected dates. "
+            "Choose another owner instead of adding the same owner twice.",
+        )
     record = PropertyOwnershipInterest(property_id=property_id, **payload.model_dump())
     session.add(record)
     await session.flush()

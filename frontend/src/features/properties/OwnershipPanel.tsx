@@ -334,6 +334,14 @@ export function OwnershipPanel({
                   </MenuItem>
                 ))}
               </TextField>
+              <Alert severity="info">
+                <strong>Household jointly</strong> records one combined share
+                without assigning it to a particular person.{' '}
+                <strong>A person in this household</strong> assigns the share to
+                a named household person. <strong>Someone else</strong> is an
+                individual outside this household; companies, trusts and other
+                legal arrangements are available as advanced owner types.
+              </Alert>
               {ownerType === 'PERSON' ? (
                 people.error ? (
                   <Alert severity="error">
