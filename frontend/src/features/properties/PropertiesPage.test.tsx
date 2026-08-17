@@ -75,6 +75,10 @@ const resolvedState = {
   property_value: '790000.00',
   status_id: statusId,
   temporal_position: 'CURRENT',
+  valuation_date: null,
+  valuation_id: null,
+  valuation_is_estimate: null,
+  valuation_type: null,
 };
 
 function response(body: unknown, status = 200) {
@@ -611,6 +615,158 @@ describe('property overview workflows', () => {
     expect(localStorage.getItem(selectionKeys.property)).toBe(propertyId);
   });
 
+  it('records a valuation and refreshes its dated resolved value', async () => {
+    const user = userEvent.setup();
+    let saved: Record<string, unknown> | null = null;
+    let valuationAdded = false;
+    const fallback = standardFetch();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (
+          path.endsWith(`/properties/${propertyId}/valuations`) &&
+          init?.method === 'POST'
+        ) {
+          saved = JSON.parse(init.body as string) as Record<string, unknown>;
+          valuationAdded = true;
+          return Promise.resolve(
+            response(
+              {
+                id: '00d8bb19-b984-47f6-95e4-f804585803ff',
+                is_estimate: false,
+                notes: null,
+                property_id: propertyId,
+                source: 'Independent valuer',
+                valuation_date: '2026-07-15',
+                valuation_type: 'FORMAL_VALUATION',
+                value: '805000.00',
+              },
+              201,
+            ),
+          );
+        }
+        if (
+          valuationAdded &&
+          path.includes(`/properties/${propertyId}/state?`)
+        ) {
+          return Promise.resolve(
+            response({
+              ...resolvedState,
+              property_value: '805000.00',
+              valuation_date: '2026-07-15',
+              valuation_id: '00d8bb19-b984-47f6-95e4-f804585803ff',
+              valuation_is_estimate: false,
+              valuation_type: 'FORMAL_VALUATION',
+            }),
+          );
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'View' }));
+    await user.click(screen.getByRole('button', { name: 'Add dated record' }));
+    await user.clear(screen.getByLabelText('Record date'));
+    await user.type(screen.getByLabelText('Record date'), '2026-07-15');
+    await user.type(screen.getByLabelText('Property value (NZD)'), '805000');
+    await user.click(screen.getByLabelText('Valuation type'));
+    await user.click(screen.getByRole('option', { name: 'Formal valuation' }));
+    await user.click(screen.getByLabelText('This value is an estimate'));
+    await user.click(screen.getByRole('button', { name: 'Advanced' }));
+    await user.type(
+      screen.getByLabelText('Source (optional)'),
+      'Independent valuer',
+    );
+    await user.click(screen.getByRole('button', { name: 'Save record' }));
+
+    expect(await screen.findByText('Valuation recorded')).toBeVisible();
+    expect(saved).toEqual({
+      is_estimate: false,
+      notes: null,
+      source: 'Independent valuer',
+      valuation_date: '2026-07-15',
+      valuation_type: 'FORMAL_VALUATION',
+      value: '805000',
+    });
+    expect(
+      await screen.findByText('Valuation recorded Jul 15, 2026'),
+    ).toBeVisible();
+    expect(screen.getByText('NZ$805,000.00')).toBeVisible();
+  });
+
+  it('records a complete baseline with explicit debt and status', async () => {
+    const user = userEvent.setup();
+    let saved: Record<string, unknown> | null = null;
+    const fallback = standardFetch();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (
+          path.endsWith(`/properties/${propertyId}/baselines`) &&
+          init?.method === 'POST'
+        ) {
+          saved = JSON.parse(init.body as string) as Record<string, unknown>;
+          return Promise.resolve(
+            response(
+              {
+                accumulated_cost_base: '560000.00',
+                baseline_date: '2026-07-31',
+                id: 'ba558658-2fe9-49a4-8d55-30dfde31c867',
+                loan_balance_total: '300000.00',
+                notes: 'End of month records',
+                property_id: propertyId,
+                property_value: '810000.00',
+                status_id: statusId,
+              },
+              201,
+            ),
+          );
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'View' }));
+    await user.click(screen.getByRole('button', { name: 'Add dated record' }));
+    await user.click(screen.getByLabelText('Record type'));
+    await user.click(
+      screen.getByRole('option', { name: 'Complete position baseline' }),
+    );
+    await user.clear(screen.getByLabelText('Record date'));
+    await user.type(screen.getByLabelText('Record date'), '2026-07-31');
+    await user.type(screen.getByLabelText('Property value (NZD)'), '810000');
+    await user.type(
+      screen.getByLabelText('Total property debt (NZD)'),
+      '300000',
+    );
+    await user.click(screen.getByLabelText('Property use'));
+    await user.click(screen.getByRole('option', { name: 'Home' }));
+    await user.click(screen.getByRole('button', { name: 'Advanced' }));
+    await user.type(
+      screen.getByLabelText('Accumulated cost base (NZD, optional)'),
+      '560000',
+    );
+    await user.type(
+      screen.getByLabelText('Notes (optional)'),
+      'End of month records',
+    );
+    await user.click(screen.getByRole('button', { name: 'Save record' }));
+
+    expect(await screen.findByText('Baseline recorded')).toBeVisible();
+    expect(saved).toEqual({
+      accumulated_cost_base: '560000',
+      baseline_date: '2026-07-31',
+      loan_balance_total: '300000',
+      notes: 'End of month records',
+      property_value: '810000',
+      status_id: statusId,
+    });
+  });
+
   it('does not offer creation to a view-only household member', async () => {
     const fallback = standardFetch([]);
     vi.stubGlobal(
@@ -631,5 +787,8 @@ describe('property overview workflows', () => {
       await screen.findByText(/view-only access to properties/i),
     ).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Add property' })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Add dated record' }),
+    ).toBeNull();
   });
 });

@@ -20,6 +20,7 @@ import { formatCurrency, formatDate } from '../../shared/format';
 import { useHousehold } from '../households/HouseholdContext';
 import { localCalendarDate } from '../people/localDate';
 import { PropertyCreateDialog } from './PropertyCreateDialog';
+import { PropertyRecordDialog } from './PropertyRecordDialog';
 
 type Lookup = components['schemas']['LookupRead'];
 type Property = components['schemas']['PropertyRead'];
@@ -72,6 +73,7 @@ export function PropertiesPage() {
   const householdId = household.selected?.id ?? null;
   const [selectedId, setSelectedId] = useState(() => loadSelection('property'));
   const [createOpen, setCreateOpen] = useState(false);
+  const [recordOpen, setRecordOpen] = useState(false);
   const [asOf, setAsOf] = useState(localCalendarDate());
   const [draftDate, setDraftDate] = useState(asOf);
   const [dateError, setDateError] = useState('');
@@ -336,7 +338,17 @@ export function PropertiesPage() {
       ) : null}
       {selectedSummary ? (
         <Stack spacing={2}>
-          <Typography variant="h2">{selectedSummary.display_name}</Typography>
+          <Stack
+            direction="row"
+            sx={{ alignItems: 'center', justifyContent: 'space-between' }}
+          >
+            <Typography variant="h2">{selectedSummary.display_name}</Typography>
+            {access.data?.can_edit ? (
+              <Button onClick={() => setRecordOpen(true)} variant="outlined">
+                Add dated record
+              </Button>
+            ) : null}
+          </Stack>
           {detail.isPending ? (
             <CircularProgress aria-label="Loading property details" />
           ) : detail.error ? (
@@ -417,6 +429,11 @@ export function PropertiesPage() {
               <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 2 }}>
                 <PositionAmount
                   currency={selectedSummary.currency}
+                  description={
+                    state.data.valuation_date
+                      ? `${state.data.valuation_is_estimate ? 'Estimated valuation' : 'Valuation'} recorded ${optionalDate(state.data.valuation_date)}`
+                      : undefined
+                  }
                   label="Property value"
                   value={state.data.property_value}
                 />
@@ -468,6 +485,16 @@ export function PropertiesPage() {
         propertyTypes={propertyTypes.data ?? []}
         statuses={statuses.data ?? []}
       />
+      {selectedSummary ? (
+        <PropertyRecordDialog
+          currency={selectedSummary.currency}
+          householdId={household.selected.id}
+          onClose={() => setRecordOpen(false)}
+          open={recordOpen}
+          propertyId={selectedSummary.id}
+          statuses={statuses.data ?? []}
+        />
+      ) : null}
     </Stack>
   );
 }
