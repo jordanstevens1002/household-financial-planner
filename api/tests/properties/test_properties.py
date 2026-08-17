@@ -146,6 +146,16 @@ async def test_property_summaries_distinguish_snapshot_debt_from_unrecorded_hist
         },
     )
     assert later_baseline.status_code == 201
+    later_valuation = await client.post(
+        f"/api/v1/properties/{snapshot.json()['property']['id']}/valuations",
+        json={
+            "valuation_date": "2026-09-27",
+            "value": "875000.00",
+            "valuation_type": "FORMAL_VALUATION",
+            "is_estimate": False,
+        },
+    )
+    assert later_valuation.status_code == 201
 
     response = await client.get(f"/api/v1/households/{household['id']}/property-summaries")
 
@@ -153,14 +163,66 @@ async def test_property_summaries_distinguish_snapshot_debt_from_unrecorded_hist
     by_name = {item["display_name"]: item for item in response.json()}
     assert by_name["Current home"]["currency"] == "AUD"
     assert by_name["Current home"]["setup_mode"] == "CURRENT_SNAPSHOT"
-    assert by_name["Current home"]["position_date"] == "2026-08-27"
-    assert by_name["Current home"]["current_value"] == "860000.00"
+    assert by_name["Current home"]["position_date"] == "2026-09-27"
+    assert by_name["Current home"]["current_value"] == "875000.00"
     assert by_name["Current home"]["total_property_debt"] == "300000.00"
     assert by_name["Current home"]["current_status_id"] == str(rented.id)
     assert by_name["Earlier purchase"]["setup_mode"] == "HISTORICAL_PURCHASE"
     assert by_name["Earlier purchase"]["purchase_price"] == "520000.00"
-    assert by_name["Earlier purchase"]["current_value"] is None
+    assert by_name["Earlier purchase"]["position_date"] == "2017-03-02"
+    assert by_name["Earlier purchase"]["current_value"] == "520000.00"
     assert by_name["Earlier purchase"]["total_property_debt"] is None
+
+    dated_state = await client.get(
+        f"/api/v1/properties/{snapshot.json()['property']['id']}/state",
+        params={"as_of": "2026-09-27"},
+    )
+    assert dated_state.status_code == 200
+    assert dated_state.json()["property_value"] == "875000.00"
+    assert dated_state.json()["loan_balance_total"] == "300000.00"
+
+
+@pytest.mark.parametrize(
+    ("valuation_type", "is_estimate"),
+    [
+        ("USER_ESTIMATE", True),
+        ("FORMAL_VALUATION", False),
+        ("AGENT_APPRAISAL", True),
+        ("AUTOMATED_ESTIMATE", True),
+    ],
+)
+async def test_valuation_estimate_provenance_is_enforced(
+    client: AsyncClient,
+    property_lookups: dict[str, str],
+    valuation_type: str,
+    is_estimate: bool,
+) -> None:
+    household = await create_household(client)
+    created = await client.post(
+        f"/api/v1/households/{household['id']}/properties",
+        json=property_payload(property_lookups),
+    )
+    endpoint = f"/api/v1/properties/{created.json()['id']}/valuations"
+    valid = await client.post(
+        endpoint,
+        json={
+            "valuation_date": "2026-09-27",
+            "value": "875000.00",
+            "valuation_type": valuation_type,
+            "is_estimate": is_estimate,
+        },
+    )
+    invalid = await client.post(
+        endpoint,
+        json={
+            "valuation_date": "2026-09-28",
+            "value": "875000.00",
+            "valuation_type": valuation_type,
+            "is_estimate": not is_estimate,
+        },
+    )
+    assert valid.status_code == 201
+    assert invalid.status_code == 422
 
 
 async def test_property_inherits_household_currency_when_omitted(

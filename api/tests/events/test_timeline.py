@@ -135,6 +135,62 @@ async def test_baseline_resolution_applies_backdated_events_in_deterministic_ord
     assert body["baseline_date"] == "2020-01-01"
 
 
+async def test_dated_valuation_updates_value_without_replacing_baseline_debt(
+    client: AsyncClient, timeline_setup: dict[str, str]
+) -> None:
+    older_event = await create_event(
+        client,
+        timeline_setup,
+        "PROPERTY_VALUED",
+        datetime(2021, 1, 1, 10, tzinfo=UTC),
+        amount=500000,
+    )
+    valuation = await client.post(
+        f"/api/v1/properties/{timeline_setup['property_id']}/valuations",
+        json={
+            "valuation_date": "2022-06-30",
+            "value": "550000.00",
+            "valuation_type": "FORMAL_VALUATION",
+            "source": "Independent valuer",
+            "is_estimate": False,
+        },
+    )
+    assert valuation.status_code == 201
+
+    response = await client.get(
+        f"/api/v1/properties/{timeline_setup['property_id']}/state",
+        params={"as_of": "2022-12-31"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["property_value"] == "550000.00"
+    assert body["loan_balance_total"] == "200000.00"
+    assert body["valuation_id"] == valuation.json()["id"]
+    assert body["valuation_date"] == "2022-06-30"
+    assert body["valuation_type"] == "FORMAL_VALUATION"
+    assert body["valuation_is_estimate"] is False
+    assert body["applied_event_ids"] == [older_event["id"]]
+
+    later_event = await create_event(
+        client,
+        timeline_setup,
+        "PROPERTY_VALUED",
+        datetime(2023, 1, 1, 10, tzinfo=UTC),
+        amount=600000,
+    )
+    later = await client.get(
+        f"/api/v1/properties/{timeline_setup['property_id']}/state",
+        params={"as_of": "2023-12-31"},
+    )
+    assert later.json()["property_value"] == "600000.00"
+    assert later.json()["valuation_id"] is None
+    assert later.json()["valuation_date"] is None
+    assert later.json()["valuation_type"] is None
+    assert later.json()["valuation_is_estimate"] is None
+    assert later.json()["applied_event_ids"] == [older_event["id"], later_event["id"]]
+
+
 async def test_same_day_priority_and_disabled_planned_events(
     client: AsyncClient, timeline_setup: dict[str, str]
 ) -> None:
@@ -160,6 +216,61 @@ async def test_same_day_priority_and_disabled_planned_events(
     )
     assert state.json()["property_value"] == "710000.00"
     assert state.json()["is_active_asset"] is False
+
+
+async def test_same_day_value_observations_use_source_then_event_precedence(
+    client: AsyncClient, timeline_setup: dict[str, str]
+) -> None:
+    endpoint = f"/api/v1/properties/{timeline_setup['property_id']}/valuations"
+    observations = [
+        ("USER_ESTIMATE", True, "610000.00"),
+        ("AUTOMATED_ESTIMATE", True, "620000.00"),
+        ("AGENT_APPRAISAL", True, "630000.00"),
+        ("FORMAL_VALUATION", False, "640000.00"),
+    ]
+    created = []
+    for valuation_type, is_estimate, value in observations:
+        response = await client.post(
+            endpoint,
+            json={
+                "valuation_date": "2025-06-01",
+                "value": value,
+                "valuation_type": valuation_type,
+                "is_estimate": is_estimate,
+            },
+        )
+        assert response.status_code == 201
+        created.append(response.json())
+
+    valuation_state = await client.get(
+        f"/api/v1/properties/{timeline_setup['property_id']}/state",
+        params={"as_of": "2025-06-01"},
+    )
+    assert valuation_state.json()["property_value"] == "640000.00"
+    assert valuation_state.json()["valuation_id"] == created[-1]["id"]
+    assert valuation_state.json()["valuation_type"] == "FORMAL_VALUATION"
+
+    await create_event(
+        client,
+        timeline_setup,
+        "PROPERTY_VALUED",
+        datetime(2025, 6, 1, 10, tzinfo=UTC),
+        amount=650000,
+    )
+    sold = await create_event(
+        client,
+        timeline_setup,
+        "PROPERTY_SOLD",
+        datetime(2025, 6, 1, 12, tzinfo=UTC),
+        amount=660000,
+    )
+    event_state = await client.get(
+        f"/api/v1/properties/{timeline_setup['property_id']}/state",
+        params={"as_of": "2025-06-01"},
+    )
+    assert event_state.json()["property_value"] == "660000.00"
+    assert event_state.json()["valuation_id"] is None
+    assert event_state.json()["applied_event_ids"][-1] == sold["id"]
 
 
 async def test_planned_event_can_be_toggled_but_observed_event_cannot(

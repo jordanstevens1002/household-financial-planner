@@ -192,6 +192,11 @@ describe('tax profile workflows', () => {
     );
     await user.click(screen.getByLabelText('Provider and tax year'));
     await user.click(screen.getByText(`${provider.display_name} — 2026`));
+    await user.clear(screen.getByLabelText('Effective from'));
+    await user.type(
+      screen.getByLabelText('Effective from'),
+      automaticProfile.effective_from,
+    );
     await user.click(screen.getByRole('button', { name: 'Save tax settings' }));
 
     expect(

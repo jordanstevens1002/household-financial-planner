@@ -7,6 +7,8 @@ test('selects and restores a dated property position', async ({ page }) => {
   const typeId = '16b3f01b-ff76-451f-a4bd-a2ddf89834fd';
   const statusId = '85e30193-a324-4d22-9065-e25d819f6530';
   const requestedDates: string[] = [];
+  let valuationAdded = false;
+  let valuationPayload: Record<string, unknown> | null = null;
   let wizardPayload: Record<string, unknown> | null = null;
   await page.addInitScript((id) => {
     localStorage.setItem('hfp.selection.household', id);
@@ -159,6 +161,28 @@ test('selects and restores a dated property position', async ({ page }) => {
       });
       return;
     }
+    if (
+      path.endsWith(`/properties/${propertyId}/valuations`) &&
+      request.method() === 'POST'
+    ) {
+      valuationPayload = request.postDataJSON() as Record<string, unknown>;
+      valuationAdded = true;
+      await route.fulfill({
+        contentType: 'application/json',
+        json: {
+          id: '00d8bb19-b984-47f6-95e4-f804585803ff',
+          is_estimate: false,
+          notes: null,
+          property_id: propertyId,
+          source: 'Independent valuer',
+          valuation_date: '2026-07-15',
+          valuation_type: 'FORMAL_VALUATION',
+          value: '805000.00',
+        },
+        status: 201,
+      });
+      return;
+    }
     if (path.endsWith(`/properties/${propertyId}/state`)) {
       requestedDates.push(url.searchParams.get('as_of') ?? '');
       const asOf = url.searchParams.get('as_of') ?? '2026-08-02';
@@ -173,9 +197,15 @@ test('selects and restores a dated property position', async ({ page }) => {
           is_active_asset: true,
           loan_balance_total: '305000.00',
           property_id: propertyId,
-          property_value: '790000.00',
+          property_value: valuationAdded ? '805000.00' : '790000.00',
           status_id: statusId,
           temporal_position: 'CURRENT',
+          valuation_date: valuationAdded ? '2026-07-15' : null,
+          valuation_id: valuationAdded
+            ? '00d8bb19-b984-47f6-95e4-f804585803ff'
+            : null,
+          valuation_is_estimate: valuationAdded ? false : null,
+          valuation_type: valuationAdded ? 'FORMAL_VALUATION' : null,
         },
       });
       return;
@@ -207,6 +237,30 @@ test('selects and restores a dated property position', async ({ page }) => {
   await page.getByRole('button', { name: 'Refresh position' }).click();
   await expect.poll(() => requestedDates).toContain('2028-07-01');
   await expect(page.getByText(/Results as of 2028-07-01/)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Add dated record' }).click();
+  await page.getByLabel('Record date').fill('2026-07-15');
+  await page.getByLabel('Property value (NZD)').fill('805000');
+  await page.getByLabel('Valuation type').click();
+  await page.getByRole('option', { name: 'Formal valuation' }).click();
+  await expect(
+    page.getByText('A formal valuation is recorded as a non-estimate.'),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Advanced' }).click();
+  await page.getByLabel('Source (optional)').fill('Independent valuer');
+  await page.getByRole('button', { name: 'Save record' }).click();
+  await expect(page.getByText('Valuation recorded')).toBeVisible();
+  await expect
+    .poll(() => valuationPayload)
+    .toEqual({
+      is_estimate: false,
+      notes: null,
+      source: 'Independent valuer',
+      valuation_date: '2026-07-15',
+      valuation_type: 'FORMAL_VALUATION',
+      value: '805000',
+    });
+  await expect(page.getByText('Valuation recorded Jul 15, 2026')).toBeVisible();
 
   await page.getByRole('button', { name: 'Add property' }).click();
   await page.getByLabel('Property name').fill('New current home');

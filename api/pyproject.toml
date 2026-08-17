@@ -9,7 +9,7 @@ description = "API and calculation service for Household Financial Planner"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-  "alembic>=1.13,<2",
+  "alembic>=1.13,<1.19",
   "argon2-cffi>=25.1,<26",
   "asyncpg>=0.29,<1",
   "Babel>=2.17,<3",

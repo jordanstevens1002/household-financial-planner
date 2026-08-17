@@ -3359,6 +3359,13 @@ export interface components {
              */
             status_id: string;
             temporal_position: components["schemas"]["TemporalPosition"];
+            /** Valuation Date */
+            valuation_date: string | null;
+            /** Valuation Id */
+            valuation_id: string | null;
+            /** Valuation Is Estimate */
+            valuation_is_estimate: boolean | null;
+            valuation_type: components["schemas"]["ValuationType"] | null;
         };
         /** RetirementAccountCreate */
         RetirementAccountCreate: {

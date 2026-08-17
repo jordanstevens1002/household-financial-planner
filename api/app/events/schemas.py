@@ -7,7 +7,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.models import EventClassification
+from app.models import EventClassification, ValuationType
 
 
 class FinancialEventCreate(BaseModel):
@@ -78,6 +78,10 @@ class ResolvedPropertyState(BaseModel):
     temporal_position: TemporalPosition
     baseline_id: uuid.UUID | None
     baseline_date: date | None
+    valuation_id: uuid.UUID | None
+    valuation_date: date | None
+    valuation_type: ValuationType | None
+    valuation_is_estimate: bool | None
     property_value: Decimal | None
     loan_balance_total: Decimal | None
     status_id: uuid.UUID
