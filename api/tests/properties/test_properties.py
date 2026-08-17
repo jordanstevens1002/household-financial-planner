@@ -1,5 +1,6 @@
 """Property and ownership tests."""
 
+import logging
 import uuid
 from datetime import date
 
@@ -439,10 +440,146 @@ async def test_same_owner_cannot_have_overlapping_ownership_records(
 
     assert first.status_code == 201
     assert duplicate.status_code == 409
-    assert "Choose another owner" in duplicate.json()["detail"]
+    assert "Correct or close the existing record" in duplicate.json()["detail"]
     assert later.status_code == 201
     listed = await client.get(endpoint)
     assert len(listed.json()) == 2
+
+
+async def test_ongoing_owner_can_be_closed_before_a_transfer_and_is_audited(
+    client: AsyncClient, property_lookups: dict[str, str], caplog
+) -> None:
+    household = await create_household(client)
+    created = await client.post(
+        f"/api/v1/households/{household['id']}/properties",
+        json=property_payload(property_lookups),
+    )
+    endpoint = f"/api/v1/properties/{created.json()['id']}/ownership"
+    with caplog.at_level(logging.INFO):
+        original = await client.post(
+            endpoint,
+            json={
+                "owner_type": "HOUSEHOLD",
+                "ownership_percentage": 100,
+                "effective_from": "2020-01-01",
+            },
+        )
+        blocked = await client.post(
+            endpoint,
+            json={
+                "owner_type": "EXTERNAL_PARTY",
+                "external_owner_name": "New owner",
+                "ownership_percentage": 100,
+                "effective_from": "2026-07-01",
+            },
+        )
+        closed = await client.patch(
+            f"{endpoint}/{original.json()['ownership']['id']}",
+            json={"effective_to": "2026-06-30", "notes": "Transferred"},
+        )
+        transferred = await client.post(
+            endpoint,
+            json={
+                "owner_type": "EXTERNAL_PARTY",
+                "external_owner_name": "New owner",
+                "ownership_percentage": 100,
+                "effective_from": "2026-07-01",
+            },
+        )
+
+    assert blocked.status_code == 422
+    assert closed.status_code == 200
+    assert closed.json()["ownership"]["effective_to"] == "2026-06-30"
+    assert transferred.status_code == 201
+    assert "property_ownership_created" in caplog.text
+    assert "property_ownership_corrected" in caplog.text
+    before = await client.get(f"{endpoint}-position", params={"as_of": "2026-06-30"})
+    after = await client.get(f"{endpoint}-position", params={"as_of": "2026-07-01"})
+    assert before.json()["ownership"][0]["owner_type"] == "HOUSEHOLD"
+    assert after.json()["ownership"][0]["external_owner_name"] == "New owner"
+
+
+async def test_ownership_total_is_checked_at_every_interval_boundary(
+    client: AsyncClient, property_lookups: dict[str, str]
+) -> None:
+    household = await create_household(client)
+    created = await client.post(
+        f"/api/v1/households/{household['id']}/properties",
+        json=property_payload(property_lookups),
+    )
+    endpoint = f"/api/v1/properties/{created.json()['id']}/ownership"
+    future = await client.post(
+        endpoint,
+        json={
+            "owner_type": "EXTERNAL_PARTY",
+            "external_owner_name": "Future owner",
+            "ownership_percentage": 60,
+            "effective_from": "2030-01-01",
+        },
+    )
+    overlaps_future_start = await client.post(
+        endpoint,
+        json={
+            "owner_type": "HOUSEHOLD",
+            "ownership_percentage": 60,
+            "effective_from": "2026-01-01",
+        },
+    )
+    assert future.status_code == 201
+    assert overlaps_future_start.status_code == 422
+    assert "2030-01-01" in overlaps_future_start.json()["detail"]
+
+
+async def test_wizard_reuses_ownership_timeline_validation(
+    client: AsyncClient, property_lookups: dict[str, str]
+) -> None:
+    household = await create_household(client)
+    endpoint = f"/api/v1/households/{household['id']}/properties/wizard"
+    base = {
+        "mode": "HISTORICAL_PURCHASE",
+        "property": property_payload(property_lookups)
+        | {"purchase_date": "2020-01-01", "purchase_price": 500000},
+    }
+    excessive = await client.post(
+        endpoint,
+        json=base
+        | {
+            "ownership": [
+                {
+                    "owner_type": "HOUSEHOLD",
+                    "ownership_percentage": 80,
+                    "effective_from": "2020-01-01",
+                },
+                {
+                    "owner_type": "EXTERNAL_PARTY",
+                    "external_owner_name": "Co-owner",
+                    "ownership_percentage": 30,
+                    "effective_from": "2021-01-01",
+                },
+            ]
+        },
+    )
+    duplicate = await client.post(
+        endpoint,
+        json=base
+        | {
+            "property": base["property"] | {"display_name": "Duplicate test"},
+            "ownership": [
+                {
+                    "owner_type": "HOUSEHOLD",
+                    "ownership_percentage": 40,
+                    "effective_from": "2020-01-01",
+                },
+                {
+                    "owner_type": "HOUSEHOLD",
+                    "ownership_percentage": 60,
+                    "effective_from": "2020-01-01",
+                },
+            ],
+        },
+    )
+    assert excessive.status_code == 422
+    assert duplicate.status_code == 409
 
 
 async def test_property_from_another_household_is_hidden(

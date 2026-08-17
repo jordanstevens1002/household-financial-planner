@@ -146,6 +146,10 @@ export function OwnershipPanel({
   const queryClient = useQueryClient();
   const { notify } = useNotification();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [correction, setCorrection] = useState<Ownership | null>(null);
+  const [correctedPercentage, setCorrectedPercentage] = useState('');
+  const [correctedEndDate, setCorrectedEndDate] = useState('');
+  const [correctionNotes, setCorrectionNotes] = useState('');
   const [asOf, setAsOf] = useState(localCalendarDate());
   const [draftDate, setDraftDate] = useState(asOf);
   const form = useForm<Fields>({
@@ -214,6 +218,35 @@ export function OwnershipPanel({
       ]);
     },
   });
+  const correct = useMutation<OwnershipResult, Error>({
+    mutationFn: () => {
+      if (!correction) throw new Error('Choose an ownership record');
+      return apiRequest<OwnershipResult>(
+        `/api/v1/properties/${propertyId}/ownership/${correction.id}`,
+        {
+          body: JSON.stringify({
+            effective_to: correctedEndDate || null,
+            notes: correctionNotes || null,
+            ownership_percentage: correctedPercentage,
+          }),
+          csrfToken: auth.csrfToken(),
+          method: 'PATCH',
+        },
+      );
+    },
+    onSuccess: async () => {
+      setCorrection(null);
+      notify('Ownership record corrected', 'success');
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['property-ownership', propertyId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['property-ownership-position', propertyId],
+        }),
+      ]);
+    },
+  });
   const columns: DataColumn<Ownership>[] = [
     {
       key: 'owner',
@@ -236,6 +269,27 @@ export function OwnershipPanel({
       render: (row) =>
         row.effective_to ? formatDate(row.effective_to) : 'Ongoing',
     },
+    ...(canEdit
+      ? [
+          {
+            key: 'actions',
+            label: 'Actions',
+            render: (row: Ownership) => (
+              <Button
+                onClick={() => {
+                  setCorrection(row);
+                  setCorrectedPercentage(row.ownership_percentage);
+                  setCorrectedEndDate(row.effective_to ?? '');
+                  setCorrectionNotes(row.notes ?? '');
+                }}
+                size="small"
+              >
+                Correct or end
+              </Button>
+            ),
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -430,6 +484,60 @@ export function OwnershipPanel({
             </Button>
           </DialogActions>
         </Stack>
+      </Dialog>
+      <Dialog
+        fullWidth
+        maxWidth="sm"
+        onClose={() => setCorrection(null)}
+        open={Boolean(correction)}
+      >
+        <DialogTitle>Correct or end ownership</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Alert severity="info">
+              To transfer ownership, end this record the day before the new
+              owner starts, then add the new owner as a separate dated record.
+            </Alert>
+            <TextField
+              label="Ownership percentage"
+              onChange={(event) => setCorrectedPercentage(event.target.value)}
+              value={correctedPercentage}
+            />
+            <TextField
+              helperText="Leave blank to keep this ownership ongoing"
+              label="Effective to"
+              onChange={(event) => setCorrectedEndDate(event.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+              type="date"
+              value={correctedEndDate}
+            />
+            <TextField
+              label="Correction notes (optional)"
+              multiline
+              onChange={(event) => setCorrectionNotes(event.target.value)}
+              rows={3}
+              value={correctionNotes}
+            />
+            {correct.error ? (
+              <Alert severity="error">{message(correct.error)}</Alert>
+            ) : null}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            disabled={correct.isPending}
+            onClick={() => setCorrection(null)}
+          >
+            Cancel
+          </Button>
+          <Button
+            disabled={correct.isPending || !correctedPercentage}
+            onClick={() => correct.mutate()}
+            variant="contained"
+          >
+            Save correction
+          </Button>
+        </DialogActions>
       </Dialog>
     </Stack>
   );

@@ -4128,6 +4128,53 @@
         "title": "OwnerType",
         "type": "string"
       },
+      "OwnershipCorrection": {
+        "properties": {
+          "effective_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective To"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "ownership_percentage": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 100.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,6}0*$)\\d{0,3}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ownership Percentage"
+          }
+        },
+        "title": "OwnershipCorrection",
+        "type": "object"
+      },
       "OwnershipPosition": {
         "properties": {
           "as_of": {
@@ -13500,6 +13547,90 @@
           }
         ],
         "summary": "Resolve Ownership Position",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/{property_id}/ownership/{ownership_id}": {
+      "patch": {
+        "operationId": "correct_ownership_api_v1_properties__property_id__ownership__ownership_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "property_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Property Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "ownership_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ownership Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnershipCorrection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnershipResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Correct Ownership",
         "tags": [
           "properties"
         ]

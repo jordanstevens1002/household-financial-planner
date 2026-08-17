@@ -885,7 +885,7 @@ describe('property overview workflows', () => {
             response(
               {
                 detail:
-                  'This owner already has an ownership record for the selected dates. Choose another owner instead of adding the same owner twice.',
+                  'This owner already has an ownership record for the selected dates. Correct or close the existing record before adding another.',
               },
               409,
             ),
@@ -913,8 +913,72 @@ describe('property overview workflows', () => {
     await user.click(screen.getByRole('button', { name: 'Save ownership' }));
 
     expect(
-      await screen.findByText(/Choose another owner instead of adding/),
+      await screen.findByText(/Correct or close the existing record/),
     ).toBeVisible();
+  });
+
+  it('closes an ongoing ownership record before a transfer', async () => {
+    const user = userEvent.setup();
+    let corrected: Record<string, unknown> | null = null;
+    const ownershipId = '018e6f8b-7bd7-40dc-aad0-bb694421fbbd';
+    const record = {
+      effective_from: '2020-01-01',
+      effective_to: null,
+      external_owner_name: null,
+      id: ownershipId,
+      notes: null,
+      owner_type: 'HOUSEHOLD',
+      ownership_percentage: '100.00',
+      person_id: null,
+      property_id: propertyId,
+    };
+    const fallback = standardFetch();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (
+          path.endsWith(`/properties/${propertyId}/ownership/${ownershipId}`) &&
+          init?.method === 'PATCH'
+        ) {
+          corrected = JSON.parse(init.body as string) as Record<
+            string,
+            unknown
+          >;
+          return Promise.resolve(
+            response({
+              ownership: { ...record, ...corrected },
+              total_percentage: '100.00',
+              warnings: [],
+            }),
+          );
+        }
+        if (path.endsWith(`/properties/${propertyId}/ownership`)) {
+          return Promise.resolve(response([record]));
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'View' }));
+    await user.click(
+      await screen.findByRole('button', { name: 'Correct or end' }),
+    );
+    expect(screen.getByText(/end this record the day before/)).toBeVisible();
+    await user.type(screen.getByLabelText('Effective to'), '2026-06-30');
+    await user.type(
+      screen.getByLabelText('Correction notes (optional)'),
+      'Transferred',
+    );
+    await user.click(screen.getByRole('button', { name: 'Save correction' }));
+
+    expect(await screen.findByText('Ownership record corrected')).toBeVisible();
+    expect(corrected).toEqual({
+      effective_to: '2026-06-30',
+      notes: 'Transferred',
+      ownership_percentage: '100.00',
+    });
   });
 
   it('does not offer creation to a view-only household member', async () => {

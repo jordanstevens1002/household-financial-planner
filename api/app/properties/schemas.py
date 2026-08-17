@@ -96,6 +96,22 @@ class OwnershipRead(OwnershipCreate, ORMModel):
     property_id: uuid.UUID
 
 
+class OwnershipCorrection(BaseModel):
+    ownership_percentage: Decimal | None = Field(
+        default=None, gt=0, le=100, max_digits=5, decimal_places=2
+    )
+    effective_to: date | None = None
+    notes: str | None = Field(default=None, max_length=2000)
+
+    @model_validator(mode="after")
+    def includes_a_change(self) -> OwnershipCorrection:
+        if not self.model_fields_set:
+            raise ValueError("At least one ownership correction is required")
+        if "ownership_percentage" in self.model_fields_set and self.ownership_percentage is None:
+            raise ValueError("ownership_percentage cannot be null")
+        return self
+
+
 class OwnershipResult(BaseModel):
     ownership: OwnershipRead
     total_percentage: Decimal

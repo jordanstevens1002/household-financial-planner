@@ -1009,6 +1009,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/properties/{property_id}/ownership/{ownership_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Correct Ownership */
+        patch: operations["correct_ownership_api_v1_properties__property_id__ownership__ownership_id__patch"];
+        trace?: never;
+    };
     "/api/v1/properties/{property_id}/rental-profiles": {
         parameters: {
             query?: never;
@@ -2738,6 +2755,15 @@ export interface components {
          * @enum {string}
          */
         OwnerType: "PERSON" | "HOUSEHOLD" | "COMPANY" | "TRUST" | "RETIREMENT_FUND" | "EXTERNAL_PARTY" | "OTHER";
+        /** OwnershipCorrection */
+        OwnershipCorrection: {
+            /** Effective To */
+            effective_to?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Ownership Percentage */
+            ownership_percentage?: number | string | null;
+        };
         /** OwnershipPosition */
         OwnershipPosition: {
             /**
@@ -6773,6 +6799,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OwnershipPosition"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    correct_ownership_api_v1_properties__property_id__ownership__ownership_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                property_id: string;
+                ownership_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OwnershipCorrection"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnershipResult"];
                 };
             };
             /** @description Validation Error */
