@@ -30,6 +30,7 @@ from app.properties.schemas import (
     BaselineCreate,
     BaselineRead,
     OwnershipCreate,
+    OwnershipPosition,
     OwnershipRead,
     OwnershipResult,
     PropertyCreate,
@@ -264,6 +265,9 @@ async def create_ownership(
     session.add(record)
     await session.flush()
     total = await _ownership_total(property_id, payload.effective_from, session)
+    if total > Decimal("100"):
+        await session.rollback()
+        raise HTTPException(422, "Ownership cannot exceed 100% for the effective date")
     await session.commit()
     await session.refresh(record)
     return OwnershipResult(
@@ -289,6 +293,45 @@ async def list_ownership(
                 PropertyOwnershipInterest.id,
             )
         )
+    )
+
+
+@router.get(
+    "/properties/{property_id}/ownership-position",
+    response_model=OwnershipPosition,
+)
+async def resolve_ownership_position(
+    property_id: uuid.UUID,
+    as_of: date,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> OwnershipPosition:
+    await _property_with_access(property_id, HouseholdRole.VIEWER, user, session)
+    records = list(
+        await session.scalars(
+            select(PropertyOwnershipInterest)
+            .where(
+                PropertyOwnershipInterest.property_id == property_id,
+                PropertyOwnershipInterest.effective_from <= as_of,
+                or_(
+                    PropertyOwnershipInterest.effective_to.is_(None),
+                    PropertyOwnershipInterest.effective_to >= as_of,
+                ),
+            )
+            .order_by(
+                PropertyOwnershipInterest.ownership_percentage.desc(),
+                PropertyOwnershipInterest.id,
+            )
+        )
+    )
+    total = sum((record.ownership_percentage for record in records), Decimal("0")).quantize(
+        Decimal("0.01")
+    )
+    return OwnershipPosition(
+        as_of=as_of,
+        ownership=[OwnershipRead.model_validate(record) for record in records],
+        total_percentage=total,
+        warnings=_ownership_warnings(total),
     )
 
 

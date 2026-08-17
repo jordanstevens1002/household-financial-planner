@@ -83,6 +83,11 @@ class OwnershipCreate(BaseModel):
             raise ValueError("person_id is required for a PERSON owner")
         if self.owner_type != OwnerType.PERSON and self.person_id is not None:
             raise ValueError("person_id is only valid for a PERSON owner")
+        if self.owner_type in {OwnerType.PERSON, OwnerType.HOUSEHOLD}:
+            if self.external_owner_name is not None:
+                raise ValueError("external_owner_name is not valid for a PERSON or HOUSEHOLD owner")
+        elif self.external_owner_name is None:
+            raise ValueError("external_owner_name is required for an external owner")
         return self
 
 
@@ -93,6 +98,13 @@ class OwnershipRead(OwnershipCreate, ORMModel):
 
 class OwnershipResult(BaseModel):
     ownership: OwnershipRead
+    total_percentage: Decimal
+    warnings: list[str]
+
+
+class OwnershipPosition(BaseModel):
+    as_of: date
+    ownership: list[OwnershipRead]
     total_percentage: Decimal
     warnings: list[str]
 

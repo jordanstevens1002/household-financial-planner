@@ -4128,6 +4128,42 @@
         "title": "OwnerType",
         "type": "string"
       },
+      "OwnershipPosition": {
+        "properties": {
+          "as_of": {
+            "format": "date",
+            "title": "As Of",
+            "type": "string"
+          },
+          "ownership": {
+            "items": {
+              "$ref": "#/components/schemas/OwnershipRead"
+            },
+            "title": "Ownership",
+            "type": "array"
+          },
+          "total_percentage": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Percentage",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "as_of",
+          "ownership",
+          "total_percentage",
+          "warnings"
+        ],
+        "title": "OwnershipPosition",
+        "type": "object"
+      },
       "OwnershipRead": {
         "properties": {
           "effective_from": {
@@ -13390,6 +13426,80 @@
           }
         ],
         "summary": "Create Ownership",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/{property_id}/ownership-position": {
+      "get": {
+        "operationId": "resolve_ownership_position_api_v1_properties__property_id__ownership_position_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "property_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Property Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "as_of",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "As Of",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnershipPosition"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Resolve Ownership Position",
         "tags": [
           "properties"
         ]

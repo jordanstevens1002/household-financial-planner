@@ -294,7 +294,12 @@ async def test_add_dated_ownership_reports_running_total(
     )
     second = await client.post(
         f"/api/v1/properties/{property_id}/ownership",
-        json={"owner_type": "TRUST", "ownership_percentage": 40, "effective_from": "2020-01-01"},
+        json={
+            "owner_type": "TRUST",
+            "external_owner_name": "Family trust",
+            "ownership_percentage": 40,
+            "effective_from": "2020-01-01",
+        },
     )
     assert first.json()["warnings"]
     assert second.json()["total_percentage"] == "100.00"
@@ -305,6 +310,89 @@ async def test_add_dated_ownership_reports_running_total(
     assert set(by_owner_type) == {"HOUSEHOLD", "TRUST"}
     assert by_owner_type["HOUSEHOLD"]["ownership_percentage"] == "60.00"
     assert by_owner_type["TRUST"]["ownership_percentage"] == "40.00"
+
+    position = await client.get(
+        f"/api/v1/properties/{property_id}/ownership-position",
+        params={"as_of": "2020-01-01"},
+    )
+    assert position.status_code == 200
+    assert position.json()["total_percentage"] == "100.00"
+    assert len(position.json()["ownership"]) == 2
+    assert position.json()["warnings"] == []
+
+
+async def test_ownership_rejects_invalid_owner_details_and_totals_over_one_hundred(
+    client: AsyncClient, property_lookups: dict[str, str]
+) -> None:
+    household = await create_household(client)
+    created = await client.post(
+        f"/api/v1/households/{household['id']}/properties",
+        json=property_payload(property_lookups),
+    )
+    endpoint = f"/api/v1/properties/{created.json()['id']}/ownership"
+    missing_name = await client.post(
+        endpoint,
+        json={
+            "owner_type": "EXTERNAL_PARTY",
+            "ownership_percentage": 10,
+            "effective_from": "2020-01-01",
+        },
+    )
+    assert missing_name.status_code == 422
+    first = await client.post(
+        endpoint,
+        json={
+            "owner_type": "HOUSEHOLD",
+            "ownership_percentage": 80,
+            "effective_from": "2020-01-01",
+        },
+    )
+    excessive = await client.post(
+        endpoint,
+        json={
+            "owner_type": "EXTERNAL_PARTY",
+            "external_owner_name": "Co-owner",
+            "ownership_percentage": 30,
+            "effective_from": "2020-01-01",
+        },
+    )
+    assert first.status_code == 201
+    assert excessive.status_code == 422
+    listed = await client.get(endpoint)
+    assert len(listed.json()) == 1
+
+
+async def test_ownership_position_respects_effective_range(
+    client: AsyncClient, property_lookups: dict[str, str]
+) -> None:
+    household = await create_household(client)
+    created = await client.post(
+        f"/api/v1/households/{household['id']}/properties",
+        json=property_payload(property_lookups),
+    )
+    property_id = created.json()["id"]
+    response = await client.post(
+        f"/api/v1/properties/{property_id}/ownership",
+        json={
+            "owner_type": "HOUSEHOLD",
+            "ownership_percentage": 100,
+            "effective_from": "2020-01-01",
+            "effective_to": "2024-12-31",
+        },
+    )
+    assert response.status_code == 201
+    active = await client.get(
+        f"/api/v1/properties/{property_id}/ownership-position",
+        params={"as_of": "2024-12-31"},
+    )
+    ended = await client.get(
+        f"/api/v1/properties/{property_id}/ownership-position",
+        params={"as_of": "2025-01-01"},
+    )
+    assert active.json()["total_percentage"] == "100.00"
+    assert ended.json()["total_percentage"] == "0.00"
+    assert ended.json()["ownership"] == []
+    assert ended.json()["warnings"]
 
 
 async def test_property_from_another_household_is_hidden(
