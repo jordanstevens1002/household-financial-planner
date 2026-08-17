@@ -20,6 +20,7 @@ import { formatCurrency, formatDate } from '../../shared/format';
 import { useHousehold } from '../households/HouseholdContext';
 import { localCalendarDate } from '../people/localDate';
 import { PropertyCreateDialog } from './PropertyCreateDialog';
+import { OwnershipPanel } from './OwnershipPanel';
 import { PropertyRecordDialog } from './PropertyRecordDialog';
 
 type Lookup = components['schemas']['LookupRead'];
@@ -465,6 +466,11 @@ export function PropertiesPage() {
               ) : null}
             </Stack>
           ) : null}
+          <OwnershipPanel
+            canEdit={access.data?.can_edit === true}
+            householdId={household.selected.id}
+            propertyId={selectedSummary.id}
+          />
         </Stack>
       ) : properties.data?.length ? (
         <Alert severity="info">

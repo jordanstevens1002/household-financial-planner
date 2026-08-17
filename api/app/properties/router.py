@@ -1,6 +1,7 @@
 """Property and ownership API routes."""
 
 import uuid
+from dataclasses import dataclass, replace
 from datetime import date
 from decimal import Decimal
 from typing import Annotated
@@ -29,7 +30,9 @@ from app.models import (
 from app.properties.schemas import (
     BaselineCreate,
     BaselineRead,
+    OwnershipCorrection,
     OwnershipCreate,
+    OwnershipPosition,
     OwnershipRead,
     OwnershipResult,
     PropertyCreate,
@@ -104,6 +107,94 @@ def _ownership_warnings(total: Decimal) -> list[str]:
     if total == Decimal("100"):
         return []
     return [f"Ownership totals {total:.2f}% rather than 100.00% for the effective date"]
+
+
+@dataclass(frozen=True)
+class _OwnershipCandidate:
+    id: uuid.UUID | None
+    owner_type: OwnerType
+    person_id: uuid.UUID | None
+    external_owner_name: str | None
+    ownership_percentage: Decimal
+    effective_from: date
+    effective_to: date | None
+
+
+def _ownership_candidate(
+    record: PropertyOwnershipInterest | OwnershipCreate,
+) -> _OwnershipCandidate:
+    return _OwnershipCandidate(
+        id=record.id if isinstance(record, PropertyOwnershipInterest) else None,
+        owner_type=record.owner_type,
+        person_id=record.person_id,
+        external_owner_name=record.external_owner_name,
+        ownership_percentage=record.ownership_percentage,
+        effective_from=record.effective_from,
+        effective_to=record.effective_to,
+    )
+
+
+def _owner_key(record: _OwnershipCandidate) -> tuple[OwnerType, str]:
+    if record.owner_type == OwnerType.PERSON:
+        return record.owner_type, str(record.person_id)
+    if record.owner_type == OwnerType.HOUSEHOLD:
+        return record.owner_type, "household"
+    return record.owner_type, (record.external_owner_name or "").strip().casefold()
+
+
+def _intervals_overlap(left: _OwnershipCandidate, right: _OwnershipCandidate) -> bool:
+    return (left.effective_to is None or left.effective_to >= right.effective_from) and (
+        right.effective_to is None or right.effective_to >= left.effective_from
+    )
+
+
+def _validate_ownership_timeline(records: list[_OwnershipCandidate]) -> None:
+    for index, left in enumerate(records):
+        for right in records[index + 1 :]:
+            if _owner_key(left) == _owner_key(right) and _intervals_overlap(left, right):
+                raise HTTPException(
+                    status.HTTP_409_CONFLICT,
+                    "This owner already has an ownership record for the selected dates. "
+                    "Correct or close the existing record before adding another.",
+                )
+    boundaries = {record.effective_from for record in records}
+    boundaries.update(
+        date.fromordinal(record.effective_to.toordinal() + 1)
+        for record in records
+        if record.effective_to is not None and record.effective_to != date.max
+    )
+    for boundary in boundaries:
+        total = sum(
+            (
+                record.ownership_percentage
+                for record in records
+                if record.effective_from <= boundary
+                and (record.effective_to is None or record.effective_to >= boundary)
+            ),
+            Decimal("0"),
+        )
+        if total > Decimal("100"):
+            raise HTTPException(
+                422,
+                f"Ownership cannot exceed 100% (total {total:.2f}% from {boundary.isoformat()})",
+            )
+
+
+async def _validate_ownership_write(
+    property_id: uuid.UUID,
+    additions: list[_OwnershipCandidate],
+    session: AsyncSession,
+    *,
+    exclude_id: uuid.UUID | None = None,
+) -> None:
+    await session.execute(select(Property.id).where(Property.id == property_id).with_for_update())
+    existing_query = select(PropertyOwnershipInterest).where(
+        PropertyOwnershipInterest.property_id == property_id
+    )
+    if exclude_id is not None:
+        existing_query = existing_query.where(PropertyOwnershipInterest.id != exclude_id)
+    existing = list(await session.scalars(existing_query))
+    _validate_ownership_timeline([_ownership_candidate(record) for record in existing] + additions)
 
 
 async def _create_property(
@@ -260,12 +351,83 @@ async def create_ownership(
         person = await session.get(Person, payload.person_id)
         if person is None or person.household_id != property_record.household_id:
             raise HTTPException(422, "Owner person must belong to the property household")
+    await _validate_ownership_write(property_id, [_ownership_candidate(payload)], session)
     record = PropertyOwnershipInterest(property_id=property_id, **payload.model_dump())
     session.add(record)
     await session.flush()
     total = await _ownership_total(property_id, payload.effective_from, session)
     await session.commit()
     await session.refresh(record)
+    logger.info(
+        "property_ownership_created",
+        actor_user_id=str(user.id),
+        household_id=str(property_record.household_id),
+        property_id=str(property_id),
+        ownership_id=str(record.id),
+        owner_type=record.owner_type,
+        person_id=str(record.person_id) if record.person_id else None,
+        external_owner_name=record.external_owner_name,
+        ownership_percentage=str(record.ownership_percentage),
+        effective_from=record.effective_from.isoformat(),
+        effective_to=record.effective_to.isoformat() if record.effective_to else None,
+    )
+    return OwnershipResult(
+        ownership=OwnershipRead.model_validate(record),
+        total_percentage=total,
+        warnings=_ownership_warnings(total),
+    )
+
+
+@router.patch(
+    "/properties/{property_id}/ownership/{ownership_id}",
+    response_model=OwnershipResult,
+)
+async def correct_ownership(
+    property_id: uuid.UUID,
+    ownership_id: uuid.UUID,
+    payload: OwnershipCorrection,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> OwnershipResult:
+    property_record = await _property_with_access(property_id, HouseholdRole.EDITOR, user, session)
+    record = await session.get(PropertyOwnershipInterest, ownership_id)
+    if record is None or record.property_id != property_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ownership record not found")
+    previous_percentage = record.ownership_percentage
+    previous_effective_to = record.effective_to
+    previous_notes = record.notes
+    values = payload.model_dump(exclude_unset=True)
+    candidate = replace(
+        _ownership_candidate(record),
+        ownership_percentage=values.get("ownership_percentage", record.ownership_percentage),
+        effective_to=values.get("effective_to", record.effective_to),
+    )
+    if candidate.effective_to and candidate.effective_to < candidate.effective_from:
+        raise HTTPException(422, "effective_to must not precede effective_from")
+    await _validate_ownership_write(property_id, [candidate], session, exclude_id=ownership_id)
+    for field, value in values.items():
+        setattr(record, field, value)
+    await session.commit()
+    await session.refresh(record)
+    total = await _ownership_total(property_id, record.effective_from, session)
+    logger.info(
+        "property_ownership_corrected",
+        actor_user_id=str(user.id),
+        household_id=str(property_record.household_id),
+        property_id=str(property_id),
+        ownership_id=str(record.id),
+        owner_type=record.owner_type,
+        person_id=str(record.person_id) if record.person_id else None,
+        external_owner_name=record.external_owner_name,
+        effective_from=record.effective_from.isoformat(),
+        previous_percentage=str(previous_percentage),
+        resulting_percentage=str(record.ownership_percentage),
+        previous_effective_to=(
+            previous_effective_to.isoformat() if previous_effective_to else None
+        ),
+        resulting_effective_to=(record.effective_to.isoformat() if record.effective_to else None),
+        notes_changed=previous_notes != record.notes,
+    )
     return OwnershipResult(
         ownership=OwnershipRead.model_validate(record),
         total_percentage=total,
@@ -289,6 +451,45 @@ async def list_ownership(
                 PropertyOwnershipInterest.id,
             )
         )
+    )
+
+
+@router.get(
+    "/properties/{property_id}/ownership-position",
+    response_model=OwnershipPosition,
+)
+async def resolve_ownership_position(
+    property_id: uuid.UUID,
+    as_of: date,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> OwnershipPosition:
+    await _property_with_access(property_id, HouseholdRole.VIEWER, user, session)
+    records = list(
+        await session.scalars(
+            select(PropertyOwnershipInterest)
+            .where(
+                PropertyOwnershipInterest.property_id == property_id,
+                PropertyOwnershipInterest.effective_from <= as_of,
+                or_(
+                    PropertyOwnershipInterest.effective_to.is_(None),
+                    PropertyOwnershipInterest.effective_to >= as_of,
+                ),
+            )
+            .order_by(
+                PropertyOwnershipInterest.ownership_percentage.desc(),
+                PropertyOwnershipInterest.id,
+            )
+        )
+    )
+    total = sum((record.ownership_percentage for record in records), Decimal("0")).quantize(
+        Decimal("0.01")
+    )
+    return OwnershipPosition(
+        as_of=as_of,
+        ownership=[OwnershipRead.model_validate(record) for record in records],
+        total_percentage=total,
+        warnings=_ownership_warnings(total),
     )
 
 
@@ -316,7 +517,7 @@ async def create_baseline(
 async def property_wizard(
     household_id: uuid.UUID,
     payload: PropertyWizardCreate,
-    _: Annotated[HouseholdMembership, Depends(require_household_role(HouseholdRole.EDITOR))],
+    actor: Annotated[HouseholdMembership, Depends(require_household_role(HouseholdRole.EDITOR))],
     session: AsyncSession = Depends(get_session),
 ) -> PropertyWizardRead:
     property_record = await _create_property(household_id, payload.property, session)
@@ -352,12 +553,31 @@ async def property_wizard(
         )
         if valid_person_count != len(set(person_ids)):
             raise HTTPException(422, "Owner person must belong to the property household")
+    await _validate_ownership_write(
+        property_record.id,
+        [_ownership_candidate(item) for item in payload.ownership],
+        session,
+    )
     session.add_all(ownership_records)
     await session.flush()
     total = sum((item.ownership_percentage for item in payload.ownership), Decimal("0"))
     warnings = _ownership_warnings(total)
     await session.commit()
     logger.info("property_setup_completed", property_id=str(property_record.id), mode=payload.mode)
+    for record in ownership_records:
+        logger.info(
+            "property_ownership_created",
+            actor_user_id=str(actor.application_user_id),
+            household_id=str(household_id),
+            property_id=str(property_record.id),
+            ownership_id=str(record.id),
+            owner_type=record.owner_type,
+            person_id=str(record.person_id) if record.person_id else None,
+            external_owner_name=record.external_owner_name,
+            ownership_percentage=str(record.ownership_percentage),
+            effective_from=record.effective_from.isoformat(),
+            effective_to=record.effective_to.isoformat() if record.effective_to else None,
+        )
     return PropertyWizardRead(
         property=PropertyRead.model_validate(property_record),
         valuation=ValuationRead.model_validate(valuation) if valuation else None,

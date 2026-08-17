@@ -62,7 +62,9 @@ decorators, so route changes require an intentional matrix update.
 | POST | `/api/v1/properties/{property_id}/baselines` | Dated property baseline | #43 |
 | GET | `/api/v1/properties/{property_id}/state` | Resolved state at a date | #43 |
 | GET | `/api/v1/properties/{property_id}/ownership` | Ownership history | #44 |
+| GET | `/api/v1/properties/{property_id}/ownership-position` | Ownership resolved at a date | #44 |
 | POST | `/api/v1/properties/{property_id}/ownership` | Dated ownership interests | #44 |
+| PATCH | `/api/v1/properties/{property_id}/ownership/{ownership_id}` | Correct or close ownership | #44 |
 | GET | `/api/v1/properties/{property_id}/rental-profiles` | Rental-profile list | #44 |
 | POST | `/api/v1/properties/{property_id}/rental-profiles` | Whole or partial rental profile | #44 |
 | GET | `/api/v1/properties/{property_id}/expenses` | Property-expense list | #44 |
