@@ -9,6 +9,7 @@ test('selects and restores a dated property position', async ({ page }) => {
   const requestedDates: string[] = [];
   let valuationAdded = false;
   let valuationPayload: Record<string, unknown> | null = null;
+  let ownershipPayload: Record<string, unknown> | null = null;
   let wizardPayload: Record<string, unknown> | null = null;
   await page.addInitScript((id) => {
     localStorage.setItem('hfp.selection.household', id);
@@ -210,6 +211,57 @@ test('selects and restores a dated property position', async ({ page }) => {
       });
       return;
     }
+    if (path.endsWith(`/households/${householdId}/people`)) {
+      await route.fulfill({
+        contentType: 'application/json',
+        json: [
+          {
+            display_name: 'Alex',
+            effective_from: '2020-01-01',
+            id: '8a76ff72-b719-4ca9-9f77-b66f901fb56f',
+            is_active: true,
+          },
+        ],
+      });
+      return;
+    }
+    if (path.endsWith(`/properties/${propertyId}/ownership-position`)) {
+      await route.fulfill({
+        contentType: 'application/json',
+        json: {
+          as_of: url.searchParams.get('as_of'),
+          ownership: [],
+          total_percentage: ownershipPayload ? '60.00' : '0.00',
+          warnings: [
+            `Ownership totals ${ownershipPayload ? '60.00' : '0.00'}% rather than 100.00% for the effective date`,
+          ],
+        },
+      });
+      return;
+    }
+    if (path.endsWith(`/properties/${propertyId}/ownership`)) {
+      if (request.method() === 'POST') {
+        ownershipPayload = request.postDataJSON() as Record<string, unknown>;
+        await route.fulfill({
+          contentType: 'application/json',
+          json: {
+            ownership: {
+              ...ownershipPayload,
+              id: 'f263fb67-ff9f-4469-8d81-b89f07146624',
+              property_id: propertyId,
+            },
+            total_percentage: '60.00',
+            warnings: [
+              'Ownership totals 60.00% rather than 100.00% for the effective date',
+            ],
+          },
+          status: 201,
+        });
+      } else {
+        await route.fulfill({ contentType: 'application/json', json: [] });
+      }
+      return;
+    }
     await route.abort();
   });
 
@@ -249,7 +301,9 @@ test('selects and restores a dated property position', async ({ page }) => {
   await page.getByRole('button', { name: 'Advanced' }).click();
   await page.getByLabel('Source (optional)').fill('Independent valuer');
   await page.getByRole('button', { name: 'Save record' }).click();
-  await expect(page.getByText('Valuation recorded')).toBeVisible();
+  await expect(
+    page.getByText('Valuation recorded', { exact: true }),
+  ).toBeVisible();
   await expect
     .poll(() => valuationPayload)
     .toEqual({
@@ -261,6 +315,31 @@ test('selects and restores a dated property position', async ({ page }) => {
       value: '805000',
     });
   await expect(page.getByText('Valuation recorded Jul 15, 2026')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Add ownership record' }).click();
+  const ownershipDialog = page.getByRole('dialog', {
+    name: 'Add ownership record',
+  });
+  await ownershipDialog.getByLabel('Owner', { exact: true }).click();
+  await page
+    .getByRole('option', { name: 'A person in this household' })
+    .click();
+  await ownershipDialog.getByLabel('Person', { exact: true }).click();
+  await page.getByRole('option', { name: 'Alex' }).click();
+  await ownershipDialog.getByLabel('Ownership percentage').fill('60');
+  await ownershipDialog.getByLabel('Effective from').fill('2020-02-01');
+  await ownershipDialog.getByRole('button', { name: 'Save ownership' }).click();
+  await expect(
+    page.getByText(/Ownership saved\. Ownership totals 60\.00%/),
+  ).toBeVisible();
+  await expect
+    .poll(() => ownershipPayload)
+    .toMatchObject({
+      effective_from: '2020-02-01',
+      owner_type: 'PERSON',
+      ownership_percentage: '60',
+      person_id: '8a76ff72-b719-4ca9-9f77-b66f901fb56f',
+    });
 
   await page.getByRole('button', { name: 'Add property' }).click();
   await page.getByLabel('Property name').fill('New current home');

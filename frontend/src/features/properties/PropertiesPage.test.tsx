@@ -125,6 +125,30 @@ function standardFetch(summaries: unknown = [summary]) {
       return Promise.resolve(response(detail));
     if (path.includes(`/properties/${propertyId}/state?`))
       return Promise.resolve(response(resolvedState));
+    if (path.endsWith(`/households/${householdId}/people`))
+      return Promise.resolve(
+        response([
+          {
+            display_name: 'Alex',
+            effective_from: '2020-01-01',
+            id: '8a76ff72-b719-4ca9-9f77-b66f901fb56f',
+            is_active: true,
+          },
+        ]),
+      );
+    if (path.endsWith(`/properties/${propertyId}/ownership`))
+      return Promise.resolve(response([]));
+    if (path.includes(`/properties/${propertyId}/ownership-position?`))
+      return Promise.resolve(
+        response({
+          as_of: '2026-08-17',
+          ownership: [],
+          total_percentage: '0.00',
+          warnings: [
+            'Ownership totals 0.00% rather than 100.00% for the effective date',
+          ],
+        }),
+      );
     throw new Error(`Unexpected request: ${path}`);
   });
 }
@@ -781,8 +805,72 @@ describe('property overview workflows', () => {
     });
   });
 
+  it('adds dated ownership for a household person and reports an incomplete total', async () => {
+    const user = userEvent.setup();
+    let saved: Record<string, unknown> | null = null;
+    const fallback = standardFetch();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (
+          path.endsWith(`/properties/${propertyId}/ownership`) &&
+          init?.method === 'POST'
+        ) {
+          saved = JSON.parse(init.body as string) as Record<string, unknown>;
+          return Promise.resolve(
+            response(
+              {
+                ownership: {
+                  ...saved,
+                  id: 'f263fb67-ff9f-4469-8d81-b89f07146624',
+                  property_id: propertyId,
+                },
+                total_percentage: '60.00',
+                warnings: [
+                  'Ownership totals 60.00% rather than 100.00% for the effective date',
+                ],
+              },
+              201,
+            ),
+          );
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'View' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Add ownership record' }),
+    );
+    await user.click(screen.getByLabelText('Owner'));
+    await user.click(
+      screen.getByRole('option', { name: 'A person in this household' }),
+    );
+    await user.click(screen.getByLabelText('Person'));
+    await user.click(screen.getByRole('option', { name: 'Alex' }));
+    await user.type(screen.getByLabelText('Ownership percentage'), '60');
+    await user.clear(screen.getByLabelText('Effective from'));
+    await user.type(screen.getByLabelText('Effective from'), '2020-02-01');
+    await user.click(screen.getByRole('button', { name: 'Save ownership' }));
+
+    expect(
+      await screen.findByText(/Ownership saved\. Ownership totals 60\.00%/),
+    ).toBeVisible();
+    expect(saved).toEqual({
+      effective_from: '2020-02-01',
+      effective_to: null,
+      external_owner_name: null,
+      notes: null,
+      owner_type: 'PERSON',
+      ownership_percentage: '60',
+      person_id: '8a76ff72-b719-4ca9-9f77-b66f901fb56f',
+    });
+  });
+
   it('does not offer creation to a view-only household member', async () => {
-    const fallback = standardFetch([]);
+    const fallback = standardFetch();
     vi.stubGlobal(
       'fetch',
       vi.fn<typeof fetch>((input, init) => {
@@ -803,6 +891,12 @@ describe('property overview workflows', () => {
     expect(screen.queryByRole('button', { name: 'Add property' })).toBeNull();
     expect(
       screen.queryByRole('button', { name: 'Add dated record' }),
+    ).toBeNull();
+    await userEvent
+      .setup()
+      .click(await screen.findByRole('button', { name: 'View' }));
+    expect(
+      screen.queryByRole('button', { name: 'Add ownership record' }),
     ).toBeNull();
   });
 });
