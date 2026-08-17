@@ -34,6 +34,7 @@ from app.models import (
     Person,
     Property,
     PropertyBaseline,
+    PropertyValuation,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["events"])
@@ -294,6 +295,20 @@ async def resolve_property_state(
         .order_by(PropertyBaseline.baseline_date.desc())
         .limit(1)
     )
+    valuation_query = (
+        select(PropertyValuation)
+        .where(
+            PropertyValuation.property_id == property_id,
+            PropertyValuation.valuation_date <= as_of,
+        )
+        .order_by(PropertyValuation.valuation_date.desc(), PropertyValuation.id.desc())
+        .limit(1)
+    )
+    if baseline is not None:
+        valuation_query = valuation_query.where(
+            PropertyValuation.valuation_date > baseline.baseline_date
+        )
+    selected_valuation = await session.scalar(valuation_query)
     state: dict[str, object] = {
         "property_value": baseline.property_value if baseline else None,
         "loan_balance_total": baseline.loan_balance_total if baseline else None,
@@ -328,10 +343,24 @@ async def resolve_property_state(
         )
     ).all()
     applied_ids: list[uuid.UUID] = []
+    pending_valuation = selected_valuation
+    valuation_is_value_source = False
     for event, event_type in rows:
+        if (
+            pending_valuation is not None
+            and event.effective_at.date() > pending_valuation.valuation_date
+        ):
+            state["property_value"] = pending_valuation.value
+            pending_valuation = None
+            valuation_is_value_source = True
         apply_property_event(event, event_type.code, state)
+        if event_type.code in {"PROPERTY_VALUED", "PROPERTY_SOLD"} and event.amount is not None:
+            valuation_is_value_source = False
         applied_ids.append(event.id)
         quality_flags.extend(event.data_quality_flags)
+    if pending_valuation is not None:
+        state["property_value"] = pending_valuation.value
+        valuation_is_value_source = True
     status_id = uuid.UUID(str(state["status_id"]))
     status_item = await session.get(LookupItem, status_id)
     is_active = state["is_active_asset"]
@@ -343,6 +372,24 @@ async def resolve_property_state(
         temporal_position=temporal_position(as_of, date.today()),
         baseline_id=baseline.id if baseline else None,
         baseline_date=baseline.baseline_date if baseline else None,
+        valuation_id=(
+            selected_valuation.id if selected_valuation and valuation_is_value_source else None
+        ),
+        valuation_date=(
+            selected_valuation.valuation_date
+            if selected_valuation and valuation_is_value_source
+            else None
+        ),
+        valuation_type=(
+            selected_valuation.valuation_type
+            if selected_valuation and valuation_is_value_source
+            else None
+        ),
+        valuation_is_estimate=(
+            selected_valuation.is_estimate
+            if selected_valuation and valuation_is_value_source
+            else None
+        ),
         property_value=Decimal(str(state["property_value"])) if state["property_value"] else None,
         loan_balance_total=(
             Decimal(str(state["loan_balance_total"]))

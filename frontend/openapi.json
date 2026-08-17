@@ -6136,6 +6136,51 @@
           },
           "temporal_position": {
             "$ref": "#/components/schemas/TemporalPosition"
+          },
+          "valuation_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valuation Date"
+          },
+          "valuation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valuation Id"
+          },
+          "valuation_is_estimate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valuation Is Estimate"
+          },
+          "valuation_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValuationType"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -6144,6 +6189,10 @@
           "temporal_position",
           "baseline_id",
           "baseline_date",
+          "valuation_id",
+          "valuation_date",
+          "valuation_type",
+          "valuation_is_estimate",
           "property_value",
           "loan_balance_total",
           "status_id",
