@@ -243,7 +243,9 @@ test('selects and restores a dated property position', async ({ page }) => {
   await page.getByLabel('Property value (NZD)').fill('805000');
   await page.getByLabel('Valuation type').click();
   await page.getByRole('option', { name: 'Formal valuation' }).click();
-  await page.getByLabel('This value is an estimate').uncheck();
+  await expect(
+    page.getByText('A formal valuation is recorded as a non-estimate.'),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Advanced' }).click();
   await page.getByLabel('Source (optional)').fill('Independent valuer');
   await page.getByRole('button', { name: 'Save record' }).click();
