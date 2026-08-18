@@ -100,6 +100,7 @@ function pathOf(input: RequestInfo | URL) {
 function standardFetch(
   summaries: unknown = [summary],
   rentalProfiles: unknown = [],
+  propertyExpenses: unknown = [],
 ) {
   return vi.fn<typeof fetch>((input) => {
     const path = pathOf(input);
@@ -167,7 +168,7 @@ function standardFetch(
         ]),
       );
     if (path.endsWith(`/properties/${propertyId}/expenses`))
-      return Promise.resolve(response([]));
+      return Promise.resolve(response(propertyExpenses));
     if (path.includes(`/properties/${propertyId}/cashflow?`))
       return Promise.resolve(
         response({
@@ -1297,6 +1298,90 @@ describe('property overview workflows', () => {
     ).toBeVisible();
     expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(2);
   });
+
+  it('corrects and removes an expense and validates the cash-flow range', async () => {
+    const user = userEvent.setup();
+    const expenseId = '70534b12-fb69-41a2-9700-31f1c3123bd8';
+    const expense = {
+      amount: '1200.00',
+      display_name: 'Council rates',
+      effective_from: '2026-01-01',
+      effective_to: null,
+      expense_type_id: expenseTypeId,
+      frequency: 'ANNUAL',
+      id: expenseId,
+      is_rental_expense: false,
+      notes: null,
+      property_id: propertyId,
+    };
+    let corrected: Record<string, unknown> | null = null;
+    let removed = false;
+    const fallback = standardFetch([summary], [], [expense]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith(`/expenses/${expenseId}`)) {
+          if (init?.method === 'PATCH') {
+            corrected = JSON.parse(init.body as string) as Record<
+              string,
+              unknown
+            >;
+            return Promise.resolve(response({ ...expense, ...corrected }));
+          }
+          if (init?.method === 'DELETE') {
+            removed = true;
+            return Promise.resolve(new Response(null, { status: 204 }));
+          }
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+    await user.click(await screen.findByRole('button', { name: 'View' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Review rental finances' }),
+    );
+    await user.click(
+      await screen.findByRole('button', { name: 'Correct or end' }),
+    );
+    fireEvent.change(screen.getByLabelText('Amount (NZD)'), {
+      target: { value: '1300' },
+    });
+    fireEvent.change(screen.getByLabelText('Effective to'), {
+      target: { value: '2026-12-31' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Save expense' }));
+    expect(await screen.findByText('Property expense updated')).toBeVisible();
+    expect(corrected).toMatchObject({
+      amount: '1300',
+      effective_to: '2026-12-31',
+    });
+
+    await user.click(await screen.findByRole('button', { name: 'Remove' }));
+    expect(
+      screen.getByText(/cash-flow calculation will no longer include/),
+    ).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Remove expense' }));
+    expect(await screen.findByText('Property expense removed')).toBeVisible();
+    expect(removed).toBe(true);
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Remove property expense?' }),
+      ).toBeNull(),
+    );
+
+    fireEvent.change(screen.getByLabelText('From'), {
+      target: { value: '2027-01-01' },
+    });
+    fireEvent.change(screen.getByLabelText('To'), {
+      target: { value: '2026-12-31' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Refresh cash flow' }));
+    expect(
+      screen.getByText('The end date cannot be before the start date'),
+    ).toBeVisible();
+  }, 30_000);
 
   it('does not offer creation to a view-only household member', async () => {
     const fallback = standardFetch();
