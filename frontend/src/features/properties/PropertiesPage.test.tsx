@@ -1208,6 +1208,9 @@ describe('property overview workflows', () => {
     await user.click(
       screen.getByRole('button', { name: 'Review rental finances' }),
     );
+    expect(
+      await screen.findByText('No property expenses have been recorded.'),
+    ).toBeVisible();
     expect(await screen.findByText('NZ$18,200.00')).toBeVisible();
     expect(screen.getByText('NZ$15,129.95')).toBeVisible();
     expect(
@@ -1216,6 +1219,9 @@ describe('property overview workflows', () => {
     await user.click(
       screen.getByRole('button', { name: 'Add property expense' }),
     );
+    await user.click(screen.getByRole('button', { name: 'Save expense' }));
+    expect(await screen.findByText('Enter a name')).toBeVisible();
+    expect(screen.getByText('Choose an expense type')).toBeVisible();
     fireEvent.change(screen.getByLabelText('Expense name'), {
       target: { value: 'Building insurance' },
     });
@@ -1242,6 +1248,55 @@ describe('property overview workflows', () => {
     });
     await waitFor(() => expect(cashflowRequests).toBeGreaterThan(1));
   }, 30_000);
+
+  it('distinguishes loading and failed rental-finance requests', async () => {
+    const user = userEvent.setup();
+    const fallback = standardFetch();
+    let delayRequests = false;
+    let releaseExpenses: ((value: Response) => void) | undefined;
+    let releaseCashflow: ((value: Response) => void) | undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (
+          delayRequests &&
+          path.endsWith(`/properties/${propertyId}/expenses`)
+        ) {
+          return new Promise((resolve) => {
+            releaseExpenses = resolve;
+          });
+        }
+        if (
+          delayRequests &&
+          path.includes(`/properties/${propertyId}/cashflow?`)
+        ) {
+          return new Promise((resolve) => {
+            releaseCashflow = resolve;
+          });
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+    await user.click(await screen.findByRole('button', { name: 'View' }));
+    delayRequests = true;
+    await user.click(
+      screen.getByRole('button', { name: 'Review rental finances' }),
+    );
+
+    expect(screen.getByLabelText('Loading property expenses')).toBeVisible();
+    expect(screen.getByLabelText('Calculating rental cash flow')).toBeVisible();
+    releaseExpenses?.(response({ detail: 'Temporary outage' }, 503));
+    releaseCashflow?.(response({ detail: 'Temporary outage' }, 503));
+    expect(
+      await screen.findByText(/Property expenses could not be loaded/),
+    ).toBeVisible();
+    expect(
+      await screen.findByText(/Rental cash flow could not be calculated/),
+    ).toBeVisible();
+    expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(2);
+  });
 
   it('does not offer creation to a view-only household member', async () => {
     const fallback = standardFetch();
