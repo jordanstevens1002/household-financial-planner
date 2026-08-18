@@ -149,11 +149,13 @@ export function RentalProfilesPanel({
   const queryClient = useQueryClient();
   const { notify } = useNotification();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<RentalProfile | null>(null);
   const form = useForm<Fields>({
     defaultValues: defaults(),
     resolver: zodResolver(schema),
   });
   const scope = useWatch({ control: form.control, name: 'scope' });
+  const frequency = useWatch({ control: form.control, name: 'frequency' });
   const profiles = useQuery({
     queryFn: () =>
       apiRequest<RentalProfile[]>(
@@ -162,15 +164,19 @@ export function RentalProfilesPanel({
     queryKey: ['property-rental-profiles', propertyId],
     retry: false,
   });
-  const create = useMutation<RentalProfile, Error, Fields>({
-    mutationFn: (fields) =>
+  const save = useMutation<
+    RentalProfile,
+    Error,
+    { fields: Fields; profileId: string | null }
+  >({
+    mutationFn: ({ fields, profileId }) =>
       apiRequest<RentalProfile>(
-        `/api/v1/properties/${propertyId}/rental-profiles`,
+        `/api/v1/properties/${propertyId}/rental-profiles${profileId ? `/${profileId}` : ''}`,
         {
           body: JSON.stringify({
             charged_rent_amount: fields.chargedRent,
             display_name: fields.displayName,
-            effective_from: fields.effectiveFrom,
+            ...(profileId ? {} : { effective_from: fields.effectiveFrom }),
             effective_to: fields.effectiveTo || null,
             frequency: fields.frequency,
             letting_fee: fields.lettingFee.trim() || null,
@@ -182,18 +188,50 @@ export function RentalProfilesPanel({
             vacancy_rate: fields.vacancyRate,
           }),
           csrfToken: auth.csrfToken(),
-          method: 'POST',
+          method: profileId ? 'PATCH' : 'POST',
         },
       ),
     onSuccess: async () => {
       form.reset(defaults());
+      setEditing(null);
       setDialogOpen(false);
-      notify('Rental arrangement saved', 'success');
+      notify(
+        editing ? 'Rental arrangement corrected' : 'Rental arrangement saved',
+        'success',
+      );
       await queryClient.invalidateQueries({
         queryKey: ['property-rental-profiles', propertyId],
       });
     },
   });
+  const openCreate = () => {
+    setEditing(null);
+    form.reset(defaults());
+    setDialogOpen(true);
+  };
+  const openCorrection = (profile: RentalProfile) => {
+    setEditing(profile);
+    form.reset({
+      chargedRent: profile.charged_rent_amount,
+      displayName: profile.display_name,
+      effectiveFrom: profile.effective_from,
+      effectiveTo: profile.effective_to ?? '',
+      frequency: profile.frequency as Fields['frequency'],
+      lettingFee: profile.letting_fee ?? '',
+      managementRate: profile.management_fee_rate,
+      marketRent: profile.market_rent_amount ?? '',
+      notes: profile.notes ?? '',
+      rentalShare:
+        profile.rental_share_percentage === '100.0000' ||
+        profile.rental_share_percentage === '100'
+          ? ''
+          : profile.rental_share_percentage,
+      scope:
+        Number(profile.rental_share_percentage) === 100 ? 'WHOLE' : 'PARTIAL',
+      vacancyRate: profile.vacancy_rate,
+    });
+    setDialogOpen(true);
+  };
   const columns: DataColumn<RentalProfile>[] = [
     { key: 'name', label: 'Rental area', render: (row) => row.display_name },
     {
@@ -213,6 +251,19 @@ export function RentalProfilesPanel({
       render: (row) =>
         `${formatDate(row.effective_from)} – ${row.effective_to ? formatDate(row.effective_to) : 'Ongoing'}`,
     },
+    ...(canEdit
+      ? [
+          {
+            key: 'actions',
+            label: 'Actions',
+            render: (row: RentalProfile) => (
+              <Button onClick={() => openCorrection(row)} size="small">
+                Correct or end
+              </Button>
+            ),
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -223,7 +274,7 @@ export function RentalProfilesPanel({
       >
         <Typography variant="h2">Rental arrangements</Typography>
         {canEdit ? (
-          <Button onClick={() => setDialogOpen(true)} variant="outlined">
+          <Button onClick={openCreate} variant="outlined">
             Add rental arrangement
           </Button>
         ) : null}
@@ -259,16 +310,25 @@ export function RentalProfilesPanel({
       <Dialog
         fullWidth
         maxWidth="md"
-        onClose={() => setDialogOpen(false)}
+        onClose={() => {
+          setDialogOpen(false);
+          setEditing(null);
+        }}
         open={dialogOpen}
       >
         <Stack
           component="form"
           onSubmit={(event) =>
-            void form.handleSubmit((fields) => create.mutate(fields))(event)
+            void form.handleSubmit((fields) =>
+              save.mutate({ fields, profileId: editing?.id ?? null }),
+            )(event)
           }
         >
-          <DialogTitle>Add rental arrangement</DialogTitle>
+          <DialogTitle>
+            {editing
+              ? 'Correct or end rental arrangement'
+              : 'Add rental arrangement'}
+          </DialogTitle>
           <DialogContent>
             <Stack spacing={2} sx={{ pt: 1 }}>
               <Alert severity="info">
@@ -279,6 +339,7 @@ export function RentalProfilesPanel({
               <TextField
                 label="Rental scope"
                 select
+                value={scope ?? 'WHOLE'}
                 {...form.register('scope')}
               >
                 <MenuItem value="WHOLE">Whole property</MenuItem>
@@ -308,14 +369,18 @@ export function RentalProfilesPanel({
                 <TextField
                   error={Boolean(form.formState.errors.chargedRent)}
                   fullWidth
-                  helperText={form.formState.errors.chargedRent?.message}
-                  label={`Rent charged (${currency})`}
+                  helperText={
+                    form.formState.errors.chargedRent?.message ??
+                    'Enter the rent for this named arrangement; it is not multiplied by the property share'
+                  }
+                  label={`Rent charged for this arrangement (${currency})`}
                   {...form.register('chargedRent')}
                 />
                 <TextField
                   fullWidth
                   label="Frequency"
                   select
+                  value={frequency ?? 'WEEKLY'}
                   {...form.register('frequency')}
                 >
                   {frequencies.map(([value, label]) => (
@@ -331,7 +396,7 @@ export function RentalProfilesPanel({
                   form.formState.errors.marketRent?.message ??
                   'Optional comparison for family or discounted arrangements'
                 }
-                label={`Comparable market rent (${currency}, optional)`}
+                label={`Comparable market rent for this arrangement (${currency}, optional)`}
                 {...form.register('marketRent')}
               />
               <Stack direction="row" spacing={2}>
@@ -363,6 +428,7 @@ export function RentalProfilesPanel({
                   fullWidth
                   helperText={form.formState.errors.effectiveFrom?.message}
                   label="Effective from"
+                  disabled={Boolean(editing)}
                   slotProps={{ inputLabel: { shrink: true } }}
                   type="date"
                   {...form.register('effectiveFrom')}
@@ -387,24 +453,30 @@ export function RentalProfilesPanel({
                   {...form.register('notes')}
                 />
               </AdvancedSection>
-              {create.error ? (
-                <Alert severity="error">{message(create.error)}</Alert>
+              {editing ? (
+                <Alert severity="info">
+                  Set an end date to close this arrangement. To preserve its
+                  history, the start date cannot be changed; add a replacement
+                  arrangement after it ends.
+                </Alert>
+              ) : null}
+              {save.error ? (
+                <Alert severity="error">{message(save.error)}</Alert>
               ) : null}
             </Stack>
           </DialogContent>
           <DialogActions>
             <Button
-              disabled={create.isPending}
-              onClick={() => setDialogOpen(false)}
+              disabled={save.isPending}
+              onClick={() => {
+                setDialogOpen(false);
+                setEditing(null);
+              }}
             >
               Cancel
             </Button>
-            <Button
-              disabled={create.isPending}
-              type="submit"
-              variant="contained"
-            >
-              Save rental arrangement
+            <Button disabled={save.isPending} type="submit" variant="contained">
+              {editing ? 'Save correction' : 'Save rental arrangement'}
             </Button>
           </DialogActions>
         </Stack>

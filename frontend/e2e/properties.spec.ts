@@ -367,7 +367,9 @@ test('selects and restores a dated property position', async ({ page }) => {
   await page.getByRole('option', { name: 'Part of the property' }).click();
   await rentalDialog.getByLabel('Rental area name').fill('Granny flat');
   await rentalDialog.getByLabel('Property share (%)').fill('30');
-  await rentalDialog.getByLabel('Rent charged (NZD)').fill('350');
+  await rentalDialog
+    .getByLabel('Rent charged for this arrangement (NZD)')
+    .fill('350');
   await rentalDialog.getByLabel('Effective from').fill('2026-09-01');
   await rentalDialog
     .getByRole('button', { name: 'Save rental arrangement' })

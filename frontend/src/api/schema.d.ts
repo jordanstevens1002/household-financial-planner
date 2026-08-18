@@ -1044,6 +1044,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/properties/{property_id}/rental-profiles/{profile_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Correct Rental Profile */
+        patch: operations["correct_rental_profile_api_v1_properties__property_id__rental_profiles__profile_id__patch"];
+        trace?: never;
+    };
     "/api/v1/properties/{property_id}/state": {
         parameters: {
             query?: never;
@@ -3378,6 +3395,28 @@ export interface components {
             rental_share_percentage: string;
             /** Vacancy Rate */
             vacancy_rate: string;
+        };
+        /** RentalProfileUpdate */
+        RentalProfileUpdate: {
+            /** Charged Rent Amount */
+            charged_rent_amount?: number | string | null;
+            /** Display Name */
+            display_name?: string | null;
+            /** Effective To */
+            effective_to?: string | null;
+            frequency?: components["schemas"]["PaymentFrequency"] | null;
+            /** Letting Fee */
+            letting_fee?: number | string | null;
+            /** Management Fee Rate */
+            management_fee_rate?: number | string | null;
+            /** Market Rent Amount */
+            market_rent_amount?: number | string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Rental Share Percentage */
+            rental_share_percentage?: number | string | null;
+            /** Vacancy Rate */
+            vacancy_rate?: number | string | null;
         };
         /**
          * RepaymentFrequency
@@ -6902,6 +6941,44 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RentalProfileRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    correct_rental_profile_api_v1_properties__property_id__rental_profiles__profile_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                property_id: string;
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RentalProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

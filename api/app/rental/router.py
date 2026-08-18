@@ -31,6 +31,7 @@ from app.rental.schemas import (
     PropertyExpenseRead,
     RentalProfileCreate,
     RentalProfileRead,
+    RentalProfileUpdate,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["rental"])
@@ -43,21 +44,24 @@ class EffectiveRecord(Protocol):
 
 
 async def _validate_profile_overlap(
-    property_id: uuid.UUID, payload: RentalProfileCreate, session: AsyncSession
+    property_id: uuid.UUID,
+    payload: RentalProfileCreate,
+    session: AsyncSession,
+    *,
+    exclude_id: uuid.UUID | None = None,
 ) -> None:
     end = payload.effective_to or date.max
-    existing = list(
-        await session.scalars(
-            select(RentalProfile.id).where(
-                RentalProfile.property_id == property_id,
-                RentalProfile.effective_from <= end,
-                or_(
-                    RentalProfile.effective_to.is_(None),
-                    RentalProfile.effective_to >= payload.effective_from,
-                ),
-            )
-        )
+    query = select(RentalProfile.id).where(
+        RentalProfile.property_id == property_id,
+        RentalProfile.effective_from <= end,
+        or_(
+            RentalProfile.effective_to.is_(None),
+            RentalProfile.effective_to >= payload.effective_from,
+        ),
     )
+    if exclude_id is not None:
+        query = query.where(RentalProfile.id != exclude_id)
+    existing = list(await session.scalars(query))
     if not existing:
         return
     profiles = list(
@@ -120,6 +124,48 @@ async def create_rental_profile(
     await session.commit()
     await session.refresh(record)
     logger.info("rental_profile_created", property_id=str(property_id), profile_id=str(record.id))
+    return record
+
+
+@router.patch(
+    "/properties/{property_id}/rental-profiles/{profile_id}",
+    response_model=RentalProfileRead,
+)
+async def correct_rental_profile(
+    property_id: uuid.UUID,
+    profile_id: uuid.UUID,
+    payload: RentalProfileUpdate,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> RentalProfile:
+    property_record = await _property_with_access(property_id, HouseholdRole.EDITOR, user, session)
+    record = await session.get(RentalProfile, profile_id)
+    if record is None or record.property_id != property_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Rental arrangement not found")
+    previous_effective_to = record.effective_to
+    values = payload.model_dump(exclude_unset=True)
+    candidate_values = {
+        **RentalProfileRead.model_validate(record).model_dump(exclude={"id", "property_id"}),
+        **values,
+    }
+    candidate = RentalProfileCreate.model_validate(candidate_values)
+    await _validate_profile_overlap(property_id, candidate, session, exclude_id=profile_id)
+    for field, value in values.items():
+        setattr(record, field, value)
+    await session.commit()
+    await session.refresh(record)
+    logger.info(
+        "rental_profile_corrected",
+        actor_user_id=str(user.id),
+        household_id=str(property_record.household_id),
+        property_id=str(property_id),
+        profile_id=str(profile_id),
+        changed_fields=sorted(values),
+        previous_effective_to=(
+            previous_effective_to.isoformat() if previous_effective_to else None
+        ),
+        resulting_effective_to=(record.effective_to.isoformat() if record.effective_to else None),
+    )
     return record
 
 
@@ -259,27 +305,33 @@ async def property_cashflow(
                 except KeyError, TypeError, ValueError:
                     continue
         active_profiles = _active(profiles, on_date)
-        generates_rent = bool(status_item and status_item.generates_rental_income)
+        partial_owner_rental = bool(
+            status_item
+            and status_item.is_occupied_by_household
+            and any(profile.rental_share_percentage < Decimal("100") for profile in active_profiles)
+        )
+        generates_rent = (
+            bool(status_item and status_item.generates_rental_income) or partial_owner_rental
+        )
         if generates_rent and not active_profiles:
             warnings.add("Rental status is active without an effective rental profile")
         if generates_rent and active_profiles:
             rental_days += 1
             for profile in active_profiles:
-                share = profile.rental_share_percentage / Decimal("100")
-                daily_charged = daily_amount(profile.charged_rent_amount, profile.frequency) * share
+                daily_charged = daily_amount(profile.charged_rent_amount, profile.frequency)
                 daily_market = (
-                    daily_amount(profile.market_rent_amount, profile.frequency) * share
+                    daily_amount(profile.market_rent_amount, profile.frequency)
                     if profile.market_rent_amount is not None
                     else daily_charged
                 )
                 daily_vacancy = (
                     daily_charged * profile.vacancy_rate / Decimal("100")
-                    if status_item and status_item.applies_vacancy
+                    if status_item and (status_item.applies_vacancy or partial_owner_rental)
                     else Decimal("0")
                 )
                 daily_management = (
                     (daily_charged - daily_vacancy) * profile.management_fee_rate / Decimal("100")
-                    if status_item and status_item.applies_management_fee
+                    if status_item and (status_item.applies_management_fee or partial_owner_rental)
                     else Decimal("0")
                 )
                 gross += daily_charged
@@ -291,7 +343,7 @@ async def property_cashflow(
                     letting += profile.letting_fee
         for expense in _active(expenses, on_date):
             if expense.is_rental_expense and not (
-                status_item and status_item.applies_rental_expenses
+                status_item and (status_item.applies_rental_expenses or partial_owner_rental)
             ):
                 continue
             if expense.frequency == PaymentFrequency.ONCE:

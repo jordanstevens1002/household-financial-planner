@@ -67,6 +67,7 @@ decorators, so route changes require an intentional matrix update.
 | PATCH | `/api/v1/properties/{property_id}/ownership/{ownership_id}` | Correct or close ownership | #44 |
 | GET | `/api/v1/properties/{property_id}/rental-profiles` | Rental-profile list | #44 |
 | POST | `/api/v1/properties/{property_id}/rental-profiles` | Whole or partial rental profile | #44 |
+| PATCH | `/api/v1/properties/{property_id}/rental-profiles/{profile_id}` | Correct or end a rental profile | #44 |
 | GET | `/api/v1/properties/{property_id}/expenses` | Property-expense list | #44 |
 | POST | `/api/v1/properties/{property_id}/expenses` | Dated property expense | #44 |
 | GET | `/api/v1/properties/{property_id}/cashflow` | Rental cash flow | #44 |

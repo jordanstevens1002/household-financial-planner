@@ -5,7 +5,7 @@ import {
   createMemoryHistory,
   type AnyRouter,
 } from '@tanstack/react-router';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { createAppRouter } from '../../app/router';
@@ -96,7 +96,10 @@ function pathOf(input: RequestInfo | URL) {
       : input.url;
 }
 
-function standardFetch(summaries: unknown = [summary]) {
+function standardFetch(
+  summaries: unknown = [summary],
+  rentalProfiles: unknown = [],
+) {
   return vi.fn<typeof fetch>((input) => {
     const path = pathOf(input);
     if (path.endsWith('/auth/session'))
@@ -150,7 +153,7 @@ function standardFetch(summaries: unknown = [summary]) {
         }),
       );
     if (path.endsWith(`/properties/${propertyId}/rental-profiles`))
-      return Promise.resolve(response([]));
+      return Promise.resolve(response(rentalProfiles));
     throw new Error(`Unexpected request: ${path}`);
   });
 }
@@ -1020,23 +1023,36 @@ describe('property overview workflows', () => {
     await user.click(
       screen.getByRole('option', { name: 'Part of the property' }),
     );
-    await user.type(screen.getByLabelText('Rental area name'), 'Granny flat');
-    await user.type(screen.getByLabelText('Property share (%)'), '30');
-    await user.type(screen.getByLabelText('Rent charged (NZD)'), '350');
-    await user.type(
-      screen.getByLabelText('Comparable market rent (NZD, optional)'),
-      '400',
+    fireEvent.change(screen.getByLabelText('Rental area name'), {
+      target: { value: 'Granny flat' },
+    });
+    fireEvent.change(screen.getByLabelText('Property share (%)'), {
+      target: { value: '30' },
+    });
+    fireEvent.change(
+      screen.getByLabelText('Rent charged for this arrangement (NZD)'),
+      {
+        target: { value: '350' },
+      },
     );
-    await user.clear(screen.getByLabelText('Vacancy allowance (%)'));
-    await user.type(screen.getByLabelText('Vacancy allowance (%)'), '3');
-    await user.clear(screen.getByLabelText('Management fee (%)'));
-    await user.type(screen.getByLabelText('Management fee (%)'), '7.5');
-    await user.type(
-      screen.getByLabelText('Letting fee (NZD, optional)'),
-      '200',
+    fireEvent.change(
+      screen.getByLabelText(
+        'Comparable market rent for this arrangement (NZD, optional)',
+      ),
+      { target: { value: '400' } },
     );
-    await user.clear(screen.getByLabelText('Effective from'));
-    await user.type(screen.getByLabelText('Effective from'), '2026-09-01');
+    fireEvent.change(screen.getByLabelText('Vacancy allowance (%)'), {
+      target: { value: '3' },
+    });
+    fireEvent.change(screen.getByLabelText('Management fee (%)'), {
+      target: { value: '7.5' },
+    });
+    fireEvent.change(screen.getByLabelText('Letting fee (NZD, optional)'), {
+      target: { value: '200' },
+    });
+    fireEvent.change(screen.getByLabelText('Effective from'), {
+      target: { value: '2026-09-01' },
+    });
     await user.click(
       screen.getByRole('button', { name: 'Save rental arrangement' }),
     );
@@ -1054,6 +1070,70 @@ describe('property overview workflows', () => {
       notes: null,
       rental_share_percentage: '30',
       vacancy_rate: '3',
+    });
+  }, 30_000);
+
+  it('corrects and ends an ongoing rental arrangement', async () => {
+    const user = userEvent.setup();
+    const existing = {
+      charged_rent_amount: '500.00',
+      display_name: 'Whole home',
+      effective_from: '2025-01-01',
+      effective_to: null,
+      frequency: 'WEEKLY',
+      id: 'a57994c3-76a7-475f-ae76-bf17228f04b4',
+      letting_fee: null,
+      management_fee_rate: '8.0000',
+      market_rent_amount: '550.00',
+      notes: null,
+      property_id: propertyId,
+      rental_share_percentage: '100.0000',
+      vacancy_rate: '5.0000',
+    };
+    let corrected: Record<string, unknown> | null = null;
+    const fallback = standardFetch([summary], [existing]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (
+          path.endsWith(
+            `/properties/${propertyId}/rental-profiles/${existing.id}`,
+          ) &&
+          init?.method === 'PATCH'
+        ) {
+          corrected = JSON.parse(init.body as string) as Record<
+            string,
+            unknown
+          >;
+          return Promise.resolve(response({ ...existing, ...corrected }));
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'View' }));
+    await user.click(
+      await screen.findByRole('button', { name: 'Correct or end' }),
+    );
+    expect(screen.getByLabelText('Effective from')).toBeDisabled();
+    fireEvent.change(
+      screen.getByLabelText('Rent charged for this arrangement (NZD)'),
+      { target: { value: '525' } },
+    );
+    fireEvent.change(screen.getByLabelText('Effective to'), {
+      target: { value: '2025-06-30' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Save correction' }));
+
+    expect(
+      await screen.findByText('Rental arrangement corrected'),
+    ).toBeVisible();
+    expect(corrected).toMatchObject({
+      charged_rent_amount: '525',
+      effective_to: '2025-06-30',
+      rental_share_percentage: '100',
     });
   });
 

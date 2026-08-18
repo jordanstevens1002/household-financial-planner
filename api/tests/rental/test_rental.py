@@ -160,9 +160,9 @@ async def test_partial_rental_supports_concurrent_duplex_granny_flat_and_roommat
     )
     assert result.status_code == 200
     body = result.json()
-    assert body["gross_rent"] == "19760.00"
+    assert body["gross_rent"] == "52000.00"
     assert body["rental_days"] == 365
-    assert body["market_rent_equivalent"] == "22360.00"
+    assert body["market_rent_equivalent"] == "59800.00"
 
 
 async def test_standard_whole_property_rental_applies_vacancy_and_management_fees(
@@ -208,7 +208,35 @@ async def test_concurrent_rental_shares_cannot_exceed_whole_property(
     assert excessive.status_code == 422
 
 
-async def test_owner_occupied_and_vacant_statuses_suppress_rent(
+async def test_owner_occupied_partial_rental_uses_the_portion_rent_without_apportioning_twice(
+    client: AsyncClient, rental_lookups: dict[str, LookupItem]
+) -> None:
+    property_id = (await create_property(client, rental_lookups, "owner"))["id"]
+    payload = profile("Granny flat", 350, 30)
+    payload.update(
+        market_rent_amount=400,
+        vacancy_rate=3,
+        management_fee_rate=7.5,
+        effective_from="2025-01-01",
+        effective_to="2025-12-31",
+    )
+    assert (
+        await client.post(f"/api/v1/properties/{property_id}/rental-profiles", json=payload)
+    ).status_code == 201
+    body = (
+        await client.get(
+            f"/api/v1/properties/{property_id}/cashflow",
+            params={"from_date": "2025-01-01", "to_date": "2025-12-31"},
+        )
+    ).json()
+    assert body["gross_rent"] == "18200.00"
+    assert body["market_rent_equivalent"] == "20800.00"
+    assert body["vacancy_cost"] == "546.00"
+    assert body["management_fee"] == "1324.05"
+    assert body["net_cashflow"] == "16329.95"
+
+
+async def test_vacant_and_whole_owner_occupied_profiles_suppress_rent(
     client: AsyncClient, rental_lookups: dict[str, LookupItem]
 ) -> None:
     for status_name in ("owner", "vacant"):
@@ -222,6 +250,46 @@ async def test_owner_occupied_and_vacant_statuses_suppress_rent(
             params={"from_date": "2025-01-01", "to_date": "2025-12-31"},
         )
         assert result.json()["gross_rent"] == "0.00"
+
+
+async def test_ongoing_rental_can_be_corrected_closed_and_replaced(
+    client: AsyncClient,
+    rental_lookups: dict[str, LookupItem],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    audit_events: list[tuple[str, dict[str, object]]] = []
+    monkeypatch.setattr(
+        "app.rental.router.logger.info",
+        lambda event, **values: audit_events.append((event, values)),
+    )
+    property_id = (await create_property(client, rental_lookups, "rented"))["id"]
+    original = profile("Whole home", 500, 100, end=None)
+    created = await client.post(f"/api/v1/properties/{property_id}/rental-profiles", json=original)
+    assert created.status_code == 201
+
+    corrected = await client.patch(
+        f"/api/v1/properties/{property_id}/rental-profiles/{created.json()['id']}",
+        json={"charged_rent_amount": 525, "effective_to": "2025-06-30"},
+    )
+    assert corrected.status_code == 200
+    assert corrected.json()["charged_rent_amount"] == "525.00"
+    assert corrected.json()["effective_to"] == "2025-06-30"
+    event, values = audit_events[-1]
+    assert event == "rental_profile_corrected"
+    assert values["actor_user_id"]
+    assert values["property_id"] == property_id
+    assert values["changed_fields"] == ["charged_rent_amount", "effective_to"]
+
+    replacement = await client.post(
+        f"/api/v1/properties/{property_id}/rental-profiles",
+        json=profile("Whole home", 550, 100, "2025-07-01", None),
+    )
+    assert replacement.status_code == 201
+    records = (await client.get(f"/api/v1/properties/{property_id}/rental-profiles")).json()
+    assert [(item["charged_rent_amount"], item["effective_to"]) for item in records] == [
+        ("525.00", "2025-06-30"),
+        ("550.00", None),
+    ]
 
 
 async def test_family_occupancy_can_charge_rent_without_vacancy_or_management(
@@ -270,7 +338,7 @@ async def test_dated_status_change_activates_partial_rent_without_rewriting_hist
     session: AsyncSession,
     rental_lookups: dict[str, LookupItem],
 ) -> None:
-    property_id = (await create_property(client, rental_lookups, "owner"))["id"]
+    property_id = (await create_property(client, rental_lookups, "vacant"))["id"]
     await client.post(
         f"/api/v1/properties/{property_id}/rental-profiles",
         json=profile("Roommate room", 300, 25),

@@ -47,6 +47,27 @@ class RentalProfileRead(RentalProfileCreate, ORMModel):
     property_id: uuid.UUID
 
 
+class RentalProfileUpdate(BaseModel):
+    display_name: str | None = Field(default=None, min_length=1, max_length=200)
+    market_rent_amount: Decimal | None = Field(default=None, ge=0, decimal_places=2)
+    charged_rent_amount: Decimal | None = Field(default=None, ge=0, decimal_places=2)
+    frequency: PaymentFrequency | None = None
+    vacancy_rate: Decimal | None = Field(default=None, ge=0, le=100, decimal_places=4)
+    management_fee_rate: Decimal | None = Field(default=None, ge=0, le=100, decimal_places=4)
+    letting_fee: Decimal | None = Field(default=None, ge=0, decimal_places=2)
+    rental_share_percentage: Decimal | None = Field(default=None, gt=0, le=100, decimal_places=4)
+    effective_to: date | None = None
+    notes: str | None = Field(default=None, max_length=2000)
+
+    @model_validator(mode="after")
+    def has_changes_and_recurs(self) -> RentalProfileUpdate:
+        if not self.model_fields_set:
+            raise ValueError("at least one field must be supplied")
+        if self.frequency == PaymentFrequency.ONCE:
+            raise ValueError("rental income requires a recurring frequency")
+        return self
+
+
 class PropertyExpenseCreate(DatedRecord):
     expense_type_id: uuid.UUID
     display_name: str = Field(min_length=1, max_length=200)

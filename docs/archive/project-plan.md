@@ -657,25 +657,28 @@ notes
 ```
 
 A property may have multiple named rental portions active at once, such as a room, granny flat,
-or the other half of a duplex. Each portion has its own dated rent and rental share. Concurrent
-shares must not exceed 100%. This supports a household occupying one part of a home while renters
-occupy another part without treating the household as a property business.
+or the other half of a duplex. Each portion has its own dated rent and rental share. The entered
+rent belongs to that named portion; the share describes how much of the property it covers and is
+not applied to the rent a second time. Concurrent shares must not exceed 100%. This supports a
+household occupying one part of a home while renters occupy another part without treating the
+household as a property business.
 
 ### Rental activation
 
 Rental income is controlled by resolved property status behaviour.
 
 ```python
-if not status.generates_rental_income:
+partial_owner_rental = status.is_occupied_by_household and rental_share_percentage < 100
+if not status.generates_rental_income and not partial_owner_rental:
     gross_rent = 0
     vacancy_cost = 0
     management_fee = 0
 else:
-    gross_rent = charged_rent_for_period * rental_share_percentage
-    vacancy_cost = gross_rent * vacancy_rate if status.applies_vacancy else 0
+    gross_rent = charged_rent_for_period
+    vacancy_cost = gross_rent * vacancy_rate if status.applies_vacancy or partial_owner_rental else 0
     management_fee = (
         gross_rent - vacancy_cost
-    ) * management_fee_rate if status.applies_management_fee else 0
+    ) * management_fee_rate if status.applies_management_fee or partial_owner_rental else 0
 ```
 
 ### Partial rental
