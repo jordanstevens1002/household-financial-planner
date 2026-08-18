@@ -73,9 +73,9 @@ decorators, so route changes require an intentional matrix update.
 | PATCH | `/api/v1/properties/{property_id}/expenses/{expense_id}` | Correct or end a property expense | #44 |
 | DELETE | `/api/v1/properties/{property_id}/expenses/{expense_id}` | Remove a property expense | #44 |
 | GET | `/api/v1/properties/{property_id}/cashflow` | Rental cash flow | #44 |
-| GET | `/api/v1/households/{household_id}/loans` | Household loan list | #45 |
+| GET | `/api/v1/households/{household_id}/loans` | Household loan list | #45 (React property workflow) |
 | POST | `/api/v1/households/{household_id}/loan-groups` | Split-loan group | #45 |
-| POST | `/api/v1/households/{household_id}/loans` | Loan creation | #45 |
+| POST | `/api/v1/households/{household_id}/loans` | Loan creation | #45 (React property workflow) |
 | GET | `/api/v1/loans/{loan_id}` | Loan detail | #45 |
 | GET | `/api/v1/loans/{loan_id}/repayment-responsibilities` | Responsibility history | #45 |
 | POST | `/api/v1/loans/{loan_id}/repayment-responsibilities` | Advanced responsibility override | #45 |

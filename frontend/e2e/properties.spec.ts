@@ -6,12 +6,14 @@ test('selects and restores a dated property position', async ({ page }) => {
   const propertyId = '818badb5-2518-4c3f-8f6d-bb6ee750e606';
   const typeId = '16b3f01b-ff76-451f-a4bd-a2ddf89834fd';
   const statusId = '85e30193-a324-4d22-9065-e25d819f6530';
+  const loanTypeId = 'b7efb821-85ea-45c6-a4af-bde69c898d87';
   const requestedDates: string[] = [];
   let valuationAdded = false;
   let valuationPayload: Record<string, unknown> | null = null;
   let ownershipPayload: Record<string, unknown> | null = null;
   let rentalPayload: Record<string, unknown> | null = null;
   let expensePayload: Record<string, unknown> | null = null;
+  let loanPayload: Record<string, unknown> | null = null;
   let wizardPayload: Record<string, unknown> | null = null;
   await page.addInitScript((id) => {
     localStorage.setItem('hfp.selection.household', id);
@@ -152,6 +154,46 @@ test('selects and restores a dated property position', async ({ page }) => {
           },
         ],
       });
+      return;
+    }
+    if (path.endsWith('/lookups/loan_type')) {
+      await route.fulfill({
+        contentType: 'application/json',
+        json: [
+          {
+            code: 'HOME_LOAN',
+            display_name: 'Home loan',
+            id: loanTypeId,
+            is_active: true,
+          },
+        ],
+      });
+      return;
+    }
+    if (path.endsWith(`/households/${householdId}/loans`)) {
+      if (request.method() === 'POST') {
+        loanPayload = request.postDataJSON() as Record<string, unknown>;
+        await route.fulfill({
+          contentType: 'application/json',
+          json: {
+            ...loanPayload,
+            id: '7a959699-d6a5-4b32-a15f-cbe2a460ce55',
+          },
+          status: 201,
+        });
+      } else {
+        await route.fulfill({
+          contentType: 'application/json',
+          json: loanPayload
+            ? [
+                {
+                  ...loanPayload,
+                  id: '7a959699-d6a5-4b32-a15f-cbe2a460ce55',
+                },
+              ]
+            : [],
+        });
+      }
       return;
     }
     if (path.endsWith(`/properties/${propertyId}`)) {
@@ -354,6 +396,40 @@ test('selects and restores a dated property position', async ({ page }) => {
       page.evaluate(() => localStorage.getItem('hfp.selection.property')),
     )
     .toBe(propertyId);
+
+  await page.getByRole('button', { name: 'Review loans' }).click();
+  await expect(page.getByText('No property loans')).toBeVisible();
+  await page.getByRole('button', { name: 'Add loan' }).click();
+  const loanDialog = page.getByRole('dialog', { name: 'Add a property loan' });
+  await loanDialog.getByLabel('Loan name').fill('Main mortgage');
+  await loanDialog.getByLabel('Loan type').click();
+  await page.getByRole('option', { name: 'Home loan' }).click();
+  await loanDialog.getByLabel('Opening balance (NZD)').fill('305000');
+  await loanDialog.getByLabel('Opening balance date').fill('2026-06-30');
+  await loanDialog.getByLabel('Annual interest rate %').fill('5.75');
+  await loanDialog.getByLabel('Scheduled repayment (NZD)').fill('2200');
+  await loanDialog.getByLabel('Repayment frequency').click();
+  await page.getByRole('option', { name: 'Monthly' }).click();
+  await loanDialog.getByLabel('Repayment type').click();
+  await page.getByRole('option', { name: 'Principal and interest' }).click();
+  await loanDialog.getByLabel('Interest calculation').click();
+  await page.getByRole('option', { name: 'Daily' }).click();
+  await loanDialog.getByRole('button', { name: 'Save loan' }).click();
+  await expect(page.getByText('Loan added')).toBeVisible();
+  await expect(
+    page.getByRole('table', { name: 'Property loans' }),
+  ).toContainText('Main mortgage');
+  await expect
+    .poll(() => loanPayload)
+    .toMatchObject({
+      currency: 'NZD',
+      initial_interest_rate: '5.75',
+      loan_type_id: loanTypeId,
+      opening_balance: '305000',
+      property_id: propertyId,
+      repayment_frequency: 'MONTHLY',
+      scheduled_repayment: '2200',
+    });
 
   await page.reload();
   await expect(page.getByRole('button', { name: 'Selected' })).toBeVisible();
