@@ -91,8 +91,23 @@ class PropertyExpenseRead(PropertyExpenseCreate, ORMModel):
     property_id: uuid.UUID
 
 
-class PropertyExpenseUpdate(PropertyExpenseCreate):
-    """A complete replacement used to correct or end an expense record."""
+class PropertyExpenseUpdate(BaseModel):
+    """Fields supplied for an append-only correction of an expense record."""
+
+    expense_type_id: uuid.UUID | None = None
+    display_name: str | None = Field(default=None, min_length=1, max_length=200)
+    amount: Decimal | None = Field(default=None, ge=0, decimal_places=2)
+    frequency: PaymentFrequency | None = None
+    effective_from: date | None = None
+    effective_to: date | None = None
+    is_rental_expense: bool | None = None
+    notes: str | None = Field(default=None, max_length=2000)
+
+    @model_validator(mode="after")
+    def has_changes(self) -> PropertyExpenseUpdate:
+        if not self.model_fields_set:
+            raise ValueError("at least one field must be supplied")
+        return self
 
 
 class PropertyCashflowRead(BaseModel):

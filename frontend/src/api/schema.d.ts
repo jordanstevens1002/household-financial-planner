@@ -3117,28 +3117,22 @@ export interface components {
         };
         /**
          * PropertyExpenseUpdate
-         * @description A complete replacement used to correct or end an expense record.
+         * @description Fields supplied for an append-only correction of an expense record.
          */
         PropertyExpenseUpdate: {
             /** Amount */
-            amount: number | string;
+            amount?: number | string | null;
             /** Display Name */
-            display_name: string;
-            /**
-             * Effective From
-             * Format: date
-             */
-            effective_from: string;
+            display_name?: string | null;
+            /** Effective From */
+            effective_from?: string | null;
             /** Effective To */
             effective_to?: string | null;
-            /**
-             * Expense Type Id
-             * Format: uuid
-             */
-            expense_type_id: string;
-            frequency: components["schemas"]["PaymentFrequency"];
+            /** Expense Type Id */
+            expense_type_id?: string | null;
+            frequency?: components["schemas"]["PaymentFrequency"] | null;
             /** Is Rental Expense */
-            is_rental_expense: boolean;
+            is_rental_expense?: boolean | null;
             /** Notes */
             notes?: string | null;
         };

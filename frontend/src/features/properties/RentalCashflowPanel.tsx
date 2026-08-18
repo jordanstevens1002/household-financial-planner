@@ -190,6 +190,11 @@ export function RentalCashflowPanel({
     queryKey: ['lookups', 'property_expense_type'],
     retry: false,
   });
+  const editingTypeIsRetired = Boolean(
+    editing &&
+    expenseTypes.data &&
+    !expenseTypes.data.some((item) => item.id === editing.expense_type_id),
+  );
   const cashflow = useQuery({
     queryFn: () =>
       apiRequest<Cashflow>(
@@ -544,6 +549,11 @@ export function RentalCashflowPanel({
                 value={expenseTypeId}
                 {...form.register('expenseTypeId')}
               >
+                {editingTypeIsRetired ? (
+                  <MenuItem value={editing?.expense_type_id ?? ''}>
+                    Current type (retired)
+                  </MenuItem>
+                ) : null}
                 {(expenseTypes.data ?? []).map((item) => (
                   <MenuItem key={item.id} value={item.id}>
                     {item.display_name}

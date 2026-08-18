@@ -180,7 +180,11 @@ async def list_property_expenses(
     return list(
         await session.scalars(
             select(PropertyExpense)
-            .where(PropertyExpense.property_id == property_id)
+            .where(
+                PropertyExpense.property_id == property_id,
+                PropertyExpense.superseded_at.is_(None),
+                PropertyExpense.deleted_at.is_(None),
+            )
             .order_by(PropertyExpense.effective_from)
         )
     )
@@ -218,10 +222,33 @@ async def _property_expense(
     expense_id: uuid.UUID,
     session: AsyncSession,
 ) -> PropertyExpense:
-    expense = await session.get(PropertyExpense, expense_id)
-    if expense is None or expense.property_id != property_id:
+    expense = await session.scalar(
+        select(PropertyExpense)
+        .where(
+            PropertyExpense.id == expense_id,
+            PropertyExpense.property_id == property_id,
+            PropertyExpense.superseded_at.is_(None),
+            PropertyExpense.deleted_at.is_(None),
+        )
+        .with_for_update()
+    )
+    if expense is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Property expense not found")
     return expense
+
+
+def _expense_snapshot(expense: PropertyExpense) -> dict[str, object]:
+    return {
+        "id": str(expense.id),
+        "expense_type_id": str(expense.expense_type_id),
+        "display_name": expense.display_name,
+        "amount": str(expense.amount),
+        "frequency": expense.frequency.value,
+        "effective_from": expense.effective_from.isoformat(),
+        "effective_to": expense.effective_to.isoformat() if expense.effective_to else None,
+        "is_rental_expense": expense.is_rental_expense,
+        "notes": expense.notes,
+    }
 
 
 @router.patch(
@@ -237,24 +264,37 @@ async def update_property_expense(
 ) -> PropertyExpense:
     property_record = await _property_with_access(property_id, HouseholdRole.EDITOR, user, session)
     expense = await _property_expense(property_id, expense_id, session)
-    await _validate_lookup(payload.expense_type_id, "property_expense_type", session)
-    previous_effective_to = expense.effective_to
-    for field, value in payload.model_dump().items():
-        setattr(expense, field, value)
+    values = payload.model_dump(exclude_unset=True)
+    candidate_values = {
+        **PropertyExpenseRead.model_validate(expense).model_dump(exclude={"id", "property_id"}),
+        **values,
+    }
+    candidate = PropertyExpenseCreate.model_validate(candidate_values)
+    if candidate.expense_type_id != expense.expense_type_id:
+        await _validate_lookup(candidate.expense_type_id, "property_expense_type", session)
+    before = _expense_snapshot(expense)
+    changed_at = datetime.now(UTC)
+    expense.superseded_at = changed_at
+    replacement = PropertyExpense(
+        property_id=property_id,
+        replaces_id=expense.id,
+        **candidate.model_dump(),
+    )
+    session.add(replacement)
     await session.commit()
-    await session.refresh(expense)
+    await session.refresh(replacement)
     logger.info(
         "property_expense_updated",
         actor_user_id=str(user.id),
         household_id=str(property_record.household_id),
         property_id=str(property_id),
-        expense_id=str(expense_id),
-        previous_effective_to=(
-            previous_effective_to.isoformat() if previous_effective_to else None
-        ),
-        resulting_effective_to=(expense.effective_to.isoformat() if expense.effective_to else None),
+        expense_id=str(replacement.id),
+        replaces_expense_id=str(expense_id),
+        changed_fields=sorted(values),
+        before=before,
+        after=_expense_snapshot(replacement),
     )
-    return expense
+    return replacement
 
 
 @router.delete(
@@ -269,7 +309,9 @@ async def delete_property_expense(
 ) -> None:
     property_record = await _property_with_access(property_id, HouseholdRole.EDITOR, user, session)
     expense = await _property_expense(property_id, expense_id, session)
-    await session.delete(expense)
+    before = _expense_snapshot(expense)
+    deleted_at = datetime.now(UTC)
+    expense.deleted_at = deleted_at
     await session.commit()
     logger.info(
         "property_expense_deleted",
@@ -277,6 +319,8 @@ async def delete_property_expense(
         household_id=str(property_record.household_id),
         property_id=str(property_id),
         expense_id=str(expense_id),
+        before=before,
+        deleted_at=deleted_at.isoformat(),
     )
 
 
@@ -294,7 +338,11 @@ async def _cashflow_inputs(
     )
     expenses = list(
         await session.scalars(
-            select(PropertyExpense).where(PropertyExpense.property_id == property_id)
+            select(PropertyExpense).where(
+                PropertyExpense.property_id == property_id,
+                PropertyExpense.superseded_at.is_(None),
+                PropertyExpense.deleted_at.is_(None),
+            )
         )
     )
     baselines = list(

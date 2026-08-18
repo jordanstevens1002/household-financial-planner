@@ -540,6 +540,11 @@ class PropertyExpense(Base):
     effective_to: Mapped[date | None] = mapped_column(Date)
     is_rental_expense: Mapped[bool] = mapped_column(Boolean)
     notes: Mapped[str | None] = mapped_column(String(2000))
+    replaces_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("property_expenses.id", ondelete="SET NULL"), index=True
+    )
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
 
 
 class IncomeSource(Base):

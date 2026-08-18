@@ -1383,6 +1383,44 @@ describe('property overview workflows', () => {
     ).toBeVisible();
   }, 30_000);
 
+  it('keeps a retired expense type selectable while correcting its record', async () => {
+    const expense = {
+      amount: '1200.00',
+      display_name: 'Old council charge',
+      effective_from: '2026-01-01',
+      effective_to: null,
+      expense_type_id: expenseTypeId,
+      frequency: 'ANNUAL',
+      id: '70534b12-fb69-41a2-9700-31f1c3123bd8',
+      is_rental_expense: false,
+      notes: null,
+      property_id: propertyId,
+    };
+    const fallback = standardFetch([summary], [], [expense]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        if (pathOf(input).endsWith('/lookups/property_expense_type'))
+          return Promise.resolve(response([]));
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'View' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Review rental finances' }),
+    );
+    await user.click(
+      await screen.findByRole('button', { name: 'Correct or end' }),
+    );
+
+    expect(screen.getByLabelText('Expense type')).toHaveTextContent(
+      'Current type (retired)',
+    );
+    expect(screen.getByLabelText('Effective to')).toBeEnabled();
+  }, 30_000);
+
   it('does not offer creation to a view-only household member', async () => {
     const fallback = standardFetch();
     vi.stubGlobal(

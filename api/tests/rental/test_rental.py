@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import UTC, date, datetime
+from decimal import Decimal
 
 import pytest
 from httpx import AsyncClient
@@ -16,6 +17,7 @@ from app.models import (
     Household,
     LookupItem,
     Property,
+    PropertyExpense,
 )
 from tests.households.test_households import create_household
 
@@ -411,6 +413,7 @@ async def test_rental_and_whole_property_expenses_follow_status_flags(
 
 async def test_property_expense_can_be_corrected_removed_and_is_audited(
     client: AsyncClient,
+    session: AsyncSession,
     rental_lookups: dict[str, LookupItem],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -435,7 +438,7 @@ async def test_property_expense_can_be_corrected_removed_and_is_audited(
 
     corrected = await client.patch(
         f"/api/v1/properties/{property_id}/expenses/{expense_id}",
-        json=payload | {"amount": 1300, "effective_to": "2025-12-31"},
+        json={"amount": 1300, "effective_to": "2025-12-31"},
     )
     assert corrected.status_code == 200
     assert corrected.json()["amount"] == "1300.00"
@@ -443,11 +446,63 @@ async def test_property_expense_can_be_corrected_removed_and_is_audited(
     assert audit_events[-1][0] == "property_expense_updated"
     assert audit_events[-1][1]["actor_user_id"]
     assert audit_events[-1][1]["property_id"] == property_id
+    assert audit_events[-1][1]["before"]["amount"] == "1200.00"
+    assert audit_events[-1][1]["after"]["amount"] == "1300.00"
 
-    removed = await client.delete(f"/api/v1/properties/{property_id}/expenses/{expense_id}")
+    revisions = list(
+        await session.scalars(
+            select(PropertyExpense)
+            .where(PropertyExpense.property_id == uuid.UUID(property_id))
+            .order_by(PropertyExpense.effective_from, PropertyExpense.id)
+        )
+    )
+    assert len(revisions) == 2
+    original = next(item for item in revisions if str(item.id) == expense_id)
+    replacement = next(item for item in revisions if str(item.id) != expense_id)
+    assert original.amount == Decimal("1200.00")
+    assert original.superseded_at is not None
+    assert replacement.replaces_id == original.id
+    assert replacement.amount == Decimal("1300.00")
+
+    removed = await client.delete(
+        f"/api/v1/properties/{property_id}/expenses/{corrected.json()['id']}"
+    )
     assert removed.status_code == 204
     assert (await client.get(f"/api/v1/properties/{property_id}/expenses")).json() == []
     assert audit_events[-1][0] == "property_expense_deleted"
+    assert audit_events[-1][1]["before"]["display_name"] == "Insurance"
+    await session.refresh(replacement)
+    assert replacement.deleted_at is not None
+
+
+async def test_inactive_expense_type_can_be_closed_but_not_newly_selected(
+    client: AsyncClient,
+    session: AsyncSession,
+    rental_lookups: dict[str, LookupItem],
+) -> None:
+    property_id = (await create_property(client, rental_lookups, "rented"))["id"]
+    payload = {
+        "expense_type_id": str(rental_lookups["expense"].id),
+        "display_name": "Retired fee",
+        "amount": 100,
+        "frequency": "ANNUAL",
+        "effective_from": "2025-01-01",
+        "is_rental_expense": True,
+    }
+    created = await client.post(f"/api/v1/properties/{property_id}/expenses", json=payload)
+    assert created.status_code == 201
+    rental_lookups["expense"].is_active = False
+    await session.commit()
+
+    closed = await client.patch(
+        f"/api/v1/properties/{property_id}/expenses/{created.json()['id']}",
+        json={"effective_to": "2025-12-31"},
+    )
+    assert closed.status_code == 200
+    assert closed.json()["effective_to"] == "2025-12-31"
+
+    rejected = await client.post(f"/api/v1/properties/{property_id}/expenses", json=payload)
+    assert rejected.status_code == 422
 
 
 async def test_other_household_cannot_access_rental_records(

@@ -5106,7 +5106,7 @@
         "type": "object"
       },
       "PropertyExpenseUpdate": {
-        "description": "A complete replacement used to correct or end an expense record.",
+        "description": "Fields supplied for an append-only correction of an expense record.",
         "properties": {
           "amount": {
             "anyOf": [
@@ -5117,20 +5117,37 @@
               {
                 "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,2}0*$",
                 "type": "string"
+              },
+              {
+                "type": "null"
               }
             ],
             "title": "Amount"
           },
           "display_name": {
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Display Name",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
           },
           "effective_from": {
-            "format": "date",
-            "title": "Effective From",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective From"
           },
           "effective_to": {
             "anyOf": [
@@ -5145,16 +5162,37 @@
             "title": "Effective To"
           },
           "expense_type_id": {
-            "format": "uuid",
-            "title": "Expense Type Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expense Type Id"
           },
           "frequency": {
-            "$ref": "#/components/schemas/PaymentFrequency"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaymentFrequency"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "is_rental_expense": {
-            "title": "Is Rental Expense",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Rental Expense"
           },
           "notes": {
             "anyOf": [
@@ -5169,14 +5207,6 @@
             "title": "Notes"
           }
         },
-        "required": [
-          "effective_from",
-          "expense_type_id",
-          "display_name",
-          "amount",
-          "frequency",
-          "is_rental_expense"
-        ],
         "title": "PropertyExpenseUpdate",
         "type": "object"
       },
