@@ -974,6 +974,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/properties/{property_id}/expenses/{expense_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Property Expense */
+        delete: operations["delete_property_expense_api_v1_properties__property_id__expenses__expense_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Property Expense */
+        patch: operations["update_property_expense_api_v1_properties__property_id__expenses__expense_id__patch"];
+        trace?: never;
+    };
     "/api/v1/properties/{property_id}/ownership": {
         parameters: {
             query?: never;
@@ -3096,6 +3114,27 @@ export interface components {
              * Format: uuid
              */
             property_id: string;
+        };
+        /**
+         * PropertyExpenseUpdate
+         * @description Fields supplied for an append-only correction of an expense record.
+         */
+        PropertyExpenseUpdate: {
+            /** Amount */
+            amount?: number | string | null;
+            /** Display Name */
+            display_name?: string | null;
+            /** Effective From */
+            effective_from?: string | null;
+            /** Effective To */
+            effective_to?: string | null;
+            /** Expense Type Id */
+            expense_type_id?: string | null;
+            frequency?: components["schemas"]["PaymentFrequency"] | null;
+            /** Is Rental Expense */
+            is_rental_expense?: boolean | null;
+            /** Notes */
+            notes?: string | null;
         };
         /** PropertyRead */
         PropertyRead: {
@@ -6728,6 +6767,76 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PropertyExpenseRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_property_expense_api_v1_properties__property_id__expenses__expense_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                property_id: string;
+                expense_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_property_expense_api_v1_properties__property_id__expenses__expense_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                property_id: string;
+                expense_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PropertyExpenseUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -22,6 +22,7 @@ import { localCalendarDate } from '../people/localDate';
 import { PropertyCreateDialog } from './PropertyCreateDialog';
 import { OwnershipPanel } from './OwnershipPanel';
 import { RentalProfilesPanel } from './RentalProfilesPanel';
+import { RentalCashflowPanel } from './RentalCashflowPanel';
 import { PropertyRecordDialog } from './PropertyRecordDialog';
 
 type Lookup = components['schemas']['LookupRead'];
@@ -76,6 +77,7 @@ export function PropertiesPage() {
   const [selectedId, setSelectedId] = useState(() => loadSelection('property'));
   const [createOpen, setCreateOpen] = useState(false);
   const [recordOpen, setRecordOpen] = useState(false);
+  const [showRentalFinances, setShowRentalFinances] = useState(false);
   const [asOf, setAsOf] = useState(localCalendarDate());
   const [draftDate, setDraftDate] = useState(asOf);
   const [dateError, setDateError] = useState('');
@@ -170,6 +172,7 @@ export function PropertiesPage() {
   };
   const selectProperty = (property: PropertySummary) => {
     setSelectedId(property.id);
+    setShowRentalFinances(false);
     saveSelection('property', property.id);
   };
   const applyDate = () => {
@@ -477,6 +480,21 @@ export function PropertiesPage() {
             currency={selectedSummary.currency}
             propertyId={selectedSummary.id}
           />
+          {showRentalFinances ? (
+            <RentalCashflowPanel
+              canEdit={access.data?.can_edit === true}
+              currency={selectedSummary.currency}
+              propertyId={selectedSummary.id}
+            />
+          ) : (
+            <Button
+              onClick={() => setShowRentalFinances(true)}
+              sx={{ alignSelf: 'flex-start' }}
+              variant="outlined"
+            >
+              Review rental finances
+            </Button>
+          )}
         </Stack>
       ) : properties.data?.length ? (
         <Alert severity="info">

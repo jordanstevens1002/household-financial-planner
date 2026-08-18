@@ -18,6 +18,7 @@ const householdId = 'dccc2857-cf74-4863-9f00-c99a9f815495';
 const propertyId = '818badb5-2518-4c3f-8f6d-bb6ee750e606';
 const typeId = '16b3f01b-ff76-451f-a4bd-a2ddf89834fd';
 const statusId = '85e30193-a324-4d22-9065-e25d819f6530';
+const expenseTypeId = '487288b5-9cf2-4760-b903-dce0e5c09627';
 const account = {
   display_name: 'Property Owner',
   email: null,
@@ -99,6 +100,7 @@ function pathOf(input: RequestInfo | URL) {
 function standardFetch(
   summaries: unknown = [summary],
   rentalProfiles: unknown = [],
+  propertyExpenses: unknown = [],
 ) {
   return vi.fn<typeof fetch>((input) => {
     const path = pathOf(input);
@@ -154,6 +156,39 @@ function standardFetch(
       );
     if (path.endsWith(`/properties/${propertyId}/rental-profiles`))
       return Promise.resolve(response(rentalProfiles));
+    if (path.endsWith('/lookups/property_expense_type'))
+      return Promise.resolve(
+        response([
+          {
+            id: expenseTypeId,
+            code: 'INSURANCE',
+            display_name: 'Insurance',
+            is_active: true,
+          },
+        ]),
+      );
+    if (path.endsWith(`/properties/${propertyId}/expenses`))
+      return Promise.resolve(response(propertyExpenses));
+    if (path.includes(`/properties/${propertyId}/cashflow?`))
+      return Promise.resolve(
+        response({
+          charged_rent_equivalent: '18200.00',
+          currency: 'NZD',
+          from_date: '2026-01-01',
+          gross_rent: '18200.00',
+          letting_fees: '0.00',
+          management_fee: '1324.05',
+          market_rent_equivalent: '20800.00',
+          net_cashflow: '15129.95',
+          property_expenses: '1200.00',
+          property_id: propertyId,
+          rent_difference: '-2600.00',
+          rental_days: 365,
+          to_date: '2026-12-31',
+          vacancy_cost: '546.00',
+          warnings: ['Recurring amounts use a 365-day planning year'],
+        }),
+      );
     throw new Error(`Unexpected request: ${path}`);
   });
 }
@@ -1137,6 +1172,255 @@ describe('property overview workflows', () => {
     });
   });
 
+  it('shows backend-calculated rental cash flow and adds a property expense', async () => {
+    const user = userEvent.setup();
+    let saved: Record<string, unknown> | null = null;
+    let cashflowRequests = 0;
+    const fallback = standardFetch();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.includes(`/properties/${propertyId}/cashflow?`)) {
+          cashflowRequests += 1;
+        }
+        if (
+          path.endsWith(`/properties/${propertyId}/expenses`) &&
+          init?.method === 'POST'
+        ) {
+          saved = JSON.parse(init.body as string) as Record<string, unknown>;
+          return Promise.resolve(
+            response(
+              {
+                ...saved,
+                id: '70534b12-fb69-41a2-9700-31f1c3123bd8',
+                property_id: propertyId,
+              },
+              201,
+            ),
+          );
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'View' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Review rental finances' }),
+    );
+    expect(
+      await screen.findByText('No property expenses have been recorded.'),
+    ).toBeVisible();
+    expect(await screen.findByText('NZ$18,200.00')).toBeVisible();
+    expect(screen.getByText('NZ$15,129.95')).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Rental cash-flow assumptions' }),
+    ).toBeVisible();
+    await user.click(
+      screen.getByRole('button', { name: 'Add property expense' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Save expense' }));
+    expect(await screen.findByText('Enter a name')).toBeVisible();
+    expect(screen.getByText('Choose an expense type')).toBeVisible();
+    fireEvent.change(screen.getByLabelText('Expense name'), {
+      target: { value: 'Building insurance' },
+    });
+    await user.click(screen.getByLabelText('Expense type'));
+    await user.click(screen.getByRole('option', { name: 'Insurance' }));
+    fireEvent.change(screen.getByLabelText('Amount (NZD)'), {
+      target: { value: '1200' },
+    });
+    fireEvent.change(screen.getByLabelText('Effective from'), {
+      target: { value: '2026-01-01' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Save expense' }));
+
+    expect(await screen.findByText('Property expense added')).toBeVisible();
+    expect(saved).toEqual({
+      amount: '1200',
+      display_name: 'Building insurance',
+      effective_from: '2026-01-01',
+      effective_to: null,
+      expense_type_id: expenseTypeId,
+      frequency: 'ANNUAL',
+      is_rental_expense: false,
+      notes: null,
+    });
+    await waitFor(() => expect(cashflowRequests).toBeGreaterThan(1));
+  }, 30_000);
+
+  it('distinguishes loading and failed rental-finance requests', async () => {
+    const user = userEvent.setup();
+    const fallback = standardFetch();
+    let delayRequests = false;
+    let releaseExpenses: ((value: Response) => void) | undefined;
+    let releaseCashflow: ((value: Response) => void) | undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (
+          delayRequests &&
+          path.endsWith(`/properties/${propertyId}/expenses`)
+        ) {
+          return new Promise((resolve) => {
+            releaseExpenses = resolve;
+          });
+        }
+        if (
+          delayRequests &&
+          path.includes(`/properties/${propertyId}/cashflow?`)
+        ) {
+          return new Promise((resolve) => {
+            releaseCashflow = resolve;
+          });
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+    await user.click(await screen.findByRole('button', { name: 'View' }));
+    delayRequests = true;
+    await user.click(
+      screen.getByRole('button', { name: 'Review rental finances' }),
+    );
+
+    expect(screen.getByLabelText('Loading property expenses')).toBeVisible();
+    expect(screen.getByLabelText('Calculating rental cash flow')).toBeVisible();
+    releaseExpenses?.(response({ detail: 'Temporary outage' }, 503));
+    releaseCashflow?.(response({ detail: 'Temporary outage' }, 503));
+    expect(
+      await screen.findByText(/Property expenses could not be loaded/),
+    ).toBeVisible();
+    expect(
+      await screen.findByText(/Rental cash flow could not be calculated/),
+    ).toBeVisible();
+    expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(2);
+  });
+
+  it('corrects and removes an expense and validates the cash-flow range', async () => {
+    const user = userEvent.setup();
+    const expenseId = '70534b12-fb69-41a2-9700-31f1c3123bd8';
+    const expense = {
+      amount: '1200.00',
+      display_name: 'Council rates',
+      effective_from: '2026-01-01',
+      effective_to: null,
+      expense_type_id: expenseTypeId,
+      frequency: 'ANNUAL',
+      id: expenseId,
+      is_rental_expense: false,
+      notes: null,
+      property_id: propertyId,
+    };
+    let corrected: Record<string, unknown> | null = null;
+    let removed = false;
+    const fallback = standardFetch([summary], [], [expense]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith(`/expenses/${expenseId}`)) {
+          if (init?.method === 'PATCH') {
+            corrected = JSON.parse(init.body as string) as Record<
+              string,
+              unknown
+            >;
+            return Promise.resolve(response({ ...expense, ...corrected }));
+          }
+          if (init?.method === 'DELETE') {
+            removed = true;
+            return Promise.resolve(new Response(null, { status: 204 }));
+          }
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+    await user.click(await screen.findByRole('button', { name: 'View' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Review rental finances' }),
+    );
+    await user.click(
+      await screen.findByRole('button', { name: 'Correct or end' }),
+    );
+    fireEvent.change(screen.getByLabelText('Amount (NZD)'), {
+      target: { value: '1300' },
+    });
+    fireEvent.change(screen.getByLabelText('Effective to'), {
+      target: { value: '2026-12-31' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Save expense' }));
+    expect(await screen.findByText('Property expense updated')).toBeVisible();
+    expect(corrected).toMatchObject({
+      amount: '1300',
+      effective_to: '2026-12-31',
+    });
+
+    await user.click(await screen.findByRole('button', { name: 'Remove' }));
+    expect(
+      screen.getByText(/cash-flow calculation will no longer include/),
+    ).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Remove expense' }));
+    expect(await screen.findByText('Property expense removed')).toBeVisible();
+    expect(removed).toBe(true);
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Remove property expense?' }),
+      ).toBeNull(),
+    );
+
+    fireEvent.change(screen.getByLabelText('From'), {
+      target: { value: '2027-01-01' },
+    });
+    fireEvent.change(screen.getByLabelText('To'), {
+      target: { value: '2026-12-31' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Refresh cash flow' }));
+    expect(
+      screen.getByText('The end date cannot be before the start date'),
+    ).toBeVisible();
+  }, 30_000);
+
+  it('keeps a retired expense type selectable while correcting its record', async () => {
+    const expense = {
+      amount: '1200.00',
+      display_name: 'Old council charge',
+      effective_from: '2026-01-01',
+      effective_to: null,
+      expense_type_id: expenseTypeId,
+      frequency: 'ANNUAL',
+      id: '70534b12-fb69-41a2-9700-31f1c3123bd8',
+      is_rental_expense: false,
+      notes: null,
+      property_id: propertyId,
+    };
+    const fallback = standardFetch([summary], [], [expense]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        if (pathOf(input).endsWith('/lookups/property_expense_type'))
+          return Promise.resolve(response([]));
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'View' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Review rental finances' }),
+    );
+    await user.click(
+      await screen.findByRole('button', { name: 'Correct or end' }),
+    );
+
+    expect(screen.getByLabelText('Expense type')).toHaveTextContent(
+      'Current type (retired)',
+    );
+    expect(screen.getByLabelText('Effective to')).toBeEnabled();
+  }, 30_000);
+
   it('does not offer creation to a view-only household member', async () => {
     const fallback = standardFetch();
     vi.stubGlobal(
@@ -1163,11 +1447,17 @@ describe('property overview workflows', () => {
     await userEvent
       .setup()
       .click(await screen.findByRole('button', { name: 'View' }));
+    await userEvent
+      .setup()
+      .click(screen.getByRole('button', { name: 'Review rental finances' }));
     expect(
       screen.queryByRole('button', { name: 'Add ownership record' }),
     ).toBeNull();
     expect(
       screen.queryByRole('button', { name: 'Add rental arrangement' }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Add property expense' }),
     ).toBeNull();
   });
 });
