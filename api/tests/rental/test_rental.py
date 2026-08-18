@@ -409,6 +409,47 @@ async def test_rental_and_whole_property_expenses_follow_status_flags(
     assert body["net_cashflow"] == "-1200.00"
 
 
+async def test_property_expense_can_be_corrected_removed_and_is_audited(
+    client: AsyncClient,
+    rental_lookups: dict[str, LookupItem],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    audit_events: list[tuple[str, dict[str, object]]] = []
+    monkeypatch.setattr(
+        "app.rental.router.logger.info",
+        lambda event, **values: audit_events.append((event, values)),
+    )
+    property_id = (await create_property(client, rental_lookups, "rented"))["id"]
+    payload = {
+        "expense_type_id": str(rental_lookups["expense"].id),
+        "display_name": "Insurance",
+        "amount": 1200,
+        "frequency": "ANNUAL",
+        "effective_from": "2025-01-01",
+        "effective_to": None,
+        "is_rental_expense": False,
+    }
+    created = await client.post(f"/api/v1/properties/{property_id}/expenses", json=payload)
+    assert created.status_code == 201
+    expense_id = created.json()["id"]
+
+    corrected = await client.patch(
+        f"/api/v1/properties/{property_id}/expenses/{expense_id}",
+        json=payload | {"amount": 1300, "effective_to": "2025-12-31"},
+    )
+    assert corrected.status_code == 200
+    assert corrected.json()["amount"] == "1300.00"
+    assert corrected.json()["effective_to"] == "2025-12-31"
+    assert audit_events[-1][0] == "property_expense_updated"
+    assert audit_events[-1][1]["actor_user_id"]
+    assert audit_events[-1][1]["property_id"] == property_id
+
+    removed = await client.delete(f"/api/v1/properties/{property_id}/expenses/{expense_id}")
+    assert removed.status_code == 204
+    assert (await client.get(f"/api/v1/properties/{property_id}/expenses")).json() == []
+    assert audit_events[-1][0] == "property_expense_deleted"
+
+
 async def test_other_household_cannot_access_rental_records(
     client: AsyncClient, session: AsyncSession, rental_lookups: dict[str, LookupItem]
 ) -> None:

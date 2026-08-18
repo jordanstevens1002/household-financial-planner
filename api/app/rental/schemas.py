@@ -91,6 +91,10 @@ class PropertyExpenseRead(PropertyExpenseCreate, ORMModel):
     property_id: uuid.UUID
 
 
+class PropertyExpenseUpdate(PropertyExpenseCreate):
+    """A complete replacement used to correct or end an expense record."""
+
+
 class PropertyCashflowRead(BaseModel):
     property_id: uuid.UUID
     from_date: date

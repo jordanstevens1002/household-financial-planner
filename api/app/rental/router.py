@@ -29,6 +29,7 @@ from app.rental.schemas import (
     PropertyCashflowRead,
     PropertyExpenseCreate,
     PropertyExpenseRead,
+    PropertyExpenseUpdate,
     RentalProfileCreate,
     RentalProfileRead,
     RentalProfileUpdate,
@@ -196,14 +197,87 @@ async def create_property_expense(
     user: ApplicationUser = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ) -> PropertyExpense:
-    await _property_with_access(property_id, HouseholdRole.EDITOR, user, session)
+    property_record = await _property_with_access(property_id, HouseholdRole.EDITOR, user, session)
     await _validate_lookup(payload.expense_type_id, "property_expense_type", session)
     record = PropertyExpense(property_id=property_id, **payload.model_dump())
     session.add(record)
     await session.commit()
     await session.refresh(record)
-    logger.info("property_expense_created", property_id=str(property_id), expense_id=str(record.id))
+    logger.info(
+        "property_expense_created",
+        actor_user_id=str(user.id),
+        household_id=str(property_record.household_id),
+        property_id=str(property_id),
+        expense_id=str(record.id),
+    )
     return record
+
+
+async def _property_expense(
+    property_id: uuid.UUID,
+    expense_id: uuid.UUID,
+    session: AsyncSession,
+) -> PropertyExpense:
+    expense = await session.get(PropertyExpense, expense_id)
+    if expense is None or expense.property_id != property_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Property expense not found")
+    return expense
+
+
+@router.patch(
+    "/properties/{property_id}/expenses/{expense_id}",
+    response_model=PropertyExpenseRead,
+)
+async def update_property_expense(
+    property_id: uuid.UUID,
+    expense_id: uuid.UUID,
+    payload: PropertyExpenseUpdate,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> PropertyExpense:
+    property_record = await _property_with_access(property_id, HouseholdRole.EDITOR, user, session)
+    expense = await _property_expense(property_id, expense_id, session)
+    await _validate_lookup(payload.expense_type_id, "property_expense_type", session)
+    previous_effective_to = expense.effective_to
+    for field, value in payload.model_dump().items():
+        setattr(expense, field, value)
+    await session.commit()
+    await session.refresh(expense)
+    logger.info(
+        "property_expense_updated",
+        actor_user_id=str(user.id),
+        household_id=str(property_record.household_id),
+        property_id=str(property_id),
+        expense_id=str(expense_id),
+        previous_effective_to=(
+            previous_effective_to.isoformat() if previous_effective_to else None
+        ),
+        resulting_effective_to=(expense.effective_to.isoformat() if expense.effective_to else None),
+    )
+    return expense
+
+
+@router.delete(
+    "/properties/{property_id}/expenses/{expense_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_property_expense(
+    property_id: uuid.UUID,
+    expense_id: uuid.UUID,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    property_record = await _property_with_access(property_id, HouseholdRole.EDITOR, user, session)
+    expense = await _property_expense(property_id, expense_id, session)
+    await session.delete(expense)
+    await session.commit()
+    logger.info(
+        "property_expense_deleted",
+        actor_user_id=str(user.id),
+        household_id=str(property_record.household_id),
+        property_id=str(property_id),
+        expense_id=str(expense_id),
+    )
 
 
 async def _cashflow_inputs(

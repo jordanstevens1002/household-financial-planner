@@ -18,6 +18,7 @@ const householdId = 'dccc2857-cf74-4863-9f00-c99a9f815495';
 const propertyId = '818badb5-2518-4c3f-8f6d-bb6ee750e606';
 const typeId = '16b3f01b-ff76-451f-a4bd-a2ddf89834fd';
 const statusId = '85e30193-a324-4d22-9065-e25d819f6530';
+const expenseTypeId = '487288b5-9cf2-4760-b903-dce0e5c09627';
 const account = {
   display_name: 'Property Owner',
   email: null,
@@ -154,6 +155,39 @@ function standardFetch(
       );
     if (path.endsWith(`/properties/${propertyId}/rental-profiles`))
       return Promise.resolve(response(rentalProfiles));
+    if (path.endsWith('/lookups/property_expense_type'))
+      return Promise.resolve(
+        response([
+          {
+            id: expenseTypeId,
+            code: 'INSURANCE',
+            display_name: 'Insurance',
+            is_active: true,
+          },
+        ]),
+      );
+    if (path.endsWith(`/properties/${propertyId}/expenses`))
+      return Promise.resolve(response([]));
+    if (path.includes(`/properties/${propertyId}/cashflow?`))
+      return Promise.resolve(
+        response({
+          charged_rent_equivalent: '18200.00',
+          currency: 'NZD',
+          from_date: '2026-01-01',
+          gross_rent: '18200.00',
+          letting_fees: '0.00',
+          management_fee: '1324.05',
+          market_rent_equivalent: '20800.00',
+          net_cashflow: '15129.95',
+          property_expenses: '1200.00',
+          property_id: propertyId,
+          rent_difference: '-2600.00',
+          rental_days: 365,
+          to_date: '2026-12-31',
+          vacancy_cost: '546.00',
+          warnings: ['Recurring amounts use a 365-day planning year'],
+        }),
+      );
     throw new Error(`Unexpected request: ${path}`);
   });
 }
@@ -1137,6 +1171,78 @@ describe('property overview workflows', () => {
     });
   });
 
+  it('shows backend-calculated rental cash flow and adds a property expense', async () => {
+    const user = userEvent.setup();
+    let saved: Record<string, unknown> | null = null;
+    let cashflowRequests = 0;
+    const fallback = standardFetch();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.includes(`/properties/${propertyId}/cashflow?`)) {
+          cashflowRequests += 1;
+        }
+        if (
+          path.endsWith(`/properties/${propertyId}/expenses`) &&
+          init?.method === 'POST'
+        ) {
+          saved = JSON.parse(init.body as string) as Record<string, unknown>;
+          return Promise.resolve(
+            response(
+              {
+                ...saved,
+                id: '70534b12-fb69-41a2-9700-31f1c3123bd8',
+                property_id: propertyId,
+              },
+              201,
+            ),
+          );
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'View' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Review rental finances' }),
+    );
+    expect(await screen.findByText('NZ$18,200.00')).toBeVisible();
+    expect(screen.getByText('NZ$15,129.95')).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Rental cash-flow assumptions' }),
+    ).toBeVisible();
+    await user.click(
+      screen.getByRole('button', { name: 'Add property expense' }),
+    );
+    fireEvent.change(screen.getByLabelText('Expense name'), {
+      target: { value: 'Building insurance' },
+    });
+    await user.click(screen.getByLabelText('Expense type'));
+    await user.click(screen.getByRole('option', { name: 'Insurance' }));
+    fireEvent.change(screen.getByLabelText('Amount (NZD)'), {
+      target: { value: '1200' },
+    });
+    fireEvent.change(screen.getByLabelText('Effective from'), {
+      target: { value: '2026-01-01' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Save expense' }));
+
+    expect(await screen.findByText('Property expense added')).toBeVisible();
+    expect(saved).toEqual({
+      amount: '1200',
+      display_name: 'Building insurance',
+      effective_from: '2026-01-01',
+      effective_to: null,
+      expense_type_id: expenseTypeId,
+      frequency: 'ANNUAL',
+      is_rental_expense: false,
+      notes: null,
+    });
+    await waitFor(() => expect(cashflowRequests).toBeGreaterThan(1));
+  }, 30_000);
+
   it('does not offer creation to a view-only household member', async () => {
     const fallback = standardFetch();
     vi.stubGlobal(
@@ -1163,11 +1269,17 @@ describe('property overview workflows', () => {
     await userEvent
       .setup()
       .click(await screen.findByRole('button', { name: 'View' }));
+    await userEvent
+      .setup()
+      .click(screen.getByRole('button', { name: 'Review rental finances' }));
     expect(
       screen.queryByRole('button', { name: 'Add ownership record' }),
     ).toBeNull();
     expect(
       screen.queryByRole('button', { name: 'Add rental arrangement' }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Add property expense' }),
     ).toBeNull();
   });
 });

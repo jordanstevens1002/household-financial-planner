@@ -11,6 +11,7 @@ test('selects and restores a dated property position', async ({ page }) => {
   let valuationPayload: Record<string, unknown> | null = null;
   let ownershipPayload: Record<string, unknown> | null = null;
   let rentalPayload: Record<string, unknown> | null = null;
+  let expensePayload: Record<string, unknown> | null = null;
   let wizardPayload: Record<string, unknown> | null = null;
   await page.addInitScript((id) => {
     localStorage.setItem('hfp.selection.household', id);
@@ -135,6 +136,20 @@ test('selects and restores a dated property position', async ({ page }) => {
         contentType: 'application/json',
         json: [
           { id: statusId, code: 'HOME', display_name: 'Home', is_active: true },
+        ],
+      });
+      return;
+    }
+    if (path.endsWith('/lookups/property_expense_type')) {
+      await route.fulfill({
+        contentType: 'application/json',
+        json: [
+          {
+            code: 'INSURANCE',
+            display_name: 'Insurance',
+            id: '487288b5-9cf2-4760-b903-dce0e5c09627',
+            is_active: true,
+          },
         ],
       });
       return;
@@ -280,6 +295,46 @@ test('selects and restores a dated property position', async ({ page }) => {
       }
       return;
     }
+    if (path.endsWith(`/properties/${propertyId}/expenses`)) {
+      if (request.method() === 'POST') {
+        expensePayload = request.postDataJSON() as Record<string, unknown>;
+        await route.fulfill({
+          contentType: 'application/json',
+          json: {
+            ...expensePayload,
+            id: '70534b12-fb69-41a2-9700-31f1c3123bd8',
+            property_id: propertyId,
+          },
+          status: 201,
+        });
+      } else {
+        await route.fulfill({ contentType: 'application/json', json: [] });
+      }
+      return;
+    }
+    if (path.endsWith(`/properties/${propertyId}/cashflow`)) {
+      await route.fulfill({
+        contentType: 'application/json',
+        json: {
+          charged_rent_equivalent: '18200.00',
+          currency: 'NZD',
+          from_date: url.searchParams.get('from_date'),
+          gross_rent: '18200.00',
+          letting_fees: '0.00',
+          management_fee: '1324.05',
+          market_rent_equivalent: '20800.00',
+          net_cashflow: '15129.95',
+          property_expenses: '1200.00',
+          property_id: propertyId,
+          rent_difference: '-2600.00',
+          rental_days: 365,
+          to_date: url.searchParams.get('to_date'),
+          vacancy_cost: '546.00',
+          warnings: ['Recurring amounts use a 365-day planning year'],
+        },
+      });
+      return;
+    }
     await route.abort();
   });
 
@@ -385,7 +440,29 @@ test('selects and restores a dated property position', async ({ page }) => {
       rental_share_percentage: '30',
     });
 
-  await page.getByRole('button', { name: 'Add property' }).click();
+  await page.getByRole('button', { name: 'Review rental finances' }).click();
+  await expect(page.getByText('NZ$15,129.95')).toBeVisible();
+  await page.getByRole('button', { name: 'Add property expense' }).click();
+  const expenseDialog = page.getByRole('dialog', {
+    name: 'Add property expense',
+  });
+  await expenseDialog.getByLabel('Expense name').fill('Building insurance');
+  await expenseDialog.getByLabel('Expense type').click();
+  await page.getByRole('option', { name: 'Insurance' }).click();
+  await expenseDialog.getByLabel('Amount (NZD)').fill('1200');
+  await expenseDialog.getByLabel('Effective from').fill('2026-01-01');
+  await expenseDialog.getByRole('button', { name: 'Save expense' }).click();
+  await expect(page.getByText('Property expense added')).toBeVisible();
+  await expect
+    .poll(() => expensePayload)
+    .toMatchObject({
+      amount: '1200',
+      display_name: 'Building insurance',
+      expense_type_id: '487288b5-9cf2-4760-b903-dce0e5c09627',
+      is_rental_expense: false,
+    });
+
+  await page.getByRole('button', { name: 'Add property', exact: true }).click();
   await page.getByLabel('Property name').fill('New current home');
   await page.getByLabel('Property type').click();
   await page.getByRole('option', { name: 'House' }).click();
