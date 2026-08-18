@@ -139,6 +139,7 @@ jobs:
       - run: sh scripts/check.sh
       - run: alembic upgrade head
       - run: python scripts/check_local_account_migration.py
+      - run: python scripts/check_property_status_migration.py
       - run: alembic check
 
   frontend-quality:
