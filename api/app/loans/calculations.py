@@ -199,6 +199,14 @@ def generate_schedule(
         previous_date = payment_date
         payment_date = add_payment_period(payment_date, loan.repayment_frequency)
         payment_number += 1
+    if through_date is not None:
+        while (
+            event_index < len(typed_events)
+            and typed_events[event_index][0].effective_at.date() <= through_date
+        ):
+            event, code = typed_events[event_index]
+            apply_loan_event(terms, event, code)
+            event_index += 1
     if terms.balance > 0 and len(entries) == periods:
         flags.append("BALANCE_REMAINS_AFTER_TERM")
     return LoanScheduleRead(

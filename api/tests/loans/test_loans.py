@@ -75,6 +75,7 @@ async def loan_setup(client: AsyncClient, session: AsyncSession) -> dict[str, st
         "household_id": household["id"],
         "property_id": str(property_record.id),
         "loan_type_id": str(loan_type.id),
+        "status_id": str(status.id),
         "goal_type_id": str(goal_type.id),
         **{item.code: str(item.id) for item in event_types},
     }
@@ -233,6 +234,106 @@ async def test_historical_personal_loan_and_multiple_property_loans(
     assert first["currency"] == "AUD"
     assert personal["property_id"] is None
     assert personal["currency"] == "NZD"
+
+
+async def test_property_debt_reconciliation_is_dated_and_preserves_closed_history(
+    client: AsyncClient, loan_setup: dict[str, str]
+) -> None:
+    endpoint = f"/api/v1/properties/{loan_setup['property_id']}/loan-debt-reconciliation"
+    empty = await client.get(endpoint, params={"as_of": "2020-01-01"})
+    assert empty.status_code == 200
+    assert empty.json()["status"] == "NO_LINKED_LOANS"
+    assert empty.json()["recorded_property_debt"] is None
+    assert empty.json()["linked_loan_balance"] == "0.00"
+
+    first = await create_loan(client, loan_setup, opening_balance="300000.00")
+    second = await create_loan(
+        client,
+        loan_setup,
+        display_name="Second split",
+        opening_balance="200000.00",
+    )
+    missing = await client.get(endpoint, params={"as_of": "2020-01-01"})
+    assert missing.json()["status"] == "RECORDED_DEBT_MISSING"
+    assert missing.json()["linked_loan_balance"] == "500000.00"
+    assert {item["loan_id"] for item in missing.json()["loans"]} == {
+        first["id"],
+        second["id"],
+    }
+
+    for baseline_date, debt in (
+        ("2020-01-01", "500000.00"),
+        ("2020-01-10", "450000.00"),
+        ("2020-01-20", "200000.00"),
+    ):
+        created = await client.post(
+            f"/api/v1/properties/{loan_setup['property_id']}/baselines",
+            json={
+                "baseline_date": baseline_date,
+                "property_value": "800000.00",
+                "loan_balance_total": debt,
+                "status_id": loan_setup["status_id"],
+            },
+        )
+        assert created.status_code == 201, created.text
+
+    matched = await client.get(endpoint, params={"as_of": "2020-01-01"})
+    assert matched.json()["status"] == "MATCHED"
+    assert matched.json()["difference"] == "0.00"
+    mismatch = await client.get(endpoint, params={"as_of": "2020-01-10"})
+    assert mismatch.json()["status"] == "MISMATCH"
+    assert mismatch.json()["difference"] == "50000.00"
+
+    closed = await client.post(
+        f"/api/v1/loans/{first['id']}/close",
+        json={"effective_date": "2020-01-15"},
+    )
+    assert closed.status_code == 200
+    historical = await client.get(endpoint, params={"as_of": "2020-01-10"})
+    assert historical.json()["linked_loan_balance"] == "500000.00"
+    after_close = await client.get(endpoint, params={"as_of": "2020-01-20"})
+    assert after_close.json()["status"] == "MATCHED"
+    assert after_close.json()["linked_loan_balance"] == "200000.00"
+    assert [item["loan_id"] for item in after_close.json()["loans"]] == [second["id"]]
+
+
+async def test_property_debt_reconciliation_refuses_incompatible_currencies(
+    client: AsyncClient, loan_setup: dict[str, str]
+) -> None:
+    await create_loan(client, loan_setup, currency="NZD")
+    response = await client.get(
+        f"/api/v1/properties/{loan_setup['property_id']}/loan-debt-reconciliation",
+        params={"as_of": "2020-01-01"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "CURRENCY_MISMATCH"
+    assert response.json()["linked_loan_balance"] is None
+    assert response.json()["difference"] is None
+
+
+async def test_property_debt_reconciliation_preserves_household_isolation(
+    client: AsyncClient, session: AsyncSession, loan_setup: dict[str, str]
+) -> None:
+    hidden_household = Household(display_name="Hidden", currency="AUD", jurisdiction="AU")
+    session.add(hidden_household)
+    await session.flush()
+    visible_property = await session.get(Property, uuid.UUID(loan_setup["property_id"]))
+    assert visible_property is not None
+    hidden_property = Property(
+        household_id=hidden_household.id,
+        display_name="Hidden property",
+        property_type_id=visible_property.property_type_id,
+        current_status_id=visible_property.current_status_id,
+        default_currency="AUD",
+    )
+    session.add(hidden_property)
+    await session.commit()
+
+    response = await client.get(
+        f"/api/v1/properties/{hidden_property.id}/loan-debt-reconciliation",
+        params={"as_of": "2020-01-01"},
+    )
+    assert response.status_code == 404
 
 
 async def test_loan_repayments_flow_into_cashflow_and_follow_dated_events(

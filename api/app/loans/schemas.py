@@ -3,6 +3,7 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
+from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -119,6 +120,35 @@ class LoanRead(LoanCreate):
     id: uuid.UUID
     household_id: uuid.UUID
     currency: str
+
+
+class DebtReconciliationStatus(StrEnum):
+    NO_LINKED_LOANS = "NO_LINKED_LOANS"
+    RECORDED_DEBT_MISSING = "RECORDED_DEBT_MISSING"
+    MATCHED = "MATCHED"
+    MISMATCH = "MISMATCH"
+    CURRENCY_MISMATCH = "CURRENCY_MISMATCH"
+
+
+class LoanDebtBalanceRead(BaseModel):
+    loan_id: uuid.UUID
+    display_name: str
+    currency: str
+    effective_balance: Decimal
+
+
+class PropertyDebtReconciliationRead(BaseModel):
+    property_id: uuid.UUID
+    as_of: date
+    currency: str
+    baseline_id: uuid.UUID | None
+    recorded_debt_date: date | None
+    recorded_property_debt: Decimal | None
+    linked_loan_balance: Decimal | None
+    difference: Decimal | None
+    status: DebtReconciliationStatus
+    loans: list[LoanDebtBalanceRead]
+    warnings: list[str]
 
 
 class LoanRepaymentResponsibilityCreate(BaseModel):
