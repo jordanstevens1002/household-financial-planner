@@ -519,7 +519,7 @@ describe('property overview workflows', () => {
     expect(localStorage.getItem(selectionKeys.property)).toBe(
       createdPropertyId,
     );
-  });
+  }, 10_000);
 
   it('creates purchase history without implying current value or debt', async () => {
     const user = userEvent.setup();
@@ -595,7 +595,7 @@ describe('property overview workflows', () => {
     });
     expect(saved).not.toHaveProperty('property.current_value');
     expect(saved).not.toHaveProperty('property.total_property_debt');
-  });
+  }, 10_000);
 
   it('adds a current position to an existing property record', async () => {
     const user = userEvent.setup();

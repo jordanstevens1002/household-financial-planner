@@ -20,6 +20,7 @@ import { formatCurrency, formatDate } from '../../shared/format';
 import { useHousehold } from '../households/HouseholdContext';
 import { localCalendarDate } from '../people/localDate';
 import { PropertyCreateDialog } from './PropertyCreateDialog';
+import { LoansPanel } from './LoansPanel';
 import { OwnershipPanel } from './OwnershipPanel';
 import { RentalProfilesPanel } from './RentalProfilesPanel';
 import { RentalCashflowPanel } from './RentalCashflowPanel';
@@ -78,6 +79,7 @@ export function PropertiesPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [recordOpen, setRecordOpen] = useState(false);
   const [showRentalFinances, setShowRentalFinances] = useState(false);
+  const [showLoans, setShowLoans] = useState(false);
   const [asOf, setAsOf] = useState(localCalendarDate());
   const [draftDate, setDraftDate] = useState(asOf);
   const [dateError, setDateError] = useState('');
@@ -173,6 +175,7 @@ export function PropertiesPage() {
   const selectProperty = (property: PropertySummary) => {
     setSelectedId(property.id);
     setShowRentalFinances(false);
+    setShowLoans(false);
     saveSelection('property', property.id);
   };
   const applyDate = () => {
@@ -444,7 +447,8 @@ export function PropertiesPage() {
                 />
                 <PositionAmount
                   currency={selectedSummary.currency}
-                  label="Total property debt"
+                  description={`Dated property record as of ${state.data.as_of}`}
+                  label="Recorded property debt"
                   value={state.data.loan_balance_total}
                 />
               </Stack>
@@ -480,6 +484,24 @@ export function PropertiesPage() {
             currency={selectedSummary.currency}
             propertyId={selectedSummary.id}
           />
+          {showLoans ? (
+            <LoansPanel
+              canEdit={access.data?.can_edit === true}
+              currency={selectedSummary.currency}
+              householdId={household.selected.id}
+              propertyId={selectedSummary.id}
+              recordedDebt={state.data?.loan_balance_total ?? null}
+              recordedDebtDate={state.data?.as_of ?? asOf}
+            />
+          ) : (
+            <Button
+              onClick={() => setShowLoans(true)}
+              sx={{ alignSelf: 'flex-start' }}
+              variant="outlined"
+            >
+              Review loans
+            </Button>
+          )}
           {showRentalFinances ? (
             <RentalCashflowPanel
               canEdit={access.data?.can_edit === true}

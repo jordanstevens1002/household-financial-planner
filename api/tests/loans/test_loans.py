@@ -112,6 +112,75 @@ async def create_loan(
     return response.json()
 
 
+async def test_loan_can_be_corrected_and_closed_with_audit(
+    client: AsyncClient,
+    loan_setup: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    audit_events: list[tuple[str, dict[str, object]]] = []
+    monkeypatch.setattr(
+        "app.loans.router.logger.info",
+        lambda event, **values: audit_events.append((event, values)),
+    )
+    loan = await create_loan(client, loan_setup)
+
+    corrected = await client.patch(
+        f"/api/v1/loans/{loan['id']}",
+        json={
+            "account_reference_masked": "****6789",
+            "scheduled_repayment": "3250.00",
+        },
+    )
+    assert corrected.status_code == 200
+    assert corrected.json()["scheduled_repayment"] == "3250.00"
+    assert corrected.json()["account_reference_masked"] == "****6789"
+    assert audit_events[-1][0] == "loan_corrected"
+    assert audit_events[-1][1]["before"]["scheduled_repayment"] == "3000.00"
+    assert audit_events[-1][1]["after"]["scheduled_repayment"] == "3250.00"
+
+    cannot_clear_required = await client.patch(
+        f"/api/v1/loans/{loan['id']}", json={"opening_balance": None}
+    )
+    assert cannot_clear_required.status_code == 422
+
+    closed = await client.post(
+        f"/api/v1/loans/{loan['id']}/close",
+        json={"effective_date": "2020-04-15"},
+    )
+    assert closed.status_code == 200
+    assert closed.json()["is_active"] is False
+    assert audit_events[-1][0] == "loan_closed"
+    assert audit_events[-1][1]["effective_date"] == "2020-04-15"
+
+    before_closure = await client.get(
+        f"/api/v1/households/{loan_setup['household_id']}/cashflow",
+        params={"as_of": "2020-03-01"},
+    )
+    assert before_closure.json()["annual_loan_repayments"] == "39000.00"
+    after_closure = await client.get(
+        f"/api/v1/households/{loan_setup['household_id']}/cashflow",
+        params={"as_of": "2020-05-01"},
+    )
+    assert after_closure.json()["annual_loan_repayments"] == "0.00"
+
+
+async def test_loan_account_reference_must_be_explicitly_masked(
+    client: AsyncClient, loan_setup: dict[str, str]
+) -> None:
+    exposed = await client.post(
+        f"/api/v1/households/{loan_setup['household_id']}/loans",
+        json=loan_payload(loan_setup) | {"account_reference_masked": "123456789"},
+    )
+    assert exposed.status_code == 422
+
+    masked = await client.post(
+        f"/api/v1/households/{loan_setup['household_id']}/loans",
+        json=loan_payload(loan_setup) | {"account_reference_masked": "•••• 6789"},
+    )
+    assert masked.status_code == 201
+    assert masked.json()["account_reference_masked"] == "•••• 6789"
+
+
 async def add_loan_event(
     client: AsyncClient,
     setup: dict[str, str],
