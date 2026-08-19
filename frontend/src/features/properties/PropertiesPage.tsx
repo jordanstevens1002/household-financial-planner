@@ -447,7 +447,8 @@ export function PropertiesPage() {
                 />
                 <PositionAmount
                   currency={selectedSummary.currency}
-                  label="Total property debt"
+                  description={`Dated property record as of ${state.data.as_of}`}
+                  label="Recorded property debt"
                   value={state.data.loan_balance_total}
                 />
               </Stack>
@@ -489,6 +490,8 @@ export function PropertiesPage() {
               currency={selectedSummary.currency}
               householdId={household.selected.id}
               propertyId={selectedSummary.id}
+              recordedDebt={state.data?.loan_balance_total ?? null}
+              recordedDebtDate={state.data?.as_of ?? asOf}
             />
           ) : (
             <Button

@@ -4,7 +4,7 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.events.schemas import FinancialEventRead
 from app.models import (
@@ -33,6 +33,71 @@ class LoanCreate(BaseModel):
     is_interest_only: bool
     is_active: bool = True
     notes: str | None = Field(default=None, max_length=2000)
+
+    @field_validator("account_reference_masked")
+    @classmethod
+    def account_reference_is_masked(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        compact = value.strip()
+        if not compact:
+            return None
+        mask_count = sum(character in "*•xX" for character in compact)
+        visible = "".join(character for character in compact if character.isalnum())
+        visible = visible.lstrip("xX")
+        if mask_count < 3 or not 2 <= len(visible) <= 4:
+            raise ValueError(
+                "account reference must hide all but the final 2 to 4 characters, "
+                "for example ****1234"
+            )
+        return compact
+
+
+class LoanUpdate(BaseModel):
+    display_name: str | None = Field(default=None, min_length=1, max_length=200)
+    lender: str | None = Field(default=None, max_length=200)
+    account_reference_masked: str | None = Field(default=None, max_length=50)
+    loan_type_id: uuid.UUID | None = None
+    original_balance: Decimal | None = Field(default=None, ge=0, max_digits=18, decimal_places=2)
+    opening_balance: Decimal | None = Field(default=None, ge=0, max_digits=18, decimal_places=2)
+    opening_balance_date: date | None = None
+    initial_interest_rate: Decimal | None = Field(
+        default=None, ge=0, le=100, max_digits=7, decimal_places=4
+    )
+    scheduled_repayment: Decimal | None = Field(default=None, ge=0, max_digits=18, decimal_places=2)
+    term_months: int | None = Field(default=None, gt=0, le=1200)
+    interest_calculation_method: InterestCalculationMethod | None = None
+    repayment_frequency: RepaymentFrequency | None = None
+    is_interest_only: bool | None = None
+    is_active: bool | None = None
+    notes: str | None = Field(default=None, max_length=2000)
+
+    @field_validator("account_reference_masked")
+    @classmethod
+    def account_reference_is_masked(cls, value: str | None) -> str | None:
+        return LoanCreate.account_reference_is_masked(value)
+
+    @model_validator(mode="after")
+    def has_changes(self) -> LoanUpdate:
+        if not self.model_fields_set:
+            raise ValueError("at least one field must be supplied")
+        required_when_supplied = {
+            "display_name",
+            "initial_interest_rate",
+            "interest_calculation_method",
+            "is_active",
+            "is_interest_only",
+            "loan_type_id",
+            "opening_balance",
+            "opening_balance_date",
+            "repayment_frequency",
+        }
+        if any(
+            field in self.model_fields_set and getattr(self, field) is None
+            for field in required_when_supplied
+        ):
+            raise ValueError("required loan fields cannot be cleared")
+        return self
 
 
 class LoanGroupCreate(BaseModel):

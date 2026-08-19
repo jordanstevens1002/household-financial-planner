@@ -27,6 +27,7 @@ from app.loans.schemas import (
     LoanRepaymentResponsibilityRead,
     LoanRepaymentResponsibilityResult,
     LoanScheduleRead,
+    LoanUpdate,
     RefinanceCreate,
     RefinanceRead,
     TargetCalculationRead,
@@ -155,6 +156,43 @@ async def create_loan(
     loan = await _create_loan_record(household_id, payload, session)
     await session.commit()
     await session.refresh(loan)
+    return loan
+
+
+def _loan_snapshot(loan: Loan) -> dict[str, object]:
+    return LoanRead.model_validate(loan).model_dump(mode="json")
+
+
+@router.patch("/loans/{loan_id}", response_model=LoanRead)
+async def update_loan(
+    loan_id: uuid.UUID,
+    payload: LoanUpdate,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Loan:
+    accessible_loan = await _loan_with_access(loan_id, HouseholdRole.EDITOR, user, session)
+    loan = await session.scalar(select(Loan).where(Loan.id == accessible_loan.id).with_for_update())
+    assert loan is not None
+    values = payload.model_dump(exclude_unset=True)
+    if "loan_type_id" in values and values["loan_type_id"] != loan.loan_type_id:
+        loan_type = await session.get(LookupItem, values["loan_type_id"])
+        if loan_type is None or loan_type.category != "loan_type" or not loan_type.is_active:
+            raise HTTPException(422, "Active loan_type lookup required")
+    before = _loan_snapshot(loan)
+    for field, value in values.items():
+        setattr(loan, field, value)
+    await session.commit()
+    await session.refresh(loan)
+    logger.info(
+        "loan_corrected",
+        actor_user_id=str(user.id),
+        household_id=str(loan.household_id),
+        property_id=str(loan.property_id) if loan.property_id else None,
+        loan_id=str(loan.id),
+        changed_fields=sorted(values),
+        before=before,
+        after=_loan_snapshot(loan),
+    )
     return loan
 
 

@@ -66,7 +66,10 @@ function loan(
   };
 }
 
-function renderPanel(canEdit = true) {
+function renderPanel(
+  canEdit = true,
+  recordedDebt: string | null = '310000.00',
+) {
   return render(
     <ThemeProvider theme={appTheme}>
       <CssBaseline />
@@ -81,6 +84,8 @@ function renderPanel(canEdit = true) {
             currency="NZD"
             householdId={householdId}
             propertyId={propertyId}
+            recordedDebt={recordedDebt}
+            recordedDebtDate="2026-06-30"
           />
         </QueryClientProvider>
       </NotificationProvider>
@@ -129,6 +134,11 @@ describe('property loan records', () => {
     expect(table).toHaveTextContent('Home loan');
     expect(table).toHaveTextContent('Variable rate');
     expect(table).toHaveTextContent('NZ$310,000.00');
+    expect(
+      screen.getByText(
+        /Active linked-loan opening balances total NZ\$310,000\.00/,
+      ),
+    ).toBeVisible();
     expect(within(table).getAllByRole('row')).toHaveLength(2);
     expect(screen.queryByRole('button', { name: 'Add loan' })).toBeNull();
   });
@@ -231,5 +241,100 @@ describe('property loan records', () => {
       .setup()
       .click(screen.getByRole('button', { name: 'Retry' }));
     expect(await screen.findByText('No property loans')).toBeVisible();
+  });
+
+  it('corrects and closes a loan while explaining conflicting recorded debt', async () => {
+    let current = loan();
+    const patches: Record<string, unknown>[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/lookups/loan_type'))
+          return Promise.resolve(
+            response([
+              {
+                code: 'VARIABLE_RATE',
+                display_name: 'Variable rate',
+                id: loanTypeId,
+                is_active: true,
+              },
+            ]),
+          );
+        if (path.endsWith(`/households/${householdId}/loans`))
+          return Promise.resolve(response([current]));
+        if (path.endsWith(`/loans/${current.id}`) && init?.method === 'PATCH') {
+          const patch = JSON.parse(init.body as string) as Record<
+            string,
+            unknown
+          >;
+          patches.push(patch);
+          current = { ...current, ...patch };
+          return Promise.resolve(response(current));
+        }
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    const user = userEvent.setup();
+    renderPanel(true, '250000.00');
+    expect(
+      await screen.findByText(/Recorded property debt.*NZ\$250,000\.00/),
+    ).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Correct' }));
+    const correction = screen.getByRole('dialog', {
+      name: 'Correct property loan',
+    });
+    await user.clear(
+      within(correction).getByLabelText('Scheduled repayment (NZD)'),
+    );
+    await user.type(
+      within(correction).getByLabelText('Scheduled repayment (NZD)'),
+      '2250',
+    );
+    await user.click(
+      within(correction).getByRole('button', { name: 'Save correction' }),
+    );
+    expect(await screen.findByText('Loan corrected')).toBeVisible();
+    expect(patches[0]).toMatchObject({ scheduled_repayment: '2250' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+    await user.click(
+      within(screen.getByRole('table', { name: 'Property loans' })).getByRole(
+        'button',
+        { name: 'Close' },
+      ),
+    );
+    await user.click(screen.getByRole('button', { name: 'Close loan' }));
+    expect(await screen.findByText('Loan closed')).toBeVisible();
+    expect(patches[1]).toEqual({ is_active: false });
+    expect(await screen.findByText('Closed')).toBeVisible();
+  }, 15_000);
+
+  it('rejects an exposed account reference and explains missing recorded debt', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input) => {
+        const path = pathOf(input);
+        if (path.endsWith('/lookups/loan_type'))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loans`))
+          return Promise.resolve(response([loan()]));
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    const user = userEvent.setup();
+    renderPanel(true, null);
+    expect(await screen.findByText(/is not available/)).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Correct' }));
+    await user.click(screen.getByRole('button', { name: 'Advanced' }));
+    const reference = screen.getByLabelText(
+      'Masked account reference (optional)',
+    );
+    await user.type(reference, '123456789');
+    await user.click(screen.getByRole('button', { name: 'Save correction' }));
+    expect(
+      await screen.findByText(/Hide all but the final 2 to 4 characters/),
+    ).toBeVisible();
   });
 });

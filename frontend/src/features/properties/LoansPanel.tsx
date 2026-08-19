@@ -20,6 +20,7 @@ import { z } from 'zod';
 import { apiRequest } from '../../api/client';
 import type { components } from '../../api/schema';
 import { AdvancedSection } from '../../shared/AdvancedSection';
+import { ConfirmDialog } from '../../shared/ConfirmDialog';
 import { DataTable, type DataColumn } from '../../shared/DataTable';
 import { EmptyState } from '../../shared/EmptyState';
 import { formatCurrency, formatDate } from '../../shared/format';
@@ -30,7 +31,18 @@ type Loan = components['schemas']['LoanRead'];
 type Lookup = components['schemas']['LookupRead'];
 
 const loanSchema = z.object({
-  accountReference: z.string().trim().max(50),
+  accountReference: z
+    .string()
+    .trim()
+    .max(50)
+    .refine((value) => {
+      if (!value) return true;
+      const masks = [...value].filter((character) =>
+        '*•xX'.includes(character),
+      );
+      const visible = value.replace(/[^a-zA-Z0-9]/g, '').replace(/^[xX]+/, '');
+      return masks.length >= 3 && visible.length >= 2 && visible.length <= 4;
+    }, 'Hide all but the final 2 to 4 characters, for example ****1234'),
   displayName: z.string().trim().min(1, 'Enter a loan name').max(200),
   initialInterestRate: z
     .string()
@@ -112,6 +124,25 @@ const defaults: LoanFields = {
   termMonths: '',
 };
 
+function fieldsForLoan(loan: Loan): LoanFields {
+  return {
+    accountReference: loan.account_reference_masked ?? '',
+    displayName: loan.display_name,
+    initialInterestRate: loan.initial_interest_rate,
+    interestCalculationMethod: loan.interest_calculation_method,
+    isInterestOnly: loan.is_interest_only ? 'true' : 'false',
+    lender: loan.lender ?? '',
+    loanTypeId: loan.loan_type_id,
+    notes: loan.notes ?? '',
+    openingBalance: loan.opening_balance,
+    openingBalanceDate: loan.opening_balance_date,
+    originalBalance: loan.original_balance ?? '',
+    repaymentFrequency: loan.repayment_frequency,
+    scheduledRepayment: loan.scheduled_repayment ?? '',
+    termMonths: loan.term_months?.toString() ?? '',
+  };
+}
+
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'The request failed';
 }
@@ -121,16 +152,22 @@ export function LoansPanel({
   currency,
   householdId,
   propertyId,
+  recordedDebt,
+  recordedDebtDate,
 }: {
   canEdit: boolean;
   currency: string;
   householdId: string;
   propertyId: string;
+  recordedDebt: string | null;
+  recordedDebtDate: string;
 }) {
   const auth = useAuth();
   const queryClient = useQueryClient();
   const { notify } = useNotification();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
+  const [closingLoan, setClosingLoan] = useState<Loan | null>(null);
   const form = useForm<LoanFields, unknown, ValidLoanFields>({
     defaultValues: defaults,
     resolver: zodResolver(loanSchema),
@@ -162,37 +199,46 @@ export function LoansPanel({
   const propertyLoans = (loans.data ?? []).filter(
     (loan) => loan.property_id === propertyId,
   );
-  const createLoan = useMutation({
+  const saveLoan = useMutation({
     mutationFn: (fields: ValidLoanFields) =>
-      apiRequest<Loan>(`/api/v1/households/${householdId}/loans`, {
-        body: JSON.stringify({
-          account_reference_masked: fields.accountReference || null,
-          currency,
-          display_name: fields.displayName.trim(),
-          initial_interest_rate: fields.initialInterestRate,
-          interest_calculation_method: fields.interestCalculationMethod,
-          is_active: true,
-          is_interest_only: fields.isInterestOnly === 'true',
-          lender: fields.lender.trim() || null,
-          loan_group_id: null,
-          loan_type_id: fields.loanTypeId,
-          notes: fields.notes.trim() || null,
-          opening_balance: fields.openingBalance,
-          opening_balance_date: fields.openingBalanceDate,
-          original_balance: fields.originalBalance || null,
-          property_id: propertyId,
-          repayment_frequency: fields.repaymentFrequency,
-          scheduled_repayment: fields.scheduledRepayment || null,
-          term_months: fields.termMonths ? Number(fields.termMonths) : null,
-        }),
-        csrfToken: auth.csrfToken(),
-        method: 'POST',
-      }),
+      apiRequest<Loan>(
+        editingLoan
+          ? `/api/v1/loans/${editingLoan.id}`
+          : `/api/v1/households/${householdId}/loans`,
+        {
+          body: JSON.stringify({
+            account_reference_masked: fields.accountReference || null,
+            display_name: fields.displayName.trim(),
+            initial_interest_rate: fields.initialInterestRate,
+            interest_calculation_method: fields.interestCalculationMethod,
+            is_interest_only: fields.isInterestOnly === 'true',
+            lender: fields.lender.trim() || null,
+            loan_type_id: fields.loanTypeId,
+            notes: fields.notes.trim() || null,
+            opening_balance: fields.openingBalance,
+            opening_balance_date: fields.openingBalanceDate,
+            original_balance: fields.originalBalance || null,
+            repayment_frequency: fields.repaymentFrequency,
+            scheduled_repayment: fields.scheduledRepayment || null,
+            term_months: fields.termMonths ? Number(fields.termMonths) : null,
+            ...(editingLoan
+              ? {}
+              : {
+                  currency,
+                  is_active: true,
+                  loan_group_id: null,
+                  property_id: propertyId,
+                }),
+          }),
+          csrfToken: auth.csrfToken(),
+          method: editingLoan ? 'PATCH' : 'POST',
+        },
+      ),
     onError: (error) => notify(errorMessage(error), 'error'),
     onSuccess: async () => {
       setDialogOpen(false);
       form.reset(defaults);
-      notify('Loan added', 'success');
+      notify(editingLoan ? 'Loan corrected' : 'Loan added', 'success');
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ['household-loans', householdId],
@@ -205,6 +251,35 @@ export function LoansPanel({
       ]);
     },
   });
+  const closeLoan = useMutation({
+    mutationFn: (loan: Loan) =>
+      apiRequest<Loan>(`/api/v1/loans/${loan.id}`, {
+        body: JSON.stringify({ is_active: false }),
+        csrfToken: auth.csrfToken(),
+        method: 'PATCH',
+      }),
+    onError: (error) => notify(errorMessage(error), 'error'),
+    onSuccess: async () => {
+      setClosingLoan(null);
+      notify('Loan closed', 'success');
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['household-loans', householdId],
+        }),
+        queryClient.invalidateQueries({ queryKey: ['household-cashflow'] }),
+      ]);
+    },
+  });
+  const openCreate = () => {
+    setEditingLoan(null);
+    form.reset(defaults);
+    setDialogOpen(true);
+  };
+  const openCorrection = (loan: Loan) => {
+    setEditingLoan(loan);
+    form.reset(fieldsForLoan(loan));
+    setDialogOpen(true);
+  };
   const columns: DataColumn<Loan>[] = [
     { key: 'name', label: 'Loan', render: (loan) => loan.display_name },
     {
@@ -242,7 +317,40 @@ export function LoansPanel({
       label: 'Status',
       render: (loan) => (loan.is_active ? 'Active' : 'Closed'),
     },
+    ...(canEdit
+      ? [
+          {
+            key: 'actions',
+            label: 'Actions',
+            render: (loan: Loan) => (
+              <Stack direction="row" spacing={1}>
+                <Button onClick={() => openCorrection(loan)}>Correct</Button>
+                {loan.is_active ? (
+                  <Button color="error" onClick={() => setClosingLoan(loan)}>
+                    Close
+                  </Button>
+                ) : null}
+              </Stack>
+            ),
+          },
+        ]
+      : []),
   ];
+  const linkedOpeningBalance = propertyLoans
+    .filter((loan) => loan.is_active)
+    .reduce((total, loan) => total + Number(loan.opening_balance), 0);
+  const debtDiffers =
+    recordedDebt == null ||
+    Math.abs(Number(recordedDebt) - linkedOpeningBalance) >= 0.01;
+  const debtComparison =
+    recordedDebt == null
+      ? 'There is no dated property-debt record to compare with these loans.'
+      : debtDiffers
+        ? `These figures differ by ${formatCurrency(
+            Math.abs(Number(recordedDebt) - linkedOpeningBalance),
+            currency,
+          )}.`
+        : 'The figures currently match.';
 
   return (
     <Stack spacing={2}>
@@ -252,7 +360,7 @@ export function LoansPanel({
       >
         <Typography variant="h2">Loans</Typography>
         {canEdit ? (
-          <Button onClick={() => setDialogOpen(true)} variant="outlined">
+          <Button onClick={openCreate} variant="outlined">
             Add loan
           </Button>
         ) : null}
@@ -261,6 +369,18 @@ export function LoansPanel({
         Record each loan separately. A property can have no loan, one loan or
         several loan splits.
       </Typography>
+      {propertyLoans.length ? (
+        <Alert severity={debtDiffers ? 'warning' : 'info'}>
+          Recorded property debt as of {formatDate(recordedDebtDate)} is{' '}
+          {recordedDebt == null
+            ? 'not available'
+            : formatCurrency(recordedDebt, currency)}
+          . Active linked-loan opening balances total{' '}
+          {formatCurrency(linkedOpeningBalance, currency)}. {debtComparison}{' '}
+          Opening balances do not yet replace the dated property-debt record;
+          reconcile discrepancies before relying on both figures.
+        </Alert>
+      ) : null}
       {loans.isPending ? (
         <CircularProgress aria-label="Loading property loans" size={24} />
       ) : loans.error ? (
@@ -297,10 +417,12 @@ export function LoansPanel({
         <Stack
           component="form"
           onSubmit={(event) =>
-            void form.handleSubmit((fields) => createLoan.mutate(fields))(event)
+            void form.handleSubmit((fields) => saveLoan.mutate(fields))(event)
           }
         >
-          <DialogTitle>Add a property loan</DialogTitle>
+          <DialogTitle>
+            {editingLoan ? 'Correct property loan' : 'Add a property loan'}
+          </DialogTitle>
           <DialogContent>
             <Stack spacing={2} sx={{ pt: 1 }}>
               {loanTypes.error ? (
@@ -428,6 +550,11 @@ export function LoansPanel({
                     {...form.register('lender')}
                   />
                   <TextField
+                    error={Boolean(form.formState.errors.accountReference)}
+                    helperText={
+                      form.formState.errors.accountReference?.message ??
+                      'Use a masked value such as ****1234; never enter the complete number.'
+                    }
                     label="Masked account reference (optional)"
                     {...form.register('accountReference')}
                   />
@@ -448,9 +575,9 @@ export function LoansPanel({
                   />
                 </Stack>
               </AdvancedSection>
-              {createLoan.error ? (
+              {saveLoan.error ? (
                 <Alert severity="error">
-                  The loan could not be added. {errorMessage(createLoan.error)}
+                  The loan could not be saved. {errorMessage(saveLoan.error)}
                 </Alert>
               ) : null}
             </Stack>
@@ -459,18 +586,27 @@ export function LoansPanel({
             <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button
               disabled={
-                createLoan.isPending ||
+                saveLoan.isPending ||
                 loanTypes.isPending ||
                 Boolean(loanTypes.error)
               }
               type="submit"
               variant="contained"
             >
-              Save loan
+              {editingLoan ? 'Save correction' : 'Save loan'}
             </Button>
           </DialogActions>
         </Stack>
       </Dialog>
+      <ConfirmDialog
+        confirmLabel="Close loan"
+        description="Closing this loan keeps its record but removes its scheduled repayment from current household cash flow."
+        onCancel={() => setClosingLoan(null)}
+        onConfirm={() => closingLoan && closeLoan.mutate(closingLoan)}
+        open={Boolean(closingLoan)}
+        pending={closeLoan.isPending}
+        title={`Close ${closingLoan?.display_name ?? 'loan'}?`}
+      />
     </Stack>
   );
 }
