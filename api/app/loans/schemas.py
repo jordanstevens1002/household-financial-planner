@@ -69,7 +69,6 @@ class LoanUpdate(BaseModel):
     interest_calculation_method: InterestCalculationMethod | None = None
     repayment_frequency: RepaymentFrequency | None = None
     is_interest_only: bool | None = None
-    is_active: bool | None = None
     notes: str | None = Field(default=None, max_length=2000)
 
     @field_validator("account_reference_masked")
@@ -85,7 +84,6 @@ class LoanUpdate(BaseModel):
             "display_name",
             "initial_interest_rate",
             "interest_calculation_method",
-            "is_active",
             "is_interest_only",
             "loan_type_id",
             "opening_balance",
@@ -98,6 +96,11 @@ class LoanUpdate(BaseModel):
         ):
             raise ValueError("required loan fields cannot be cleared")
         return self
+
+
+class LoanCloseCreate(BaseModel):
+    effective_date: date
+    notes: str | None = Field(default=None, max_length=2000)
 
 
 class LoanGroupCreate(BaseModel):

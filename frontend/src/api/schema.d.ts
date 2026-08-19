@@ -750,6 +750,23 @@ export interface paths {
         patch: operations["update_loan_api_v1_loans__loan_id__patch"];
         trace?: never;
     };
+    "/api/v1/loans/{loan_id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close Loan */
+        post: operations["close_loan_api_v1_loans__loan_id__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/loans/{loan_id}/events": {
         parameters: {
             query?: never;
@@ -2384,6 +2401,16 @@ export interface components {
             /** Unresolved Identity Ids */
             unresolved_identity_ids: string[];
         };
+        /** LoanCloseCreate */
+        LoanCloseCreate: {
+            /**
+             * Effective Date
+             * Format: date
+             */
+            effective_date: string;
+            /** Notes */
+            notes?: string | null;
+        };
         /** LoanCreate */
         LoanCreate: {
             /** Account Reference Masked */
@@ -2672,8 +2699,6 @@ export interface components {
             /** Initial Interest Rate */
             initial_interest_rate?: number | string | null;
             interest_calculation_method?: components["schemas"]["InterestCalculationMethod"] | null;
-            /** Is Active */
-            is_active?: boolean | null;
             /** Is Interest Only */
             is_interest_only?: boolean | null;
             /** Lender */
@@ -6231,6 +6256,43 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["LoanUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_loan_api_v1_loans__loan_id__close_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                loan_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoanCloseCreate"];
             };
         };
         responses: {

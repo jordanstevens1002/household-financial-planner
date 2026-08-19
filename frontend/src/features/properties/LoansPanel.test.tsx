@@ -272,6 +272,18 @@ describe('property loan records', () => {
           current = { ...current, ...patch };
           return Promise.resolve(response(current));
         }
+        if (
+          path.endsWith(`/loans/${current.id}/close`) &&
+          init?.method === 'POST'
+        ) {
+          const close = JSON.parse(init.body as string) as Record<
+            string,
+            unknown
+          >;
+          patches.push(close);
+          current = { ...current, is_active: false };
+          return Promise.resolve(response(current));
+        }
         throw new Error(`Unexpected request: ${path}`);
       }),
     );
@@ -307,7 +319,9 @@ describe('property loan records', () => {
     );
     await user.click(screen.getByRole('button', { name: 'Close loan' }));
     expect(await screen.findByText('Loan closed')).toBeVisible();
-    expect(patches[1]).toEqual({ is_active: false });
+    const effectiveDate = patches[1]?.effective_date;
+    expect(typeof effectiveDate).toBe('string');
+    expect(effectiveDate as string).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(await screen.findByText('Closed')).toBeVisible();
   }, 15_000);
 

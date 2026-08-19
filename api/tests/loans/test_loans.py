@@ -143,10 +143,25 @@ async def test_loan_can_be_corrected_and_closed_with_audit(
     )
     assert cannot_clear_required.status_code == 422
 
-    closed = await client.patch(f"/api/v1/loans/{loan['id']}", json={"is_active": False})
+    closed = await client.post(
+        f"/api/v1/loans/{loan['id']}/close",
+        json={"effective_date": "2020-04-15"},
+    )
     assert closed.status_code == 200
     assert closed.json()["is_active"] is False
-    assert audit_events[-1][1]["changed_fields"] == ["is_active"]
+    assert audit_events[-1][0] == "loan_closed"
+    assert audit_events[-1][1]["effective_date"] == "2020-04-15"
+
+    before_closure = await client.get(
+        f"/api/v1/households/{loan_setup['household_id']}/cashflow",
+        params={"as_of": "2020-03-01"},
+    )
+    assert before_closure.json()["annual_loan_repayments"] == "39000.00"
+    after_closure = await client.get(
+        f"/api/v1/households/{loan_setup['household_id']}/cashflow",
+        params={"as_of": "2020-05-01"},
+    )
+    assert after_closure.json()["annual_loan_repayments"] == "0.00"
 
 
 async def test_loan_account_reference_must_be_explicitly_masked(

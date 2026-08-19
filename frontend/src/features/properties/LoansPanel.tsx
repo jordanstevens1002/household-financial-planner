@@ -26,6 +26,7 @@ import { EmptyState } from '../../shared/EmptyState';
 import { formatCurrency, formatDate } from '../../shared/format';
 import { useNotification } from '../../shared/notificationContext';
 import { useAuth } from '../auth/AuthContext';
+import { localCalendarDate } from '../people/localDate';
 
 type Loan = components['schemas']['LoanRead'];
 type Lookup = components['schemas']['LookupRead'];
@@ -253,10 +254,10 @@ export function LoansPanel({
   });
   const closeLoan = useMutation({
     mutationFn: (loan: Loan) =>
-      apiRequest<Loan>(`/api/v1/loans/${loan.id}`, {
-        body: JSON.stringify({ is_active: false }),
+      apiRequest<Loan>(`/api/v1/loans/${loan.id}/close`, {
+        body: JSON.stringify({ effective_date: localCalendarDate() }),
         csrfToken: auth.csrfToken(),
-        method: 'PATCH',
+        method: 'POST',
       }),
     onError: (error) => notify(errorMessage(error), 'error'),
     onSuccess: async () => {

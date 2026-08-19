@@ -77,7 +77,8 @@ decorators, so route changes require an intentional matrix update.
 | POST | `/api/v1/households/{household_id}/loan-groups` | Split-loan group | #45 |
 | POST | `/api/v1/households/{household_id}/loans` | Loan creation | #45 (React property workflow) |
 | GET | `/api/v1/loans/{loan_id}` | Loan detail | #45 |
-| PATCH | `/api/v1/loans/{loan_id}` | Audited loan correction or closure | #45 (React property workflow) |
+| PATCH | `/api/v1/loans/{loan_id}` | Audited loan correction | #45 (React property workflow) |
+| POST | `/api/v1/loans/{loan_id}/close` | Dated, audited loan closure | #45 (React property workflow) |
 | GET | `/api/v1/loans/{loan_id}/repayment-responsibilities` | Responsibility history | #45 |
 | POST | `/api/v1/loans/{loan_id}/repayment-responsibilities` | Advanced responsibility override | #45 |
 | POST | `/api/v1/loans/{loan_id}/events` | Dated loan event | #46 |
