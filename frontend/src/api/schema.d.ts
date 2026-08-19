@@ -1736,7 +1736,7 @@ export interface components {
          * DebtReconciliationStatus
          * @enum {string}
          */
-        DebtReconciliationStatus: "NO_LINKED_LOANS" | "RECORDED_DEBT_MISSING" | "MATCHED" | "MISMATCH" | "CURRENCY_MISMATCH";
+        DebtReconciliationStatus: "NO_LINKED_LOANS" | "RECORDED_DEBT_MISSING" | "MATCHED" | "MISMATCH" | "CURRENCY_MISMATCH" | "UNPROJECTABLE_LOANS";
         /**
          * EventClassification
          * @enum {string}
@@ -2483,10 +2483,12 @@ export interface components {
         LoanDebtBalanceRead: {
             /** Currency */
             currency: string;
+            /** Data Quality Flags */
+            data_quality_flags?: string[];
             /** Display Name */
             display_name: string;
             /** Effective Balance */
-            effective_balance: string;
+            effective_balance: string | null;
             /**
              * Loan Id
              * Format: uuid

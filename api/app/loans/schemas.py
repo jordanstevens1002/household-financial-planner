@@ -128,13 +128,15 @@ class DebtReconciliationStatus(StrEnum):
     MATCHED = "MATCHED"
     MISMATCH = "MISMATCH"
     CURRENCY_MISMATCH = "CURRENCY_MISMATCH"
+    UNPROJECTABLE_LOANS = "UNPROJECTABLE_LOANS"
 
 
 class LoanDebtBalanceRead(BaseModel):
     loan_id: uuid.UUID
     display_name: str
     currency: str
-    effective_balance: Decimal
+    effective_balance: Decimal | None
+    data_quality_flags: list[str] = Field(default_factory=list)
 
 
 class PropertyDebtReconciliationRead(BaseModel):

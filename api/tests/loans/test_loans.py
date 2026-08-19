@@ -336,6 +336,87 @@ async def test_property_debt_reconciliation_preserves_household_isolation(
     assert response.status_code == 404
 
 
+async def test_property_debt_reconciliation_reports_unprojectable_open_ended_loan(
+    client: AsyncClient, loan_setup: dict[str, str]
+) -> None:
+    loan = await create_loan(
+        client,
+        loan_setup,
+        display_name="Repayment not recorded",
+        scheduled_repayment=None,
+        term_months=None,
+    )
+    response = await client.get(
+        f"/api/v1/properties/{loan_setup['property_id']}/loan-debt-reconciliation",
+        params={"as_of": "2020-02-01"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "UNPROJECTABLE_LOANS"
+    assert response.json()["linked_loan_balance"] is None
+    assert response.json()["loans"] == [
+        {
+            "loan_id": loan["id"],
+            "display_name": "Repayment not recorded",
+            "currency": "AUD",
+            "effective_balance": None,
+            "data_quality_flags": ["LOAN_BALANCE_CANNOT_BE_PROJECTED"],
+        }
+    ]
+
+
+async def test_property_debt_reconciliation_bounds_horizon_and_handles_many_loans(
+    client: AsyncClient, loan_setup: dict[str, str]
+) -> None:
+    endpoint = f"/api/v1/properties/{loan_setup['property_id']}/loan-debt-reconciliation"
+    distant = await client.get(endpoint, params={"as_of": "9999-12-31"})
+    assert distant.status_code == 422
+    assert "100 years" in distant.json()["detail"]
+
+    for index in range(12):
+        await create_loan(
+            client,
+            loan_setup,
+            display_name=f"Loan {index + 1}",
+            frequency="WEEKLY",
+            opening_balance="100.00",
+            initial_interest_rate="0.0000",
+            scheduled_repayment="10.00",
+            term_months=None,
+        )
+    response = await client.get(endpoint, params={"as_of": "2020-01-15"})
+    assert response.status_code == 200
+    assert response.json()["status"] == "RECORDED_DEBT_MISSING"
+    assert len(response.json()["loans"]) == 12
+
+
+async def test_schedule_resumes_repayments_after_payoff_and_redraw(
+    client: AsyncClient, loan_setup: dict[str, str]
+) -> None:
+    loan = await create_loan(
+        client,
+        loan_setup,
+        opening_balance="10000.00",
+        initial_interest_rate="0.0000",
+        scheduled_repayment="10000.00",
+        term_months=12,
+    )
+    await add_loan_event(
+        client,
+        loan_setup,
+        str(loan["id"]),
+        "LOAN_REDRAWN",
+        amount=5000,
+        effective_at="2020-02-15T00:00:00+00:00",
+    )
+    schedule = await client.get(
+        f"/api/v1/loans/{loan['id']}/schedule",
+        params={"through_date": "2020-03-01"},
+    )
+    assert schedule.status_code == 200
+    assert schedule.json()["remaining_balance"] == "0.00"
+    assert schedule.json()["entries"][-1]["opening_balance"] == "5000.00"
+
+
 async def test_loan_repayments_flow_into_cashflow_and_follow_dated_events(
     client: AsyncClient, loan_setup: dict[str, str]
 ) -> None:

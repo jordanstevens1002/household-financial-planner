@@ -57,6 +57,7 @@ from app.models import (
 
 router = APIRouter(prefix="/api/v1", tags=["loans"])
 logger = get_logger(component="loans")
+MAX_RECONCILIATION_YEARS = 100
 
 LOAN_EVENT_CODES = {
     "LOAN_RATE_CHANGED",
@@ -192,6 +193,12 @@ async def property_loan_debt_reconciliation(
     user: ApplicationUser = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ) -> PropertyDebtReconciliationRead:
+    latest_supported_date = date(date.today().year + MAX_RECONCILIATION_YEARS, 12, 31)
+    if as_of > latest_supported_date:
+        raise HTTPException(
+            422,
+            f"as_of cannot be more than {MAX_RECONCILIATION_YEARS} years in the future",
+        )
     property_record = await session.scalar(
         select(Property)
         .join(HouseholdMembership, HouseholdMembership.household_id == Property.household_id)
@@ -220,8 +227,27 @@ async def property_loan_debt_reconciliation(
         )
     )
     balances: list[LoanDebtBalanceRead] = []
+    unprojectable_names: list[str] = []
     for loan in loans:
-        schedule = generate_schedule(loan, await _loan_events(loan.id, session), as_of)
+        try:
+            schedule = generate_schedule(
+                loan,
+                await _loan_events(loan.id, session),
+                as_of,
+                include_entries=False,
+            )
+        except ValueError:
+            unprojectable_names.append(loan.display_name)
+            balances.append(
+                LoanDebtBalanceRead(
+                    loan_id=loan.id,
+                    display_name=loan.display_name,
+                    currency=loan.currency,
+                    effective_balance=None,
+                    data_quality_flags=["LOAN_BALANCE_CANNOT_BE_PROJECTED"],
+                )
+            )
+            continue
         if schedule.remaining_balance > 0:
             balances.append(
                 LoanDebtBalanceRead(
@@ -232,11 +258,18 @@ async def property_loan_debt_reconciliation(
                 )
             )
     recorded = baseline.loan_balance_total if baseline is not None else None
-    currencies = {item.currency for item in balances}
+    currencies = {item.currency for item in balances if item.effective_balance is not None}
     warnings: list[str] = []
     linked_total: Decimal | None
     difference: Decimal | None
-    if currencies - {property_record.default_currency}:
+    if unprojectable_names:
+        status_value = DebtReconciliationStatus.UNPROJECTABLE_LOANS
+        linked_total = None
+        difference = None
+        warnings.append(
+            "Effective balances cannot be projected for: " + ", ".join(unprojectable_names)
+        )
+    elif currencies - {property_record.default_currency}:
         status_value = DebtReconciliationStatus.CURRENCY_MISMATCH
         linked_total = None
         difference = None
@@ -244,7 +277,12 @@ async def property_loan_debt_reconciliation(
             "Linked loans use a currency other than the property's currency and cannot be totalled."
         )
     else:
-        linked_total = money(sum((item.effective_balance for item in balances), Decimal("0")))
+        linked_total = money(
+            sum(
+                (item.effective_balance for item in balances if item.effective_balance is not None),
+                Decimal("0"),
+            )
+        )
         difference = linked_total - recorded if recorded is not None else None
         if not balances:
             status_value = DebtReconciliationStatus.NO_LINKED_LOANS

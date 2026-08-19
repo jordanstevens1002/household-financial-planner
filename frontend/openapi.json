@@ -857,7 +857,8 @@
           "RECORDED_DEBT_MISSING",
           "MATCHED",
           "MISMATCH",
-          "CURRENCY_MISMATCH"
+          "CURRENCY_MISMATCH",
+          "UNPROJECTABLE_LOANS"
         ],
         "title": "DebtReconciliationStatus",
         "type": "string"
@@ -3143,14 +3144,28 @@
             "title": "Currency",
             "type": "string"
           },
+          "data_quality_flags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Data Quality Flags",
+            "type": "array"
+          },
           "display_name": {
             "title": "Display Name",
             "type": "string"
           },
           "effective_balance": {
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Effective Balance",
-            "type": "string"
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Balance"
           },
           "loan_id": {
             "format": "uuid",
