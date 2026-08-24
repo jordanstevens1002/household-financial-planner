@@ -405,12 +405,6 @@ describe('property overview workflows', () => {
     const createdPropertyId = 'd5dab911-5253-4cb1-b854-183faba41f4b';
     let saved: Record<string, unknown> | null = null;
     let created = false;
-    let createAttempts = 0;
-    let refetchReleased = false;
-    let resolveRefetch!: (response: Response) => void;
-    const delayedSummary = new Promise<Response>((resolve) => {
-      resolveRefetch = resolve;
-    });
     const fallback = standardFetch([]);
     vi.stubGlobal(
       'fetch',
@@ -418,29 +412,21 @@ describe('property overview workflows', () => {
         const path = pathOf(input);
         if (path.endsWith('/property-summaries')) {
           if (!created) return Promise.resolve(response([]));
-          return refetchReleased
-            ? Promise.resolve(
-                response([
-                  {
-                    ...summary,
-                    display_name: 'New current home',
-                    id: createdPropertyId,
-                  },
-                ]),
-              )
-            : delayedSummary;
+          return Promise.resolve(
+            response([
+              {
+                ...summary,
+                display_name: 'New current home',
+                id: createdPropertyId,
+              },
+            ]),
+          );
         }
         if (path.endsWith('/reference/countries')) {
           return Promise.resolve(response([]));
         }
         if (path.endsWith('/properties/wizard') && init?.method === 'POST') {
-          createAttempts += 1;
           saved = JSON.parse(init.body as string) as Record<string, unknown>;
-          if (createAttempts === 1) {
-            return Promise.resolve(
-              response({ detail: 'Debt changed while saving' }, 409),
-            );
-          }
           created = true;
           return Promise.resolve(
             response(
@@ -493,23 +479,34 @@ describe('property overview workflows', () => {
     await user.click(
       await screen.findByRole('button', { name: 'Add property' }),
     );
-    await user.type(screen.getByLabelText('Property name'), 'Harbour home');
+    fireEvent.change(screen.getByLabelText('Property name'), {
+      target: { value: 'Harbour home' },
+    });
     await user.click(screen.getByLabelText('Property type'));
     await user.click(screen.getByRole('option', { name: 'House' }));
     await user.click(screen.getByLabelText('Current use'));
     await user.click(screen.getByRole('option', { name: 'Home' }));
-    await user.type(screen.getByLabelText('Property value (NZD)'), '780000');
-    await user.type(
-      screen.getByLabelText('Total property debt (NZD)'),
-      '310000',
-    );
+    fireEvent.change(screen.getByLabelText('Property value (NZD)'), {
+      target: { value: '780000' },
+    });
+    fireEvent.change(screen.getByLabelText('Total property debt (NZD)'), {
+      target: { value: '310000' },
+    });
     await user.click(screen.getByRole('button', { name: 'Add loan' }));
-    await user.type(screen.getByLabelText('Loan name'), 'Main mortgage');
+    fireEvent.change(screen.getByLabelText('Loan name'), {
+      target: { value: 'Main mortgage' },
+    });
     await user.click(screen.getByLabelText('Loan type'));
     await user.click(screen.getByRole('option', { name: 'Home loan' }));
-    await user.type(screen.getByLabelText('Opening balance (NZD)'), '310000');
-    await user.type(screen.getByLabelText('Annual interest rate %'), '5.75');
-    await user.type(screen.getByLabelText('Scheduled repayment (NZD)'), '2100');
+    fireEvent.change(screen.getByLabelText('Opening balance (NZD)'), {
+      target: { value: '310000' },
+    });
+    fireEvent.change(screen.getByLabelText('Annual interest rate %'), {
+      target: { value: '5.75' },
+    });
+    fireEvent.change(screen.getByLabelText('Scheduled repayment (NZD)'), {
+      target: { value: '2100' },
+    });
     await user.click(screen.getByLabelText('Repayment frequency'));
     await user.click(screen.getByRole('option', { name: 'Monthly' }));
     await user.click(screen.getByLabelText('Repayment type'));
@@ -518,11 +515,6 @@ describe('property overview workflows', () => {
     );
     await user.click(screen.getByLabelText('Interest calculation'));
     await user.click(screen.getByRole('option', { name: 'Daily' }));
-    await user.click(screen.getByRole('button', { name: 'Save property' }));
-
-    expect(
-      await screen.findByText(/Property could not be added.*Debt changed/i),
-    ).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Save property' }));
 
     expect(await screen.findByText('Property added')).toBeVisible();
@@ -559,16 +551,6 @@ describe('property overview workflows', () => {
     };
     expect(submittedSetup.loans[0]?.opening_balance_date).toBe(
       submittedSetup.baseline.baseline_date,
-    );
-    refetchReleased = true;
-    resolveRefetch(
-      response([
-        {
-          ...summary,
-          display_name: 'New current home',
-          id: createdPropertyId,
-        },
-      ]),
     );
     await waitFor(() =>
       expect(screen.getByRole('table')).toHaveTextContent('New current home'),
@@ -698,6 +680,7 @@ describe('property overview workflows', () => {
   it('accepts a debt-free current position without setup loans', async () => {
     const user = userEvent.setup();
     let saved: { loans?: unknown[] } | null = null;
+    let createAttempts = 0;
     const fallback = standardFetch([]);
     vi.stubGlobal(
       'fetch',
@@ -705,7 +688,11 @@ describe('property overview workflows', () => {
         const path = pathOf(input);
         if (path.endsWith('/reference/countries')) return response([]);
         if (path.endsWith('/properties/wizard') && init?.method === 'POST') {
+          createAttempts += 1;
           saved = JSON.parse(init.body as string) as typeof saved;
+          if (createAttempts === 1) {
+            return response({ detail: 'Debt changed while saving' }, 409);
+          }
           return response(
             {
               baseline: {
@@ -749,8 +736,13 @@ describe('property overview workflows', () => {
     });
     await user.click(screen.getByRole('button', { name: 'Save property' }));
 
+    expect(
+      await screen.findByText(/Property could not be added.*Debt changed/i),
+    ).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Save property' }));
     expect(await screen.findByText('Property added')).toBeVisible();
     expect((saved as unknown as { loans: unknown[] }).loans).toEqual([]);
+    expect(createAttempts).toBe(2);
   });
 
   it('blocks debt setup and retries when loan types cannot be loaded', async () => {
