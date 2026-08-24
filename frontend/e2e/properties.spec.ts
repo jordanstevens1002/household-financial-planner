@@ -202,8 +202,8 @@ test('selects and restores a dated property position', async ({ page }) => {
       return;
     }
     if (
-      path.endsWith(`/loan-groups/${loanGroupId}`) &&
-      request.method() === 'DELETE'
+      path.endsWith(`/loan-groups/${loanGroupId}/remove`) &&
+      request.method() === 'POST'
     ) {
       loanGroups = [];
       if (loanPayload) loanPayload = { ...loanPayload, loan_group_id: null };

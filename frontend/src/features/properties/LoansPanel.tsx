@@ -17,7 +17,7 @@ import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
-import { apiRequest } from '../../api/client';
+import { ApiError, apiRequest } from '../../api/client';
 import type { components } from '../../api/schema';
 import { AdvancedSection } from '../../shared/AdvancedSection';
 import { ConfirmDialog } from '../../shared/ConfirmDialog';
@@ -342,20 +342,32 @@ export function LoansPanel({
       group: LoanGroup;
       assignedLoanIds: string[];
     }) => {
-      const confirmation = new URLSearchParams();
-      if (assignedLoanIds.length) {
-        confirmation.set('confirm_assigned', 'true');
-        assignedLoanIds.forEach((id) =>
-          confirmation.append('assigned_loan_id', id),
-        );
-      }
-      const query = confirmation.size ? `?${confirmation.toString()}` : '';
-      return apiRequest<void>(`/api/v1/loan-groups/${group.id}${query}`, {
-        csrfToken: auth.csrfToken(),
-        method: 'DELETE',
-      });
+      const populated = assignedLoanIds.length > 0;
+      return apiRequest<void>(
+        `/api/v1/loan-groups/${group.id}${populated ? '/remove' : ''}`,
+        {
+          body: populated
+            ? JSON.stringify({ assigned_loan_ids: assignedLoanIds })
+            : undefined,
+          csrfToken: auth.csrfToken(),
+          method: populated ? 'POST' : 'DELETE',
+        },
+      );
     },
-    onError: (error) => notify(errorMessage(error), 'error'),
+    onError: async (error) => {
+      notify(errorMessage(error), 'error');
+      if (error instanceof ApiError && error.status === 409) {
+        setRemovingGroup(null);
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: ['loan-groups', householdId],
+          }),
+          queryClient.invalidateQueries({
+            queryKey: ['household-loans', householdId],
+          }),
+        ]);
+      }
+    },
     onSuccess: async () => {
       setRemovingGroup(null);
       notify('Split group removed', 'success');

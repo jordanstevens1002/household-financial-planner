@@ -3340,6 +3340,25 @@
         "title": "LoanGroupRead",
         "type": "object"
       },
+      "LoanGroupRemovalCreate": {
+        "properties": {
+          "assigned_loan_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 10000,
+            "minItems": 1,
+            "title": "Assigned Loan Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "assigned_loan_ids"
+        ],
+        "title": "LoanGroupRemovalCreate",
+        "type": "object"
+      },
       "LoanGroupUpdate": {
         "properties": {
           "display_name": {
@@ -12793,36 +12812,6 @@
             }
           },
           {
-            "in": "query",
-            "name": "confirm_assigned",
-            "required": false,
-            "schema": {
-              "default": false,
-              "title": "Confirm Assigned",
-              "type": "boolean"
-            }
-          },
-          {
-            "in": "query",
-            "name": "assigned_loan_id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "items": {
-                    "format": "uuid",
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Assigned Loan Id"
-            }
-          },
-          {
             "in": "header",
             "name": "X-Development-Subject",
             "required": false,
@@ -12932,6 +12921,73 @@
           }
         ],
         "summary": "Update Loan Group",
+        "tags": [
+          "loans"
+        ]
+      }
+    },
+    "/api/v1/loan-groups/{group_id}/remove": {
+      "post": {
+        "operationId": "remove_populated_loan_group_api_v1_loan_groups__group_id__remove_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "group_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Group Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoanGroupRemovalCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remove Populated Loan Group",
         "tags": [
           "loans"
         ]
