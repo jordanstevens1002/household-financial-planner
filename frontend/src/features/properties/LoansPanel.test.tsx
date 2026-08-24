@@ -22,6 +22,7 @@ const householdId = '1bfbb15e-5293-4e29-95e0-f86b82e62528';
 const propertyId = '818badb5-2518-4c3f-8f6d-bb6ee750e606';
 const otherPropertyId = '19528fd9-ad60-4621-b41a-012f21a98e2e';
 const loanTypeId = '951bd6cd-82db-4a37-a56f-95c36b02f9d1';
+const groupId = '47cf84d0-3151-4b75-9667-e5daa7e822d9';
 
 function response(body: unknown, status = 200) {
   return new Response(status === 204 ? null : JSON.stringify(body), {
@@ -42,7 +43,7 @@ function loan(
   id = '997d68f7-bf03-4f70-97bb-80cfe8619d09',
   property = propertyId,
 ) {
-  return {
+  const record = {
     account_reference_masked: null,
     currency: 'NZD',
     display_name: 'Home loan',
@@ -63,6 +64,22 @@ function loan(
     repayment_frequency: 'MONTHLY',
     scheduled_repayment: '2100.00',
     term_months: 360,
+  };
+  return record as Omit<typeof record, 'loan_group_id'> & {
+    loan_group_id: string | null;
+  };
+}
+
+function group(
+  id = groupId,
+  displayName = 'Fixed splits',
+  property = propertyId,
+) {
+  return {
+    display_name: displayName,
+    household_id: householdId,
+    id,
+    property_id: property,
   };
 }
 
@@ -118,6 +135,8 @@ describe('property loan records', () => {
               },
             ]),
           );
+        if (path.endsWith(`/households/${householdId}/loan-groups`))
+          return Promise.resolve(response([]));
         if (path.endsWith(`/households/${householdId}/loans`))
           return Promise.resolve(
             response([
@@ -141,6 +160,9 @@ describe('property loan records', () => {
     ).toBeVisible();
     expect(within(table).getAllByRole('row')).toHaveLength(2);
     expect(screen.queryByRole('button', { name: 'Add loan' })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Add split group' }),
+    ).toBeNull();
   });
 
   it('validates material fields and creates a property-linked loan', async () => {
@@ -161,6 +183,8 @@ describe('property loan records', () => {
               },
             ]),
           );
+        if (path.endsWith(`/households/${householdId}/loan-groups`))
+          return Promise.resolve(response([]));
         if (path.endsWith(`/households/${householdId}/loans`)) {
           if (init?.method === 'POST') {
             saved = JSON.parse(init.body as string) as Record<string, unknown>;
@@ -221,6 +245,8 @@ describe('property loan records', () => {
         const path = pathOf(input);
         if (path.endsWith('/lookups/loan_type'))
           return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loan-groups`))
+          return Promise.resolve(response([]));
         if (path.endsWith(`/households/${householdId}/loans`)) {
           if (failed) {
             failed = false;
@@ -243,6 +269,40 @@ describe('property loan records', () => {
     expect(await screen.findByText('No property loans')).toBeVisible();
   });
 
+  it('shows a recoverable split-group catalogue failure', async () => {
+    let failed = true;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input) => {
+        const path = pathOf(input);
+        if (path.endsWith('/lookups/loan_type'))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loans`))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loan-groups`)) {
+          if (failed) {
+            failed = false;
+            return Promise.resolve(response({ detail: 'Unavailable' }, 503));
+          }
+          return Promise.resolve(response([]));
+        }
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    renderPanel();
+    expect(
+      await screen.findByText(/Loan split groups could not be loaded/),
+    ).toBeVisible();
+    await userEvent
+      .setup()
+      .click(screen.getByRole('button', { name: 'Retry' }));
+    await waitFor(() =>
+      expect(
+        screen.queryByText(/Loan split groups could not be loaded/),
+      ).toBeNull(),
+    );
+  });
+
   it('corrects and closes a loan while explaining conflicting recorded debt', async () => {
     let current = loan();
     const patches: Record<string, unknown>[] = [];
@@ -261,6 +321,8 @@ describe('property loan records', () => {
               },
             ]),
           );
+        if (path.endsWith(`/households/${householdId}/loan-groups`))
+          return Promise.resolve(response([]));
         if (path.endsWith(`/households/${householdId}/loans`))
           return Promise.resolve(response([current]));
         if (path.endsWith(`/loans/${current.id}`) && init?.method === 'PATCH') {
@@ -332,6 +394,8 @@ describe('property loan records', () => {
         const path = pathOf(input);
         if (path.endsWith('/lookups/loan_type'))
           return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loan-groups`))
+          return Promise.resolve(response([]));
         if (path.endsWith(`/households/${householdId}/loans`))
           return Promise.resolve(response([loan()]));
         throw new Error(`Unexpected request: ${path}`);
@@ -351,4 +415,130 @@ describe('property loan records', () => {
       await screen.findByText(/Hide all but the final 2 to 4 characters/),
     ).toBeVisible();
   });
+
+  it('creates, presents, assigns, renames and removes split groups', async () => {
+    const emptyGroupId = 'a7e1ef72-7894-41d6-9303-22aa98c108f6';
+    let groups = [group(), group(emptyGroupId, 'Offset split')];
+    let currentLoans: ReturnType<typeof loan>[] = [
+      { ...loan(), loan_group_id: groupId },
+      loan('17223c91-b956-4f70-8431-01fe4a140eb8'),
+    ];
+    const writes: Array<{ method: string; path: string; body?: unknown }> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/lookups/loan_type'))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loans`))
+          return Promise.resolve(response(currentLoans));
+        if (path.endsWith(`/households/${householdId}/loan-groups`)) {
+          if (init?.method === 'POST') {
+            const body = JSON.parse(init.body as string) as {
+              display_name: string;
+            };
+            const created = group(
+              'b20e35bc-2bfe-42b0-ad33-38e3507787ab',
+              body.display_name,
+            );
+            groups = [...groups, created];
+            writes.push({ body, method: 'POST', path });
+            return Promise.resolve(response(created, 201));
+          }
+          return Promise.resolve(response(groups));
+        }
+        const editedLoan = currentLoans[1];
+        if (!editedLoan) throw new Error('Expected an ungrouped loan');
+        if (path.endsWith(`/loans/${editedLoan.id}`)) {
+          const body = JSON.parse(init?.body as string) as Record<
+            string,
+            unknown
+          >;
+          const updated = { ...editedLoan, ...body };
+          currentLoans = [currentLoans[0]!, updated];
+          writes.push({ body, method: 'PATCH', path });
+          return Promise.resolve(response(currentLoans[1]));
+        }
+        const matchedGroup = groups.find((item) =>
+          path.endsWith(`/loan-groups/${item.id}`),
+        );
+        if (matchedGroup && init?.method === 'PATCH') {
+          const body = JSON.parse(init.body as string) as {
+            display_name: string;
+          };
+          groups = groups.map((item) =>
+            item.id === matchedGroup.id
+              ? { ...item, display_name: body.display_name }
+              : item,
+          );
+          writes.push({ body, method: 'PATCH', path });
+          return Promise.resolve(
+            response({ ...matchedGroup, display_name: body.display_name }),
+          );
+        }
+        if (matchedGroup && init?.method === 'DELETE') {
+          groups = groups.filter((item) => item.id !== matchedGroup.id);
+          writes.push({ method: 'DELETE', path });
+          return Promise.resolve(response(null, 204));
+        }
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    const user = userEvent.setup();
+    renderPanel();
+
+    const table = await screen.findByRole('table', { name: 'Property loans' });
+    expect(within(table).getByText('Fixed splits')).toBeVisible();
+    expect(within(table).getByText('Ungrouped')).toBeVisible();
+    expect(
+      screen.getByText(/derived opening balance NZ\$310,000\.00/),
+    ).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Add split group' }));
+    await user.click(screen.getByRole('button', { name: 'Add group' }));
+    expect(await screen.findByText('Enter a split group name')).toBeVisible();
+    await user.type(
+      screen.getByLabelText('Split group name'),
+      'Variable split',
+    );
+    await user.click(screen.getByRole('button', { name: 'Add group' }));
+    expect(await screen.findByText('Split group added')).toBeVisible();
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+    await user.click(
+      screen.getByRole('button', { name: 'Rename Offset split' }),
+    );
+    await user.clear(screen.getByLabelText('Split group name'));
+    await user.type(
+      screen.getByLabelText('Split group name'),
+      'Offset facility',
+    );
+    await user.click(screen.getByRole('button', { name: 'Save name' }));
+    expect(await screen.findByText('Split group renamed')).toBeVisible();
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+    await user.click(
+      screen.getByRole('button', { name: 'Remove Offset facility' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Remove group' }));
+    expect(await screen.findByText('Split group removed')).toBeVisible();
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+    const currentTable = screen.getByRole('table', { name: 'Property loans' });
+    const secondRow = within(currentTable).getAllByRole('row')[2]!;
+    await user.click(
+      within(secondRow).getByRole('button', { name: 'Correct' }),
+    );
+    await choose('Split group (optional)', 'Fixed splits');
+    await user.click(screen.getByRole('button', { name: 'Save correction' }));
+    await waitFor(() =>
+      expect(
+        writes.some(
+          (write) =>
+            (write.body as Record<string, unknown> | undefined)
+              ?.loan_group_id === groupId,
+        ),
+      ).toBe(true),
+    );
+  }, 30_000);
 });

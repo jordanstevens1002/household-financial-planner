@@ -7,6 +7,7 @@ test('selects and restores a dated property position', async ({ page }) => {
   const typeId = '16b3f01b-ff76-451f-a4bd-a2ddf89834fd';
   const statusId = '85e30193-a324-4d22-9065-e25d819f6530';
   const loanTypeId = 'b7efb821-85ea-45c6-a4af-bde69c898d87';
+  const loanGroupId = '39ba4179-2f46-42ae-8e09-5696079c0fd9';
   const requestedDates: string[] = [];
   let valuationAdded = false;
   let valuationPayload: Record<string, unknown> | null = null;
@@ -14,6 +15,7 @@ test('selects and restores a dated property position', async ({ page }) => {
   let rentalPayload: Record<string, unknown> | null = null;
   let expensePayload: Record<string, unknown> | null = null;
   let loanPayload: Record<string, unknown> | null = null;
+  let loanGroups: Record<string, unknown>[] = [];
   let wizardPayload: Record<string, unknown> | null = null;
   await page.addInitScript((id) => {
     localStorage.setItem('hfp.selection.household', id);
@@ -168,6 +170,29 @@ test('selects and restores a dated property position', async ({ page }) => {
           },
         ],
       });
+      return;
+    }
+    if (path.endsWith(`/households/${householdId}/loan-groups`)) {
+      if (request.method() === 'POST') {
+        const payload = request.postDataJSON() as Record<string, unknown>;
+        loanGroups = [
+          {
+            ...payload,
+            household_id: householdId,
+            id: loanGroupId,
+          },
+        ];
+        await route.fulfill({
+          contentType: 'application/json',
+          json: loanGroups[0],
+          status: 201,
+        });
+      } else {
+        await route.fulfill({
+          contentType: 'application/json',
+          json: loanGroups,
+        });
+      }
       return;
     }
     if (path.endsWith(`/households/${householdId}/loans`)) {
@@ -399,6 +424,11 @@ test('selects and restores a dated property position', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Review loans' }).click();
   await expect(page.getByText('No property loans')).toBeVisible();
+  await page.getByRole('button', { name: 'Add split group' }).click();
+  const groupDialog = page.getByRole('dialog', { name: 'Add a split group' });
+  await groupDialog.getByLabel('Split group name').fill('Mortgage package');
+  await groupDialog.getByRole('button', { name: 'Add group' }).click();
+  await expect(page.getByText('Split group added')).toBeVisible();
   await page.getByRole('button', { name: 'Add loan' }).click();
   const loanDialog = page.getByRole('dialog', { name: 'Add a property loan' });
   await loanDialog.getByLabel('Loan name').fill('Main mortgage');
@@ -407,6 +437,8 @@ test('selects and restores a dated property position', async ({ page }) => {
   await loanDialog.getByLabel('Opening balance (NZD)').fill('305000');
   await loanDialog.getByLabel('Opening balance date').fill('2026-06-30');
   await loanDialog.getByLabel('Annual interest rate %').fill('5.75');
+  await loanDialog.getByLabel('Split group (optional)').click();
+  await page.getByRole('option', { name: 'Mortgage package' }).click();
   await loanDialog.getByLabel('Scheduled repayment (NZD)').fill('2200');
   await loanDialog.getByLabel('Repayment frequency').click();
   await page.getByRole('option', { name: 'Monthly' }).click();
@@ -425,11 +457,15 @@ test('selects and restores a dated property position', async ({ page }) => {
       currency: 'NZD',
       initial_interest_rate: '5.75',
       loan_type_id: loanTypeId,
+      loan_group_id: loanGroupId,
       opening_balance: '305000',
       property_id: propertyId,
       repayment_frequency: 'MONTHLY',
       scheduled_repayment: '2200',
     });
+  await expect(
+    page.getByText(/derived opening balance NZ\$305,000\.00/),
+  ).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole('button', { name: 'Selected' })).toBeVisible();
