@@ -566,6 +566,7 @@ async def property_wizard(
                 loan_payload.model_copy(
                     update={
                         "currency": property_record.default_currency,
+                        "is_active": True,
                         "property_id": property_record.id,
                     }
                 ),
@@ -608,9 +609,16 @@ async def property_wizard(
     await session.commit()
     logger.info(
         "property_setup_completed",
+        actor_user_id=str(actor.application_user_id),
+        household_id=str(household_id),
         property_id=str(property_record.id),
         mode=payload.mode,
         loan_count=len(loan_records),
+        loan_ids=[str(loan.id) for loan in loan_records],
+        recorded_property_debt=(str(baseline.loan_balance_total) if baseline is not None else None),
+        linked_opening_balance_total=str(
+            sum((loan.opening_balance for loan in loan_records), Decimal("0"))
+        ),
     )
     for record in ownership_records:
         logger.info(

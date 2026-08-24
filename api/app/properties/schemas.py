@@ -181,6 +181,8 @@ class PropertyWizardCreate(BaseModel):
         elif self.loans:
             if self.baseline.loan_balance_total == 0:
                 raise ValueError("a debt-free current position cannot include loans")
+            if any(not loan.is_active for loan in self.loans):
+                raise ValueError("current-position setup loans must be active")
             if any(loan.property_id is not None for loan in self.loans):
                 raise ValueError("property_id is assigned by current-position setup")
             if any(loan.loan_group_id is not None for loan in self.loans):

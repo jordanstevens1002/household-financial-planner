@@ -125,8 +125,16 @@ async def test_current_snapshot_wizard_accepts_no_loan_and_warns_on_incomplete_o
 
 @pytest.mark.parametrize("balances", [("310000.00",), ("200000.00", "110000.00")])
 async def test_current_snapshot_wizard_creates_reconciled_loans_atomically(
-    balances: tuple[str, ...], client: AsyncClient, property_lookups: dict[str, str]
+    balances: tuple[str, ...],
+    client: AsyncClient,
+    property_lookups: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    audit_events: list[tuple[str, dict[str, object]]] = []
+    monkeypatch.setattr(
+        "app.properties.router.logger.info",
+        lambda event, **values: audit_events.append((event, values)),
+    )
     household = await create_household(client)
     response = await client.post(
         f"/api/v1/households/{household['id']}/properties/wizard",
@@ -150,6 +158,50 @@ async def test_current_snapshot_wizard_creates_reconciled_loans_atomically(
     assert len(body["loans"]) == len(balances)
     assert {loan["property_id"] for loan in body["loans"]} == {body["property"]["id"]}
     assert {loan["currency"] for loan in body["loans"]} == {household["currency"]}
+    cashflow = await client.get(
+        f"/api/v1/households/{household['id']}/cashflow",
+        params={"as_of": "2026-07-16"},
+    )
+    assert cashflow.status_code == 200
+    assert cashflow.json()["annual_loan_repayments"] == f"{len(balances) * 25200:.2f}"
+    event, audit = audit_events[-1]
+    assert event == "property_setup_completed"
+    assert audit["actor_user_id"]
+    assert audit["household_id"] == household["id"]
+    assert audit["property_id"] == body["property"]["id"]
+    assert audit["loan_ids"] == [loan["id"] for loan in body["loans"]]
+    assert audit["recorded_property_debt"] == "310000.00"
+    assert audit["linked_opening_balance_total"] == "310000.00"
+
+
+async def test_current_snapshot_wizard_rejects_inactive_setup_loan(
+    client: AsyncClient, property_lookups: dict[str, str], session: AsyncSession
+) -> None:
+    household = await create_household(client)
+    loan = setup_loan_payload(property_lookups, "Already closed", "310000.00")
+    loan["is_active"] = False
+    response = await client.post(
+        f"/api/v1/households/{household['id']}/properties/wizard",
+        json={
+            "mode": "CURRENT_SNAPSHOT",
+            "property": property_payload(property_lookups) | {"display_name": "Inactive loan"},
+            "baseline": {
+                "baseline_date": "2026-07-16",
+                "property_value": "900000.00",
+                "loan_balance_total": "310000.00",
+                "status_id": property_lookups["status"],
+            },
+            "loans": [loan],
+        },
+    )
+    assert response.status_code == 422
+    assert "current-position setup loans must be active" in response.text
+    assert (
+        await session.scalar(
+            select(func.count(Property.id)).where(Property.display_name == "Inactive loan")
+        )
+        == 0
+    )
 
 
 async def test_current_snapshot_wizard_rejects_conflicting_loan_total_without_persisting(
