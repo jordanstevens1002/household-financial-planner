@@ -18,6 +18,7 @@ const householdId = 'dccc2857-cf74-4863-9f00-c99a9f815495';
 const propertyId = '818badb5-2518-4c3f-8f6d-bb6ee750e606';
 const typeId = '16b3f01b-ff76-451f-a4bd-a2ddf89834fd';
 const statusId = '85e30193-a324-4d22-9065-e25d819f6530';
+const loanTypeId = '951bd6cd-82db-4a37-a56f-95c36b02f9d1';
 const expenseTypeId = '487288b5-9cf2-4760-b903-dce0e5c09627';
 const account = {
   display_name: 'Property Owner',
@@ -124,6 +125,17 @@ function standardFetch(
       return Promise.resolve(
         response([
           { id: statusId, code: 'HOME', display_name: 'Home', is_active: true },
+        ]),
+      );
+    if (path.endsWith('/lookups/loan_type'))
+      return Promise.resolve(
+        response([
+          {
+            id: loanTypeId,
+            code: 'HOME_LOAN',
+            display_name: 'Home loan',
+            is_active: true,
+          },
         ]),
       );
     if (path.endsWith(`/properties/${propertyId}`))
@@ -388,16 +400,11 @@ describe('property overview workflows', () => {
     expect(screen.getByRole('table')).toHaveTextContent('House');
   });
 
-  it('creates a current position with only its dated baseline fields', async () => {
+  it('creates a current position and its linked loan atomically', async () => {
     const user = userEvent.setup();
     const createdPropertyId = 'd5dab911-5253-4cb1-b854-183faba41f4b';
     let saved: Record<string, unknown> | null = null;
     let created = false;
-    let refetchReleased = false;
-    let resolveRefetch!: (response: Response) => void;
-    const delayedSummary = new Promise<Response>((resolve) => {
-      resolveRefetch = resolve;
-    });
     const fallback = standardFetch([]);
     vi.stubGlobal(
       'fetch',
@@ -405,17 +412,15 @@ describe('property overview workflows', () => {
         const path = pathOf(input);
         if (path.endsWith('/property-summaries')) {
           if (!created) return Promise.resolve(response([]));
-          return refetchReleased
-            ? Promise.resolve(
-                response([
-                  {
-                    ...summary,
-                    display_name: 'New current home',
-                    id: createdPropertyId,
-                  },
-                ]),
-              )
-            : delayedSummary;
+          return Promise.resolve(
+            response([
+              {
+                ...summary,
+                display_name: 'New current home',
+                id: createdPropertyId,
+              },
+            ]),
+          );
         }
         if (path.endsWith('/reference/countries')) {
           return Promise.resolve(response([]));
@@ -436,6 +441,14 @@ describe('property overview workflows', () => {
                   status_id: statusId,
                 },
                 ownership: [],
+                loans: [
+                  {
+                    currency: 'NZD',
+                    display_name: 'Main mortgage',
+                    id: '748c93ca-e467-46c2-af52-edbd535b872f',
+                    property_id: createdPropertyId,
+                  },
+                ],
                 property: {
                   ...detail,
                   display_name: 'New current home',
@@ -466,16 +479,42 @@ describe('property overview workflows', () => {
     await user.click(
       await screen.findByRole('button', { name: 'Add property' }),
     );
-    await user.type(screen.getByLabelText('Property name'), 'Harbour home');
+    fireEvent.change(screen.getByLabelText('Property name'), {
+      target: { value: 'Harbour home' },
+    });
     await user.click(screen.getByLabelText('Property type'));
     await user.click(screen.getByRole('option', { name: 'House' }));
     await user.click(screen.getByLabelText('Current use'));
     await user.click(screen.getByRole('option', { name: 'Home' }));
-    await user.type(screen.getByLabelText('Property value (NZD)'), '780000');
-    await user.type(
-      screen.getByLabelText('Total property debt (NZD)'),
-      '310000',
+    fireEvent.change(screen.getByLabelText('Property value (NZD)'), {
+      target: { value: '780000' },
+    });
+    fireEvent.change(screen.getByLabelText('Total property debt (NZD)'), {
+      target: { value: '310000' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Add loan' }));
+    fireEvent.change(screen.getByLabelText('Loan name'), {
+      target: { value: 'Main mortgage' },
+    });
+    await user.click(screen.getByLabelText('Loan type'));
+    await user.click(screen.getByRole('option', { name: 'Home loan' }));
+    fireEvent.change(screen.getByLabelText('Opening balance (NZD)'), {
+      target: { value: '310000' },
+    });
+    fireEvent.change(screen.getByLabelText('Annual interest rate %'), {
+      target: { value: '5.75' },
+    });
+    fireEvent.change(screen.getByLabelText('Scheduled repayment (NZD)'), {
+      target: { value: '2100' },
+    });
+    await user.click(screen.getByLabelText('Repayment frequency'));
+    await user.click(screen.getByRole('option', { name: 'Monthly' }));
+    await user.click(screen.getByLabelText('Repayment type'));
+    await user.click(
+      screen.getByRole('option', { name: 'Principal and interest' }),
     );
+    await user.click(screen.getByLabelText('Interest calculation'));
+    await user.click(screen.getByRole('option', { name: 'Daily' }));
     await user.click(screen.getByRole('button', { name: 'Save property' }));
 
     expect(await screen.findByText('Property added')).toBeVisible();
@@ -492,21 +531,26 @@ describe('property overview workflows', () => {
         status_id: statusId,
       },
       mode: 'CURRENT_SNAPSHOT',
+      loans: [
+        {
+          display_name: 'Main mortgage',
+          is_active: true,
+          loan_type_id: loanTypeId,
+          opening_balance: '310000',
+        },
+      ],
       property: {
         display_name: 'Harbour home',
         purchase_date: null,
         purchase_price: null,
       },
     });
-    refetchReleased = true;
-    resolveRefetch(
-      response([
-        {
-          ...summary,
-          display_name: 'New current home',
-          id: createdPropertyId,
-        },
-      ]),
+    const submittedSetup = saved as unknown as {
+      baseline: { baseline_date: string };
+      loans: Array<{ opening_balance_date: string }>;
+    };
+    expect(submittedSetup.loans[0]?.opening_balance_date).toBe(
+      submittedSetup.baseline.baseline_date,
     );
     await waitFor(() =>
       expect(screen.getByRole('table')).toHaveTextContent('New current home'),
@@ -519,7 +563,227 @@ describe('property overview workflows', () => {
     expect(localStorage.getItem(selectionKeys.property)).toBe(
       createdPropertyId,
     );
-  }, 10_000);
+  }, 20_000);
+
+  it('requires exact debt matching and accepts multiple setup loans', async () => {
+    const user = userEvent.setup();
+    let saved: { loans?: Array<{ opening_balance: string }> } | null = null;
+    const createdPropertyId = '22294060-6e26-4be4-af10-70c6460b4e6d';
+    const fallback = standardFetch([]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>(async (input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/reference/countries')) return response([]);
+        if (path.endsWith('/properties/wizard') && init?.method === 'POST') {
+          saved = JSON.parse(init.body as string) as typeof saved;
+          return response(
+            {
+              baseline: {
+                baseline_date: '2026-08-24',
+                id: 'b95c39af-cb65-4d71-849f-e697acaa4857',
+                loan_balance_total: '310000.00',
+                notes: null,
+                property_id: createdPropertyId,
+                property_value: '780000.00',
+                status_id: statusId,
+              },
+              loans: [],
+              ownership: [],
+              property: { ...detail, id: createdPropertyId },
+              valuation: null,
+              warnings: [],
+            },
+            201,
+          );
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Add property' }),
+    );
+    fireEvent.change(screen.getByLabelText('Property name'), {
+      target: { value: 'Two-loan home' },
+    });
+    await user.click(screen.getByLabelText('Property type'));
+    await user.click(screen.getByRole('option', { name: 'House' }));
+    await user.click(screen.getByLabelText('Current use'));
+    await user.click(screen.getByRole('option', { name: 'Home' }));
+    fireEvent.change(screen.getByLabelText('Property value (NZD)'), {
+      target: { value: '780000' },
+    });
+    fireEvent.change(screen.getByLabelText('Total property debt (NZD)'), {
+      target: { value: '310000' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Save property' }));
+    expect(
+      await screen.findByText(
+        /Add the loan details that make up this property debt/i,
+      ),
+    ).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Add loan' }));
+    await user.click(screen.getByRole('button', { name: 'Add loan' }));
+    const values = [
+      { balance: '200000', name: 'Fixed portion' },
+      { balance: '110000', name: 'Variable portion' },
+    ];
+    for (const [index, value] of values.entries()) {
+      fireEvent.change(screen.getAllByLabelText('Loan name')[index]!, {
+        target: { value: value.name },
+      });
+      fireEvent.change(
+        screen.getAllByLabelText('Opening balance (NZD)')[index]!,
+        { target: { value: index === 0 ? '199999.99' : value.balance } },
+      );
+      fireEvent.change(
+        screen.getAllByLabelText('Annual interest rate %')[index]!,
+        { target: { value: '5.5' } },
+      );
+      await user.click(screen.getAllByLabelText('Loan type')[index]!);
+      await user.click(screen.getByRole('option', { name: 'Home loan' }));
+      await user.click(screen.getAllByLabelText('Repayment frequency')[index]!);
+      await user.click(screen.getByRole('option', { name: 'Monthly' }));
+      await user.click(screen.getAllByLabelText('Repayment type')[index]!);
+      await user.click(
+        screen.getByRole('option', { name: 'Principal and interest' }),
+      );
+      await user.click(
+        screen.getAllByLabelText('Interest calculation')[index]!,
+      );
+      await user.click(screen.getByRole('option', { name: 'Daily' }));
+    }
+    await user.click(screen.getByRole('button', { name: 'Save property' }));
+    expect(
+      await screen.findByText(
+        /Linked loan balances must equal total property debt/i,
+      ),
+    ).toBeVisible();
+
+    fireEvent.change(screen.getAllByLabelText('Opening balance (NZD)')[0]!, {
+      target: { value: '200000' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Save property' }));
+    expect(await screen.findByText('Property added')).toBeVisible();
+    expect(
+      (
+        saved as unknown as {
+          loans: Array<{ opening_balance: string }>;
+        }
+      ).loans.map((loan) => loan.opening_balance),
+    ).toEqual(['200000', '110000']);
+  }, 30_000);
+
+  it('accepts a debt-free current position without setup loans', async () => {
+    const user = userEvent.setup();
+    let saved: { loans?: unknown[] } | null = null;
+    let createAttempts = 0;
+    const fallback = standardFetch([]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>(async (input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/reference/countries')) return response([]);
+        if (path.endsWith('/properties/wizard') && init?.method === 'POST') {
+          createAttempts += 1;
+          saved = JSON.parse(init.body as string) as typeof saved;
+          if (createAttempts === 1) {
+            return response({ detail: 'Debt changed while saving' }, 409);
+          }
+          return response(
+            {
+              baseline: {
+                baseline_date: '2026-08-24',
+                id: 'a43d4bbb-78ef-4ace-82a5-8278038809a5',
+                loan_balance_total: '0.00',
+                notes: null,
+                property_id: detail.id,
+                property_value: '500000.00',
+                status_id: statusId,
+              },
+              loans: [],
+              ownership: [],
+              property: detail,
+              valuation: null,
+              warnings: [],
+            },
+            201,
+          );
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Add property' }),
+    );
+    fireEvent.change(screen.getByLabelText('Property name'), {
+      target: { value: 'Debt-free home' },
+    });
+    await user.click(screen.getByLabelText('Property type'));
+    await user.click(screen.getByRole('option', { name: 'House' }));
+    await user.click(screen.getByLabelText('Current use'));
+    await user.click(screen.getByRole('option', { name: 'Home' }));
+    fireEvent.change(screen.getByLabelText('Property value (NZD)'), {
+      target: { value: '500000' },
+    });
+    fireEvent.change(screen.getByLabelText('Total property debt (NZD)'), {
+      target: { value: '0' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Save property' }));
+
+    expect(
+      await screen.findByText(/Property could not be added.*Debt changed/i),
+    ).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Save property' }));
+    expect(await screen.findByText('Property added')).toBeVisible();
+    expect((saved as unknown as { loans: unknown[] }).loans).toEqual([]);
+    expect(createAttempts).toBe(2);
+  });
+
+  it('blocks debt setup and retries when loan types cannot be loaded', async () => {
+    const user = userEvent.setup();
+    let catalogueAttempts = 0;
+    const fallback = standardFetch([]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>(async (input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/lookups/loan_type')) {
+          catalogueAttempts += 1;
+          return catalogueAttempts === 1
+            ? response({ detail: 'Unavailable' }, 503)
+            : response([
+                {
+                  category: 'loan_type',
+                  code: 'HOME_LOAN',
+                  display_name: 'Home loan',
+                  id: loanTypeId,
+                },
+              ]);
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Add property' }),
+    );
+    expect(
+      await screen.findByText(/Loan types could not be loaded/),
+    ).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Add loan' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Add loan' })).toBeEnabled(),
+    );
+    expect(catalogueAttempts).toBe(2);
+  });
 
   it('creates purchase history without implying current value or debt', async () => {
     const user = userEvent.setup();
