@@ -8,10 +8,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   conventional-pr-title:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     env:
       PR_TITLE: ${{ github.event.pull_request.title }}
     steps:
@@ -36,6 +41,7 @@ jobs:
   pr-size-guidance:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -93,6 +99,7 @@ jobs:
 
   appsmith-quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -104,6 +111,7 @@ jobs:
 
   api-quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     services:
       postgres:
         image: postgres:16-alpine
@@ -144,6 +152,7 @@ jobs:
 
   frontend-quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: frontend
@@ -165,6 +174,7 @@ jobs:
 
   frontend-e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: frontend
@@ -177,11 +187,13 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npx playwright install --with-deps chromium firefox
+        timeout-minutes: 15
       - run: npm run build
       - run: npm run e2e
 
   containers:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - run: cp .env.example .env
@@ -191,6 +203,7 @@ jobs:
           docker run --rm household-financial-planner-api:${{ github.sha }}
           python scripts/check_runtime_dependencies.py
       - uses: aquasecurity/trivy-action@v0.36.0
+        timeout-minutes: 10
         with:
           image-ref: household-financial-planner-api:${{ github.sha }}
           format: table
@@ -200,6 +213,7 @@ jobs:
 
   dependency-audit:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: api

@@ -14,12 +14,14 @@ from app.core.dependencies import ROLE_LEVEL, current_user, require_household_ro
 from app.core.logging import get_logger
 from app.events.router import _event_read
 from app.events.schemas import FinancialEventRead
-from app.loans.calculations import generate_schedule, minimum_repayment, payments_per_year
+from app.loans.calculations import generate_schedule, minimum_repayment, money, payments_per_year
 from app.loans.schemas import (
+    DebtReconciliationStatus,
     GoalCreate,
     GoalRead,
     LoanCloseCreate,
     LoanCreate,
+    LoanDebtBalanceRead,
     LoanEventCreate,
     LoanGroupCreate,
     LoanGroupRead,
@@ -29,6 +31,7 @@ from app.loans.schemas import (
     LoanRepaymentResponsibilityResult,
     LoanScheduleRead,
     LoanUpdate,
+    PropertyDebtReconciliationRead,
     RefinanceCreate,
     RefinanceRead,
     TargetCalculationRead,
@@ -49,10 +52,12 @@ from app.models import (
     LookupItem,
     Person,
     Property,
+    PropertyBaseline,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["loans"])
 logger = get_logger(component="loans")
+MAX_RECONCILIATION_YEARS = 100
 
 LOAN_EVENT_CODES = {
     "LOAN_RATE_CHANGED",
@@ -176,6 +181,135 @@ async def list_loans(
     session: AsyncSession = Depends(get_session),
 ) -> list[Loan]:
     return list(await session.scalars(select(Loan).where(Loan.household_id == household_id)))
+
+
+@router.get(
+    "/properties/{property_id}/loan-debt-reconciliation",
+    response_model=PropertyDebtReconciliationRead,
+)
+async def property_loan_debt_reconciliation(
+    property_id: uuid.UUID,
+    as_of: date,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> PropertyDebtReconciliationRead:
+    latest_supported_date = date(date.today().year + MAX_RECONCILIATION_YEARS, 12, 31)
+    if as_of > latest_supported_date:
+        raise HTTPException(
+            422,
+            f"as_of cannot be more than {MAX_RECONCILIATION_YEARS} years in the future",
+        )
+    property_record = await session.scalar(
+        select(Property)
+        .join(HouseholdMembership, HouseholdMembership.household_id == Property.household_id)
+        .where(
+            Property.id == property_id,
+            HouseholdMembership.application_user_id == user.id,
+        )
+    )
+    if property_record is None:
+        raise HTTPException(404, "Property not found")
+    baseline = await session.scalar(
+        select(PropertyBaseline)
+        .where(
+            PropertyBaseline.property_id == property_id,
+            PropertyBaseline.baseline_date <= as_of,
+        )
+        .order_by(PropertyBaseline.baseline_date.desc())
+        .limit(1)
+    )
+    loans = list(
+        await session.scalars(
+            select(Loan).where(
+                Loan.property_id == property_id,
+                Loan.opening_balance_date <= as_of,
+            )
+        )
+    )
+    balances: list[LoanDebtBalanceRead] = []
+    unprojectable_names: list[str] = []
+    for loan in loans:
+        try:
+            schedule = generate_schedule(
+                loan,
+                await _loan_events(loan.id, session),
+                as_of,
+                include_entries=False,
+            )
+        except ValueError:
+            unprojectable_names.append(loan.display_name)
+            balances.append(
+                LoanDebtBalanceRead(
+                    loan_id=loan.id,
+                    display_name=loan.display_name,
+                    currency=loan.currency,
+                    effective_balance=None,
+                    data_quality_flags=["LOAN_BALANCE_CANNOT_BE_PROJECTED"],
+                )
+            )
+            continue
+        if schedule.remaining_balance > 0:
+            balances.append(
+                LoanDebtBalanceRead(
+                    loan_id=loan.id,
+                    display_name=loan.display_name,
+                    currency=loan.currency,
+                    effective_balance=schedule.remaining_balance,
+                )
+            )
+    recorded = baseline.loan_balance_total if baseline is not None else None
+    currencies = {item.currency for item in balances if item.effective_balance is not None}
+    warnings: list[str] = []
+    linked_total: Decimal | None
+    difference: Decimal | None
+    if unprojectable_names:
+        status_value = DebtReconciliationStatus.UNPROJECTABLE_LOANS
+        linked_total = None
+        difference = None
+        warnings.append(
+            "Effective balances cannot be projected for: " + ", ".join(unprojectable_names)
+        )
+    elif currencies - {property_record.default_currency}:
+        status_value = DebtReconciliationStatus.CURRENCY_MISMATCH
+        linked_total = None
+        difference = None
+        warnings.append(
+            "Linked loans use a currency other than the property's currency and cannot be totalled."
+        )
+    else:
+        linked_total = money(
+            sum(
+                (item.effective_balance for item in balances if item.effective_balance is not None),
+                Decimal("0"),
+            )
+        )
+        difference = linked_total - recorded if recorded is not None else None
+        if not balances:
+            status_value = DebtReconciliationStatus.NO_LINKED_LOANS
+            warnings.append("No linked loans were effective on this date.")
+        elif recorded is None:
+            status_value = DebtReconciliationStatus.RECORDED_DEBT_MISSING
+            warnings.append("No property-debt observation was recorded on or before this date.")
+        elif difference == 0:
+            status_value = DebtReconciliationStatus.MATCHED
+        else:
+            status_value = DebtReconciliationStatus.MISMATCH
+            warnings.append(
+                "Recorded property debt differs from the effective linked-loan balance."
+            )
+    return PropertyDebtReconciliationRead(
+        property_id=property_id,
+        as_of=as_of,
+        currency=property_record.default_currency,
+        baseline_id=baseline.id if baseline is not None else None,
+        recorded_debt_date=baseline.baseline_date if baseline is not None else None,
+        recorded_property_debt=recorded,
+        linked_loan_balance=linked_total,
+        difference=difference,
+        status=status_value,
+        loans=balances,
+        warnings=warnings,
+    )
 
 
 @router.post(

@@ -91,6 +91,8 @@ def generate_schedule(
     loan: Loan,
     typed_events: list[tuple[FinancialEvent, str]],
     through_date: date | None = None,
+    *,
+    include_entries: bool = True,
 ) -> LoanScheduleRead:
     terms = LoanTerms(
         balance=loan.opening_balance,
@@ -128,6 +130,7 @@ def generate_schedule(
         else []
     )
     payment_number = 1
+    last_payment_date: date | None = None
     while payment_number <= periods:
         if through_date is not None and payment_date > through_date:
             break
@@ -157,8 +160,22 @@ def generate_schedule(
                 payment_number,
                 (terms.term_months * per_year + 11) // 12,
             )
-        if terms.balance <= 0 or terms.closed:
+        if terms.closed:
             break
+        if terms.balance <= 0:
+            future_redraw = any(
+                code == "LOAN_REDRAWN"
+                and event.amount is not None
+                and event.amount > 0
+                and (through_date is None or event.effective_at.date() <= through_date)
+                for event, code in typed_events[event_index:]
+            )
+            if not future_redraw:
+                break
+            previous_date = payment_date
+            payment_date = add_payment_period(payment_date, loan.repayment_frequency)
+            payment_number += 1
+            continue
         opening = terms.balance
         interest_basis = max(Decimal("0"), opening - terms.offset)
         if loan.interest_calculation_method == InterestCalculationMethod.DAILY:
@@ -181,25 +198,35 @@ def generate_schedule(
         repayment = money(min(opening + interest, repayment))
         principal = money(max(Decimal("0"), repayment - interest))
         terms.balance = money(max(Decimal("0"), opening - principal))
-        entries.append(
-            ScheduleEntry(
-                payment_number=payment_number,
-                payment_date=payment_date,
-                opening_balance=money(opening),
-                interest=interest,
-                repayment=repayment,
-                principal=principal,
-                offset_balance=money(terms.offset),
-                closing_balance=terms.balance,
-                annual_interest_rate=terms.annual_rate,
+        if include_entries:
+            entries.append(
+                ScheduleEntry(
+                    payment_number=payment_number,
+                    payment_date=payment_date,
+                    opening_balance=money(opening),
+                    interest=interest,
+                    repayment=repayment,
+                    principal=principal,
+                    offset_balance=money(terms.offset),
+                    closing_balance=terms.balance,
+                    annual_interest_rate=terms.annual_rate,
+                )
             )
-        )
+        last_payment_date = payment_date
         total_interest += interest
         total_repayments += repayment
         previous_date = payment_date
         payment_date = add_payment_period(payment_date, loan.repayment_frequency)
         payment_number += 1
-    if terms.balance > 0 and len(entries) == periods:
+    if through_date is not None:
+        while (
+            event_index < len(typed_events)
+            and typed_events[event_index][0].effective_at.date() <= through_date
+        ):
+            event, code = typed_events[event_index]
+            apply_loan_event(terms, event, code)
+            event_index += 1
+    if terms.balance > 0 and payment_number > periods:
         flags.append("BALANCE_REMAINS_AFTER_TERM")
     return LoanScheduleRead(
         loan_id=loan.id,
@@ -209,8 +236,8 @@ def generate_schedule(
         payoff_date=(
             terms.closed_date
             if terms.closed_date is not None
-            else entries[-1].payment_date
-            if entries and terms.balance == 0
+            else last_payment_date
+            if last_payment_date is not None and terms.balance == 0
             else None
         ),
         remaining_balance=money(terms.balance),

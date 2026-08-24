@@ -1010,6 +1010,23 @@ export interface paths {
         patch: operations["update_property_expense_api_v1_properties__property_id__expenses__expense_id__patch"];
         trace?: never;
     };
+    "/api/v1/properties/{property_id}/loan-debt-reconciliation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Property Loan Debt Reconciliation */
+        get: operations["property_loan_debt_reconciliation_api_v1_properties__property_id__loan_debt_reconciliation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/properties/{property_id}/ownership": {
         parameters: {
             query?: never;
@@ -1715,6 +1732,11 @@ export interface components {
             /** Numeric Code */
             numeric_code: string;
         };
+        /**
+         * DebtReconciliationStatus
+         * @enum {string}
+         */
+        DebtReconciliationStatus: "NO_LINKED_LOANS" | "RECORDED_DEBT_MISSING" | "MATCHED" | "MISMATCH" | "CURRENCY_MISMATCH" | "UNPROJECTABLE_LOANS";
         /**
          * EventClassification
          * @enum {string}
@@ -2457,6 +2479,22 @@ export interface components {
             /** Term Months */
             term_months?: number | null;
         };
+        /** LoanDebtBalanceRead */
+        LoanDebtBalanceRead: {
+            /** Currency */
+            currency: string;
+            /** Data Quality Flags */
+            data_quality_flags?: string[];
+            /** Display Name */
+            display_name: string;
+            /** Effective Balance */
+            effective_balance: string | null;
+            /**
+             * Loan Id
+             * Format: uuid
+             */
+            loan_id: string;
+        };
         /** LoanEventCreate */
         LoanEventCreate: {
             /** Amount */
@@ -3113,6 +3151,36 @@ export interface components {
             state_or_region?: string | null;
             /** Suburb Or Locality */
             suburb_or_locality?: string | null;
+        };
+        /** PropertyDebtReconciliationRead */
+        PropertyDebtReconciliationRead: {
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /** Baseline Id */
+            baseline_id: string | null;
+            /** Currency */
+            currency: string;
+            /** Difference */
+            difference: string | null;
+            /** Linked Loan Balance */
+            linked_loan_balance: string | null;
+            /** Loans */
+            loans: components["schemas"]["LoanDebtBalanceRead"][];
+            /**
+             * Property Id
+             * Format: uuid
+             */
+            property_id: string;
+            /** Recorded Debt Date */
+            recorded_debt_date: string | null;
+            /** Recorded Property Debt */
+            recorded_property_debt: string | null;
+            status: components["schemas"]["DebtReconciliationStatus"];
+            /** Warnings */
+            warnings: string[];
         };
         /** PropertyExpenseCreate */
         PropertyExpenseCreate: {
@@ -6973,6 +7041,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PropertyExpenseRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    property_loan_debt_reconciliation_api_v1_properties__property_id__loan_debt_reconciliation_get: {
+        parameters: {
+            query: {
+                as_of: string;
+            };
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                property_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PropertyDebtReconciliationRead"];
                 };
             };
             /** @description Validation Error */

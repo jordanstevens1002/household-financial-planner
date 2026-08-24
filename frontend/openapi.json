@@ -851,6 +851,18 @@
         "title": "CurrencyRead",
         "type": "object"
       },
+      "DebtReconciliationStatus": {
+        "enum": [
+          "NO_LINKED_LOANS",
+          "RECORDED_DEBT_MISSING",
+          "MATCHED",
+          "MISMATCH",
+          "CURRENCY_MISMATCH",
+          "UNPROJECTABLE_LOANS"
+        ],
+        "title": "DebtReconciliationStatus",
+        "type": "string"
+      },
       "EventClassification": {
         "enum": [
           "OBSERVED",
@@ -3126,6 +3138,50 @@
         "title": "LoanCreate",
         "type": "object"
       },
+      "LoanDebtBalanceRead": {
+        "properties": {
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "data_quality_flags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Data Quality Flags",
+            "type": "array"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "effective_balance": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Balance"
+          },
+          "loan_id": {
+            "format": "uuid",
+            "title": "Loan Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loan_id",
+          "display_name",
+          "currency",
+          "effective_balance"
+        ],
+        "title": "LoanDebtBalanceRead",
+        "type": "object"
+      },
       "LoanEventCreate": {
         "properties": {
           "amount": {
@@ -5165,6 +5221,116 @@
           "current_status_id"
         ],
         "title": "PropertyCreate",
+        "type": "object"
+      },
+      "PropertyDebtReconciliationRead": {
+        "properties": {
+          "as_of": {
+            "format": "date",
+            "title": "As Of",
+            "type": "string"
+          },
+          "baseline_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Id"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "difference": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Difference"
+          },
+          "linked_loan_balance": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Loan Balance"
+          },
+          "loans": {
+            "items": {
+              "$ref": "#/components/schemas/LoanDebtBalanceRead"
+            },
+            "title": "Loans",
+            "type": "array"
+          },
+          "property_id": {
+            "format": "uuid",
+            "title": "Property Id",
+            "type": "string"
+          },
+          "recorded_debt_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded Debt Date"
+          },
+          "recorded_property_debt": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded Property Debt"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DebtReconciliationStatus"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "property_id",
+          "as_of",
+          "currency",
+          "baseline_id",
+          "recorded_debt_date",
+          "recorded_property_debt",
+          "linked_loan_balance",
+          "difference",
+          "status",
+          "loans",
+          "warnings"
+        ],
+        "title": "PropertyDebtReconciliationRead",
         "type": "object"
       },
       "PropertyExpenseCreate": {
@@ -14101,6 +14267,80 @@
         "summary": "Update Property Expense",
         "tags": [
           "rental"
+        ]
+      }
+    },
+    "/api/v1/properties/{property_id}/loan-debt-reconciliation": {
+      "get": {
+        "operationId": "property_loan_debt_reconciliation_api_v1_properties__property_id__loan_debt_reconciliation_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "property_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Property Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "as_of",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "As Of",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertyDebtReconciliationRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Property Loan Debt Reconciliation",
+        "tags": [
+          "loans"
         ]
       }
     },
