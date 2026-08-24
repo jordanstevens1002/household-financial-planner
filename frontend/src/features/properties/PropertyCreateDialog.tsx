@@ -8,12 +8,14 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   MenuItem,
   Stack,
   TextField,
+  Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Controller, useForm, useWatch } from 'react-hook-form';
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
 import { apiRequest } from '../../api/client';
@@ -31,6 +33,75 @@ type PropertyWizard = components['schemas']['PropertyWizardRead'];
 
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 const moneyPattern = /^\d+(?:\.\d{1,2})?$/;
+
+const setupLoanSchema = z.object({
+  displayName: z.string().trim().min(1, 'Enter a loan name').max(200),
+  initialInterestRate: z
+    .string()
+    .refine(
+      (value) =>
+        value.trim() !== '' &&
+        Number.isFinite(Number(value)) &&
+        Number(value) >= 0 &&
+        Number(value) <= 100,
+      'Enter a rate from 0 to 100',
+    ),
+  interestCalculationMethod: z
+    .enum(['', 'DAILY', 'MONTHLY'])
+    .refine((value) => value !== '', 'Choose how interest is calculated'),
+  isInterestOnly: z
+    .enum(['', 'false', 'true'])
+    .refine((value) => value !== '', 'Choose a repayment type'),
+  loanTypeId: z.string().min(1, 'Choose a loan type'),
+  openingBalance: z
+    .string()
+    .refine(
+      (value) => validMoney(value, true),
+      'Enter a balance greater than zero',
+    ),
+  repaymentFrequency: z
+    .enum(['', 'WEEKLY', 'FORTNIGHTLY', 'MONTHLY'])
+    .refine((value) => value !== '', 'Choose a repayment frequency'),
+  scheduledRepayment: z
+    .string()
+    .refine(
+      (value) => value === '' || validMoney(value),
+      'Enter a repayment of zero or more',
+    ),
+  termMonths: z
+    .string()
+    .refine(
+      (value) =>
+        value === '' ||
+        (/^\d+$/.test(value) && Number(value) > 0 && Number(value) <= 1200),
+      'Enter a term from 1 to 1200 months',
+    ),
+});
+
+type SetupLoanFields = z.input<typeof setupLoanSchema>;
+
+const setupLoanDefaults: SetupLoanFields = {
+  displayName: '',
+  initialInterestRate: '',
+  interestCalculationMethod: '',
+  isInterestOnly: '',
+  loanTypeId: '',
+  openingBalance: '',
+  repaymentFrequency: '',
+  scheduledRepayment: '',
+  termMonths: '',
+};
+
+function moneyCents(value: string): bigint | null {
+  if (!moneyPattern.test(value)) return null;
+  const [whole, fraction = ''] = value.split('.');
+  return BigInt(whole!) * 100n + BigInt(fraction.padEnd(2, '0'));
+}
+
+function formattedCents(value: bigint, currency: string) {
+  const digits = value.toString().padStart(3, '0');
+  return `${currency} ${digits.slice(0, -2)}.${digits.slice(-2)}`;
+}
 
 function validDate(value: string) {
   if (!datePattern.test(value)) return false;
@@ -63,6 +134,7 @@ const propertySchema = z
     existingPropertyId: z.string(),
     mode: z.enum(['CURRENT_SNAPSHOT', 'HISTORICAL_PURCHASE']),
     notes: z.string().trim().max(2000),
+    loans: z.array(setupLoanSchema).max(100),
     positionDate: z.string(),
     postalCode: z.string().trim().max(20),
     propertyTypeId: z.string(),
@@ -111,6 +183,26 @@ const propertySchema = z
           path: ['totalDebt'],
         });
       }
+      if (!fields.existingPropertyId) {
+        const debt = moneyCents(fields.totalDebt);
+        const linked = fields.loans.reduce(
+          (total, loan) => total + (moneyCents(loan.openingBalance) ?? 0n),
+          0n,
+        );
+        if (debt !== null && debt > 0n && fields.loans.length === 0) {
+          context.addIssue({
+            code: 'custom',
+            message: 'Add the loan details that make up this property debt',
+            path: ['loans'],
+          });
+        } else if (debt !== null && linked !== debt) {
+          context.addIssue({
+            code: 'custom',
+            message: 'Linked loan balances must equal total property debt',
+            path: ['loans'],
+          });
+        }
+      }
     } else {
       if (!validDate(fields.purchaseDate)) {
         context.addIssue({
@@ -129,7 +221,8 @@ const propertySchema = z
     }
   });
 
-type PropertyFields = z.infer<typeof propertySchema>;
+type PropertyFields = z.input<typeof propertySchema>;
+type ValidPropertyFields = z.output<typeof propertySchema>;
 
 function defaults(jurisdiction: string | null): PropertyFields {
   return {
@@ -141,6 +234,7 @@ function defaults(jurisdiction: string | null): PropertyFields {
     existingPropertyId: '',
     mode: 'CURRENT_SNAPSHOT',
     notes: '',
+    loans: [],
     positionDate: localCalendarDate(),
     postalCode: '',
     propertyTypeId: '',
@@ -184,11 +278,14 @@ export function PropertyCreateDialog({
   const auth = useAuth();
   const queryClient = useQueryClient();
   const { notify } = useNotification();
-  const form = useForm<PropertyFields>({
+  const form = useForm<PropertyFields, unknown, ValidPropertyFields>({
     defaultValues: defaults(jurisdiction),
     resolver: zodResolver(propertySchema),
   });
+  const setupLoans = useFieldArray({ control: form.control, name: 'loans' });
   const mode = useWatch({ control: form.control, name: 'mode' });
+  const loans = useWatch({ control: form.control, name: 'loans' });
+  const totalDebt = useWatch({ control: form.control, name: 'totalDebt' });
   const existingPropertyId = useWatch({
     control: form.control,
     name: 'existingPropertyId',
@@ -200,8 +297,20 @@ export function PropertyCreateDialog({
     queryFn: () => apiRequest<Country[]>('/api/v1/reference/countries'),
     queryKey: ['reference', 'countries'],
   });
+  const loanTypes = useQuery({
+    enabled: open && mode === 'CURRENT_SNAPSHOT',
+    queryFn: () => apiRequest<Lookup[]>('/api/v1/lookups/loan_type'),
+    queryKey: ['lookups', 'loan_type'],
+  });
+  const linkedLoanCents = (loans ?? []).reduce(
+    (total, loan) => total + (moneyCents(loan.openingBalance) ?? 0n),
+    0n,
+  );
+  const setupLoanError =
+    form.formState.errors.loans?.root?.message ??
+    form.formState.errors.loans?.message;
   const createProperty = useMutation({
-    mutationFn: async (fields: PropertyFields) => {
+    mutationFn: async (fields: ValidPropertyFields) => {
       if (fields.mode === 'CURRENT_SNAPSHOT' && fields.existingPropertyId) {
         const property = properties.find(
           (item) => item.id === fields.existingPropertyId,
@@ -247,6 +356,24 @@ export function PropertyCreateDialog({
                   }
                 : null,
             mode: fields.mode,
+            loans:
+              fields.mode === 'CURRENT_SNAPSHOT'
+                ? fields.loans.map((loan) => ({
+                    display_name: loan.displayName,
+                    initial_interest_rate: loan.initialInterestRate,
+                    interest_calculation_method: loan.interestCalculationMethod,
+                    is_active: true,
+                    is_interest_only: loan.isInterestOnly === 'true',
+                    loan_type_id: loan.loanTypeId,
+                    opening_balance: loan.openingBalance,
+                    opening_balance_date: fields.positionDate,
+                    repayment_frequency: loan.repaymentFrequency,
+                    scheduled_repayment: loan.scheduledRepayment || null,
+                    term_months: loan.termMonths
+                      ? Number(loan.termMonths)
+                      : null,
+                  }))
+                : [],
             property: {
               address_line_1: optional(fields.addressLine1),
               country_code: optional(fields.countryCode),
@@ -307,6 +434,12 @@ export function PropertyCreateDialog({
       await queryClient.invalidateQueries({
         queryKey: ['property-summaries', householdId],
       });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['household-loans', householdId],
+        }),
+        queryClient.invalidateQueries({ queryKey: ['household-cashflow'] }),
+      ]);
     },
   });
   const close = () => {
@@ -349,7 +482,7 @@ export function PropertyCreateDialog({
             />
             <Alert severity="info">
               {mode === 'CURRENT_SNAPSHOT'
-                ? 'Record a dated property value and its total debt. Individual loans can be added separately.'
+                ? 'Record a dated property value and add the loans that make up its total debt.'
                 : 'Record what was paid and when. Purchase history does not mean the property is debt-free.'}
             </Alert>
             {mode === 'CURRENT_SNAPSHOT' && properties.length ? (
@@ -452,6 +585,222 @@ export function PropertyCreateDialog({
                 />
               </Stack>
             )}
+            {mode === 'CURRENT_SNAPSHOT' && !existingPropertyId ? (
+              <Stack spacing={2}>
+                <Divider />
+                <Stack
+                  direction="row"
+                  sx={{ alignItems: 'center', justifyContent: 'space-between' }}
+                >
+                  <Box>
+                    <Typography variant="h6">Linked loans</Typography>
+                    <Typography color="text.secondary" variant="body2">
+                      Add each loan that makes up the debt recorded above.
+                    </Typography>
+                  </Box>
+                  <Button
+                    disabled={loanTypes.isPending || Boolean(loanTypes.error)}
+                    onClick={() => setupLoans.append({ ...setupLoanDefaults })}
+                    variant="outlined"
+                  >
+                    Add loan
+                  </Button>
+                </Stack>
+                {loanTypes.isPending ? (
+                  <Alert severity="info">Loading loan types…</Alert>
+                ) : null}
+                {loanTypes.error ? (
+                  <Alert
+                    action={
+                      <Button
+                        color="inherit"
+                        onClick={() => void loanTypes.refetch()}
+                      >
+                        Retry
+                      </Button>
+                    }
+                    severity="error"
+                  >
+                    Loan types could not be loaded. Property setup with debt is
+                    unavailable until the catalogue is restored.
+                  </Alert>
+                ) : null}
+                {setupLoans.fields.map((loan, index) => {
+                  const errors = form.formState.errors.loans?.[index];
+                  return (
+                    <Stack
+                      key={loan.id}
+                      spacing={2}
+                      sx={{
+                        border: 1,
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        p: 2,
+                      }}
+                    >
+                      <Stack
+                        direction="row"
+                        sx={{
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <Typography variant="subtitle1">
+                          Loan {index + 1}
+                        </Typography>
+                        <Button
+                          color="error"
+                          onClick={() => setupLoans.remove(index)}
+                        >
+                          Remove
+                        </Button>
+                      </Stack>
+                      <Stack direction="row" spacing={2}>
+                        <TextField
+                          error={Boolean(errors?.displayName)}
+                          fullWidth
+                          helperText={errors?.displayName?.message}
+                          label="Loan name"
+                          {...form.register(`loans.${index}.displayName`)}
+                        />
+                        <Controller
+                          control={form.control}
+                          name={`loans.${index}.loanTypeId`}
+                          render={({ field }) => (
+                            <TextField
+                              {...field}
+                              error={Boolean(errors?.loanTypeId)}
+                              fullWidth
+                              helperText={errors?.loanTypeId?.message}
+                              label="Loan type"
+                              select
+                            >
+                              {(loanTypes.data ?? []).map((item) => (
+                                <MenuItem key={item.id} value={item.id}>
+                                  {item.display_name}
+                                </MenuItem>
+                              ))}
+                            </TextField>
+                          )}
+                        />
+                      </Stack>
+                      <Stack direction="row" spacing={2}>
+                        <TextField
+                          error={Boolean(errors?.openingBalance)}
+                          fullWidth
+                          helperText={errors?.openingBalance?.message}
+                          label={`Opening balance (${currency})`}
+                          {...form.register(`loans.${index}.openingBalance`)}
+                        />
+                        <TextField
+                          error={Boolean(errors?.initialInterestRate)}
+                          fullWidth
+                          helperText={errors?.initialInterestRate?.message}
+                          label="Annual interest rate %"
+                          {...form.register(
+                            `loans.${index}.initialInterestRate`,
+                          )}
+                        />
+                      </Stack>
+                      <Stack direction="row" spacing={2}>
+                        <TextField
+                          error={Boolean(errors?.scheduledRepayment)}
+                          fullWidth
+                          helperText={
+                            errors?.scheduledRepayment?.message ?? 'Optional'
+                          }
+                          label={`Scheduled repayment (${currency})`}
+                          {...form.register(
+                            `loans.${index}.scheduledRepayment`,
+                          )}
+                        />
+                        <Controller
+                          control={form.control}
+                          name={`loans.${index}.repaymentFrequency`}
+                          render={({ field }) => (
+                            <TextField
+                              {...field}
+                              error={Boolean(errors?.repaymentFrequency)}
+                              fullWidth
+                              helperText={errors?.repaymentFrequency?.message}
+                              label="Repayment frequency"
+                              select
+                            >
+                              <MenuItem value="WEEKLY">Weekly</MenuItem>
+                              <MenuItem value="FORTNIGHTLY">
+                                Fortnightly
+                              </MenuItem>
+                              <MenuItem value="MONTHLY">Monthly</MenuItem>
+                            </TextField>
+                          )}
+                        />
+                        <TextField
+                          error={Boolean(errors?.termMonths)}
+                          fullWidth
+                          helperText={errors?.termMonths?.message ?? 'Optional'}
+                          label="Term in months"
+                          {...form.register(`loans.${index}.termMonths`)}
+                        />
+                      </Stack>
+                      <Stack direction="row" spacing={2}>
+                        <Controller
+                          control={form.control}
+                          name={`loans.${index}.isInterestOnly`}
+                          render={({ field }) => (
+                            <TextField
+                              {...field}
+                              error={Boolean(errors?.isInterestOnly)}
+                              fullWidth
+                              helperText={errors?.isInterestOnly?.message}
+                              label="Repayment type"
+                              select
+                            >
+                              <MenuItem value="false">
+                                Principal and interest
+                              </MenuItem>
+                              <MenuItem value="true">Interest only</MenuItem>
+                            </TextField>
+                          )}
+                        />
+                        <Controller
+                          control={form.control}
+                          name={`loans.${index}.interestCalculationMethod`}
+                          render={({ field }) => (
+                            <TextField
+                              {...field}
+                              error={Boolean(errors?.interestCalculationMethod)}
+                              fullWidth
+                              helperText={
+                                errors?.interestCalculationMethod?.message
+                              }
+                              label="Interest calculation"
+                              select
+                            >
+                              <MenuItem value="DAILY">Daily</MenuItem>
+                              <MenuItem value="MONTHLY">Monthly</MenuItem>
+                            </TextField>
+                          )}
+                        />
+                      </Stack>
+                    </Stack>
+                  );
+                })}
+                <Alert
+                  severity={
+                    moneyCents(totalDebt) !== null &&
+                    moneyCents(totalDebt) === linkedLoanCents
+                      ? 'success'
+                      : 'warning'
+                  }
+                >
+                  Linked loan balances total{' '}
+                  {formattedCents(linkedLoanCents, currency)}. Recorded property
+                  debt is{' '}
+                  {formattedCents(moneyCents(totalDebt) ?? 0n, currency)}.
+                  {setupLoanError ? ` ${setupLoanError}` : ''}
+                </Alert>
+              </Stack>
+            ) : null}
             {existingPropertyId && mode === 'CURRENT_SNAPSHOT' ? null : (
               <AdvancedSection description="Add the property address and notes when they are useful to your household.">
                 <Stack spacing={2}>
@@ -543,7 +892,13 @@ export function PropertyCreateDialog({
         <DialogActions>
           <Button onClick={close}>Cancel</Button>
           <Button
-            disabled={createProperty.isPending}
+            disabled={
+              createProperty.isPending ||
+              (mode === 'CURRENT_SNAPSHOT' &&
+                !existingPropertyId &&
+                (moneyCents(totalDebt) ?? 0n) > 0n &&
+                (loanTypes.isPending || Boolean(loanTypes.error)))
+            }
             type="submit"
             variant="contained"
           >

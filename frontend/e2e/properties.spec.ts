@@ -85,6 +85,14 @@ test('selects and restores a dated property position', async ({ page }) => {
             property_value: '810000.00',
             status_id: statusId,
           },
+          loans: [
+            {
+              currency: 'NZD',
+              display_name: 'Setup mortgage',
+              id: '748c93ca-e467-46c2-af52-edbd535b872f',
+              property_id: propertyId,
+            },
+          ],
           ownership: [],
           property: {
             address_line_1: null,
@@ -606,6 +614,18 @@ test('selects and restores a dated property position', async ({ page }) => {
   await page.getByRole('option', { name: 'Home' }).click();
   await page.getByLabel('Property value (NZD)').fill('810000');
   await page.getByLabel('Total property debt (NZD)').fill('250000');
+  await page.getByRole('button', { name: 'Add loan' }).click();
+  await page.getByLabel('Loan name').fill('Setup mortgage');
+  await page.getByLabel('Loan type').click();
+  await page.getByRole('option', { name: 'Home loan' }).click();
+  await page.getByLabel('Opening balance (NZD)').fill('250000');
+  await page.getByLabel('Annual interest rate %').fill('5.65');
+  await page.getByLabel('Repayment frequency').click();
+  await page.getByRole('option', { name: 'Monthly' }).click();
+  await page.getByLabel('Repayment type').click();
+  await page.getByRole('option', { name: 'Principal and interest' }).click();
+  await page.getByLabel('Interest calculation').click();
+  await page.getByRole('option', { name: 'Daily' }).click();
   await page.getByRole('button', { name: 'Save property' }).click();
   await expect(page.getByText('Property added')).toBeVisible();
   await expect
@@ -616,6 +636,14 @@ test('selects and restores a dated property position', async ({ page }) => {
         property_value: '810000',
         status_id: statusId,
       },
+      loans: [
+        {
+          display_name: 'Setup mortgage',
+          is_active: true,
+          loan_type_id: loanTypeId,
+          opening_balance: '250000',
+        },
+      ],
       mode: 'CURRENT_SNAPSHOT',
       property: {
         display_name: 'New current home',
