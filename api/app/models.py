@@ -388,6 +388,15 @@ class PropertyBaseline(Base):
 
 class LoanGroup(Base):
     __tablename__ = "loan_groups"
+    __table_args__ = (
+        Index(
+            "uq_loan_groups_scope_normalized_name",
+            "household_id",
+            text("COALESCE(property_id, '00000000-0000-0000-0000-000000000000'::uuid)"),
+            text("lower(display_name)"),
+            unique=True,
+        ).ddl_if(dialect="postgresql"),
+    )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     household_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("households.id", ondelete="CASCADE"), index=True

@@ -25,6 +25,7 @@ from app.loans.schemas import (
     LoanEventCreate,
     LoanGroupCreate,
     LoanGroupRead,
+    LoanGroupUpdate,
     LoanRead,
     LoanRepaymentResponsibilityCreate,
     LoanRepaymentResponsibilityRead,
@@ -164,8 +165,12 @@ async def _create_loan_record(
             raise HTTPException(422, "Loan property must belong to the household")
     if payload.loan_group_id is not None:
         group = await session.get(LoanGroup, payload.loan_group_id)
-        if group is None or group.household_id != household_id:
-            raise HTTPException(422, "Loan group must belong to the household")
+        if (
+            group is None
+            or group.household_id != household_id
+            or group.property_id != payload.property_id
+        ):
+            raise HTTPException(422, "Loan group must belong to the same property and household")
     values = payload.model_dump()
     values["currency"] = payload.currency or household.currency
     loan = Loan(household_id=household_id, **values)
@@ -325,11 +330,130 @@ async def create_loan_group(
         property_record = await session.get(Property, payload.property_id)
         if property_record is None or property_record.household_id != household_id:
             raise HTTPException(422, "Loan group property must belong to the household")
+    duplicate = await session.scalar(
+        select(LoanGroup.id).where(
+            LoanGroup.household_id == household_id,
+            LoanGroup.property_id == payload.property_id,
+            func.lower(LoanGroup.display_name) == payload.display_name.lower(),
+        )
+    )
+    if duplicate is not None:
+        raise HTTPException(409, "A loan group with this name already exists for the property")
     group = LoanGroup(household_id=household_id, **payload.model_dump())
     session.add(group)
     await session.commit()
     await session.refresh(group)
     return group
+
+
+async def _loan_group_with_access(
+    group_id: uuid.UUID,
+    minimum: HouseholdRole,
+    user: ApplicationUser,
+    session: AsyncSession,
+) -> LoanGroup:
+    group = await session.scalar(
+        select(LoanGroup)
+        .join(HouseholdMembership, HouseholdMembership.household_id == LoanGroup.household_id)
+        .where(
+            LoanGroup.id == group_id,
+            HouseholdMembership.application_user_id == user.id,
+        )
+    )
+    if group is None:
+        raise HTTPException(404, "Loan group not found")
+    membership = await session.scalar(
+        select(HouseholdMembership).where(
+            HouseholdMembership.household_id == group.household_id,
+            HouseholdMembership.application_user_id == user.id,
+        )
+    )
+    assert membership is not None
+    if ROLE_LEVEL[membership.role] < ROLE_LEVEL[minimum]:
+        raise HTTPException(403, "Insufficient household role")
+    return group
+
+
+@router.patch("/loan-groups/{group_id}", response_model=LoanGroupRead)
+async def update_loan_group(
+    group_id: uuid.UUID,
+    payload: LoanGroupUpdate,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> LoanGroup:
+    accessible = await _loan_group_with_access(group_id, HouseholdRole.EDITOR, user, session)
+    group = await session.scalar(
+        select(LoanGroup).where(LoanGroup.id == accessible.id).with_for_update()
+    )
+    assert group is not None
+    duplicate = await session.scalar(
+        select(LoanGroup.id).where(
+            LoanGroup.household_id == group.household_id,
+            LoanGroup.property_id == group.property_id,
+            func.lower(LoanGroup.display_name) == payload.display_name.lower(),
+            LoanGroup.id != group.id,
+        )
+    )
+    if duplicate is not None:
+        raise HTTPException(409, "A loan group with this name already exists for the property")
+    previous_name = group.display_name
+    group.display_name = payload.display_name
+    await session.commit()
+    await session.refresh(group)
+    logger.info(
+        "loan_group_renamed",
+        actor_user_id=str(user.id),
+        household_id=str(group.household_id),
+        property_id=str(group.property_id) if group.property_id else None,
+        loan_group_id=str(group.id),
+        previous_name=previous_name,
+        resulting_name=group.display_name,
+    )
+    return group
+
+
+@router.delete("/loan-groups/{group_id}", status_code=204)
+async def delete_loan_group(
+    group_id: uuid.UUID,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    accessible = await _loan_group_with_access(group_id, HouseholdRole.EDITOR, user, session)
+    group = await session.scalar(
+        select(LoanGroup).where(LoanGroup.id == accessible.id).with_for_update()
+    )
+    assert group is not None
+    assigned = await session.scalar(
+        select(func.count(Loan.id)).where(Loan.loan_group_id == group.id)
+    )
+    if assigned:
+        raise HTTPException(409, "Reassign or ungroup all loans before removing this group")
+    snapshot = LoanGroupRead.model_validate(group).model_dump(mode="json")
+    await session.delete(group)
+    await session.commit()
+    logger.info(
+        "loan_group_removed",
+        actor_user_id=str(user.id),
+        household_id=str(group.household_id),
+        property_id=str(group.property_id) if group.property_id else None,
+        loan_group_id=str(group.id),
+        removed_group=snapshot,
+    )
+
+
+@router.get("/households/{household_id}/loan-groups", response_model=list[LoanGroupRead])
+async def list_loan_groups(
+    household_id: uuid.UUID,
+    _: Annotated[HouseholdMembership, Depends(require_household_role(HouseholdRole.VIEWER))],
+    session: AsyncSession = Depends(get_session),
+) -> list[LoanGroup]:
+    return list(
+        await session.scalars(
+            select(LoanGroup)
+            .where(LoanGroup.household_id == household_id)
+            .order_by(LoanGroup.display_name, LoanGroup.id)
+        )
+    )
 
 
 @router.post("/households/{household_id}/loans", response_model=LoanRead, status_code=201)
@@ -364,6 +488,14 @@ async def update_loan(
         loan_type = await session.get(LookupItem, values["loan_type_id"])
         if loan_type is None or loan_type.category != "loan_type" or not loan_type.is_active:
             raise HTTPException(422, "Active loan_type lookup required")
+    if "loan_group_id" in values and values["loan_group_id"] is not None:
+        group = await session.get(LoanGroup, values["loan_group_id"])
+        if (
+            group is None
+            or group.household_id != loan.household_id
+            or group.property_id != loan.property_id
+        ):
+            raise HTTPException(422, "Loan group must belong to the same property and household")
     before = _loan_snapshot(loan)
     for field, value in values.items():
         setattr(loan, field, value)

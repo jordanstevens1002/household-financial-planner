@@ -55,6 +55,7 @@ class LoanCreate(BaseModel):
 
 
 class LoanUpdate(BaseModel):
+    loan_group_id: uuid.UUID | None = None
     display_name: str | None = Field(default=None, min_length=1, max_length=200)
     lender: str | None = Field(default=None, max_length=200)
     account_reference_masked: str | None = Field(default=None, max_length=50)
@@ -107,6 +108,23 @@ class LoanCloseCreate(BaseModel):
 class LoanGroupCreate(BaseModel):
     display_name: str = Field(min_length=1, max_length=200)
     property_id: uuid.UUID | None = None
+
+    @field_validator("display_name")
+    @classmethod
+    def normalize_display_name(cls, value: str) -> str:
+        normalized = " ".join(value.split())
+        if not normalized:
+            raise ValueError("loan group name cannot be empty")
+        return normalized
+
+
+class LoanGroupUpdate(BaseModel):
+    display_name: str = Field(min_length=1, max_length=200)
+
+    @field_validator("display_name")
+    @classmethod
+    def normalize_display_name(cls, value: str) -> str:
+        return LoanGroupCreate.normalize_display_name(value)
 
 
 class LoanGroupRead(LoanGroupCreate):

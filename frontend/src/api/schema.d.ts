@@ -510,7 +510,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Loan Groups */
+        get: operations["list_loan_groups_api_v1_households__household_id__loan_groups_get"];
         put?: never;
         /** Create Loan Group */
         post: operations["create_loan_group_api_v1_households__household_id__loan_groups_post"];
@@ -730,6 +731,24 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/loan-groups/{group_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Loan Group */
+        delete: operations["delete_loan_group_api_v1_loan_groups__group_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Loan Group */
+        patch: operations["update_loan_group_api_v1_loan_groups__group_id__patch"];
         trace?: never;
     };
     "/api/v1/loans/{loan_id}": {
@@ -2550,6 +2569,11 @@ export interface components {
             /** Property Id */
             property_id?: string | null;
         };
+        /** LoanGroupUpdate */
+        LoanGroupUpdate: {
+            /** Display Name */
+            display_name: string;
+        };
         /** LoanRead */
         LoanRead: {
             /** Account Reference Masked */
@@ -2741,6 +2765,8 @@ export interface components {
             is_interest_only?: boolean | null;
             /** Lender */
             lender?: string | null;
+            /** Loan Group Id */
+            loan_group_id?: string | null;
             /** Loan Type Id */
             loan_type_id?: string | null;
             /** Notes */
@@ -5536,6 +5562,39 @@ export interface operations {
             };
         };
     };
+    list_loan_groups_api_v1_households__household_id__loan_groups_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                household_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanGroupRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_loan_group_api_v1_households__household_id__loan_groups_post: {
         parameters: {
             query?: never;
@@ -6264,6 +6323,74 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TimelineRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_loan_group_api_v1_loan_groups__group_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_loan_group_api_v1_loan_groups__group_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoanGroupUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanGroupRead"];
                 };
             };
             /** @description Validation Error */
