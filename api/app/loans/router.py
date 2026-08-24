@@ -5,7 +5,7 @@ from datetime import UTC, date, datetime, time
 from decimal import Decimal
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -415,6 +415,8 @@ async def update_loan_group(
 @router.delete("/loan-groups/{group_id}", status_code=204)
 async def delete_loan_group(
     group_id: uuid.UUID,
+    confirm_assigned: bool = False,
+    assigned_loan_id: Annotated[list[uuid.UUID] | None, Query()] = None,
     user: ApplicationUser = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ) -> None:
@@ -423,12 +425,43 @@ async def delete_loan_group(
         select(LoanGroup).where(LoanGroup.id == accessible.id).with_for_update()
     )
     assert group is not None
-    assigned = await session.scalar(
-        select(func.count(Loan.id)).where(Loan.loan_group_id == group.id)
+    assigned_loans = list(
+        await session.scalars(
+            select(Loan)
+            .where(Loan.loan_group_id == group.id)
+            .order_by(Loan.display_name, Loan.id)
+            .with_for_update()
+        )
     )
-    if assigned:
-        raise HTTPException(409, "Reassign or ungroup all loans before removing this group")
+    if assigned_loans:
+        membership = await session.scalar(
+            select(HouseholdMembership).where(
+                HouseholdMembership.household_id == group.household_id,
+                HouseholdMembership.application_user_id == user.id,
+            )
+        )
+        assert membership is not None
+        if ROLE_LEVEL[membership.role] < ROLE_LEVEL[HouseholdRole.ADMIN]:
+            raise HTTPException(
+                403,
+                "Household administrator or owner access is required to remove an assigned group",
+            )
+        if not confirm_assigned:
+            raise HTTPException(
+                409,
+                "Confirm that assigned loans should be moved to Ungrouped",
+            )
+        if set(assigned_loan_id or []) != {loan.id for loan in assigned_loans}:
+            raise HTTPException(
+                409,
+                "Loan assignments changed; review the affected loans and confirm again",
+            )
     snapshot = LoanGroupRead.model_validate(group).model_dump(mode="json")
+    affected_loans = [
+        {"id": str(loan.id), "display_name": loan.display_name} for loan in assigned_loans
+    ]
+    for loan in assigned_loans:
+        loan.loan_group_id = None
     await session.delete(group)
     await session.commit()
     logger.info(
@@ -438,6 +471,7 @@ async def delete_loan_group(
         property_id=str(group.property_id) if group.property_id else None,
         loan_group_id=str(group.id),
         removed_group=snapshot,
+        affected_loans=affected_loans,
     )
 
 

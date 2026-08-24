@@ -12793,6 +12793,36 @@
             }
           },
           {
+            "in": "query",
+            "name": "confirm_assigned",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Confirm Assigned",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "assigned_loan_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Assigned Loan Id"
+            }
+          },
+          {
             "in": "header",
             "name": "X-Development-Subject",
             "required": false,

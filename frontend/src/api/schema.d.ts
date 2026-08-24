@@ -6338,7 +6338,10 @@ export interface operations {
     };
     delete_loan_group_api_v1_loan_groups__group_id__delete: {
         parameters: {
-            query?: never;
+            query?: {
+                confirm_assigned?: boolean;
+                assigned_loan_id?: string[] | null;
+            };
             header?: {
                 "X-Development-Subject"?: string | null;
             };

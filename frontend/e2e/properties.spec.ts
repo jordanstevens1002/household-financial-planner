@@ -57,7 +57,13 @@ test('selects and restores a dated property position', async ({ page }) => {
     if (path.endsWith(`/households/${householdId}/access`)) {
       await route.fulfill({
         contentType: 'application/json',
-        json: { can_edit: true, can_manage: true, role: 'OWNER' },
+        json: {
+          can_administer: true,
+          can_edit: true,
+          can_manage_owners: true,
+          can_view: true,
+          role: 'OWNER',
+        },
       });
       return;
     }
@@ -193,6 +199,15 @@ test('selects and restores a dated property position', async ({ page }) => {
           json: loanGroups,
         });
       }
+      return;
+    }
+    if (
+      path.endsWith(`/loan-groups/${loanGroupId}`) &&
+      request.method() === 'DELETE'
+    ) {
+      loanGroups = [];
+      if (loanPayload) loanPayload = { ...loanPayload, loan_group_id: null };
+      await route.fulfill({ status: 204 });
       return;
     }
     if (path.endsWith(`/households/${householdId}/loans`)) {
@@ -466,6 +481,15 @@ test('selects and restores a dated property position', async ({ page }) => {
   await expect(
     page.getByText(/derived opening balance NZD 305,000\.00/),
   ).toBeVisible();
+  await page.getByRole('button', { name: 'Remove Mortgage package' }).click();
+  await expect(
+    page.getByText(/will move Main mortgage to Ungrouped/),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Remove group' }).click();
+  await expect(page.getByText('Split group removed')).toBeVisible();
+  await expect(
+    page.getByRole('table', { name: 'Property loans' }),
+  ).toContainText('Ungrouped');
 
   await page.reload();
   await expect(page.getByRole('button', { name: 'Selected' })).toBeVisible();

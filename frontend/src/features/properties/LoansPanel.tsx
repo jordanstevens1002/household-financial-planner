@@ -184,6 +184,7 @@ function errorMessage(error: unknown) {
 }
 
 export function LoansPanel({
+  canAdminister,
   canEdit,
   currency,
   householdId,
@@ -191,6 +192,7 @@ export function LoansPanel({
   recordedDebt,
   recordedDebtDate,
 }: {
+  canAdminister: boolean;
   canEdit: boolean;
   currency: string;
   householdId: string;
@@ -333,18 +335,38 @@ export function LoansPanel({
     },
   });
   const removeGroup = useMutation({
-    mutationFn: (group: LoanGroup) =>
-      apiRequest<void>(`/api/v1/loan-groups/${group.id}`, {
+    mutationFn: ({
+      group,
+      assignedLoanIds,
+    }: {
+      group: LoanGroup;
+      assignedLoanIds: string[];
+    }) => {
+      const confirmation = new URLSearchParams();
+      if (assignedLoanIds.length) {
+        confirmation.set('confirm_assigned', 'true');
+        assignedLoanIds.forEach((id) =>
+          confirmation.append('assigned_loan_id', id),
+        );
+      }
+      const query = confirmation.size ? `?${confirmation.toString()}` : '';
+      return apiRequest<void>(`/api/v1/loan-groups/${group.id}${query}`, {
         csrfToken: auth.csrfToken(),
         method: 'DELETE',
-      }),
+      });
+    },
     onError: (error) => notify(errorMessage(error), 'error'),
     onSuccess: async () => {
       setRemovingGroup(null);
       notify('Split group removed', 'success');
-      await queryClient.invalidateQueries({
-        queryKey: ['loan-groups', householdId],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['loan-groups', householdId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['household-loans', householdId],
+        }),
+      ]);
     },
   });
   const closeLoan = useMutation({
@@ -548,7 +570,7 @@ export function LoansPanel({
                       <Button
                         aria-label={`Remove ${group.display_name}`}
                         color="error"
-                        disabled={groupedLoans.length > 0}
+                        disabled={groupedLoans.length > 0 && !canAdminister}
                         onClick={() => setRemovingGroup(group)}
                       >
                         Remove
@@ -563,8 +585,8 @@ export function LoansPanel({
                 {groupedLoans.length === 1 ? 'loan' : 'loans'}; derived opening
                 {totals.length === 1 ? ' balance' : ' balances'}{' '}
                 {formattedTotals}.
-                {groupedLoans.length > 0 && canEdit
-                  ? ' Ungroup its loans before removing this group.'
+                {groupedLoans.length > 0 && canEdit && !canAdminister
+                  ? ' A household administrator or owner can remove this group and move its loans to Ungrouped.'
                   : ''}
               </Alert>
             );
@@ -875,9 +897,25 @@ export function LoansPanel({
       />
       <ConfirmDialog
         confirmLabel="Remove group"
-        description="This removes the empty catalogue group. It does not delete or change any loan."
+        description={
+          removingGroup &&
+          propertyLoans.some((loan) => loan.loan_group_id === removingGroup.id)
+            ? `Removing this group will move ${propertyLoans
+                .filter((loan) => loan.loan_group_id === removingGroup.id)
+                .map((loan) => loan.display_name)
+                .join(', ')} to Ungrouped. No loan will be deleted.`
+            : 'This removes the empty catalogue group. It does not delete or change any loan.'
+        }
         onCancel={() => setRemovingGroup(null)}
-        onConfirm={() => removingGroup && removeGroup.mutate(removingGroup)}
+        onConfirm={() =>
+          removingGroup &&
+          removeGroup.mutate({
+            assignedLoanIds: propertyLoans
+              .filter((loan) => loan.loan_group_id === removingGroup.id)
+              .map((loan) => loan.id),
+            group: removingGroup,
+          })
+        }
         open={Boolean(removingGroup)}
         pending={removeGroup.isPending}
         title={`Remove ${removingGroup?.display_name ?? 'split group'}?`}
