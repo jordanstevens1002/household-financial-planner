@@ -3926,6 +3926,18 @@
             ],
             "title": "Lender"
           },
+          "loan_group_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loan Group Id"
+          },
           "loan_type_id": {
             "anyOf": [
               {
@@ -11159,6 +11171,72 @@
       }
     },
     "/api/v1/households/{household_id}/loan-groups": {
+      "get": {
+        "operationId": "list_loan_groups_api_v1_households__household_id__loan_groups_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "household_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Household Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LoanGroupRead"
+                  },
+                  "title": "Response List Loan Groups Api V1 Households  Household Id  Loan Groups Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Loan Groups",
+        "tags": [
+          "loans"
+        ]
+      },
       "post": {
         "operationId": "create_loan_group_api_v1_households__household_id__loan_groups_post",
         "parameters": [

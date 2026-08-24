@@ -55,6 +55,7 @@ class LoanCreate(BaseModel):
 
 
 class LoanUpdate(BaseModel):
+    loan_group_id: uuid.UUID | None = None
     display_name: str | None = Field(default=None, min_length=1, max_length=200)
     lender: str | None = Field(default=None, max_length=200)
     account_reference_masked: str | None = Field(default=None, max_length=50)

@@ -164,8 +164,12 @@ async def _create_loan_record(
             raise HTTPException(422, "Loan property must belong to the household")
     if payload.loan_group_id is not None:
         group = await session.get(LoanGroup, payload.loan_group_id)
-        if group is None or group.household_id != household_id:
-            raise HTTPException(422, "Loan group must belong to the household")
+        if (
+            group is None
+            or group.household_id != household_id
+            or group.property_id != payload.property_id
+        ):
+            raise HTTPException(422, "Loan group must belong to the same property and household")
     values = payload.model_dump()
     values["currency"] = payload.currency or household.currency
     loan = Loan(household_id=household_id, **values)
@@ -332,6 +336,21 @@ async def create_loan_group(
     return group
 
 
+@router.get("/households/{household_id}/loan-groups", response_model=list[LoanGroupRead])
+async def list_loan_groups(
+    household_id: uuid.UUID,
+    _: Annotated[HouseholdMembership, Depends(require_household_role(HouseholdRole.VIEWER))],
+    session: AsyncSession = Depends(get_session),
+) -> list[LoanGroup]:
+    return list(
+        await session.scalars(
+            select(LoanGroup)
+            .where(LoanGroup.household_id == household_id)
+            .order_by(LoanGroup.display_name, LoanGroup.id)
+        )
+    )
+
+
 @router.post("/households/{household_id}/loans", response_model=LoanRead, status_code=201)
 async def create_loan(
     household_id: uuid.UUID,
@@ -364,6 +383,14 @@ async def update_loan(
         loan_type = await session.get(LookupItem, values["loan_type_id"])
         if loan_type is None or loan_type.category != "loan_type" or not loan_type.is_active:
             raise HTTPException(422, "Active loan_type lookup required")
+    if "loan_group_id" in values and values["loan_group_id"] is not None:
+        group = await session.get(LoanGroup, values["loan_group_id"])
+        if (
+            group is None
+            or group.household_id != loan.household_id
+            or group.property_id != loan.property_id
+        ):
+            raise HTTPException(422, "Loan group must belong to the same property and household")
     before = _loan_snapshot(loan)
     for field, value in values.items():
         setattr(loan, field, value)

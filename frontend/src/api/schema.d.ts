@@ -510,7 +510,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Loan Groups */
+        get: operations["list_loan_groups_api_v1_households__household_id__loan_groups_get"];
         put?: never;
         /** Create Loan Group */
         post: operations["create_loan_group_api_v1_households__household_id__loan_groups_post"];
@@ -2741,6 +2742,8 @@ export interface components {
             is_interest_only?: boolean | null;
             /** Lender */
             lender?: string | null;
+            /** Loan Group Id */
+            loan_group_id?: string | null;
             /** Loan Type Id */
             loan_type_id?: string | null;
             /** Notes */
@@ -5523,6 +5526,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HouseholdCashflowRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_loan_groups_api_v1_households__household_id__loan_groups_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                household_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanGroupRead"][];
                 };
             };
             /** @description Validation Error */
