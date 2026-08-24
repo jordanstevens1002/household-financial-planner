@@ -159,6 +159,20 @@ describe('property loan records', () => {
       ),
     ).toBeVisible();
     expect(within(table).getAllByRole('row')).toHaveLength(2);
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual([
+      'Loan',
+      'Type',
+      'Opening balance',
+      'Opening date',
+      'Interest rate',
+      'Scheduled repayment',
+      'Split group',
+      'Status',
+    ]);
     expect(screen.queryByRole('button', { name: 'Add loan' })).toBeNull();
     expect(
       screen.queryByRole('button', { name: 'Add split group' }),

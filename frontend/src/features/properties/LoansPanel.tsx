@@ -393,21 +393,6 @@ export function LoansPanel({
   const columns: DataColumn<Loan>[] = [
     { key: 'name', label: 'Loan', render: (loan) => loan.display_name },
     {
-      key: 'group',
-      label: 'Split group',
-      render: (loan) => {
-        if (loan.loan_group_id == null) return 'Ungrouped';
-        if (loanGroups.isPending) return 'Loading…';
-        if (loanGroups.error) return 'Group unavailable';
-        const group = loanGroups.data?.find(
-          (item) => item.id === loan.loan_group_id,
-        );
-        return group?.property_id === propertyId
-          ? group.display_name
-          : 'Invalid group assignment';
-      },
-    },
-    {
       key: 'type',
       label: 'Type',
       render: (loan) =>
@@ -436,6 +421,21 @@ export function LoansPanel({
         loan.scheduled_repayment == null
           ? 'Not recorded'
           : `${formatCurrency(loan.scheduled_repayment, loan.currency)} ${loan.repayment_frequency.toLowerCase()}`,
+    },
+    {
+      key: 'group',
+      label: 'Split group',
+      render: (loan) => {
+        if (loan.loan_group_id == null) return 'Ungrouped';
+        if (loanGroups.isPending) return 'Loading…';
+        if (loanGroups.error) return 'Group unavailable';
+        const group = loanGroups.data?.find(
+          (item) => item.id === loan.loan_group_id,
+        );
+        return group?.property_id === propertyId
+          ? group.display_name
+          : 'Invalid group assignment';
+      },
     },
     {
       key: 'status',
