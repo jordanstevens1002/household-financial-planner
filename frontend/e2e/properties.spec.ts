@@ -464,7 +464,7 @@ test('selects and restores a dated property position', async ({ page }) => {
       scheduled_repayment: '2200',
     });
   await expect(
-    page.getByText(/derived opening balance NZ\$305,000\.00/),
+    page.getByText(/derived opening balance NZD 305,000\.00/),
   ).toBeVisible();
 
   await page.reload();

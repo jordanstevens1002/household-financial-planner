@@ -32,6 +32,37 @@ type Loan = components['schemas']['LoanRead'];
 type LoanGroup = components['schemas']['LoanGroupRead'];
 type Lookup = components['schemas']['LookupRead'];
 
+function addMoneyAmounts(amounts: string[]): string {
+  const cents = amounts.reduce((total, amount) => {
+    const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(amount);
+    if (!match)
+      throw new TypeError('Money amount must have at most two decimals');
+    return (
+      total + BigInt(match[1]!) * 100n + BigInt((match[2] ?? '').padEnd(2, '0'))
+    );
+  }, 0n);
+  const digits = cents.toString().padStart(3, '0');
+  return `${digits.slice(0, -2)}.${digits.slice(-2)}`;
+}
+
+function formatExactMoney(amount: string, currency: string): string {
+  const [integer = '0', fraction = '00'] = amount.split('.');
+  return `${currency} ${integer.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}.${fraction.padEnd(2, '0')}`;
+}
+
+function totalsByCurrency(loans: Loan[]): Array<[string, string]> {
+  const amounts = new Map<string, string[]>();
+  loans.forEach((loan) => {
+    amounts.set(loan.currency, [
+      ...(amounts.get(loan.currency) ?? []),
+      loan.opening_balance,
+    ]);
+  });
+  return [...amounts.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([loanCurrency, values]) => [loanCurrency, addMoneyAmounts(values)]);
+}
+
 const loanSchema = z.object({
   accountReference: z
     .string()
@@ -364,9 +395,17 @@ export function LoansPanel({
     {
       key: 'group',
       label: 'Split group',
-      render: (loan) =>
-        propertyGroups.find((group) => group.id === loan.loan_group_id)
-          ?.display_name ?? 'Ungrouped',
+      render: (loan) => {
+        if (loan.loan_group_id == null) return 'Ungrouped';
+        if (loanGroups.isPending) return 'Loading…';
+        if (loanGroups.error) return 'Group unavailable';
+        const group = loanGroups.data?.find(
+          (item) => item.id === loan.loan_group_id,
+        );
+        return group?.property_id === propertyId
+          ? group.display_name
+          : 'Invalid group assignment';
+      },
     },
     {
       key: 'type',
@@ -422,21 +461,30 @@ export function LoansPanel({
         ]
       : []),
   ];
-  const linkedOpeningBalance = propertyLoans
-    .filter((loan) => loan.is_active)
-    .reduce((total, loan) => total + Number(loan.opening_balance), 0);
+  const linkedOpeningTotals = totalsByCurrency(
+    propertyLoans.filter((loan) => loan.is_active),
+  );
+  const linkedPropertyCurrencyBalance = linkedOpeningTotals.find(
+    ([loanCurrency]) => loanCurrency === currency,
+  )?.[1];
+  const hasOtherCurrencies = linkedOpeningTotals.some(
+    ([loanCurrency]) => loanCurrency !== currency,
+  );
   const debtDiffers =
     recordedDebt == null ||
-    Math.abs(Number(recordedDebt) - linkedOpeningBalance) >= 0.01;
+    linkedPropertyCurrencyBalance == null ||
+    addMoneyAmounts([recordedDebt]) !==
+      addMoneyAmounts([linkedPropertyCurrencyBalance]);
   const debtComparison =
     recordedDebt == null
       ? 'There is no dated property-debt record to compare with these loans.'
-      : debtDiffers
-        ? `These figures differ by ${formatCurrency(
-            Math.abs(Number(recordedDebt) - linkedOpeningBalance),
-            currency,
-          )}.`
-        : 'The figures currently match.';
+      : hasOtherCurrencies
+        ? 'Loans in other currencies are shown separately and cannot be combined with recorded property debt.'
+        : linkedPropertyCurrencyBalance == null
+          ? `There is no linked ${currency} opening balance to compare.`
+          : debtDiffers
+            ? 'These figures differ.'
+            : 'The figures currently match.';
 
   return (
     <Stack spacing={2}>
@@ -478,10 +526,14 @@ export function LoansPanel({
             const groupedLoans = propertyLoans.filter(
               (loan) => loan.loan_group_id === group.id,
             );
-            const total = groupedLoans.reduce(
-              (sum, loan) => sum + Number(loan.opening_balance),
-              0,
-            );
+            const totals = totalsByCurrency(groupedLoans);
+            const formattedTotals = totals.length
+              ? totals
+                  .map(([loanCurrency, amount]) =>
+                    formatExactMoney(amount, loanCurrency),
+                  )
+                  .join('; ')
+              : 'none';
             return (
               <Alert
                 action={
@@ -509,7 +561,8 @@ export function LoansPanel({
               >
                 <strong>{group.display_name}</strong>: {groupedLoans.length}{' '}
                 {groupedLoans.length === 1 ? 'loan' : 'loans'}; derived opening
-                balance {formatCurrency(total, currency)}.
+                {totals.length === 1 ? ' balance' : ' balances'}{' '}
+                {formattedTotals}.
                 {groupedLoans.length > 0 && canEdit
                   ? ' Ungroup its loans before removing this group.'
                   : ''}
@@ -525,9 +578,16 @@ export function LoansPanel({
             ? 'not available'
             : formatCurrency(recordedDebt, currency)}
           . Active linked-loan opening balances total{' '}
-          {formatCurrency(linkedOpeningBalance, currency)}. {debtComparison}{' '}
-          Opening balances do not yet replace the dated property-debt record;
-          reconcile discrepancies before relying on both figures.
+          {linkedOpeningTotals.length
+            ? linkedOpeningTotals
+                .map(([loanCurrency, amount]) =>
+                  formatExactMoney(amount, loanCurrency),
+                )
+                .join('; ')
+            : 'none'}
+          . {debtComparison} Opening balances do not yet replace the dated
+          property-debt record; reconcile discrepancies before relying on both
+          figures.
         </Alert>
       ) : null}
       {loans.isPending ? (

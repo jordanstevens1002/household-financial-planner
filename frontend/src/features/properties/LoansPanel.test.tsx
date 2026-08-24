@@ -155,7 +155,7 @@ describe('property loan records', () => {
     expect(table).toHaveTextContent('NZ$310,000.00');
     expect(
       screen.getByText(
-        /Active linked-loan opening balances total NZ\$310,000\.00/,
+        /Active linked-loan opening balances total NZD 310,000\.00/,
       ),
     ).toBeVisible();
     expect(within(table).getAllByRole('row')).toHaveLength(2);
@@ -301,6 +301,100 @@ describe('property loan records', () => {
         screen.queryByText(/Loan split groups could not be loaded/),
       ).toBeNull(),
     );
+  });
+
+  it('keeps mixed-currency group totals separate and decimal-exact', async () => {
+    const large = '9999999999999999.99';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input) => {
+        const path = pathOf(input);
+        if (path.endsWith('/lookups/loan_type'))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loan-groups`))
+          return Promise.resolve(response([group()]));
+        if (path.endsWith(`/households/${householdId}/loans`))
+          return Promise.resolve(
+            response([
+              {
+                ...loan(),
+                currency: 'AUD',
+                loan_group_id: groupId,
+                opening_balance: large,
+              },
+              {
+                ...loan('17223c91-b956-4f70-8431-01fe4a140eb8'),
+                currency: 'AUD',
+                loan_group_id: groupId,
+                opening_balance: large,
+              },
+              {
+                ...loan('46aa75ae-929b-4d92-bca8-bf578c32e8b2'),
+                currency: 'NZD',
+                loan_group_id: groupId,
+                opening_balance: '1.01',
+              },
+            ]),
+          );
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    renderPanel();
+    expect(
+      await within(
+        await screen.findByLabelText('Loan split groups'),
+      ).findByText(/AUD 19,999,999,999,999,999\.98; NZD 1\.01/),
+    ).toBeVisible();
+  });
+
+  it('distinguishes loading, failed and unknown split-group assignments', async () => {
+    let resolveGroups: ((value: Response) => void) | undefined;
+    const pendingGroups = new Promise<Response>((resolve) => {
+      resolveGroups = resolve;
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input) => {
+        const path = pathOf(input);
+        if (path.endsWith('/lookups/loan_type'))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loans`))
+          return Promise.resolve(
+            response([{ ...loan(), loan_group_id: groupId }]),
+          );
+        if (path.endsWith(`/households/${householdId}/loan-groups`))
+          return pendingGroups;
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    renderPanel();
+    const table = await screen.findByRole('table', { name: 'Property loans' });
+    expect(within(table).getByText('Loading…')).toBeVisible();
+    resolveGroups?.(response([]));
+    expect(
+      await within(table).findByText('Invalid group assignment'),
+    ).toBeVisible();
+  });
+
+  it('marks a grouped loan unavailable when its catalogue request fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input) => {
+        const path = pathOf(input);
+        if (path.endsWith('/lookups/loan_type'))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loans`))
+          return Promise.resolve(
+            response([{ ...loan(), loan_group_id: groupId }]),
+          );
+        if (path.endsWith(`/households/${householdId}/loan-groups`))
+          return Promise.resolve(response({ detail: 'Unavailable' }, 503));
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    renderPanel();
+    expect(await screen.findByText('Group unavailable')).toBeVisible();
+    expect(screen.queryByText('Ungrouped')).toBeNull();
   });
 
   it('corrects and closes a loan while explaining conflicting recorded debt', async () => {
@@ -491,7 +585,7 @@ describe('property loan records', () => {
     expect(within(table).getByText('Fixed splits')).toBeVisible();
     expect(within(table).getByText('Ungrouped')).toBeVisible();
     expect(
-      screen.getByText(/derived opening balance NZ\$310,000\.00/),
+      screen.getByText(/derived opening balance NZD 310,000\.00/),
     ).toBeVisible();
 
     await user.click(screen.getByRole('button', { name: 'Add split group' }));
