@@ -107,16 +107,15 @@ function renderPanel(
   canEdit = true,
   recordedDebt: string | null = '310000.00',
   canAdminister = false,
+  queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  }),
 ) {
   return render(
     <ThemeProvider theme={appTheme}>
       <CssBaseline />
       <NotificationProvider>
-        <QueryClientProvider
-          client={
-            new QueryClient({ defaultOptions: { queries: { retry: false } } })
-          }
-        >
+        <QueryClientProvider client={queryClient}>
           <LoansPanel
             canAdminister={canAdminister}
             canEdit={canEdit}
@@ -329,6 +328,11 @@ describe('property loan records', () => {
     const dialog = screen.getByRole('dialog', {
       name: 'Manage borrowers for Home loan',
     });
+    expect(
+      within(dialog).getByText(
+        /changes repayment attribution from the loan opening date/i,
+      ),
+    ).toBeVisible();
     await user.click(
       within(dialog).getByRole('combobox', { name: 'Borrowers' }),
     );
@@ -349,6 +353,81 @@ describe('property loan records', () => {
         'Alex Borrower, Sam Former Borrower (inactive)',
       ),
     ).toBeVisible();
+  });
+
+  it('uses the shared people cache for a newly created household person', async () => {
+    const newPerson = person(secondPersonId, 'Just Added');
+    const current = { ...loan(), borrower_person_ids: [secondPersonId] };
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+    });
+    queryClient.setQueryData(['people', householdId], [newPerson]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input) => {
+        const path = pathOf(input);
+        if (path.endsWith('/lookups/loan_type'))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loan-groups`))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loans`))
+          return Promise.resolve(response([current]));
+        if (path.endsWith(`/households/${householdId}/people`))
+          throw new Error('The fresh shared people cache should be reused');
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    renderPanel(true, '310000.00', false, queryClient);
+    const table = await screen.findByRole('table', { name: 'Property loans' });
+    expect(await within(table).findByText('Just Added')).toBeVisible();
+  });
+
+  it('cannot dismiss a borrower dialog while replacement is pending', async () => {
+    let finishReplacement!: (value: Response) => void;
+    const pendingReplacement = new Promise<Response>((resolve) => {
+      finishReplacement = resolve;
+    });
+    const current = { ...loan(), borrower_person_ids: [firstPersonId] };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input) => {
+        const path = pathOf(input);
+        if (path.endsWith('/lookups/loan_type'))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loan-groups`))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/people`))
+          return Promise.resolve(
+            response([person(firstPersonId, 'Alex Borrower')]),
+          );
+        if (path.endsWith(`/loans/${current.id}/borrowers`))
+          return pendingReplacement;
+        if (path.endsWith(`/households/${householdId}/loans`))
+          return Promise.resolve(response([current]));
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    const user = userEvent.setup();
+    renderPanel();
+    await user.click(
+      within(
+        await screen.findByRole('table', { name: 'Property loans' }),
+      ).getByRole('button', { name: 'Manage borrowers' }),
+    );
+    const dialog = screen.getByRole('dialog', {
+      name: 'Manage borrowers for Home loan',
+    });
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Save borrowers' }),
+    );
+    expect(
+      within(dialog).getByRole('button', { name: 'Cancel' }),
+    ).toBeDisabled();
+    await user.keyboard('{Escape}');
+    expect(dialog).toBeVisible();
+    finishReplacement(response(current));
+    expect(await screen.findByText('Borrowers updated')).toBeVisible();
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 
   it('blocks borrower replacement until a failed people lookup is retried', async () => {
@@ -639,6 +718,15 @@ describe('property loan records', () => {
     expect(typeof effectiveDate).toBe('string');
     expect(effectiveDate as string).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(await screen.findByText('Closed')).toBeVisible();
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Close loan?' })).toBeNull(),
+    );
+    expect(
+      within(screen.getByRole('table', { name: 'Property loans' })).queryByRole(
+        'button',
+        { name: 'Manage borrowers' },
+      ),
+    ).toBeNull();
   }, 15_000);
 
   it('rejects an exposed account reference and explains missing recorded debt', async () => {

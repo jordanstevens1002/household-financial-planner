@@ -273,7 +273,7 @@ export function LoansPanel({
     enabled: needsPeople,
     queryFn: () =>
       apiRequest<Person[]>(`/api/v1/households/${householdId}/people`),
-    queryKey: ['household-people', householdId],
+    queryKey: ['people', householdId],
     retry: false,
   });
   const saveLoan = useMutation({
@@ -337,8 +337,10 @@ export function LoansPanel({
         method: 'PUT',
       }),
     onError: (error) => notify(errorMessage(error), 'error'),
-    onSuccess: async () => {
-      setBorrowerLoan(null);
+    onSuccess: async (_, variables) => {
+      setBorrowerLoan((current) =>
+        current?.id === variables.loan.id ? null : current,
+      );
       notify('Borrowers updated', 'success');
       await Promise.all([
         queryClient.invalidateQueries({
@@ -556,9 +558,14 @@ export function LoansPanel({
             render: (loan: Loan) => (
               <Stack direction="row" spacing={1}>
                 <Button onClick={() => openCorrection(loan)}>Correct</Button>
-                <Button onClick={() => openBorrowers(loan)}>
-                  Manage borrowers
-                </Button>
+                {loan.is_active ? (
+                  <Button
+                    disabled={replaceBorrowers.isPending}
+                    onClick={() => openBorrowers(loan)}
+                  >
+                    Manage borrowers
+                  </Button>
+                ) : null}
                 {loan.is_active ? (
                   <Button color="error" onClick={() => setClosingLoan(loan)}>
                     Close
@@ -981,7 +988,9 @@ export function LoansPanel({
       <Dialog
         fullWidth
         maxWidth="sm"
-        onClose={() => setBorrowerLoan(null)}
+        onClose={() => {
+          if (!replaceBorrowers.isPending) setBorrowerLoan(null);
+        }}
         open={Boolean(borrowerLoan)}
       >
         <DialogTitle>
@@ -994,6 +1003,12 @@ export function LoansPanel({
               Advanced dated override applies. Leaving this empty keeps the
               repayment at whole-household level.
             </Typography>
+            <Alert severity="warning">
+              Ordinary borrowers are undated defaults. Saving here changes
+              repayment attribution from the loan opening date, including past
+              cash-flow views. Use a dated Advanced repayment override when
+              responsibility changes over time. Closed loans cannot be changed.
+            </Alert>
             {people.error ? (
               <Alert
                 action={
@@ -1026,7 +1041,12 @@ export function LoansPanel({
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setBorrowerLoan(null)}>Cancel</Button>
+          <Button
+            disabled={replaceBorrowers.isPending}
+            onClick={() => setBorrowerLoan(null)}
+          >
+            Cancel
+          </Button>
           <Button
             disabled={
               replaceBorrowers.isPending ||
