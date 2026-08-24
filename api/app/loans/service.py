@@ -41,6 +41,11 @@ def equal_borrower_allocations(person_ids: list[uuid.UUID]) -> dict[uuid.UUID, D
     }
 
 
+def canonical_borrower_ids(person_ids: list[uuid.UUID]) -> list[uuid.UUID]:
+    """Return the API's stable, unordered-set representation of borrowers."""
+    return sorted(set(person_ids), key=lambda person_id: person_id.int)
+
+
 async def create_loan_record(
     household_id: uuid.UUID, payload: LoanCreate, session: AsyncSession
 ) -> Loan:
@@ -62,7 +67,9 @@ async def create_loan_record(
             or group.property_id != payload.property_id
         ):
             raise HTTPException(422, "Loan group must belong to the same property and household")
-    borrowers = await validate_borrowers(household_id, payload.borrower_person_ids, session)
+    borrowers = await validate_borrowers(
+        household_id, canonical_borrower_ids(payload.borrower_person_ids), session
+    )
     values = payload.model_dump(exclude={"borrower_person_ids"})
     values["currency"] = payload.currency or household.currency
     loan = Loan(household_id=household_id, **values)

@@ -2924,6 +2924,7 @@
       "LoanBorrowerReplace": {
         "properties": {
           "borrower_person_ids": {
+            "description": "Unordered borrower set; responses use canonical UUID order.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -2980,6 +2981,7 @@
             "title": "Account Reference Masked"
           },
           "borrower_person_ids": {
+            "description": "Unordered borrower set; responses use canonical UUID order.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -3416,6 +3418,7 @@
             "title": "Account Reference Masked"
           },
           "borrower_person_ids": {
+            "description": "Unordered borrower set; responses use canonical UUID order.",
             "items": {
               "format": "uuid",
               "type": "string"

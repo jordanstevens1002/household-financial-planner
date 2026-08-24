@@ -451,7 +451,9 @@ class Loan(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
     borrower_links: Mapped[list[LoanBorrower]] = relationship(
-        cascade="all, delete-orphan", lazy="selectin"
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="LoanBorrower.person_id",
     )
 
     @property

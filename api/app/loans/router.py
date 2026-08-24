@@ -40,7 +40,7 @@ from app.loans.schemas import (
     TargetCalculationRead,
     TargetCalculationRequest,
 )
-from app.loans.service import create_loan_record, validate_borrowers
+from app.loans.service import canonical_borrower_ids, create_loan_record, validate_borrowers
 from app.models import (
     ApplicationUser,
     EventClassification,
@@ -563,9 +563,14 @@ async def replace_loan_borrowers(
     accessible = await _loan_with_access(loan_id, HouseholdRole.EDITOR, user, session)
     loan = await session.scalar(select(Loan).where(Loan.id == accessible.id).with_for_update())
     assert loan is not None
-    people = await validate_borrowers(loan.household_id, payload.borrower_person_ids, session)
-    previous_ids = loan.borrower_person_ids
-    loan.borrower_links = [LoanBorrower(person_id=person.id) for person in people]
+    requested_ids = canonical_borrower_ids(payload.borrower_person_ids)
+    await validate_borrowers(loan.household_id, requested_ids, session)
+    previous_ids = canonical_borrower_ids(loan.borrower_person_ids)
+    existing_by_person_id = {link.person_id: link for link in loan.borrower_links}
+    loan.borrower_links = [
+        existing_by_person_id.get(person_id, LoanBorrower(person_id=person_id))
+        for person_id in requested_ids
+    ]
     await session.commit()
     logger.info(
         "loan_borrowers_replaced",
@@ -574,7 +579,7 @@ async def replace_loan_borrowers(
         property_id=str(loan.property_id) if loan.property_id else None,
         loan_id=str(loan.id),
         previous_borrower_person_ids=[str(person_id) for person_id in previous_ids],
-        resulting_borrower_person_ids=[str(person.id) for person in people],
+        resulting_borrower_person_ids=[str(person_id) for person_id in requested_ids],
     )
     return loan
 

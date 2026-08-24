@@ -55,10 +55,11 @@ async def test_borrowers_create_exact_default_cashflow_allocations(
     borrower_ids = [person["id"] for person in people]
     loan = await create_loan(client, loan_setup, borrower_person_ids=borrower_ids)
 
-    assert loan["borrower_person_ids"] == borrower_ids
+    canonical_ids = sorted(borrower_ids, key=lambda person_id: uuid.UUID(person_id).int)
+    assert loan["borrower_person_ids"] == canonical_ids
     listed = await client.get(f"/api/v1/loans/{loan['id']}")
     assert listed.status_code == 200
-    assert listed.json()["borrower_person_ids"] == borrower_ids
+    assert listed.json()["borrower_person_ids"] == canonical_ids
 
     cashflow = await client.get(
         f"/api/v1/households/{loan_setup['household_id']}/cashflow",
@@ -72,6 +73,14 @@ async def test_borrowers_create_exact_default_cashflow_allocations(
         (Decimal(item["responsibility_percentage"]) for item in projection["allocations"]),
         Decimal("0"),
     ) == (Decimal("100") if borrower_count else Decimal("0"))
+    assert sum(
+        (Decimal(item["annual_amount"]) for item in projection["allocations"]),
+        Decimal("0"),
+    ) == (Decimal(projection["annual_repayment"]) if borrower_count else Decimal("0"))
+    assert sum(
+        (Decimal(item["monthly_amount"]) for item in projection["allocations"]),
+        Decimal("0"),
+    ) == (Decimal(projection["monthly_repayment"]) if borrower_count else Decimal("0"))
     assert any("whole-household expense" in item for item in projection["warnings"]) is (
         borrower_count == 0
     )
@@ -138,6 +147,23 @@ async def test_borrower_replacement_validates_access_and_audits(
     assert events[-1][0] == "loan_borrowers_replaced"
     assert events[-1][1]["previous_borrower_person_ids"] == [first["id"]]
     assert events[-1][1]["resulting_borrower_person_ids"] == [second["id"]]
+
+    third = await create_person(client, loan_setup["household_id"], "Third borrower")
+    canonical_pair = sorted(
+        [second["id"], third["id"]], key=lambda person_id: uuid.UUID(person_id).int
+    )
+    for requested, expected in [
+        ([second["id"], third["id"]], canonical_pair),
+        ([third["id"], second["id"]], canonical_pair),
+        ([second["id"], third["id"]], canonical_pair),
+        ([second["id"]], [second["id"]]),
+    ]:
+        response = await client.put(
+            f"/api/v1/loans/{loan['id']}/borrowers",
+            json={"borrower_person_ids": requested},
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["borrower_person_ids"] == expected
 
     other = await create_household(client, "Other borrower household")
     outsider = await create_person(client, other["id"], "Outside borrower")

@@ -34,7 +34,11 @@ class LoanCreate(BaseModel):
     is_interest_only: bool
     is_active: bool = True
     notes: str | None = Field(default=None, max_length=2000)
-    borrower_person_ids: list[uuid.UUID] = Field(default_factory=list, max_length=20)
+    borrower_person_ids: list[uuid.UUID] = Field(
+        default_factory=list,
+        max_length=20,
+        description="Unordered borrower set; responses use canonical UUID order.",
+    )
 
     @field_validator("account_reference_masked")
     @classmethod
@@ -160,7 +164,10 @@ class LoanRead(LoanCreate):
 
 
 class LoanBorrowerReplace(BaseModel):
-    borrower_person_ids: list[uuid.UUID] = Field(max_length=20)
+    borrower_person_ids: list[uuid.UUID] = Field(
+        max_length=20,
+        description="Unordered borrower set; responses use canonical UUID order.",
+    )
 
     @field_validator("borrower_person_ids")
     @classmethod

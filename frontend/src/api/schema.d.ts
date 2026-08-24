@@ -2478,7 +2478,10 @@ export interface components {
         };
         /** LoanBorrowerReplace */
         LoanBorrowerReplace: {
-            /** Borrower Person Ids */
+            /**
+             * Borrower Person Ids
+             * @description Unordered borrower set; responses use canonical UUID order.
+             */
             borrower_person_ids: string[];
         };
         /** LoanCloseCreate */
@@ -2495,7 +2498,10 @@ export interface components {
         LoanCreate: {
             /** Account Reference Masked */
             account_reference_masked?: string | null;
-            /** Borrower Person Ids */
+            /**
+             * Borrower Person Ids
+             * @description Unordered borrower set; responses use canonical UUID order.
+             */
             borrower_person_ids?: string[];
             /** Currency */
             currency?: string | null;
@@ -2624,7 +2630,10 @@ export interface components {
         LoanRead: {
             /** Account Reference Masked */
             account_reference_masked?: string | null;
-            /** Borrower Person Ids */
+            /**
+             * Borrower Person Ids
+             * @description Unordered borrower set; responses use canonical UUID order.
+             */
             borrower_person_ids?: string[];
             /** Currency */
             currency: string;
