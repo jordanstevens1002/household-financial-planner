@@ -29,7 +29,39 @@ import { useAuth } from '../auth/AuthContext';
 import { localCalendarDate } from '../people/localDate';
 
 type Loan = components['schemas']['LoanRead'];
+type LoanGroup = components['schemas']['LoanGroupRead'];
 type Lookup = components['schemas']['LookupRead'];
+
+function addMoneyAmounts(amounts: string[]): string {
+  const cents = amounts.reduce((total, amount) => {
+    const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(amount);
+    if (!match)
+      throw new TypeError('Money amount must have at most two decimals');
+    return (
+      total + BigInt(match[1]!) * 100n + BigInt((match[2] ?? '').padEnd(2, '0'))
+    );
+  }, 0n);
+  const digits = cents.toString().padStart(3, '0');
+  return `${digits.slice(0, -2)}.${digits.slice(-2)}`;
+}
+
+function formatExactMoney(amount: string, currency: string): string {
+  const [integer = '0', fraction = '00'] = amount.split('.');
+  return `${currency} ${integer.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}.${fraction.padEnd(2, '0')}`;
+}
+
+function totalsByCurrency(loans: Loan[]): Array<[string, string]> {
+  const amounts = new Map<string, string[]>();
+  loans.forEach((loan) => {
+    amounts.set(loan.currency, [
+      ...(amounts.get(loan.currency) ?? []),
+      loan.opening_balance,
+    ]);
+  });
+  return [...amounts.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([loanCurrency, values]) => [loanCurrency, addMoneyAmounts(values)]);
+}
 
 const loanSchema = z.object({
   accountReference: z
@@ -62,6 +94,7 @@ const loanSchema = z.object({
     .enum(['', 'false', 'true'])
     .refine((value) => value !== '', 'Choose a repayment type'),
   lender: z.string().trim().max(200),
+  loanGroupId: z.string(),
   loanTypeId: z.string().min(1, 'Choose a loan type'),
   notes: z.string().trim().max(2000),
   openingBalance: z
@@ -115,6 +148,7 @@ const defaults: LoanFields = {
   interestCalculationMethod: '',
   isInterestOnly: '',
   lender: '',
+  loanGroupId: '',
   loanTypeId: '',
   notes: '',
   openingBalance: '',
@@ -133,6 +167,7 @@ function fieldsForLoan(loan: Loan): LoanFields {
     interestCalculationMethod: loan.interest_calculation_method,
     isInterestOnly: loan.is_interest_only ? 'true' : 'false',
     lender: loan.lender ?? '',
+    loanGroupId: loan.loan_group_id ?? '',
     loanTypeId: loan.loan_type_id,
     notes: loan.notes ?? '',
     openingBalance: loan.opening_balance,
@@ -169,11 +204,17 @@ export function LoansPanel({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
   const [closingLoan, setClosingLoan] = useState<Loan | null>(null);
+  const [groupDialogOpen, setGroupDialogOpen] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<LoanGroup | null>(null);
+  const [removingGroup, setRemovingGroup] = useState<LoanGroup | null>(null);
+  const [groupName, setGroupName] = useState('');
+  const [groupNameError, setGroupNameError] = useState('');
   const form = useForm<LoanFields, unknown, ValidLoanFields>({
     defaultValues: defaults,
     resolver: zodResolver(loanSchema),
   });
   const loanTypeId = useWatch({ control: form.control, name: 'loanTypeId' });
+  const loanGroupId = useWatch({ control: form.control, name: 'loanGroupId' });
   const repaymentFrequency = useWatch({
     control: form.control,
     name: 'repaymentFrequency',
@@ -197,8 +238,17 @@ export function LoansPanel({
     queryKey: ['lookups', 'loan_type'],
     retry: false,
   });
+  const loanGroups = useQuery({
+    queryFn: () =>
+      apiRequest<LoanGroup[]>(`/api/v1/households/${householdId}/loan-groups`),
+    queryKey: ['loan-groups', householdId],
+    retry: false,
+  });
   const propertyLoans = (loans.data ?? []).filter(
     (loan) => loan.property_id === propertyId,
+  );
+  const propertyGroups = (loanGroups.data ?? []).filter(
+    (group) => group.property_id === propertyId,
   );
   const saveLoan = useMutation({
     mutationFn: (fields: ValidLoanFields) =>
@@ -214,6 +264,7 @@ export function LoansPanel({
             interest_calculation_method: fields.interestCalculationMethod,
             is_interest_only: fields.isInterestOnly === 'true',
             lender: fields.lender.trim() || null,
+            loan_group_id: fields.loanGroupId || null,
             loan_type_id: fields.loanTypeId,
             notes: fields.notes.trim() || null,
             opening_balance: fields.openingBalance,
@@ -227,7 +278,6 @@ export function LoansPanel({
               : {
                   currency,
                   is_active: true,
-                  loan_group_id: null,
                   property_id: propertyId,
                 }),
           }),
@@ -250,6 +300,51 @@ export function LoansPanel({
         }),
         queryClient.invalidateQueries({ queryKey: ['household-cashflow'] }),
       ]);
+    },
+  });
+  const saveGroup = useMutation({
+    mutationFn: (name: string) =>
+      apiRequest<LoanGroup>(
+        editingGroup
+          ? `/api/v1/loan-groups/${editingGroup.id}`
+          : `/api/v1/households/${householdId}/loan-groups`,
+        {
+          body: JSON.stringify(
+            editingGroup
+              ? { display_name: name }
+              : { display_name: name, property_id: propertyId },
+          ),
+          csrfToken: auth.csrfToken(),
+          method: editingGroup ? 'PATCH' : 'POST',
+        },
+      ),
+    onError: (error) => notify(errorMessage(error), 'error'),
+    onSuccess: async () => {
+      setGroupDialogOpen(false);
+      setEditingGroup(null);
+      setGroupName('');
+      notify(
+        editingGroup ? 'Split group renamed' : 'Split group added',
+        'success',
+      );
+      await queryClient.invalidateQueries({
+        queryKey: ['loan-groups', householdId],
+      });
+    },
+  });
+  const removeGroup = useMutation({
+    mutationFn: (group: LoanGroup) =>
+      apiRequest<void>(`/api/v1/loan-groups/${group.id}`, {
+        csrfToken: auth.csrfToken(),
+        method: 'DELETE',
+      }),
+    onError: (error) => notify(errorMessage(error), 'error'),
+    onSuccess: async () => {
+      setRemovingGroup(null);
+      notify('Split group removed', 'success');
+      await queryClient.invalidateQueries({
+        queryKey: ['loan-groups', householdId],
+      });
     },
   });
   const closeLoan = useMutation({
@@ -280,6 +375,20 @@ export function LoansPanel({
     setEditingLoan(loan);
     form.reset(fieldsForLoan(loan));
     setDialogOpen(true);
+  };
+  const openGroupDialog = (group: LoanGroup | null = null) => {
+    setEditingGroup(group);
+    setGroupName(group?.display_name ?? '');
+    setGroupNameError('');
+    setGroupDialogOpen(true);
+  };
+  const submitGroup = () => {
+    const normalized = groupName.trim().replace(/\s+/g, ' ');
+    if (!normalized) {
+      setGroupNameError('Enter a split group name');
+      return;
+    }
+    saveGroup.mutate(normalized);
   };
   const columns: DataColumn<Loan>[] = [
     { key: 'name', label: 'Loan', render: (loan) => loan.display_name },
@@ -314,6 +423,21 @@ export function LoansPanel({
           : `${formatCurrency(loan.scheduled_repayment, loan.currency)} ${loan.repayment_frequency.toLowerCase()}`,
     },
     {
+      key: 'group',
+      label: 'Split group',
+      render: (loan) => {
+        if (loan.loan_group_id == null) return 'Ungrouped';
+        if (loanGroups.isPending) return 'Loading…';
+        if (loanGroups.error) return 'Group unavailable';
+        const group = loanGroups.data?.find(
+          (item) => item.id === loan.loan_group_id,
+        );
+        return group?.property_id === propertyId
+          ? group.display_name
+          : 'Invalid group assignment';
+      },
+    },
+    {
       key: 'status',
       label: 'Status',
       render: (loan) => (loan.is_active ? 'Active' : 'Closed'),
@@ -337,21 +461,30 @@ export function LoansPanel({
         ]
       : []),
   ];
-  const linkedOpeningBalance = propertyLoans
-    .filter((loan) => loan.is_active)
-    .reduce((total, loan) => total + Number(loan.opening_balance), 0);
+  const linkedOpeningTotals = totalsByCurrency(
+    propertyLoans.filter((loan) => loan.is_active),
+  );
+  const linkedPropertyCurrencyBalance = linkedOpeningTotals.find(
+    ([loanCurrency]) => loanCurrency === currency,
+  )?.[1];
+  const hasOtherCurrencies = linkedOpeningTotals.some(
+    ([loanCurrency]) => loanCurrency !== currency,
+  );
   const debtDiffers =
     recordedDebt == null ||
-    Math.abs(Number(recordedDebt) - linkedOpeningBalance) >= 0.01;
+    linkedPropertyCurrencyBalance == null ||
+    addMoneyAmounts([recordedDebt]) !==
+      addMoneyAmounts([linkedPropertyCurrencyBalance]);
   const debtComparison =
     recordedDebt == null
       ? 'There is no dated property-debt record to compare with these loans.'
-      : debtDiffers
-        ? `These figures differ by ${formatCurrency(
-            Math.abs(Number(recordedDebt) - linkedOpeningBalance),
-            currency,
-          )}.`
-        : 'The figures currently match.';
+      : hasOtherCurrencies
+        ? 'Loans in other currencies are shown separately and cannot be combined with recorded property debt.'
+        : linkedPropertyCurrencyBalance == null
+          ? `There is no linked ${currency} opening balance to compare.`
+          : debtDiffers
+            ? 'These figures differ.'
+            : 'The figures currently match.';
 
   return (
     <Stack spacing={2}>
@@ -361,15 +494,83 @@ export function LoansPanel({
       >
         <Typography variant="h2">Loans</Typography>
         {canEdit ? (
-          <Button onClick={openCreate} variant="outlined">
-            Add loan
-          </Button>
+          <Stack direction="row" spacing={1}>
+            <Button onClick={() => openGroupDialog()} variant="outlined">
+              Add split group
+            </Button>
+            <Button onClick={openCreate} variant="outlined">
+              Add loan
+            </Button>
+          </Stack>
         ) : null}
       </Stack>
       <Typography color="text.secondary">
         Record each loan separately. A property can have no loan, one loan or
         several loan splits.
       </Typography>
+      {loanGroups.isPending ? (
+        <CircularProgress aria-label="Loading loan split groups" size={24} />
+      ) : loanGroups.error ? (
+        <Alert
+          action={
+            <Button onClick={() => void loanGroups.refetch()}>Retry</Button>
+          }
+          severity="error"
+        >
+          Loan split groups could not be loaded.{' '}
+          {errorMessage(loanGroups.error)}
+        </Alert>
+      ) : propertyGroups.length ? (
+        <Stack aria-label="Loan split groups" spacing={1}>
+          {propertyGroups.map((group) => {
+            const groupedLoans = propertyLoans.filter(
+              (loan) => loan.loan_group_id === group.id,
+            );
+            const totals = totalsByCurrency(groupedLoans);
+            const formattedTotals = totals.length
+              ? totals
+                  .map(([loanCurrency, amount]) =>
+                    formatExactMoney(amount, loanCurrency),
+                  )
+                  .join('; ')
+              : 'none';
+            return (
+              <Alert
+                action={
+                  canEdit ? (
+                    <Stack direction="row" spacing={1}>
+                      <Button
+                        aria-label={`Rename ${group.display_name}`}
+                        onClick={() => openGroupDialog(group)}
+                      >
+                        Rename
+                      </Button>
+                      <Button
+                        aria-label={`Remove ${group.display_name}`}
+                        color="error"
+                        disabled={groupedLoans.length > 0}
+                        onClick={() => setRemovingGroup(group)}
+                      >
+                        Remove
+                      </Button>
+                    </Stack>
+                  ) : undefined
+                }
+                key={group.id}
+                severity="info"
+              >
+                <strong>{group.display_name}</strong>: {groupedLoans.length}{' '}
+                {groupedLoans.length === 1 ? 'loan' : 'loans'}; derived opening
+                {totals.length === 1 ? ' balance' : ' balances'}{' '}
+                {formattedTotals}.
+                {groupedLoans.length > 0 && canEdit
+                  ? ' Ungroup its loans before removing this group.'
+                  : ''}
+              </Alert>
+            );
+          })}
+        </Stack>
+      ) : null}
       {propertyLoans.length ? (
         <Alert severity={debtDiffers ? 'warning' : 'info'}>
           Recorded property debt as of {formatDate(recordedDebtDate)} is{' '}
@@ -377,9 +578,16 @@ export function LoansPanel({
             ? 'not available'
             : formatCurrency(recordedDebt, currency)}
           . Active linked-loan opening balances total{' '}
-          {formatCurrency(linkedOpeningBalance, currency)}. {debtComparison}{' '}
-          Opening balances do not yet replace the dated property-debt record;
-          reconcile discrepancies before relying on both figures.
+          {linkedOpeningTotals.length
+            ? linkedOpeningTotals
+                .map(([loanCurrency, amount]) =>
+                  formatExactMoney(amount, loanCurrency),
+                )
+                .join('; ')
+            : 'none'}
+          . {debtComparison} Opening balances do not yet replace the dated
+          property-debt record; reconcile discrepancies before relying on both
+          figures.
         </Alert>
       ) : null}
       {loans.isPending ? (
@@ -456,6 +664,25 @@ export function LoansPanel({
                 {(loanTypes.data ?? []).map((item) => (
                   <MenuItem key={item.id} value={item.id}>
                     {item.display_name}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                disabled={loanGroups.isPending || Boolean(loanGroups.error)}
+                helperText={
+                  loanGroups.error
+                    ? 'Groups are unavailable; retry from the Loans section.'
+                    : 'Optional; each loan keeps its own balance and terms.'
+                }
+                label="Split group (optional)"
+                select
+                value={loanGroupId ?? ''}
+                {...form.register('loanGroupId')}
+              >
+                <MenuItem value="">Ungrouped</MenuItem>
+                {propertyGroups.map((group) => (
+                  <MenuItem key={group.id} value={group.id}>
+                    {group.display_name}
                   </MenuItem>
                 ))}
               </TextField>
@@ -599,6 +826,44 @@ export function LoansPanel({
           </DialogActions>
         </Stack>
       </Dialog>
+      <Dialog
+        fullWidth
+        maxWidth="sm"
+        onClose={() => setGroupDialogOpen(false)}
+        open={groupDialogOpen}
+      >
+        <DialogTitle>
+          {editingGroup ? 'Rename split group' : 'Add a split group'}
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            error={Boolean(groupNameError)}
+            fullWidth
+            helperText={
+              groupNameError ||
+              'Use a familiar name such as Fixed or Offset split.'
+            }
+            label="Split group name"
+            onChange={(event) => {
+              setGroupName(event.target.value);
+              setGroupNameError('');
+            }}
+            sx={{ mt: 1 }}
+            value={groupName}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setGroupDialogOpen(false)}>Cancel</Button>
+          <Button
+            disabled={saveGroup.isPending}
+            onClick={submitGroup}
+            variant="contained"
+          >
+            {editingGroup ? 'Save name' : 'Add group'}
+          </Button>
+        </DialogActions>
+      </Dialog>
       <ConfirmDialog
         confirmLabel="Close loan"
         description="Closing this loan keeps its record but removes its scheduled repayment from current household cash flow."
@@ -607,6 +872,15 @@ export function LoansPanel({
         open={Boolean(closingLoan)}
         pending={closeLoan.isPending}
         title={`Close ${closingLoan?.display_name ?? 'loan'}?`}
+      />
+      <ConfirmDialog
+        confirmLabel="Remove group"
+        description="This removes the empty catalogue group. It does not delete or change any loan."
+        onCancel={() => setRemovingGroup(null)}
+        onConfirm={() => removingGroup && removeGroup.mutate(removingGroup)}
+        open={Boolean(removingGroup)}
+        pending={removeGroup.isPending}
+        title={`Remove ${removingGroup?.display_name ?? 'split group'}?`}
       />
     </Stack>
   );
