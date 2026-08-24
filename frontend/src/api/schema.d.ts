@@ -751,6 +751,23 @@ export interface paths {
         patch: operations["update_loan_group_api_v1_loan_groups__group_id__patch"];
         trace?: never;
     };
+    "/api/v1/loan-groups/{group_id}/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Remove Populated Loan Group */
+        post: operations["remove_populated_loan_group_api_v1_loan_groups__group_id__remove_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/loans/{loan_id}": {
         parameters: {
             query?: never;
@@ -2568,6 +2585,11 @@ export interface components {
             id: string;
             /** Property Id */
             property_id?: string | null;
+        };
+        /** LoanGroupRemovalCreate */
+        LoanGroupRemovalCreate: {
+            /** Assigned Loan Ids */
+            assigned_loan_ids: string[];
         };
         /** LoanGroupUpdate */
         LoanGroupUpdate: {
@@ -6392,6 +6414,41 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["LoanGroupRead"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_populated_loan_group_api_v1_loan_groups__group_id__remove_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoanGroupRemovalCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

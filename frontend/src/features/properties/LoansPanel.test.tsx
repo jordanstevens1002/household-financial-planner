@@ -86,6 +86,7 @@ function group(
 function renderPanel(
   canEdit = true,
   recordedDebt: string | null = '310000.00',
+  canAdminister = false,
 ) {
   return render(
     <ThemeProvider theme={appTheme}>
@@ -97,6 +98,7 @@ function renderPanel(
           }
         >
           <LoansPanel
+            canAdminister={canAdminister}
             canEdit={canEdit}
             currency="NZD"
             householdId={householdId}
@@ -601,6 +603,9 @@ describe('property loan records', () => {
     expect(
       screen.getByText(/derived opening balance NZD 310,000\.00/),
     ).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Remove Fixed splits' }),
+    ).toBeDisabled();
 
     await user.click(screen.getByRole('button', { name: 'Add split group' }));
     await user.click(screen.getByRole('button', { name: 'Add group' }));
@@ -648,5 +653,203 @@ describe('property loan records', () => {
         ),
       ).toBe(true),
     );
+  }, 30_000);
+
+  it('warns an administrator before moving assigned loans to Ungrouped', async () => {
+    let groups = [group()];
+    let currentLoans: ReturnType<typeof loan>[] = [
+      { ...loan(), loan_group_id: groupId },
+      {
+        ...loan('17223c91-b956-4f70-8431-01fe4a140eb8'),
+        display_name: 'Offset split',
+        loan_group_id: groupId,
+      },
+    ];
+    let removedUrl = '';
+    let removedBody: { assigned_loan_ids: string[] } | null = null;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/lookups/loan_type'))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loans`))
+          return Promise.resolve(response(currentLoans));
+        if (path.endsWith(`/households/${householdId}/loan-groups`))
+          return Promise.resolve(response(groups));
+        if (
+          path.endsWith(`/loan-groups/${groupId}/remove`) &&
+          init?.method === 'POST'
+        ) {
+          removedUrl = path;
+          removedBody = JSON.parse(init.body as string) as {
+            assigned_loan_ids: string[];
+          };
+          groups = [];
+          currentLoans = currentLoans.map((item) => ({
+            ...item,
+            loan_group_id: null,
+          }));
+          return Promise.resolve(response(null, 204));
+        }
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    const user = userEvent.setup();
+    renderPanel(true, '620000.00', true);
+    await screen.findByRole('table', { name: 'Property loans' });
+
+    await user.click(
+      screen.getByRole('button', { name: 'Remove Fixed splits' }),
+    );
+    expect(
+      screen.getByText(
+        /will move Home loan, Offset split to Ungrouped.*No loan will be deleted/,
+      ),
+    ).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(removedUrl).toBe('');
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+    await user.click(
+      screen.getByRole('button', { name: 'Remove Fixed splits' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Remove group' }));
+    expect(await screen.findByText('Split group removed')).toBeVisible();
+    expect(removedUrl).toBe(`/api/v1/loan-groups/${groupId}/remove`);
+    expect(removedBody).toEqual({
+      assigned_loan_ids: currentLoans.map((item) => item.id),
+    });
+    await waitFor(() =>
+      expect(screen.getAllByText('Ungrouped')).toHaveLength(2),
+    );
+  }, 15_000);
+
+  it('refreshes stale assignments before allowing a new confirmation', async () => {
+    const newlyAssigned = {
+      ...loan('46aa75ae-929b-4d92-bca8-bf578c32e8b2'),
+      display_name: 'Newly assigned split',
+      loan_group_id: groupId,
+    };
+    let currentLoans: ReturnType<typeof loan>[] = [
+      { ...loan(), loan_group_id: groupId },
+    ];
+    const submittedIds: string[][] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/lookups/loan_type'))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loans`))
+          return Promise.resolve(response(currentLoans));
+        if (path.endsWith(`/households/${householdId}/loan-groups`))
+          return Promise.resolve(response([group()]));
+        if (
+          path.endsWith(`/loan-groups/${groupId}/remove`) &&
+          init?.method === 'POST'
+        ) {
+          const body = JSON.parse(init.body as string) as {
+            assigned_loan_ids: string[];
+          };
+          submittedIds.push(body.assigned_loan_ids);
+          if (submittedIds.length === 1) {
+            currentLoans = [...currentLoans, newlyAssigned];
+            return Promise.resolve(
+              response(
+                {
+                  detail:
+                    'Loan assignments changed; review the affected loans and confirm again',
+                },
+                409,
+              ),
+            );
+          }
+          currentLoans = currentLoans.map((item) => ({
+            ...item,
+            loan_group_id: null,
+          }));
+          return Promise.resolve(response(null, 204));
+        }
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    const user = userEvent.setup();
+    renderPanel(true, '310000.00', true);
+    await screen.findByRole('table', { name: 'Property loans' });
+
+    await user.click(
+      screen.getByRole('button', { name: 'Remove Fixed splits' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Remove group' }));
+    expect(await screen.findByText(/Loan assignments changed/)).toBeVisible();
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(await screen.findByText('Newly assigned split')).toBeVisible();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Remove Fixed splits' }),
+    );
+    expect(
+      screen.getByText(
+        /will move Home loan, Newly assigned split to Ungrouped/,
+      ),
+    ).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Remove group' }));
+    expect(submittedIds).toEqual([
+      [currentLoans[0]!.id],
+      [currentLoans[0]!.id, newlyAssigned.id],
+    ]);
+  }, 20_000);
+
+  it('submits a large populated group in a bounded JSON request body', async () => {
+    let currentLoans: ReturnType<typeof loan>[] = Array.from(
+      { length: 150 },
+      (_, index) => ({
+        ...loan(
+          `00000000-0000-4000-8000-${index.toString().padStart(12, '0')}`,
+        ),
+        display_name: `Split ${index + 1}`,
+        loan_group_id: groupId,
+      }),
+    );
+    let requestUrl = '';
+    let submittedIds: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/lookups/loan_type'))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loans`))
+          return Promise.resolve(response(currentLoans));
+        if (path.endsWith(`/households/${householdId}/loan-groups`))
+          return Promise.resolve(response([group()]));
+        if (path.endsWith(`/loan-groups/${groupId}/remove`)) {
+          requestUrl = path;
+          submittedIds = (
+            JSON.parse(init?.body as string) as {
+              assigned_loan_ids: string[];
+            }
+          ).assigned_loan_ids;
+          currentLoans = currentLoans.map((item) => ({
+            ...item,
+            loan_group_id: null,
+          }));
+          return Promise.resolve(response(null, 204));
+        }
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    const user = userEvent.setup();
+    renderPanel(true, '0.00', true);
+    await screen.findByRole('table', { name: 'Property loans' });
+    await user.click(
+      screen.getByRole('button', { name: 'Remove Fixed splits' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Remove group' }));
+    expect(await screen.findByText('Split group removed')).toBeVisible();
+    expect(requestUrl).toBe(`/api/v1/loan-groups/${groupId}/remove`);
+    expect(requestUrl).not.toContain(currentLoans[0]!.id);
+    expect(submittedIds).toHaveLength(150);
   }, 30_000);
 });

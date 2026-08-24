@@ -17,7 +17,7 @@ import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
-import { apiRequest } from '../../api/client';
+import { ApiError, apiRequest } from '../../api/client';
 import type { components } from '../../api/schema';
 import { AdvancedSection } from '../../shared/AdvancedSection';
 import { ConfirmDialog } from '../../shared/ConfirmDialog';
@@ -184,6 +184,7 @@ function errorMessage(error: unknown) {
 }
 
 export function LoansPanel({
+  canAdminister,
   canEdit,
   currency,
   householdId,
@@ -191,6 +192,7 @@ export function LoansPanel({
   recordedDebt,
   recordedDebtDate,
 }: {
+  canAdminister: boolean;
   canEdit: boolean;
   currency: string;
   householdId: string;
@@ -333,18 +335,50 @@ export function LoansPanel({
     },
   });
   const removeGroup = useMutation({
-    mutationFn: (group: LoanGroup) =>
-      apiRequest<void>(`/api/v1/loan-groups/${group.id}`, {
-        csrfToken: auth.csrfToken(),
-        method: 'DELETE',
-      }),
-    onError: (error) => notify(errorMessage(error), 'error'),
+    mutationFn: ({
+      group,
+      assignedLoanIds,
+    }: {
+      group: LoanGroup;
+      assignedLoanIds: string[];
+    }) => {
+      const populated = assignedLoanIds.length > 0;
+      return apiRequest<void>(
+        `/api/v1/loan-groups/${group.id}${populated ? '/remove' : ''}`,
+        {
+          body: populated
+            ? JSON.stringify({ assigned_loan_ids: assignedLoanIds })
+            : undefined,
+          csrfToken: auth.csrfToken(),
+          method: populated ? 'POST' : 'DELETE',
+        },
+      );
+    },
+    onError: async (error) => {
+      notify(errorMessage(error), 'error');
+      if (error instanceof ApiError && error.status === 409) {
+        setRemovingGroup(null);
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: ['loan-groups', householdId],
+          }),
+          queryClient.invalidateQueries({
+            queryKey: ['household-loans', householdId],
+          }),
+        ]);
+      }
+    },
     onSuccess: async () => {
       setRemovingGroup(null);
       notify('Split group removed', 'success');
-      await queryClient.invalidateQueries({
-        queryKey: ['loan-groups', householdId],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['loan-groups', householdId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['household-loans', householdId],
+        }),
+      ]);
     },
   });
   const closeLoan = useMutation({
@@ -548,7 +582,7 @@ export function LoansPanel({
                       <Button
                         aria-label={`Remove ${group.display_name}`}
                         color="error"
-                        disabled={groupedLoans.length > 0}
+                        disabled={groupedLoans.length > 0 && !canAdminister}
                         onClick={() => setRemovingGroup(group)}
                       >
                         Remove
@@ -563,8 +597,8 @@ export function LoansPanel({
                 {groupedLoans.length === 1 ? 'loan' : 'loans'}; derived opening
                 {totals.length === 1 ? ' balance' : ' balances'}{' '}
                 {formattedTotals}.
-                {groupedLoans.length > 0 && canEdit
-                  ? ' Ungroup its loans before removing this group.'
+                {groupedLoans.length > 0 && canEdit && !canAdminister
+                  ? ' A household administrator or owner can remove this group and move its loans to Ungrouped.'
                   : ''}
               </Alert>
             );
@@ -875,9 +909,25 @@ export function LoansPanel({
       />
       <ConfirmDialog
         confirmLabel="Remove group"
-        description="This removes the empty catalogue group. It does not delete or change any loan."
+        description={
+          removingGroup &&
+          propertyLoans.some((loan) => loan.loan_group_id === removingGroup.id)
+            ? `Removing this group will move ${propertyLoans
+                .filter((loan) => loan.loan_group_id === removingGroup.id)
+                .map((loan) => loan.display_name)
+                .join(', ')} to Ungrouped. No loan will be deleted.`
+            : 'This removes the empty catalogue group. It does not delete or change any loan.'
+        }
         onCancel={() => setRemovingGroup(null)}
-        onConfirm={() => removingGroup && removeGroup.mutate(removingGroup)}
+        onConfirm={() =>
+          removingGroup &&
+          removeGroup.mutate({
+            assignedLoanIds: propertyLoans
+              .filter((loan) => loan.loan_group_id === removingGroup.id)
+              .map((loan) => loan.id),
+            group: removingGroup,
+          })
+        }
         open={Boolean(removingGroup)}
         pending={removeGroup.isPending}
         title={`Remove ${removingGroup?.display_name ?? 'split group'}?`}

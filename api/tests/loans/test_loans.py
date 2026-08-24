@@ -15,6 +15,7 @@ from app.models import (
     Household,
     HouseholdMembership,
     HouseholdRole,
+    Loan,
     LoanGroup,
     LookupItem,
     Property,
@@ -308,10 +309,140 @@ async def test_loan_groups_are_listed_and_can_be_corrected(
 
     assigned_removal = await client.delete(f"/api/v1/loan-groups/{earlier.json()['id']}")
     assert assigned_removal.status_code == 409
+    confirmed_removal = await client.post(
+        f"/api/v1/loan-groups/{earlier.json()['id']}/remove",
+        json={"assigned_loan_ids": [grouped["id"]]},
+    )
+    assert confirmed_removal.status_code == 204
+    assert (await client.get(f"/api/v1/households/{loan_setup['household_id']}/loans")).json()[0][
+        "loan_group_id"
+    ] is None
+    assert audit_events[-1][0] == "loan_group_removed"
+    assert audit_events[-1][1]["affected_loans"] == [
+        {"id": grouped["id"], "display_name": grouped["display_name"]}
+    ]
     removed = await client.delete(f"/api/v1/loan-groups/{later.json()['id']}")
     assert removed.status_code == 204
     assert audit_events[-1][0] == "loan_group_removed"
     assert audit_events[-1][1]["removed_group"]["display_name"] == "Flexible splits"
+
+
+async def test_only_household_administrators_can_remove_populated_groups(
+    client: AsyncClient,
+    session: AsyncSession,
+    loan_setup: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    group = await client.post(
+        f"/api/v1/households/{loan_setup['household_id']}/loan-groups",
+        json={"display_name": "Package", "property_id": loan_setup["property_id"]},
+    )
+    first = await create_loan(client, loan_setup, loan_group_id=group.json()["id"])
+    second = await create_loan(
+        client,
+        loan_setup,
+        display_name="Offset split",
+        loan_group_id=group.json()["id"],
+    )
+    membership = await session.scalar(
+        select(HouseholdMembership).where(
+            HouseholdMembership.household_id == uuid.UUID(loan_setup["household_id"])
+        )
+    )
+    assert membership is not None
+    membership.role = HouseholdRole.EDITOR
+    await session.commit()
+
+    endpoint = f"/api/v1/loan-groups/{group.json()['id']}/remove"
+    confirmation = {"assigned_loan_ids": [first["id"], second["id"]]}
+    forbidden = await client.post(endpoint, json=confirmation)
+    assert forbidden.status_code == 403
+    unchanged = await client.get(f"/api/v1/households/{loan_setup['household_id']}/loans")
+    assert {item["loan_group_id"] for item in unchanged.json()} == {group.json()["id"]}
+
+    membership.role = HouseholdRole.ADMIN
+    await session.commit()
+    confirmation_required = await client.delete(f"/api/v1/loan-groups/{group.json()['id']}")
+    assert confirmation_required.status_code == 409
+    stale_confirmation = await client.post(
+        endpoint,
+        json={"assigned_loan_ids": [first["id"]]},
+    )
+    assert stale_confirmation.status_code == 409
+
+    audit_events: list[tuple[str, dict[str, object]]] = []
+    monkeypatch.setattr(
+        "app.loans.router.logger.info",
+        lambda event, **values: audit_events.append((event, values)),
+    )
+    removed = await client.post(endpoint, json=confirmation)
+    assert removed.status_code == 204
+    resulting = await client.get(f"/api/v1/households/{loan_setup['household_id']}/loans")
+    assert {item["loan_group_id"] for item in resulting.json()} == {None}
+    assert audit_events == [
+        (
+            "loan_group_removed",
+            {
+                "actor_user_id": audit_events[0][1]["actor_user_id"],
+                "household_id": loan_setup["household_id"],
+                "property_id": loan_setup["property_id"],
+                "loan_group_id": group.json()["id"],
+                "removed_group": group.json(),
+                "affected_loans": [
+                    {"id": first["id"], "display_name": first["display_name"]},
+                    {"id": second["id"], "display_name": second["display_name"]},
+                ],
+            },
+        )
+    ]
+
+
+async def test_populated_group_removal_uses_a_bounded_body_for_many_loans(
+    client: AsyncClient, session: AsyncSession, loan_setup: dict[str, str]
+) -> None:
+    group = await client.post(
+        f"/api/v1/households/{loan_setup['household_id']}/loan-groups",
+        json={"display_name": "Many splits", "property_id": loan_setup["property_id"]},
+    )
+    seed = await create_loan(client, loan_setup, loan_group_id=group.json()["id"])
+    seed_record = await session.get(Loan, uuid.UUID(seed["id"]))
+    assert seed_record is not None
+    additional = [
+        Loan(
+            household_id=seed_record.household_id,
+            property_id=seed_record.property_id,
+            loan_group_id=seed_record.loan_group_id,
+            display_name=f"Split {index:03d}",
+            lender=None,
+            account_reference_masked=None,
+            loan_type_id=seed_record.loan_type_id,
+            currency=seed_record.currency,
+            original_balance=None,
+            opening_balance=seed_record.opening_balance,
+            opening_balance_date=seed_record.opening_balance_date,
+            initial_interest_rate=seed_record.initial_interest_rate,
+            scheduled_repayment=seed_record.scheduled_repayment,
+            term_months=seed_record.term_months,
+            interest_calculation_method=seed_record.interest_calculation_method,
+            repayment_frequency=seed_record.repayment_frequency,
+            is_interest_only=False,
+            is_active=True,
+            notes=None,
+        )
+        for index in range(149)
+    ]
+    session.add_all(additional)
+    await session.commit()
+    expected_ids = [seed["id"], *(str(loan.id) for loan in additional)]
+
+    removed = await client.post(
+        f"/api/v1/loan-groups/{group.json()['id']}/remove",
+        json={"assigned_loan_ids": expected_ids},
+    )
+    assert removed.status_code == 204
+    resulting = await client.get(f"/api/v1/households/{loan_setup['household_id']}/loans")
+    assert len(resulting.json()) == 150
+    assert {loan["loan_group_id"] for loan in resulting.json()} == {None}
 
 
 async def test_loan_group_assignment_requires_the_same_property_and_household(

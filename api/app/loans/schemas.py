@@ -127,6 +127,17 @@ class LoanGroupUpdate(BaseModel):
         return LoanGroupCreate.normalize_display_name(value)
 
 
+class LoanGroupRemovalCreate(BaseModel):
+    assigned_loan_ids: list[uuid.UUID] = Field(min_length=1, max_length=10_000)
+
+    @field_validator("assigned_loan_ids")
+    @classmethod
+    def assigned_loans_are_unique(cls, value: list[uuid.UUID]) -> list[uuid.UUID]:
+        if len(value) != len(set(value)):
+            raise ValueError("assigned loan IDs must be unique")
+        return value
+
+
 class LoanGroupRead(LoanGroupCreate):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID

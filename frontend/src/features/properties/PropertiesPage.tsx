@@ -486,6 +486,7 @@ export function PropertiesPage() {
           />
           {showLoans ? (
             <LoansPanel
+              canAdminister={access.data?.can_administer === true}
               canEdit={access.data?.can_edit === true}
               currency={selectedSummary.currency}
               householdId={household.selected.id}

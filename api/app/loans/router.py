@@ -25,6 +25,7 @@ from app.loans.schemas import (
     LoanEventCreate,
     LoanGroupCreate,
     LoanGroupRead,
+    LoanGroupRemovalCreate,
     LoanGroupUpdate,
     LoanRead,
     LoanRepaymentResponsibilityCreate,
@@ -423,12 +424,59 @@ async def delete_loan_group(
         select(LoanGroup).where(LoanGroup.id == accessible.id).with_for_update()
     )
     assert group is not None
-    assigned = await session.scalar(
-        select(func.count(Loan.id)).where(Loan.loan_group_id == group.id)
+    assigned_loans = list(
+        await session.scalars(
+            select(Loan)
+            .where(Loan.loan_group_id == group.id)
+            .order_by(Loan.display_name, Loan.id)
+            .with_for_update()
+        )
     )
-    if assigned:
-        raise HTTPException(409, "Reassign or ungroup all loans before removing this group")
+    if assigned_loans:
+        raise HTTPException(409, "Use the populated-group removal action after reviewing its loans")
+    await _remove_locked_loan_group(group, assigned_loans, user, session)
+
+
+@router.post("/loan-groups/{group_id}/remove", status_code=204)
+async def remove_populated_loan_group(
+    group_id: uuid.UUID,
+    payload: LoanGroupRemovalCreate,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    accessible = await _loan_group_with_access(group_id, HouseholdRole.ADMIN, user, session)
+    group = await session.scalar(
+        select(LoanGroup).where(LoanGroup.id == accessible.id).with_for_update()
+    )
+    assert group is not None
+    assigned_loans = list(
+        await session.scalars(
+            select(Loan)
+            .where(Loan.loan_group_id == group.id)
+            .order_by(Loan.display_name, Loan.id)
+            .with_for_update()
+        )
+    )
+    if set(payload.assigned_loan_ids) != {loan.id for loan in assigned_loans}:
+        raise HTTPException(
+            409,
+            "Loan assignments changed; review the affected loans and confirm again",
+        )
+    await _remove_locked_loan_group(group, assigned_loans, user, session)
+
+
+async def _remove_locked_loan_group(
+    group: LoanGroup,
+    assigned_loans: list[Loan],
+    user: ApplicationUser,
+    session: AsyncSession,
+) -> None:
     snapshot = LoanGroupRead.model_validate(group).model_dump(mode="json")
+    affected_loans = [
+        {"id": str(loan.id), "display_name": loan.display_name} for loan in assigned_loans
+    ]
+    for loan in assigned_loans:
+        loan.loan_group_id = None
     await session.delete(group)
     await session.commit()
     logger.info(
@@ -438,6 +486,7 @@ async def delete_loan_group(
         property_id=str(group.property_id) if group.property_id else None,
         loan_group_id=str(group.id),
         removed_group=snapshot,
+        affected_loans=affected_loans,
     )
 
 
