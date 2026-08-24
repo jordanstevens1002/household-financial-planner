@@ -3397,6 +3397,8 @@ export interface components {
         /** PropertyWizardCreate */
         PropertyWizardCreate: {
             baseline?: components["schemas"]["BaselineCreate"] | null;
+            /** Loans */
+            loans?: components["schemas"]["LoanCreate"][];
             mode: components["schemas"]["PropertySetupMode"];
             /** Ownership */
             ownership?: components["schemas"]["app__properties__schemas__OwnershipCreate"][];
@@ -3406,6 +3408,8 @@ export interface components {
         /** PropertyWizardRead */
         PropertyWizardRead: {
             baseline: components["schemas"]["BaselineRead"] | null;
+            /** Loans */
+            loans: components["schemas"]["LoanRead"][];
             /** Ownership */
             ownership: components["schemas"]["OwnershipRead"][];
             property: components["schemas"]["PropertyRead"];

@@ -56,7 +56,7 @@ decorators, so route changes require an intentional matrix update.
 | GET | `/api/v1/households/{household_id}/properties` | Property list | #43 |
 | GET | `/api/v1/households/{household_id}/property-summaries` | Value and debt summaries | #43 |
 | POST | `/api/v1/households/{household_id}/properties` | Property creation | #43 |
-| POST | `/api/v1/households/{household_id}/properties/wizard` | Current or historical setup | #43 |
+| POST | `/api/v1/households/{household_id}/properties/wizard` | Atomic current or historical setup, including linked current-position loans | #43, #105, #106 |
 | GET | `/api/v1/properties/{property_id}` | Property detail | #43 |
 | POST | `/api/v1/properties/{property_id}/valuations` | Dated valuation | #43 |
 | POST | `/api/v1/properties/{property_id}/baselines` | Dated property baseline | #43 |

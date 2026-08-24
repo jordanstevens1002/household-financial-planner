@@ -5932,6 +5932,14 @@
               }
             ]
           },
+          "loans": {
+            "items": {
+              "$ref": "#/components/schemas/LoanCreate"
+            },
+            "maxItems": 100,
+            "title": "Loans",
+            "type": "array"
+          },
           "mode": {
             "$ref": "#/components/schemas/PropertySetupMode"
           },
@@ -5975,6 +5983,13 @@
               }
             ]
           },
+          "loans": {
+            "items": {
+              "$ref": "#/components/schemas/LoanRead"
+            },
+            "title": "Loans",
+            "type": "array"
+          },
           "ownership": {
             "items": {
               "$ref": "#/components/schemas/OwnershipRead"
@@ -6008,6 +6023,7 @@
           "valuation",
           "baseline",
           "ownership",
+          "loans",
           "warnings"
         ],
         "title": "PropertyWizardRead",

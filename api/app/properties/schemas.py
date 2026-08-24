@@ -7,6 +7,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.loans.schemas import LoanCreate, LoanRead
 from app.models import OwnerType, ValuationType
 from app.properties.valuations import VALUATION_ESTIMATE_BY_TYPE
 
@@ -166,14 +167,29 @@ class PropertyWizardCreate(BaseModel):
     valuation: ValuationCreate | None = None
     baseline: BaselineCreate | None = None
     ownership: list[OwnershipCreate] = Field(default_factory=list)
+    loans: list[LoanCreate] = Field(default_factory=list, max_length=100)
 
     @model_validator(mode="after")
     def mode_requirements_are_present(self) -> PropertyWizardCreate:
         if self.mode == PropertySetupMode.HISTORICAL_PURCHASE:
             if self.property.purchase_date is None or self.property.purchase_price is None:
                 raise ValueError("historical purchase requires purchase_date and purchase_price")
+            if self.loans:
+                raise ValueError("historical purchase setup cannot include current loans")
         elif self.baseline is None:
             raise ValueError("current snapshot requires a baseline")
+        elif self.loans:
+            if self.baseline.loan_balance_total == 0:
+                raise ValueError("a debt-free current position cannot include loans")
+            if any(loan.property_id is not None for loan in self.loans):
+                raise ValueError("property_id is assigned by current-position setup")
+            if any(loan.loan_group_id is not None for loan in self.loans):
+                raise ValueError("loan groups can be assigned after property setup")
+            if any(loan.opening_balance_date != self.baseline.baseline_date for loan in self.loans):
+                raise ValueError("loan opening dates must match the position date")
+            linked_total = sum((loan.opening_balance for loan in self.loans), Decimal("0"))
+            if linked_total != self.baseline.loan_balance_total:
+                raise ValueError("linked loan balances must equal total property debt")
         return self
 
 
@@ -182,4 +198,5 @@ class PropertyWizardRead(BaseModel):
     valuation: ValuationRead | None
     baseline: BaselineRead | None
     ownership: list[OwnershipRead]
+    loans: list[LoanRead]
     warnings: list[str]
