@@ -615,6 +615,10 @@ async def property_wizard(
         mode=payload.mode,
         loan_count=len(loan_records),
         loan_ids=[str(loan.id) for loan in loan_records],
+        borrower_person_ids_by_loan={
+            str(loan.id): [str(person_id) for person_id in loan.borrower_person_ids]
+            for loan in loan_records
+        },
         recorded_property_debt=(str(baseline.loan_balance_total) if baseline is not None else None),
         linked_opening_balance_total=str(
             sum((loan.opening_balance for loan in loan_records), Decimal("0"))

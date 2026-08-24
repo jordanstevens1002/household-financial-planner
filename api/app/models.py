@@ -450,6 +450,25 @@ class Loan(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+    borrower_links: Mapped[list[LoanBorrower]] = relationship(
+        cascade="all, delete-orphan", lazy="selectin"
+    )
+
+    @property
+    def borrower_person_ids(self) -> list[uuid.UUID]:
+        return [link.person_id for link in self.borrower_links]
+
+
+class LoanBorrower(Base):
+    __tablename__ = "loan_borrowers"
+    __table_args__ = (UniqueConstraint("loan_id", "person_id"),)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    loan_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("loans.id", ondelete="CASCADE"), index=True
+    )
+    person_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("people.id", ondelete="RESTRICT"), index=True
+    )
 
 
 class LoanRepaymentResponsibility(Base):

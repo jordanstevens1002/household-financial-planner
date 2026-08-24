@@ -38,6 +38,7 @@ from app.income.tax.registry import (
     get_tax_engine_for_date,
 )
 from app.loans.calculations import generate_schedule, payments_per_year
+from app.loans.service import equal_borrower_allocations
 from app.models import (
     ApplicationUser,
     EventType,
@@ -48,6 +49,7 @@ from app.models import (
     HouseholdRole,
     IncomeSource,
     Loan,
+    LoanBorrower,
     LoanRepaymentResponsibility,
     PaymentFrequency,
     Person,
@@ -151,18 +153,34 @@ async def _loan_repayment_projection(
             )
         )
     )
-    responsibility_total = sum(
-        (item.responsibility_percentage for item in responsibilities),
-        Decimal("0"),
-    )
+    allocations_by_person: dict[uuid.UUID, Decimal] = {}
+    for item in responsibilities:
+        allocations_by_person[item.person_id] = (
+            allocations_by_person.get(item.person_id, Decimal("0")) + item.responsibility_percentage
+        )
+    responsibility_total = sum(allocations_by_person.values(), Decimal("0"))
     if responsibilities and responsibility_total != Decimal("100"):
         warnings.append(
             f"{loan.display_name} repayment responsibility totals "
             f"{responsibility_total:.2f}% rather than 100.00%."
         )
+    if not responsibilities:
+        borrower_ids = list(
+            await session.scalars(
+                select(LoanBorrower.person_id)
+                .where(LoanBorrower.loan_id == loan.id)
+                .order_by(LoanBorrower.person_id)
+            )
+        )
+        allocations_by_person = equal_borrower_allocations(borrower_ids)
+        if not borrower_ids:
+            warnings.append(
+                f"{loan.display_name} has no named borrowers; its repayment remains "
+                "a whole-household expense."
+            )
     responsibility_people = dict(people_by_id)
     inactive_person_ids = {
-        item.person_id for item in responsibilities if item.person_id not in responsibility_people
+        person_id for person_id in allocations_by_person if person_id not in responsibility_people
     }
     if inactive_person_ids:
         responsibility_people.update(
@@ -185,16 +203,14 @@ async def _loan_repayment_projection(
             )
     allocations = [
         LoanRepaymentAllocationRead(
-            person_id=item.person_id,
-            display_name=responsibility_people[item.person_id].display_name,
-            responsibility_percentage=item.responsibility_percentage,
-            annual_amount=_money(annual * item.responsibility_percentage / Decimal("100")),
-            monthly_amount=_money(
-                annual * item.responsibility_percentage / Decimal("100") / Decimal("12")
-            ),
+            person_id=person_id,
+            display_name=responsibility_people[person_id].display_name,
+            responsibility_percentage=percentage,
+            annual_amount=_money(annual * percentage / Decimal("100")),
+            monthly_amount=_money(annual * percentage / Decimal("100") / Decimal("12")),
         )
-        for item in responsibilities
-        if item.person_id in responsibility_people
+        for person_id, percentage in allocations_by_person.items()
+        if person_id in responsibility_people
     ]
     return LoanRepaymentProjectionRead(
         loan_id=loan.id,

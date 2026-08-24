@@ -136,6 +136,11 @@ async def test_current_snapshot_wizard_creates_reconciled_loans_atomically(
         lambda event, **values: audit_events.append((event, values)),
     )
     household = await create_household(client)
+    borrower = await client.post(
+        f"/api/v1/households/{household['id']}/people",
+        json={"display_name": "Setup borrower", "effective_from": "2026-07-16"},
+    )
+    assert borrower.status_code == 201
     response = await client.post(
         f"/api/v1/households/{household['id']}/properties/wizard",
         json={
@@ -149,6 +154,7 @@ async def test_current_snapshot_wizard_creates_reconciled_loans_atomically(
             },
             "loans": [
                 setup_loan_payload(property_lookups, f"Split {index + 1}", balance)
+                | {"borrower_person_ids": [borrower.json()["id"]]}
                 for index, balance in enumerate(balances)
             ],
         },
@@ -158,6 +164,9 @@ async def test_current_snapshot_wizard_creates_reconciled_loans_atomically(
     assert len(body["loans"]) == len(balances)
     assert {loan["property_id"] for loan in body["loans"]} == {body["property"]["id"]}
     assert {loan["currency"] for loan in body["loans"]} == {household["currency"]}
+    assert {tuple(loan["borrower_person_ids"]) for loan in body["loans"]} == {
+        (borrower.json()["id"],)
+    }
     cashflow = await client.get(
         f"/api/v1/households/{household['id']}/cashflow",
         params={"as_of": "2026-07-16"},
@@ -170,6 +179,9 @@ async def test_current_snapshot_wizard_creates_reconciled_loans_atomically(
     assert audit["household_id"] == household["id"]
     assert audit["property_id"] == body["property"]["id"]
     assert audit["loan_ids"] == [loan["id"] for loan in body["loans"]]
+    assert audit["borrower_person_ids_by_loan"] == {
+        loan["id"]: [borrower.json()["id"]] for loan in body["loans"]
+    }
     assert audit["recorded_property_debt"] == "310000.00"
     assert audit["linked_opening_balance_total"] == "310000.00"
 

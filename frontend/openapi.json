@@ -2921,6 +2921,24 @@
         "title": "LegacyMigrationReviewSummary",
         "type": "object"
       },
+      "LoanBorrowerReplace": {
+        "properties": {
+          "borrower_person_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Borrower Person Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "borrower_person_ids"
+        ],
+        "title": "LoanBorrowerReplace",
+        "type": "object"
+      },
       "LoanCloseCreate": {
         "properties": {
           "effective_date": {
@@ -2960,6 +2978,15 @@
               }
             ],
             "title": "Account Reference Masked"
+          },
+          "borrower_person_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Borrower Person Ids",
+            "type": "array"
           },
           "currency": {
             "anyOf": [
@@ -3387,6 +3414,15 @@
               }
             ],
             "title": "Account Reference Masked"
+          },
+          "borrower_person_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Borrower Person Ids",
+            "type": "array"
           },
           "currency": {
             "title": "Currency",
@@ -13140,6 +13176,80 @@
           }
         ],
         "summary": "Update Loan",
+        "tags": [
+          "loans"
+        ]
+      }
+    },
+    "/api/v1/loans/{loan_id}/borrowers": {
+      "put": {
+        "operationId": "replace_loan_borrowers_api_v1_loans__loan_id__borrowers_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "loan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Loan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoanBorrowerReplace"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Replace Loan Borrowers",
         "tags": [
           "loans"
         ]

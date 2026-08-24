@@ -34,6 +34,7 @@ class LoanCreate(BaseModel):
     is_interest_only: bool
     is_active: bool = True
     notes: str | None = Field(default=None, max_length=2000)
+    borrower_person_ids: list[uuid.UUID] = Field(default_factory=list, max_length=20)
 
     @field_validator("account_reference_masked")
     @classmethod
@@ -52,6 +53,13 @@ class LoanCreate(BaseModel):
                 "for example ****1234"
             )
         return compact
+
+    @field_validator("borrower_person_ids")
+    @classmethod
+    def borrowers_are_unique(cls, value: list[uuid.UUID]) -> list[uuid.UUID]:
+        if len(value) != len(set(value)):
+            raise ValueError("borrower person IDs must be unique")
+        return value
 
 
 class LoanUpdate(BaseModel):
@@ -149,6 +157,15 @@ class LoanRead(LoanCreate):
     id: uuid.UUID
     household_id: uuid.UUID
     currency: str
+
+
+class LoanBorrowerReplace(BaseModel):
+    borrower_person_ids: list[uuid.UUID] = Field(max_length=20)
+
+    @field_validator("borrower_person_ids")
+    @classmethod
+    def borrowers_are_unique(cls, value: list[uuid.UUID]) -> list[uuid.UUID]:
+        return LoanCreate.borrowers_are_unique(value)
 
 
 class DebtReconciliationStatus(StrEnum):
