@@ -13,6 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
 from app.core.dependencies import ROLE_LEVEL, current_user, require_household_role
 from app.core.logging import get_logger
+from app.loans.schemas import LoanRead
+from app.loans.service import create_loan_record
 from app.models import (
     ApplicationUser,
     Household,
@@ -211,6 +213,23 @@ async def _create_property(
     session.add(record)
     await session.flush()
     return record
+
+
+async def _validate_setup_loans(
+    household_id: uuid.UUID,
+    payload: PropertyWizardCreate,
+    session: AsyncSession,
+) -> None:
+    if not payload.loans:
+        return
+    household = await session.get(Household, household_id)
+    if household is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Household not found")
+    property_currency = payload.property.default_currency or household.currency
+    for loan in payload.loans:
+        if loan.currency is not None and loan.currency != property_currency:
+            raise HTTPException(422, "Setup loan currency must match the property currency")
+        await _validate_lookup(loan.loan_type_id, "loan_type", session)
 
 
 @router.get("/households/{household_id}/properties", response_model=list[PropertyRead])
@@ -520,6 +539,7 @@ async def property_wizard(
     actor: Annotated[HouseholdMembership, Depends(require_household_role(HouseholdRole.EDITOR))],
     session: AsyncSession = Depends(get_session),
 ) -> PropertyWizardRead:
+    await _validate_setup_loans(household_id, payload, session)
     property_record = await _create_property(household_id, payload.property, session)
     valuation: PropertyValuation | None = None
     baseline: PropertyBaseline | None = None
@@ -538,6 +558,21 @@ async def property_wizard(
         await _validate_lookup(payload.baseline.status_id, "property_status", session)
         baseline = PropertyBaseline(property_id=property_record.id, **payload.baseline.model_dump())
         session.add(baseline)
+    loan_records = []
+    for loan_payload in payload.loans:
+        loan_records.append(
+            await create_loan_record(
+                household_id,
+                loan_payload.model_copy(
+                    update={
+                        "currency": property_record.default_currency,
+                        "is_active": True,
+                        "property_id": property_record.id,
+                    }
+                ),
+                session,
+            )
+        )
     ownership_records = [
         PropertyOwnershipInterest(property_id=property_record.id, **item.model_dump())
         for item in payload.ownership
@@ -562,8 +597,29 @@ async def property_wizard(
     await session.flush()
     total = sum((item.ownership_percentage for item in payload.ownership), Decimal("0"))
     warnings = _ownership_warnings(total)
+    if (
+        payload.mode == PropertySetupMode.CURRENT_SNAPSHOT
+        and payload.baseline is not None
+        and payload.baseline.loan_balance_total > 0
+        and not loan_records
+    ):
+        warnings.append(
+            "Property debt was recorded without linked loans; add loan details to reconcile it."
+        )
     await session.commit()
-    logger.info("property_setup_completed", property_id=str(property_record.id), mode=payload.mode)
+    logger.info(
+        "property_setup_completed",
+        actor_user_id=str(actor.application_user_id),
+        household_id=str(household_id),
+        property_id=str(property_record.id),
+        mode=payload.mode,
+        loan_count=len(loan_records),
+        loan_ids=[str(loan.id) for loan in loan_records],
+        recorded_property_debt=(str(baseline.loan_balance_total) if baseline is not None else None),
+        linked_opening_balance_total=str(
+            sum((loan.opening_balance for loan in loan_records), Decimal("0"))
+        ),
+    )
     for record in ownership_records:
         logger.info(
             "property_ownership_created",
@@ -583,5 +639,6 @@ async def property_wizard(
         valuation=ValuationRead.model_validate(valuation) if valuation else None,
         baseline=BaselineRead.model_validate(baseline) if baseline else None,
         ownership=[OwnershipRead.model_validate(item) for item in ownership_records],
+        loans=[LoanRead.model_validate(item) for item in loan_records],
         warnings=warnings,
     )
