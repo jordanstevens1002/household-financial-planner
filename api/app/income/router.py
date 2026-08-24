@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import date, timedelta
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import ROUND_FLOOR, ROUND_HALF_UP, Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import func, or_, select
@@ -38,6 +38,7 @@ from app.income.tax.registry import (
     get_tax_engine_for_date,
 )
 from app.loans.calculations import generate_schedule, payments_per_year
+from app.loans.service import equal_borrower_allocations
 from app.models import (
     ApplicationUser,
     EventType,
@@ -48,6 +49,7 @@ from app.models import (
     HouseholdRole,
     IncomeSource,
     Loan,
+    LoanBorrower,
     LoanRepaymentResponsibility,
     PaymentFrequency,
     Person,
@@ -70,6 +72,40 @@ ANNUAL_MULTIPLIERS = {
 
 def _money(value: Decimal) -> Decimal:
     return value.quantize(CENT, rounding=ROUND_HALF_UP)
+
+
+def _allocate_money(
+    total: Decimal, percentages: dict[uuid.UUID, Decimal]
+) -> dict[uuid.UUID, Decimal]:
+    """Allocate monetary cents deterministically when percentages total 100%."""
+    ordered_ids = sorted(percentages, key=lambda person_id: person_id.int)
+    if not ordered_ids:
+        return {}
+    if sum(percentages.values(), Decimal("0")) != Decimal("100"):
+        return {
+            person_id: _money(total * percentages[person_id] / Decimal("100"))
+            for person_id in ordered_ids
+        }
+    total_cents = int(_money(total) / CENT)
+    exact_cents = {
+        person_id: Decimal(total_cents) * percentages[person_id] / Decimal("100")
+        for person_id in ordered_ids
+    }
+    allocated_cents = {
+        person_id: int(value.to_integral_value(rounding=ROUND_FLOOR))
+        for person_id, value in exact_cents.items()
+    }
+    remainder = total_cents - sum(allocated_cents.values())
+    remainder_order = sorted(
+        ordered_ids,
+        key=lambda person_id: (
+            -(exact_cents[person_id] - Decimal(allocated_cents[person_id])),
+            person_id.int,
+        ),
+    )
+    for person_id in remainder_order[:remainder]:
+        allocated_cents[person_id] += 1
+    return {person_id: Decimal(allocated_cents[person_id]) * CENT for person_id in ordered_ids}
 
 
 async def _loan_repayment_projection(
@@ -151,18 +187,34 @@ async def _loan_repayment_projection(
             )
         )
     )
-    responsibility_total = sum(
-        (item.responsibility_percentage for item in responsibilities),
-        Decimal("0"),
-    )
+    allocations_by_person: dict[uuid.UUID, Decimal] = {}
+    for item in responsibilities:
+        allocations_by_person[item.person_id] = (
+            allocations_by_person.get(item.person_id, Decimal("0")) + item.responsibility_percentage
+        )
+    responsibility_total = sum(allocations_by_person.values(), Decimal("0"))
     if responsibilities and responsibility_total != Decimal("100"):
         warnings.append(
             f"{loan.display_name} repayment responsibility totals "
             f"{responsibility_total:.2f}% rather than 100.00%."
         )
+    if not responsibilities:
+        borrower_ids = list(
+            await session.scalars(
+                select(LoanBorrower.person_id)
+                .where(LoanBorrower.loan_id == loan.id)
+                .order_by(LoanBorrower.person_id)
+            )
+        )
+        allocations_by_person = equal_borrower_allocations(borrower_ids)
+        if not borrower_ids:
+            warnings.append(
+                f"{loan.display_name} has no named borrowers; its repayment remains "
+                "a whole-household expense."
+            )
     responsibility_people = dict(people_by_id)
     inactive_person_ids = {
-        item.person_id for item in responsibilities if item.person_id not in responsibility_people
+        person_id for person_id in allocations_by_person if person_id not in responsibility_people
     }
     if inactive_person_ids:
         responsibility_people.update(
@@ -183,18 +235,19 @@ async def _loan_repayment_projection(
                 f"{loan.display_name} has repayment responsibility assigned to "
                 f"inactive people at {as_of.isoformat()}: {', '.join(sorted(inactive_names))}."
             )
+    annual_allocations = _allocate_money(annual, allocations_by_person)
+    monthly_total = _money(annual / Decimal("12"))
+    monthly_allocations = _allocate_money(monthly_total, allocations_by_person)
     allocations = [
         LoanRepaymentAllocationRead(
-            person_id=item.person_id,
-            display_name=responsibility_people[item.person_id].display_name,
-            responsibility_percentage=item.responsibility_percentage,
-            annual_amount=_money(annual * item.responsibility_percentage / Decimal("100")),
-            monthly_amount=_money(
-                annual * item.responsibility_percentage / Decimal("100") / Decimal("12")
-            ),
+            person_id=person_id,
+            display_name=responsibility_people[person_id].display_name,
+            responsibility_percentage=percentage,
+            annual_amount=annual_allocations[person_id],
+            monthly_amount=monthly_allocations[person_id],
         )
-        for item in responsibilities
-        if item.person_id in responsibility_people
+        for person_id, percentage in allocations_by_person.items()
+        if person_id in responsibility_people
     ]
     return LoanRepaymentProjectionRead(
         loan_id=loan.id,
@@ -204,7 +257,7 @@ async def _loan_repayment_projection(
         repayment_frequency=loan.repayment_frequency,
         periodic_repayment=_money(periodic),
         annual_repayment=annual,
-        monthly_repayment=_money(annual / Decimal("12")),
+        monthly_repayment=monthly_total,
         included_in_household_total=included,
         allocations=allocations,
         warnings=warnings,

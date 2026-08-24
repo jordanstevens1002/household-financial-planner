@@ -19,6 +19,7 @@ from app.loans.schemas import (
     DebtReconciliationStatus,
     GoalCreate,
     GoalRead,
+    LoanBorrowerReplace,
     LoanCloseCreate,
     LoanCreate,
     LoanDebtBalanceRead,
@@ -39,7 +40,7 @@ from app.loans.schemas import (
     TargetCalculationRead,
     TargetCalculationRequest,
 )
-from app.loans.service import create_loan_record
+from app.loans.service import canonical_borrower_ids, create_loan_record, validate_borrowers
 from app.models import (
     ApplicationUser,
     EventClassification,
@@ -49,6 +50,7 @@ from app.models import (
     HouseholdMembership,
     HouseholdRole,
     Loan,
+    LoanBorrower,
     LoanGroup,
     LoanRepaymentResponsibility,
     LookupItem,
@@ -480,12 +482,20 @@ async def list_loan_groups(
 async def create_loan(
     household_id: uuid.UUID,
     payload: LoanCreate,
-    _: Annotated[HouseholdMembership, Depends(require_household_role(HouseholdRole.EDITOR))],
+    actor: Annotated[HouseholdMembership, Depends(require_household_role(HouseholdRole.EDITOR))],
     session: AsyncSession = Depends(get_session),
 ) -> Loan:
     loan = await create_loan_record(household_id, payload, session)
     await session.commit()
     await session.refresh(loan)
+    logger.info(
+        "loan_created",
+        actor_user_id=str(actor.application_user_id),
+        household_id=str(household_id),
+        property_id=str(loan.property_id) if loan.property_id else None,
+        loan_id=str(loan.id),
+        borrower_person_ids=[str(person_id) for person_id in loan.borrower_person_ids],
+    )
     return loan
 
 
@@ -541,6 +551,37 @@ async def get_loan(
     session: AsyncSession = Depends(get_session),
 ) -> Loan:
     return await _loan_with_access(loan_id, HouseholdRole.VIEWER, user, session)
+
+
+@router.put("/loans/{loan_id}/borrowers", response_model=LoanRead)
+async def replace_loan_borrowers(
+    loan_id: uuid.UUID,
+    payload: LoanBorrowerReplace,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Loan:
+    accessible = await _loan_with_access(loan_id, HouseholdRole.EDITOR, user, session)
+    loan = await session.scalar(select(Loan).where(Loan.id == accessible.id).with_for_update())
+    assert loan is not None
+    requested_ids = canonical_borrower_ids(payload.borrower_person_ids)
+    await validate_borrowers(loan.household_id, requested_ids, session)
+    previous_ids = canonical_borrower_ids(loan.borrower_person_ids)
+    existing_by_person_id = {link.person_id: link for link in loan.borrower_links}
+    loan.borrower_links = [
+        existing_by_person_id.get(person_id, LoanBorrower(person_id=person_id))
+        for person_id in requested_ids
+    ]
+    await session.commit()
+    logger.info(
+        "loan_borrowers_replaced",
+        actor_user_id=str(user.id),
+        household_id=str(loan.household_id),
+        property_id=str(loan.property_id) if loan.property_id else None,
+        loan_id=str(loan.id),
+        previous_borrower_person_ids=[str(person_id) for person_id in previous_ids],
+        resulting_borrower_person_ids=[str(person_id) for person_id in requested_ids],
+    )
+    return loan
 
 
 async def _responsibility_total(
