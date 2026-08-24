@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Alert,
+  Autocomplete,
   Button,
   CircularProgress,
   Dialog,
@@ -31,6 +32,7 @@ import { localCalendarDate } from '../people/localDate';
 type Loan = components['schemas']['LoanRead'];
 type LoanGroup = components['schemas']['LoanGroupRead'];
 type Lookup = components['schemas']['LookupRead'];
+type Person = components['schemas']['PersonRead'];
 
 function addMoneyAmounts(amounts: string[]): string {
   const cents = amounts.reduce((total, amount) => {
@@ -76,6 +78,7 @@ const loanSchema = z.object({
       const visible = value.replace(/[^a-zA-Z0-9]/g, '').replace(/^[xX]+/, '');
       return masks.length >= 3 && visible.length >= 2 && visible.length <= 4;
     }, 'Hide all but the final 2 to 4 characters, for example ****1234'),
+  borrowerPersonIds: z.array(z.string()).max(20),
   displayName: z.string().trim().min(1, 'Enter a loan name').max(200),
   initialInterestRate: z
     .string()
@@ -143,6 +146,7 @@ type ValidLoanFields = z.output<typeof loanSchema>;
 
 const defaults: LoanFields = {
   accountReference: '',
+  borrowerPersonIds: [],
   displayName: '',
   initialInterestRate: '',
   interestCalculationMethod: '',
@@ -162,6 +166,7 @@ const defaults: LoanFields = {
 function fieldsForLoan(loan: Loan): LoanFields {
   return {
     accountReference: loan.account_reference_masked ?? '',
+    borrowerPersonIds: [],
     displayName: loan.display_name,
     initialInterestRate: loan.initial_interest_rate,
     interestCalculationMethod: loan.interest_calculation_method,
@@ -206,6 +211,10 @@ export function LoansPanel({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
   const [closingLoan, setClosingLoan] = useState<Loan | null>(null);
+  const [borrowerLoan, setBorrowerLoan] = useState<Loan | null>(null);
+  const [replacementBorrowerIds, setReplacementBorrowerIds] = useState<
+    string[]
+  >([]);
   const [groupDialogOpen, setGroupDialogOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<LoanGroup | null>(null);
   const [removingGroup, setRemovingGroup] = useState<LoanGroup | null>(null);
@@ -228,6 +237,10 @@ export function LoansPanel({
   const repaymentType = useWatch({
     control: form.control,
     name: 'isInterestOnly',
+  });
+  const borrowerPersonIds = useWatch({
+    control: form.control,
+    name: 'borrowerPersonIds',
   });
   const loans = useQuery({
     queryFn: () =>
@@ -252,6 +265,17 @@ export function LoansPanel({
   const propertyGroups = (loanGroups.data ?? []).filter(
     (group) => group.property_id === propertyId,
   );
+  const needsPeople =
+    (dialogOpen && editingLoan == null) ||
+    borrowerLoan != null ||
+    propertyLoans.some((loan) => (loan.borrower_person_ids ?? []).length > 0);
+  const people = useQuery({
+    enabled: needsPeople,
+    queryFn: () =>
+      apiRequest<Person[]>(`/api/v1/households/${householdId}/people`),
+    queryKey: ['household-people', householdId],
+    retry: false,
+  });
   const saveLoan = useMutation({
     mutationFn: (fields: ValidLoanFields) =>
       apiRequest<Loan>(
@@ -278,6 +302,7 @@ export function LoansPanel({
             ...(editingLoan
               ? {}
               : {
+                  borrower_person_ids: fields.borrowerPersonIds,
                   currency,
                   is_active: true,
                   property_id: propertyId,
@@ -299,6 +324,25 @@ export function LoansPanel({
         queryClient.invalidateQueries({ queryKey: ['property', propertyId] }),
         queryClient.invalidateQueries({
           queryKey: ['property-state', propertyId],
+        }),
+        queryClient.invalidateQueries({ queryKey: ['household-cashflow'] }),
+      ]);
+    },
+  });
+  const replaceBorrowers = useMutation({
+    mutationFn: ({ loan, personIds }: { loan: Loan; personIds: string[] }) =>
+      apiRequest<Loan>(`/api/v1/loans/${loan.id}/borrowers`, {
+        body: JSON.stringify({ borrower_person_ids: personIds }),
+        csrfToken: auth.csrfToken(),
+        method: 'PUT',
+      }),
+    onError: (error) => notify(errorMessage(error), 'error'),
+    onSuccess: async () => {
+      setBorrowerLoan(null);
+      notify('Borrowers updated', 'success');
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['household-loans', householdId],
         }),
         queryClient.invalidateQueries({ queryKey: ['household-cashflow'] }),
       ]);
@@ -410,6 +454,29 @@ export function LoansPanel({
     form.reset(fieldsForLoan(loan));
     setDialogOpen(true);
   };
+  const openBorrowers = (loan: Loan) => {
+    setBorrowerLoan(loan);
+    setReplacementBorrowerIds(loan.borrower_person_ids ?? []);
+  };
+  const personLabel = (person: Person) => {
+    const today = localCalendarDate();
+    const inactive =
+      person.effective_from > today ||
+      (person.effective_to != null && person.effective_to < today);
+    return `${person.display_name}${inactive ? ' (inactive)' : ''}`;
+  };
+  const borrowerNames = (loan: Loan) => {
+    const borrowerIds = loan.borrower_person_ids ?? [];
+    if (borrowerIds.length === 0) return 'Not assigned';
+    if (people.isPending) return 'Loading…';
+    if (people.error) return 'Borrowers unavailable';
+    return borrowerIds
+      .map((personId) => {
+        const person = people.data?.find((item) => item.id === personId);
+        return person ? personLabel(person) : 'Unknown borrower';
+      })
+      .join(', ');
+  };
   const openGroupDialog = (group: LoanGroup | null = null) => {
     setEditingGroup(group);
     setGroupName(group?.display_name ?? '');
@@ -457,6 +524,11 @@ export function LoansPanel({
           : `${formatCurrency(loan.scheduled_repayment, loan.currency)} ${loan.repayment_frequency.toLowerCase()}`,
     },
     {
+      key: 'borrowers',
+      label: 'Borrowers',
+      render: borrowerNames,
+    },
+    {
       key: 'group',
       label: 'Split group',
       render: (loan) => {
@@ -484,6 +556,9 @@ export function LoansPanel({
             render: (loan: Loan) => (
               <Stack direction="row" spacing={1}>
                 <Button onClick={() => openCorrection(loan)}>Correct</Button>
+                <Button onClick={() => openBorrowers(loan)}>
+                  Manage borrowers
+                </Button>
                 {loan.is_active ? (
                   <Button color="error" onClick={() => setClosingLoan(loan)}>
                     Close
@@ -701,6 +776,49 @@ export function LoansPanel({
                   </MenuItem>
                 ))}
               </TextField>
+              {!editingLoan ? (
+                people.error ? (
+                  <Alert
+                    action={
+                      <Button onClick={() => void people.refetch()}>
+                        Retry
+                      </Button>
+                    }
+                    severity="warning"
+                  >
+                    People could not be loaded. You can save this loan without
+                    named borrowers and add them later.
+                  </Alert>
+                ) : (
+                  <Autocomplete
+                    disableCloseOnSelect
+                    disabled={people.isPending}
+                    getOptionLabel={personLabel}
+                    isOptionEqualToValue={(option, value) =>
+                      option.id === value.id
+                    }
+                    multiple
+                    onChange={(_, selected) =>
+                      form.setValue(
+                        'borrowerPersonIds',
+                        selected.map((person) => person.id),
+                        { shouldDirty: true },
+                      )
+                    }
+                    options={people.data ?? []}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        helperText="Optional; repayments default equally across named borrowers."
+                        label="Borrowers (optional)"
+                      />
+                    )}
+                    value={(people.data ?? []).filter((person) =>
+                      (borrowerPersonIds ?? []).includes(person.id),
+                    )}
+                  />
+                )
+              ) : null}
               <TextField
                 disabled={loanGroups.isPending || Boolean(loanGroups.error)}
                 helperText={
@@ -859,6 +977,74 @@ export function LoansPanel({
             </Button>
           </DialogActions>
         </Stack>
+      </Dialog>
+      <Dialog
+        fullWidth
+        maxWidth="sm"
+        onClose={() => setBorrowerLoan(null)}
+        open={Boolean(borrowerLoan)}
+      >
+        <DialogTitle>
+          Manage borrowers for {borrowerLoan?.display_name ?? 'loan'}
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Typography color="text.secondary">
+              Scheduled repayments default equally across these people unless an
+              Advanced dated override applies. Leaving this empty keeps the
+              repayment at whole-household level.
+            </Typography>
+            {people.error ? (
+              <Alert
+                action={
+                  <Button onClick={() => void people.refetch()}>Retry</Button>
+                }
+                severity="error"
+              >
+                Household people could not be loaded.{' '}
+                {errorMessage(people.error)}
+              </Alert>
+            ) : (
+              <Autocomplete
+                disableCloseOnSelect
+                disabled={people.isPending}
+                getOptionLabel={personLabel}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                multiple
+                onChange={(_, selected) =>
+                  setReplacementBorrowerIds(selected.map((person) => person.id))
+                }
+                options={people.data ?? []}
+                renderInput={(params) => (
+                  <TextField {...params} label="Borrowers" />
+                )}
+                value={(people.data ?? []).filter((person) =>
+                  replacementBorrowerIds.includes(person.id),
+                )}
+              />
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBorrowerLoan(null)}>Cancel</Button>
+          <Button
+            disabled={
+              replaceBorrowers.isPending ||
+              people.isPending ||
+              Boolean(people.error)
+            }
+            onClick={() =>
+              borrowerLoan &&
+              replaceBorrowers.mutate({
+                loan: borrowerLoan,
+                personIds: replacementBorrowerIds,
+              })
+            }
+            variant="contained"
+          >
+            Save borrowers
+          </Button>
+        </DialogActions>
       </Dialog>
       <Dialog
         fullWidth
