@@ -286,6 +286,33 @@ async def test_loan_groups_are_listed_and_can_be_corrected(
     assert cleared.status_code == 200
     assert cleared.json()["loan_group_id"] is None
 
+    renamed = await client.patch(
+        f"/api/v1/loan-groups/{later.json()['id']}",
+        json={"display_name": "  Flexible   splits  "},
+    )
+    assert renamed.status_code == 200
+    assert renamed.json()["display_name"] == "Flexible splits"
+    assert audit_events[-1][0] == "loan_group_renamed"
+    assert audit_events[-1][1]["previous_name"] == "Variable splits"
+
+    duplicate = await client.patch(
+        f"/api/v1/loan-groups/{later.json()['id']}",
+        json={"display_name": "fixed SPLITS"},
+    )
+    assert duplicate.status_code == 409
+    empty_name = await client.post(
+        f"/api/v1/households/{loan_setup['household_id']}/loan-groups",
+        json={"display_name": "   ", "property_id": loan_setup["property_id"]},
+    )
+    assert empty_name.status_code == 422
+
+    assigned_removal = await client.delete(f"/api/v1/loan-groups/{earlier.json()['id']}")
+    assert assigned_removal.status_code == 409
+    removed = await client.delete(f"/api/v1/loan-groups/{later.json()['id']}")
+    assert removed.status_code == 204
+    assert audit_events[-1][0] == "loan_group_removed"
+    assert audit_events[-1][1]["removed_group"]["display_name"] == "Flexible splits"
+
 
 async def test_loan_group_assignment_requires_the_same_property_and_household(
     client: AsyncClient, session: AsyncSession, loan_setup: dict[str, str]
@@ -915,6 +942,11 @@ async def test_cross_household_property_is_rejected_and_viewer_cannot_write(
     )
     assert invalid.status_code == 422
     loan = await create_loan(client, loan_setup)
+    group = await client.post(
+        f"/api/v1/households/{loan_setup['household_id']}/loan-groups",
+        json={"display_name": "Permission test", "property_id": loan_setup["property_id"]},
+    )
+    assert group.status_code == 201
     membership = await session.scalar(
         select(HouseholdMembership).where(
             HouseholdMembership.household_id == uuid.UUID(loan_setup["household_id"])
@@ -932,6 +964,12 @@ async def test_cross_household_property_is_rejected_and_viewer_cannot_write(
         json={"display_name": "Viewer group", "property_id": loan_setup["property_id"]},
     )
     assert blocked_group.status_code == 403
+    blocked_rename = await client.patch(
+        f"/api/v1/loan-groups/{group.json()['id']}", json={"display_name": "Renamed"}
+    )
+    assert blocked_rename.status_code == 403
+    blocked_removal = await client.delete(f"/api/v1/loan-groups/{group.json()['id']}")
+    assert blocked_removal.status_code == 403
     blocked = await client.post(
         f"/api/v1/loans/{loan['id']}/events",
         json={

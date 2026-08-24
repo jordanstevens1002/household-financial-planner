@@ -76,6 +76,8 @@ decorators, so route changes require an intentional matrix update.
 | GET | `/api/v1/households/{household_id}/loans` | Household loan list | #45 (React property workflow) |
 | GET | `/api/v1/households/{household_id}/loan-groups` | Split-loan group catalogue | #99, #100 |
 | POST | `/api/v1/households/{household_id}/loan-groups` | Split-loan group creation | #99, #100 |
+| PATCH | `/api/v1/loan-groups/{group_id}` | Audited split-loan group rename | #99, #100 |
+| DELETE | `/api/v1/loan-groups/{group_id}` | Guarded split-loan group removal | #99, #100 |
 | POST | `/api/v1/households/{household_id}/loans` | Loan creation | #45 (React property workflow) |
 | GET | `/api/v1/loans/{loan_id}` | Loan detail | #45 |
 | PATCH | `/api/v1/loans/{loan_id}` | Audited loan correction | #45 (React property workflow) |
