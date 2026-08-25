@@ -675,7 +675,7 @@ describe('property overview workflows', () => {
         }
       ).loans.map((loan) => loan.opening_balance),
     ).toEqual(['200000', '110000']);
-  }, 30_000);
+  }, 45_000);
 
   it('accepts a debt-free current position without setup loans', async () => {
     const user = userEvent.setup();

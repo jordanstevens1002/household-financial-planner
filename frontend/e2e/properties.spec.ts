@@ -8,6 +8,8 @@ test('selects and restores a dated property position', async ({ page }) => {
   const statusId = '85e30193-a324-4d22-9065-e25d819f6530';
   const loanTypeId = 'b7efb821-85ea-45c6-a4af-bde69c898d87';
   const loanGroupId = '39ba4179-2f46-42ae-8e09-5696079c0fd9';
+  const firstPersonId = '8a76ff72-b719-4ca9-9f77-b66f901fb56f';
+  const secondPersonId = 'cbe438d4-4dbc-4401-9659-794c743b3769';
   const requestedDates: string[] = [];
   let valuationAdded = false;
   let valuationPayload: Record<string, unknown> | null = null;
@@ -15,6 +17,7 @@ test('selects and restores a dated property position', async ({ page }) => {
   let rentalPayload: Record<string, unknown> | null = null;
   let expensePayload: Record<string, unknown> | null = null;
   let loanPayload: Record<string, unknown> | null = null;
+  let borrowerReplacement: Record<string, unknown> | null = null;
   let loanGroups: Record<string, unknown>[] = [];
   let wizardPayload: Record<string, unknown> | null = null;
   await page.addInitScript((id) => {
@@ -186,6 +189,28 @@ test('selects and restores a dated property position', async ({ page }) => {
       });
       return;
     }
+    if (path.endsWith(`/households/${householdId}/people`)) {
+      await route.fulfill({
+        contentType: 'application/json',
+        json: [
+          {
+            display_name: 'Alex',
+            effective_from: '2020-01-01',
+            effective_to: null,
+            household_id: householdId,
+            id: firstPersonId,
+          },
+          {
+            display_name: 'Sam Borrower',
+            effective_from: '2020-01-01',
+            effective_to: null,
+            household_id: householdId,
+            id: secondPersonId,
+          },
+        ],
+      });
+      return;
+    }
     if (path.endsWith(`/households/${householdId}/loan-groups`)) {
       if (request.method() === 'POST') {
         const payload = request.postDataJSON() as Record<string, unknown>;
@@ -242,6 +267,21 @@ test('selects and restores a dated property position', async ({ page }) => {
             : [],
         });
       }
+      return;
+    }
+    if (
+      path.endsWith('/loans/7a959699-d6a5-4b32-a15f-cbe2a460ce55/borrowers') &&
+      request.method() === 'PUT'
+    ) {
+      borrowerReplacement = request.postDataJSON() as Record<string, unknown>;
+      loanPayload = { ...loanPayload, ...borrowerReplacement };
+      await route.fulfill({
+        contentType: 'application/json',
+        json: {
+          ...loanPayload,
+          id: '7a959699-d6a5-4b32-a15f-cbe2a460ce55',
+        },
+      });
       return;
     }
     if (path.endsWith(`/properties/${propertyId}`)) {
@@ -314,20 +354,6 @@ test('selects and restores a dated property position', async ({ page }) => {
           valuation_is_estimate: valuationAdded ? false : null,
           valuation_type: valuationAdded ? 'FORMAL_VALUATION' : null,
         },
-      });
-      return;
-    }
-    if (path.endsWith(`/households/${householdId}/people`)) {
-      await route.fulfill({
-        contentType: 'application/json',
-        json: [
-          {
-            display_name: 'Alex',
-            effective_from: '2020-01-01',
-            id: '8a76ff72-b719-4ca9-9f77-b66f901fb56f',
-            is_active: true,
-          },
-        ],
       });
       return;
     }
@@ -457,6 +483,8 @@ test('selects and restores a dated property position', async ({ page }) => {
   await loanDialog.getByLabel('Loan name').fill('Main mortgage');
   await loanDialog.getByLabel('Loan type').click();
   await page.getByRole('option', { name: 'Home loan' }).click();
+  await loanDialog.getByLabel('Borrowers (optional)').click();
+  await page.getByRole('option', { name: 'Alex' }).click();
   await loanDialog.getByLabel('Opening balance (NZD)').fill('305000');
   await loanDialog.getByLabel('Opening balance date').fill('2026-06-30');
   await loanDialog.getByLabel('Annual interest rate %').fill('5.75');
@@ -478,6 +506,7 @@ test('selects and restores a dated property position', async ({ page }) => {
     .poll(() => loanPayload)
     .toMatchObject({
       currency: 'NZD',
+      borrower_person_ids: [firstPersonId],
       initial_interest_rate: '5.75',
       loan_type_id: loanTypeId,
       loan_group_id: loanGroupId,
@@ -486,6 +515,23 @@ test('selects and restores a dated property position', async ({ page }) => {
       repayment_frequency: 'MONTHLY',
       scheduled_repayment: '2200',
     });
+  await page.getByRole('button', { name: 'Manage borrowers' }).click();
+  const borrowerDialog = page.getByRole('dialog', {
+    name: 'Manage borrowers for Main mortgage',
+  });
+  await borrowerDialog.getByLabel('Borrowers').click();
+  await page.getByRole('option', { name: 'Sam Borrower' }).click();
+  await page.keyboard.press('Escape');
+  await borrowerDialog.getByRole('button', { name: 'Save borrowers' }).click();
+  await expect(page.getByText('Borrowers updated')).toBeVisible();
+  await expect
+    .poll(() => borrowerReplacement)
+    .toEqual({
+      borrower_person_ids: [firstPersonId, secondPersonId],
+    });
+  await expect(
+    page.getByRole('table', { name: 'Property loans' }),
+  ).toContainText('Alex, Sam Borrower');
   await expect(
     page.getByText(/derived opening balance NZD 305,000\.00/),
   ).toBeVisible();

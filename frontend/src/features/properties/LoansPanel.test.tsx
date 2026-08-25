@@ -23,6 +23,8 @@ const propertyId = '818badb5-2518-4c3f-8f6d-bb6ee750e606';
 const otherPropertyId = '19528fd9-ad60-4621-b41a-012f21a98e2e';
 const loanTypeId = '951bd6cd-82db-4a37-a56f-95c36b02f9d1';
 const groupId = '47cf84d0-3151-4b75-9667-e5daa7e822d9';
+const firstPersonId = 'a2342535-475d-4eb9-9257-acfdf704bb65';
+const secondPersonId = 'b79316f7-04d9-4345-88a9-996fd6518d85';
 
 function response(body: unknown, status = 200) {
   return new Response(status === 204 ? null : JSON.stringify(body), {
@@ -45,6 +47,7 @@ function loan(
 ) {
   const record = {
     account_reference_masked: null,
+    borrower_person_ids: [],
     currency: 'NZD',
     display_name: 'Home loan',
     household_id: householdId,
@@ -83,20 +86,36 @@ function group(
   };
 }
 
+function person(
+  id: string,
+  displayName: string,
+  effectiveTo: string | null = null,
+) {
+  return {
+    date_of_birth: null,
+    display_name: displayName,
+    effective_from: '2020-01-01',
+    effective_to: effectiveTo,
+    household_id: householdId,
+    id,
+    tax_jurisdiction: null,
+    tax_residency_country_code: null,
+  };
+}
+
 function renderPanel(
   canEdit = true,
   recordedDebt: string | null = '310000.00',
   canAdminister = false,
+  queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  }),
 ) {
   return render(
     <ThemeProvider theme={appTheme}>
       <CssBaseline />
       <NotificationProvider>
-        <QueryClientProvider
-          client={
-            new QueryClient({ defaultOptions: { queries: { retry: false } } })
-          }
-        >
+        <QueryClientProvider client={queryClient}>
           <LoansPanel
             canAdminister={canAdminister}
             canEdit={canEdit}
@@ -172,6 +191,7 @@ describe('property loan records', () => {
       'Opening date',
       'Interest rate',
       'Scheduled repayment',
+      'Borrowers',
       'Split group',
       'Status',
     ]);
@@ -201,6 +221,10 @@ describe('property loan records', () => {
           );
         if (path.endsWith(`/households/${householdId}/loan-groups`))
           return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/people`))
+          return Promise.resolve(
+            response([person(firstPersonId, 'Alex Borrower')]),
+          );
         if (path.endsWith(`/households/${householdId}/loans`)) {
           if (init?.method === 'POST') {
             saved = JSON.parse(init.body as string) as Record<string, unknown>;
@@ -220,6 +244,12 @@ describe('property loan records', () => {
     expect(screen.getByText('Choose a loan type')).toBeVisible();
 
     await user.type(screen.getByLabelText('Loan name'), 'Home loan');
+    await user.click(
+      screen.getByRole('combobox', { name: 'Borrowers (optional)' }),
+    );
+    await user.click(
+      await screen.findByRole('option', { name: 'Alex Borrower' }),
+    );
     await choose('Loan type', 'Variable rate');
     await user.type(screen.getByLabelText('Opening balance (NZD)'), '310000');
     fireEvent.change(screen.getByLabelText('Opening balance date'), {
@@ -236,6 +266,7 @@ describe('property loan records', () => {
     expect(await screen.findByText('Loan added')).toBeVisible();
     await waitFor(() => expect(saved).not.toBeNull());
     expect(saved).toMatchObject({
+      borrower_person_ids: [firstPersonId],
       currency: 'NZD',
       initial_interest_rate: '5.75',
       interest_calculation_method: 'DAILY',
@@ -252,6 +283,198 @@ describe('property loan records', () => {
       await screen.findByRole('table', { name: 'Property loans' }),
     ).toHaveTextContent('Home loan');
   }, 30_000);
+
+  it('shows and atomically replaces borrowers on an existing loan', async () => {
+    let current = { ...loan(), borrower_person_ids: [firstPersonId] };
+    let replacement: Record<string, unknown> | null = null;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith('/lookups/loan_type'))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loan-groups`))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/people`))
+          return Promise.resolve(
+            response([
+              person(firstPersonId, 'Alex Borrower'),
+              person(secondPersonId, 'Sam Former Borrower', '2020-12-31'),
+            ]),
+          );
+        if (path.endsWith(`/loans/${current.id}/borrowers`)) {
+          replacement = JSON.parse(init?.body as string) as Record<
+            string,
+            unknown
+          >;
+          current = {
+            ...current,
+            borrower_person_ids: replacement.borrower_person_ids as string[],
+          };
+          return Promise.resolve(response(current));
+        }
+        if (path.endsWith(`/households/${householdId}/loans`))
+          return Promise.resolve(response([current]));
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    const user = userEvent.setup();
+    renderPanel();
+    const table = await screen.findByRole('table', { name: 'Property loans' });
+    expect(await within(table).findByText('Alex Borrower')).toBeVisible();
+    await user.click(
+      within(table).getByRole('button', { name: 'Manage borrowers' }),
+    );
+    const dialog = screen.getByRole('dialog', {
+      name: 'Manage borrowers for Home loan',
+    });
+    expect(
+      within(dialog).getByText(
+        /changes repayment attribution from the loan opening date/i,
+      ),
+    ).toBeVisible();
+    await user.click(
+      within(dialog).getByRole('combobox', { name: 'Borrowers' }),
+    );
+    await user.click(
+      await screen.findByRole('option', {
+        name: 'Sam Former Borrower (inactive)',
+      }),
+    );
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Save borrowers' }),
+    );
+    expect(await screen.findByText('Borrowers updated')).toBeVisible();
+    expect(replacement).toEqual({
+      borrower_person_ids: [firstPersonId, secondPersonId],
+    });
+    expect(
+      await within(table).findByText(
+        'Alex Borrower, Sam Former Borrower (inactive)',
+      ),
+    ).toBeVisible();
+  });
+
+  it('uses the shared people cache for a newly created household person', async () => {
+    const newPerson = person(secondPersonId, 'Just Added');
+    const current = { ...loan(), borrower_person_ids: [secondPersonId] };
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+    });
+    queryClient.setQueryData(['people', householdId], [newPerson]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input) => {
+        const path = pathOf(input);
+        if (path.endsWith('/lookups/loan_type'))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loan-groups`))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loans`))
+          return Promise.resolve(response([current]));
+        if (path.endsWith(`/households/${householdId}/people`))
+          throw new Error('The fresh shared people cache should be reused');
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    renderPanel(true, '310000.00', false, queryClient);
+    const table = await screen.findByRole('table', { name: 'Property loans' });
+    expect(await within(table).findByText('Just Added')).toBeVisible();
+  });
+
+  it('cannot dismiss a borrower dialog while replacement is pending', async () => {
+    let finishReplacement!: (value: Response) => void;
+    const pendingReplacement = new Promise<Response>((resolve) => {
+      finishReplacement = resolve;
+    });
+    const current = { ...loan(), borrower_person_ids: [firstPersonId] };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input) => {
+        const path = pathOf(input);
+        if (path.endsWith('/lookups/loan_type'))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loan-groups`))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/people`))
+          return Promise.resolve(
+            response([person(firstPersonId, 'Alex Borrower')]),
+          );
+        if (path.endsWith(`/loans/${current.id}/borrowers`))
+          return pendingReplacement;
+        if (path.endsWith(`/households/${householdId}/loans`))
+          return Promise.resolve(response([current]));
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    const user = userEvent.setup();
+    renderPanel();
+    await user.click(
+      within(
+        await screen.findByRole('table', { name: 'Property loans' }),
+      ).getByRole('button', { name: 'Manage borrowers' }),
+    );
+    const dialog = screen.getByRole('dialog', {
+      name: 'Manage borrowers for Home loan',
+    });
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Save borrowers' }),
+    );
+    expect(
+      within(dialog).getByRole('button', { name: 'Cancel' }),
+    ).toBeDisabled();
+    await user.keyboard('{Escape}');
+    expect(dialog).toBeVisible();
+    finishReplacement(response(current));
+    expect(await screen.findByText('Borrowers updated')).toBeVisible();
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('blocks borrower replacement until a failed people lookup is retried', async () => {
+    let peopleFailed = true;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input) => {
+        const path = pathOf(input);
+        if (path.endsWith('/lookups/loan_type'))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loan-groups`))
+          return Promise.resolve(response([]));
+        if (path.endsWith(`/households/${householdId}/loans`))
+          return Promise.resolve(response([loan()]));
+        if (path.endsWith(`/households/${householdId}/people`)) {
+          if (peopleFailed) {
+            peopleFailed = false;
+            return Promise.resolve(response({ detail: 'Unavailable' }, 503));
+          }
+          return Promise.resolve(
+            response([person(firstPersonId, 'Alex Borrower')]),
+          );
+        }
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    const user = userEvent.setup();
+    renderPanel();
+    await user.click(
+      within(
+        await screen.findByRole('table', { name: 'Property loans' }),
+      ).getByRole('button', { name: 'Manage borrowers' }),
+    );
+    const dialog = screen.getByRole('dialog', {
+      name: 'Manage borrowers for Home loan',
+    });
+    expect(
+      await within(dialog).findByText(/could not be loaded/),
+    ).toBeVisible();
+    expect(
+      within(dialog).getByRole('button', { name: 'Save borrowers' }),
+    ).toBeDisabled();
+    await user.click(within(dialog).getByRole('button', { name: 'Retry' }));
+    expect(
+      await within(dialog).findByRole('combobox', { name: 'Borrowers' }),
+    ).toBeEnabled();
+  });
 
   it('shows a recoverable loan-list failure', async () => {
     let failed = true;
@@ -495,6 +718,15 @@ describe('property loan records', () => {
     expect(typeof effectiveDate).toBe('string');
     expect(effectiveDate as string).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(await screen.findByText('Closed')).toBeVisible();
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Close loan?' })).toBeNull(),
+    );
+    expect(
+      within(screen.getByRole('table', { name: 'Property loans' })).queryByRole(
+        'button',
+        { name: 'Manage borrowers' },
+      ),
+    ).toBeNull();
   }, 15_000);
 
   it('rejects an exposed account reference and explains missing recorded debt', async () => {
