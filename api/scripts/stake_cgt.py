@@ -2,8 +2,10 @@
 """Create an experimental CGT working paper from Stake activity XLSX files."""
 
 import argparse
+import io
 import re
 import sys
+import zipfile
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -13,9 +15,28 @@ from openpyxl import load_workbook
 
 from app.investments.capital_gains import Calculation, Trade, calculate_fifo
 
-HEADERS = {"date", "side", "identifier", "units", "total value"}
+HEADER_ALIASES = {
+    "date": {"date", "trade date"},
+    "identifier": {"identifier", "trade identifier"},
+    "side": {"side"},
+    "units": {"units"},
+    "total value": {"total value"},
+}
 SECURITY = re.compile(r"^\s*([A-Z0-9.:-]+)\s+-\s+(.+?)\s*$")
 FY = re.compile(r"^(\d{4})-(\d{2}|\d{4})$")
+ALIGNMENT_VALUE = re.compile(rb'((?:horizontal|vertical)=")([A-Za-z]+)(")')
+VALID_ALIGNMENTS = {
+    b"bottom",
+    b"center",
+    b"centerContinuous",
+    b"distributed",
+    b"fill",
+    b"general",
+    b"justify",
+    b"left",
+    b"right",
+    b"top",
+}
 
 
 def _text(value: Any) -> str:
@@ -58,6 +79,47 @@ def _is_aud(cell: Any) -> bool:
     return "AUD" in rendered or "AUD" in number_format or "A$" in rendered
 
 
+def _columns(values: list[str]) -> dict[str, int] | None:
+    positions = {value: position for position, value in enumerate(values) if value}
+    canonical: dict[str, int] = {}
+    for name, aliases in HEADER_ALIASES.items():
+        matching = next((positions[alias] for alias in aliases if alias in positions), None)
+        if matching is None:
+            return None
+        canonical[name] = matching
+    for optional in ("symbol", "currency", "aud/usd rate"):
+        if optional in positions:
+            canonical[optional] = positions[optional]
+    return canonical
+
+
+def _normalise_alignment(match: re.Match[bytes]) -> bytes:
+    value = match.group(2)
+    canonical = next(
+        (candidate for candidate in VALID_ALIGNMENTS if candidate.lower() == value.lower()), value
+    )
+    return match.group(1) + canonical + match.group(3)
+
+
+def _load_workbook_tolerating_stake_styles(path: Path) -> Any:
+    """Load a workbook after normalising Stake's non-standard style capitalisation."""
+    try:
+        return load_workbook(path, read_only=True, data_only=True)
+    except ValueError as exc:
+        if "could not read stylesheet" not in str(exc):
+            raise
+
+    repaired = io.BytesIO()
+    with zipfile.ZipFile(path) as source, zipfile.ZipFile(repaired, "w") as destination:
+        for item in source.infolist():
+            content = source.read(item.filename)
+            if item.filename == "xl/styles.xml":
+                content = ALIGNMENT_VALUE.sub(_normalise_alignment, content)
+            destination.writestr(item, content)
+    repaired.seek(0)
+    return load_workbook(repaired, read_only=True, data_only=True)
+
+
 def read_stake_workbook(path: Path) -> list[Trade]:
     """Read Stake's sectioned Investment Activity workbook.
 
@@ -65,17 +127,23 @@ def read_stake_workbook(path: Path) -> list[Trade]:
     Only the AUD row is retained. Australian rows without an explicit currency marker are
     treated as AUD. Header aliases are intentionally strict so format changes fail visibly.
     """
-    workbook = load_workbook(path, read_only=True, data_only=True)
+    workbook = _load_workbook_tolerating_stake_styles(path)
     trades: list[Trade] = []
+    found_activity_sheet = False
     for sheet in workbook.worksheets:
+        # Stake exports declare every sheet dimension as A1 even when rows extend beyond it.
+        # Read-only openpyxl trusts that declaration unless dimensions are recalculated.
+        sheet.reset_dimensions()
         rows = list(sheet.iter_rows())
         header_at: int | None = None
         columns: dict[str, int] = {}
         for index, row in enumerate(rows):
             values = [_text(cell.value).lower() for cell in row]
-            if HEADERS.issubset(set(values)):
+            detected = _columns(values)
+            if detected is not None:
                 header_at = index
-                columns = {value: position for position, value in enumerate(values) if value}
+                columns = detected
+                found_activity_sheet = True
                 break
         if header_at is None:
             continue
@@ -106,6 +174,40 @@ def read_stake_workbook(path: Path) -> list[Trade]:
 
             side = values[columns["side"]].upper() if columns["side"] < len(values) else ""
             traded_on = _date(row[columns["date"]].value) if columns["date"] < len(row) else None
+            if "symbol" in columns and side in {"BUY", "SELL"} and traded_on:
+                symbol = values[columns["symbol"]].strip()
+                total = _decimal(row[columns["total value"]].value)
+                units = abs(_decimal(row[columns["units"]].value) or Decimal("0"))
+                currency = values[columns["currency"]].upper() if "currency" in columns else "AUD"
+                if total is None:
+                    continue
+                if currency == "USD":
+                    if "aud/usd rate" not in columns:
+                        raise ValueError(f"Missing AUD/USD rate at row {row_number} in {path}")
+                    rate = _decimal(row[columns["aud/usd rate"]].value)
+                    if rate is None or rate <= 0:
+                        raise ValueError(f"Invalid AUD/USD rate at row {row_number} in {path}")
+                    total *= rate
+                elif currency != "AUD":
+                    raise ValueError(
+                        f"Unsupported currency {currency!r} at row {row_number} in {path}"
+                    )
+                cash_total = abs(total) if side == "BUY" else -total
+                trades.append(
+                    Trade(
+                        account=(
+                            "Stake Wall St" if sheet.title == "Wall St Equities" else "Stake AUS"
+                        ),
+                        security=symbol,
+                        traded_on=traded_on,
+                        side=side,
+                        units=units,
+                        total_aud=cash_total,
+                        identifier=values[columns["identifier"]],
+                        source=f"{path.name}:{row_number}",
+                    )
+                )
+                continue
             if side in {"BUY", "SELL"} and traded_on:
                 pending = {
                     "account": account,
@@ -137,13 +239,13 @@ def read_stake_workbook(path: Path) -> list[Trade]:
                     traded_on=pending["traded_on"],
                     side=pending["side"],
                     units=pending["units"],
-                    total_aud=abs(total),
+                    total_aud=abs(total) if pending["side"] == "BUY" else -total,
                     identifier=pending["identifier"],
                     source=f"{path.name}:{pending['row']}",
                 )
             )
             pending = None
-    if not trades:
+    if not trades and not found_activity_sheet:
         raise ValueError(f"No Stake investment activity rows found in {path}")
     return trades
 
@@ -242,7 +344,8 @@ def render_markdown(calculation: Calculation, financial_year: str | None) -> str
             "## Method and assumptions",
             "",
             "- Trade date determines the income year.",
-            "- Stake's AUD total is used: inclusive cost for buys and net proceeds for sells.",
+            "- Stake AUD totals are used directly. USD totals are converted using the "
+            "workbook's AUD/USD rate.",
             "- Parcels are matched FIFO within each Stake account and security.",
             "- Discount eligibility is flagged only when disposal is after the first "
             "acquisition anniversary.",

@@ -26,7 +26,9 @@ gain.
 ## Current assumptions and boundaries
 
 - Input is Stake's sectioned Investment Activity `.xlsx` format; PDFs are not accepted.
-- The importer uses Stake's AUD total rather than reconstructing foreign-exchange conversions.
+- Australian activity uses Stake's AUD total. Wall St activity is converted using the AUD/USD rate
+  included in Stake's XLSX; because Stake displays this rate to three decimals, independently verify
+  material foreign-currency results against contract notes or an accepted exchange-rate source.
 - Tax parcels are matched FIFO. This is an explicit convenience assumption, not a claim that FIFO is
   required or optimal under Australian tax law.
 - The tool does not infer demergers, splits, transfers, returns of capital, AMIT cost-base adjustments,

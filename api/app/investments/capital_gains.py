@@ -69,9 +69,9 @@ def _discount_eligible(acquired_on: date, disposed_on: date) -> bool:
 def calculate_fifo(trades: list[Trade]) -> Calculation:
     """Match disposals to earlier acquisitions using an explicit FIFO assumption.
 
-    ``total_aud`` is the cash total from Stake: positive inclusive cost for buys and
-    positive net proceeds for sells. A result is deliberately withheld when any sold
-    units have no imported cost-base parcel.
+    ``total_aud`` is the cash total: positive inclusive cost for buys and net proceeds
+    for sells (which can be negative when fees exceed gross proceeds). A result is
+    deliberately withheld when any sold units have no imported cost-base parcel.
     """
     lots: dict[tuple[str, str], deque[_Lot]] = defaultdict(deque)
     disposals: list[Disposal] = []
@@ -79,8 +79,8 @@ def calculate_fifo(trades: list[Trade]) -> Calculation:
     ordered = sorted(enumerate(trades), key=lambda item: (item[1].traded_on, item[0]))
 
     for _, trade in ordered:
-        if trade.units <= 0 or trade.total_aud < 0:
-            raise ValueError(f"Invalid positive units/value in {trade.source}: {trade.identifier}")
+        if trade.units <= 0 or (trade.side == "BUY" and trade.total_aud < 0):
+            raise ValueError(f"Invalid units/value in {trade.source}: {trade.identifier}")
         key = (trade.account, trade.security)
         if trade.side == "BUY":
             lots[key].append(_Lot(trade.traded_on, trade.units, trade.total_aud, trade.identifier))
