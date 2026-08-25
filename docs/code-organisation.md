@@ -15,6 +15,7 @@ api/
 │   ├── rental/           rental and property-expense cash flow
 │   ├── income/           income and household cash flow
 │   │   └── tax/          tax contracts, registry, and bundled examples
+│   ├── investments/      experimental post-2.0 investment calculations
 │   ├── retirement/       retirement routes, schemas, calculations, and providers
 │   ├── purchases/        purchase routes, schemas, calculations, and providers
 │   ├── scenarios/        scenario routes, schemas, calculations, and templates
@@ -45,6 +46,8 @@ api/
   refactor; moving Python declarations must not accidentally change SQLAlchemy metadata.
 - Cross-domain imports should use the public domain package path. Avoid compatibility modules at
   old flat paths because they allow the loose structure to return unnoticed.
+- The standalone Stake CGT working-paper utility is staged for post-2.0 redesign and is documented
+  in `docs/post-2.0-stake-cgt.md`; it is not an API or persistence contract.
 
 This structure changes where code lives, not API paths, database names, entry-point group names, or
 calculation behaviour.
