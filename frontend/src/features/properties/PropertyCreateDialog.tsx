@@ -24,6 +24,11 @@ import { AdvancedSection } from '../../shared/AdvancedSection';
 import { useNotification } from '../../shared/notificationContext';
 import { useAuth } from '../auth/AuthContext';
 import { localCalendarDate } from '../people/localDate';
+import {
+  MAX_SETUP_BORROWERS,
+  setupBorrowerLabel,
+  setupBorrowerOptionDisabled,
+} from './propertySetupBorrowers';
 
 type Country = components['schemas']['CountryRead'];
 type Baseline = components['schemas']['BaselineRead'];
@@ -36,7 +41,9 @@ const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 const moneyPattern = /^\d+(?:\.\d{1,2})?$/;
 
 const setupLoanSchema = z.object({
-  borrowerPersonIds: z.array(z.string().uuid()).max(20),
+  borrowerPersonIds: z
+    .array(z.string().uuid())
+    .max(MAX_SETUP_BORROWERS, 'Choose no more than 20 borrowers'),
   displayName: z.string().trim().min(1, 'Enter a loan name').max(200),
   initialInterestRate: z
     .string()
@@ -253,10 +260,6 @@ function optional(value: string) {
   return value || null;
 }
 
-function personLabel(person: Person) {
-  return `${person.display_name}${person.is_active ? '' : ' (inactive)'}`;
-}
-
 function message(error: unknown) {
   return error instanceof Error ? error.message : 'The request failed';
 }
@@ -293,6 +296,10 @@ export function PropertyCreateDialog({
   const mode = useWatch({ control: form.control, name: 'mode' });
   const loans = useWatch({ control: form.control, name: 'loans' });
   const totalDebt = useWatch({ control: form.control, name: 'totalDebt' });
+  const positionDate = useWatch({
+    control: form.control,
+    name: 'positionDate',
+  });
   const existingPropertyId = useWatch({
     control: form.control,
     name: 'existingPropertyId',
@@ -726,7 +733,15 @@ export function PropertyCreateDialog({
                           <Autocomplete
                             disableCloseOnSelect
                             disabled={people.isPending || Boolean(people.error)}
-                            getOptionLabel={personLabel}
+                            getOptionDisabled={(option) =>
+                              setupBorrowerOptionDisabled(
+                                field.value,
+                                option.id,
+                              )
+                            }
+                            getOptionLabel={(person) =>
+                              setupBorrowerLabel(person, positionDate)
+                            }
                             isOptionEqualToValue={(option, value) =>
                               option.id === value.id
                             }
@@ -740,7 +755,11 @@ export function PropertyCreateDialog({
                             renderInput={(params) => (
                               <TextField
                                 {...params}
-                                helperText="Scheduled repayments are shared equally unless an Advanced dated override applies."
+                                error={Boolean(errors?.borrowerPersonIds)}
+                                helperText={
+                                  errors?.borrowerPersonIds?.message ??
+                                  'Scheduled repayments are shared equally unless an Advanced dated override applies.'
+                                }
                                 label={`Borrowers for loan ${index + 1} (optional)`}
                               />
                             )}

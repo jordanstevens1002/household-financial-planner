@@ -442,6 +442,19 @@ describe('property overview workflows', () => {
                 id: samId,
                 is_active: true,
               },
+              {
+                display_name: 'Future person',
+                effective_from: '2026-09-01',
+                id: '6046d725-9347-42e6-958a-f0b8c71a4e04',
+                is_active: true,
+              },
+              {
+                display_name: 'Former person',
+                effective_from: '2020-01-01',
+                effective_to: '2026-07-31',
+                id: '4526d238-51ac-4383-b238-3040c8a7043f',
+                is_active: true,
+              },
             ]),
           );
         }
@@ -512,10 +525,20 @@ describe('property overview workflows', () => {
     fireEvent.change(screen.getByLabelText('Total property debt (NZD)'), {
       target: { value: '310000' },
     });
+    fireEvent.change(screen.getByLabelText('Position date'), {
+      target: { value: '2026-08-02' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Add loan' }));
     const borrowerInput = await screen.findByRole('combobox', {
       name: 'Borrowers for loan 1 (optional)',
     });
+    fireEvent.keyDown(borrowerInput, { key: 'ArrowDown' });
+    expect(
+      await screen.findByRole('option', { name: 'Future person (inactive)' }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('option', { name: 'Former person (inactive)' }),
+    ).toBeVisible();
     fireEvent.change(borrowerInput, { target: { value: 'Alex' } });
     fireEvent.click(await screen.findByRole('option', { name: 'Alex' }));
     fireEvent.change(borrowerInput, { target: { value: 'Sam' } });
