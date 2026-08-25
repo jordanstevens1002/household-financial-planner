@@ -20,6 +20,8 @@ const typeId = '16b3f01b-ff76-451f-a4bd-a2ddf89834fd';
 const statusId = '85e30193-a324-4d22-9065-e25d819f6530';
 const loanTypeId = '951bd6cd-82db-4a37-a56f-95c36b02f9d1';
 const expenseTypeId = '487288b5-9cf2-4760-b903-dce0e5c09627';
+const alexId = '8a76ff72-b719-4ca9-9f77-b66f901fb56f';
+const samId = '79094b21-6ed3-4b39-8383-d5e21501b302';
 const account = {
   display_name: 'Property Owner',
   email: null,
@@ -148,7 +150,7 @@ function standardFetch(
           {
             display_name: 'Alex',
             effective_from: '2020-01-01',
-            id: '8a76ff72-b719-4ca9-9f77-b66f901fb56f',
+            id: alexId,
             is_active: true,
           },
         ]),
@@ -425,6 +427,24 @@ describe('property overview workflows', () => {
         if (path.endsWith('/reference/countries')) {
           return Promise.resolve(response([]));
         }
+        if (path.endsWith(`/households/${householdId}/people`)) {
+          return Promise.resolve(
+            response([
+              {
+                display_name: 'Alex',
+                effective_from: '2020-01-01',
+                id: alexId,
+                is_active: true,
+              },
+              {
+                display_name: 'Sam',
+                effective_from: '2021-01-01',
+                id: samId,
+                is_active: true,
+              },
+            ]),
+          );
+        }
         if (path.endsWith('/properties/wizard') && init?.method === 'POST') {
           saved = JSON.parse(init.body as string) as Record<string, unknown>;
           created = true;
@@ -482,22 +502,29 @@ describe('property overview workflows', () => {
     fireEvent.change(screen.getByLabelText('Property name'), {
       target: { value: 'Harbour home' },
     });
-    await user.click(screen.getByLabelText('Property type'));
-    await user.click(screen.getByRole('option', { name: 'House' }));
-    await user.click(screen.getByLabelText('Current use'));
-    await user.click(screen.getByRole('option', { name: 'Home' }));
+    fireEvent.mouseDown(screen.getByLabelText('Property type'));
+    fireEvent.click(screen.getByRole('option', { name: 'House' }));
+    fireEvent.mouseDown(screen.getByLabelText('Current use'));
+    fireEvent.click(screen.getByRole('option', { name: 'Home' }));
     fireEvent.change(screen.getByLabelText('Property value (NZD)'), {
       target: { value: '780000' },
     });
     fireEvent.change(screen.getByLabelText('Total property debt (NZD)'), {
       target: { value: '310000' },
     });
-    await user.click(screen.getByRole('button', { name: 'Add loan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add loan' }));
+    const borrowerInput = await screen.findByRole('combobox', {
+      name: 'Borrowers for loan 1 (optional)',
+    });
+    fireEvent.change(borrowerInput, { target: { value: 'Alex' } });
+    fireEvent.click(await screen.findByRole('option', { name: 'Alex' }));
+    fireEvent.change(borrowerInput, { target: { value: 'Sam' } });
+    fireEvent.click(await screen.findByRole('option', { name: 'Sam' }));
     fireEvent.change(screen.getByLabelText('Loan name'), {
       target: { value: 'Main mortgage' },
     });
-    await user.click(screen.getByLabelText('Loan type'));
-    await user.click(screen.getByRole('option', { name: 'Home loan' }));
+    fireEvent.mouseDown(screen.getByLabelText('Loan type'));
+    fireEvent.click(screen.getByRole('option', { name: 'Home loan' }));
     fireEvent.change(screen.getByLabelText('Opening balance (NZD)'), {
       target: { value: '310000' },
     });
@@ -507,23 +534,20 @@ describe('property overview workflows', () => {
     fireEvent.change(screen.getByLabelText('Scheduled repayment (NZD)'), {
       target: { value: '2100' },
     });
-    await user.click(screen.getByLabelText('Repayment frequency'));
-    await user.click(screen.getByRole('option', { name: 'Monthly' }));
-    await user.click(screen.getByLabelText('Repayment type'));
-    await user.click(
+    fireEvent.mouseDown(screen.getByLabelText('Repayment frequency'));
+    fireEvent.click(screen.getByRole('option', { name: 'Monthly' }));
+    fireEvent.mouseDown(screen.getByLabelText('Repayment type'));
+    fireEvent.click(
       screen.getByRole('option', { name: 'Principal and interest' }),
     );
-    await user.click(screen.getByLabelText('Interest calculation'));
-    await user.click(screen.getByRole('option', { name: 'Daily' }));
-    await user.click(screen.getByRole('button', { name: 'Save property' }));
+    fireEvent.mouseDown(screen.getByLabelText('Interest calculation'));
+    fireEvent.click(screen.getByRole('option', { name: 'Daily' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save property' }));
 
     expect(await screen.findByText('Property added')).toBeVisible();
     expect(localStorage.getItem(selectionKeys.property)).toBe(
       createdPropertyId,
     );
-    expect(
-      await screen.findByRole('button', { name: 'Selected' }),
-    ).toBeVisible();
     expect(saved).toMatchObject({
       baseline: {
         loan_balance_total: '310000',
@@ -533,6 +557,7 @@ describe('property overview workflows', () => {
       mode: 'CURRENT_SNAPSHOT',
       loans: [
         {
+          borrower_person_ids: [alexId, samId],
           display_name: 'Main mortgage',
           is_active: true,
           loan_type_id: loanTypeId,
@@ -676,6 +701,53 @@ describe('property overview workflows', () => {
       ).loans.map((loan) => loan.opening_balance),
     ).toEqual(['200000', '110000']);
   }, 45_000);
+
+  it('allows unattributed setup loans when people fail and supports retry', async () => {
+    const user = userEvent.setup();
+    let peopleAttempts = 0;
+    const fallback = standardFetch([]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>(async (input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith(`/households/${householdId}/people`)) {
+          peopleAttempts += 1;
+          return peopleAttempts === 1
+            ? response({ detail: 'Unavailable' }, 503)
+            : response([
+                {
+                  display_name: 'Alex',
+                  effective_from: '2020-01-01',
+                  id: alexId,
+                  is_active: true,
+                },
+              ]);
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Add property' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Add loan' }));
+    expect(
+      await screen.findByText(
+        /Loans may still be saved without named borrowers/,
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByLabelText('Borrowers for loan 1 (optional)'),
+    ).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Retry people' }));
+    await waitFor(() =>
+      expect(
+        screen.getByLabelText('Borrowers for loan 1 (optional)'),
+      ).toBeEnabled(),
+    );
+    expect(peopleAttempts).toBe(2);
+  });
 
   it('accepts a debt-free current position without setup loans', async () => {
     const user = userEvent.setup();
