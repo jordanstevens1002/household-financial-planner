@@ -864,8 +864,24 @@ export interface paths {
         /** List Repayment Responsibilities */
         get: operations["list_repayment_responsibilities_api_v1_loans__loan_id__repayment_responsibilities_get"];
         put?: never;
-        /** Create Repayment Responsibility */
-        post: operations["create_repayment_responsibility_api_v1_loans__loan_id__repayment_responsibilities_post"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/loans/{loan_id}/repayment-responsibilities/{effective_from}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace Repayment Responsibility Set */
+        put: operations["replace_repayment_responsibility_set_api_v1_loans__loan_id__repayment_responsibilities__effective_from__put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2687,6 +2703,18 @@ export interface components {
             /** Term Months */
             term_months?: number | null;
         };
+        /** LoanRepaymentAllocationCreate */
+        LoanRepaymentAllocationCreate: {
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Person Id
+             * Format: uuid
+             */
+            person_id: string;
+            /** Responsibility Percentage */
+            responsibility_percentage: number | string;
+        };
         /** LoanRepaymentAllocationRead */
         LoanRepaymentAllocationRead: {
             /** Annual Amount */
@@ -2731,25 +2759,6 @@ export interface components {
             /** Warnings */
             warnings: string[];
         };
-        /** LoanRepaymentResponsibilityCreate */
-        LoanRepaymentResponsibilityCreate: {
-            /**
-             * Effective From
-             * Format: date
-             */
-            effective_from: string;
-            /** Effective To */
-            effective_to?: string | null;
-            /** Notes */
-            notes?: string | null;
-            /**
-             * Person Id
-             * Format: uuid
-             */
-            person_id: string;
-            /** Responsibility Percentage */
-            responsibility_percentage: number | string;
-        };
         /** LoanRepaymentResponsibilityRead */
         LoanRepaymentResponsibilityRead: {
             /**
@@ -2779,9 +2788,24 @@ export interface components {
             /** Responsibility Percentage */
             responsibility_percentage: string;
         };
-        /** LoanRepaymentResponsibilityResult */
-        LoanRepaymentResponsibilityResult: {
-            responsibility: components["schemas"]["LoanRepaymentResponsibilityRead"];
+        /** LoanRepaymentResponsibilitySetCreate */
+        LoanRepaymentResponsibilitySetCreate: {
+            /** Allocations */
+            allocations: components["schemas"]["LoanRepaymentAllocationCreate"][];
+            /** Effective To */
+            effective_to?: string | null;
+        };
+        /** LoanRepaymentResponsibilitySetRead */
+        LoanRepaymentResponsibilitySetRead: {
+            /**
+             * Effective From
+             * Format: date
+             */
+            effective_from: string;
+            /** Effective To */
+            effective_to: string | null;
+            /** Responsibilities */
+            responsibilities: components["schemas"]["LoanRepaymentResponsibilityRead"][];
             /** Total Percentage */
             total_percentage: string;
             /** Warnings */
@@ -6751,7 +6775,7 @@ export interface operations {
             };
         };
     };
-    create_repayment_responsibility_api_v1_loans__loan_id__repayment_responsibilities_post: {
+    replace_repayment_responsibility_set_api_v1_loans__loan_id__repayment_responsibilities__effective_from__put: {
         parameters: {
             query?: never;
             header?: {
@@ -6759,22 +6783,23 @@ export interface operations {
             };
             path: {
                 loan_id: string;
+                effective_from: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["LoanRepaymentResponsibilityCreate"];
+                "application/json": components["schemas"]["LoanRepaymentResponsibilitySetCreate"];
             };
         };
         responses: {
             /** @description Successful Response */
-            201: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LoanRepaymentResponsibilityResult"];
+                    "application/json": components["schemas"]["LoanRepaymentResponsibilitySetRead"];
                 };
             };
             /** @description Validation Error */

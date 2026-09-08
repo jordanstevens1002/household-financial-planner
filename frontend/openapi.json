@@ -3584,6 +3584,47 @@
         "title": "LoanRead",
         "type": "object"
       },
+      "LoanRepaymentAllocationCreate": {
+        "properties": {
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "person_id": {
+            "format": "uuid",
+            "title": "Person Id",
+            "type": "string"
+          },
+          "responsibility_percentage": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 100.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,2}0*$",
+                "type": "string"
+              }
+            ],
+            "title": "Responsibility Percentage"
+          }
+        },
+        "required": [
+          "person_id",
+          "responsibility_percentage"
+        ],
+        "title": "LoanRepaymentAllocationCreate",
+        "type": "object"
+      },
       "LoanRepaymentAllocationRead": {
         "properties": {
           "annual_amount": {
@@ -3702,65 +3743,6 @@
         "title": "LoanRepaymentProjectionRead",
         "type": "object"
       },
-      "LoanRepaymentResponsibilityCreate": {
-        "properties": {
-          "effective_from": {
-            "format": "date",
-            "title": "Effective From",
-            "type": "string"
-          },
-          "effective_to": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Effective To"
-          },
-          "notes": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notes"
-          },
-          "person_id": {
-            "format": "uuid",
-            "title": "Person Id",
-            "type": "string"
-          },
-          "responsibility_percentage": {
-            "anyOf": [
-              {
-                "exclusiveMinimum": 0.0,
-                "maximum": 100.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,2}0*$",
-                "type": "string"
-              }
-            ],
-            "title": "Responsibility Percentage"
-          }
-        },
-        "required": [
-          "person_id",
-          "responsibility_percentage",
-          "effective_from"
-        ],
-        "title": "LoanRepaymentResponsibilityCreate",
-        "type": "object"
-      },
       "LoanRepaymentResponsibilityRead": {
         "properties": {
           "effective_from": {
@@ -3823,10 +3805,61 @@
         "title": "LoanRepaymentResponsibilityRead",
         "type": "object"
       },
-      "LoanRepaymentResponsibilityResult": {
+      "LoanRepaymentResponsibilitySetCreate": {
         "properties": {
-          "responsibility": {
-            "$ref": "#/components/schemas/LoanRepaymentResponsibilityRead"
+          "allocations": {
+            "items": {
+              "$ref": "#/components/schemas/LoanRepaymentAllocationCreate"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Allocations",
+            "type": "array"
+          },
+          "effective_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective To"
+          }
+        },
+        "required": [
+          "allocations"
+        ],
+        "title": "LoanRepaymentResponsibilitySetCreate",
+        "type": "object"
+      },
+      "LoanRepaymentResponsibilitySetRead": {
+        "properties": {
+          "effective_from": {
+            "format": "date",
+            "title": "Effective From",
+            "type": "string"
+          },
+          "effective_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective To"
+          },
+          "responsibilities": {
+            "items": {
+              "$ref": "#/components/schemas/LoanRepaymentResponsibilityRead"
+            },
+            "title": "Responsibilities",
+            "type": "array"
           },
           "total_percentage": {
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
@@ -3842,11 +3875,13 @@
           }
         },
         "required": [
-          "responsibility",
+          "effective_from",
+          "effective_to",
+          "responsibilities",
           "total_percentage",
           "warnings"
         ],
-        "title": "LoanRepaymentResponsibilityResult",
+        "title": "LoanRepaymentResponsibilitySetRead",
         "type": "object"
       },
       "LoanScheduleRead": {
@@ -13546,9 +13581,11 @@
         "tags": [
           "loans"
         ]
-      },
-      "post": {
-        "operationId": "create_repayment_responsibility_api_v1_loans__loan_id__repayment_responsibilities_post",
+      }
+    },
+    "/api/v1/loans/{loan_id}/repayment-responsibilities/{effective_from}": {
+      "put": {
+        "operationId": "replace_repayment_responsibility_set_api_v1_loans__loan_id__repayment_responsibilities__effective_from__put",
         "parameters": [
           {
             "in": "path",
@@ -13557,6 +13594,16 @@
             "schema": {
               "format": "uuid",
               "title": "Loan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "effective_from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Effective From",
               "type": "string"
             }
           },
@@ -13581,18 +13628,18 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/LoanRepaymentResponsibilityCreate"
+                "$ref": "#/components/schemas/LoanRepaymentResponsibilitySetCreate"
               }
             }
           },
           "required": true
         },
         "responses": {
-          "201": {
+          "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LoanRepaymentResponsibilityResult"
+                  "$ref": "#/components/schemas/LoanRepaymentResponsibilitySetRead"
                 }
               }
             },
@@ -13614,7 +13661,7 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Create Repayment Responsibility",
+        "summary": "Replace Repayment Responsibility Set",
         "tags": [
           "loans"
         ]

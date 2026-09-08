@@ -226,8 +226,41 @@ class LoanRepaymentResponsibilityRead(LoanRepaymentResponsibilityCreate):
     loan_id: uuid.UUID
 
 
-class LoanRepaymentResponsibilityResult(BaseModel):
-    responsibility: LoanRepaymentResponsibilityRead
+class LoanRepaymentAllocationCreate(BaseModel):
+    person_id: uuid.UUID
+    responsibility_percentage: Decimal = Field(gt=0, le=100, decimal_places=2)
+    notes: str | None = Field(default=None, max_length=2000)
+
+
+class LoanRepaymentResponsibilitySetCreate(BaseModel):
+    effective_to: date | None = None
+    allocations: list[LoanRepaymentAllocationCreate] = Field(min_length=1, max_length=20)
+
+    @field_validator("allocations")
+    @classmethod
+    def allocations_are_unique(
+        cls, value: list[LoanRepaymentAllocationCreate]
+    ) -> list[LoanRepaymentAllocationCreate]:
+        person_ids = [allocation.person_id for allocation in value]
+        if len(person_ids) != len(set(person_ids)):
+            raise ValueError("allocation person IDs must be unique")
+        return value
+
+    @model_validator(mode="after")
+    def allocations_total_one_hundred(self) -> LoanRepaymentResponsibilitySetCreate:
+        total = sum(
+            (allocation.responsibility_percentage for allocation in self.allocations),
+            Decimal("0"),
+        )
+        if total != Decimal("100"):
+            raise ValueError("repayment allocations must total exactly 100 percent")
+        return self
+
+
+class LoanRepaymentResponsibilitySetRead(BaseModel):
+    effective_from: date
+    effective_to: date | None
+    responsibilities: list[LoanRepaymentResponsibilityRead]
     total_percentage: Decimal
     warnings: list[str]
 
