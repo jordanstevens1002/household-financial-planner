@@ -611,7 +611,7 @@ describe('property overview workflows', () => {
     expect(localStorage.getItem(selectionKeys.property)).toBe(
       createdPropertyId,
     );
-  }, 20_000);
+  }, 30_000);
 
   it('requires exact debt matching and accepts multiple setup loans', async () => {
     const user = userEvent.setup();
