@@ -57,6 +57,23 @@ async def test_same_date_set_is_replaced_atomically_and_audited(
     assert values["household_id"] == loan_setup["household_id"]
     assert values["loan_id"] == loan["id"]
     assert set(values["previous_responsibility_ids"]) == initial_ids
+    previous_by_person = {
+        allocation["person_id"]: allocation for allocation in values["previous_allocations"]
+    }
+    assert previous_by_person == {
+        first["id"]: {
+            "person_id": first["id"],
+            "responsibility_percentage": "60.00",
+            "effective_to": None,
+            "notes": None,
+        },
+        second["id"]: {
+            "person_id": second["id"],
+            "responsibility_percentage": "40.00",
+            "effective_to": None,
+            "notes": None,
+        },
+    }
     assert values["allocations"] == [
         {"person_id": second["id"], "responsibility_percentage": "100.00"}
     ]
@@ -141,6 +158,50 @@ async def test_set_requires_people_active_for_the_complete_interval(
     )
     assert response.status_code == 422
     assert "active for the complete allocation interval" in response.text
+
+
+async def test_disabled_person_can_be_used_for_their_finite_historical_interval(
+    client: AsyncClient,
+    loan_setup: dict[str, str],
+) -> None:
+    person = await client.post(
+        f"/api/v1/households/{loan_setup['household_id']}/people",
+        json={
+            "display_name": "Former payer",
+            "effective_from": "2020-01-01",
+            "effective_to": "2021-12-31",
+            "is_active": False,
+        },
+    )
+    assert person.status_code == 201
+    loan = await create_loan(client, loan_setup)
+
+    historical = await client.put(
+        f"/api/v1/loans/{loan['id']}/repayment-responsibilities/2020-01-01",
+        json={
+            "effective_to": "2021-12-31",
+            "allocations": [
+                {
+                    "person_id": person.json()["id"],
+                    "responsibility_percentage": 100,
+                }
+            ],
+        },
+    )
+    assert historical.status_code == 200, historical.text
+
+    open_ended = await client.put(
+        f"/api/v1/loans/{loan['id']}/repayment-responsibilities/2020-01-01",
+        json={
+            "allocations": [
+                {
+                    "person_id": person.json()["id"],
+                    "responsibility_percentage": 100,
+                }
+            ],
+        },
+    )
+    assert open_ended.status_code == 422
 
 
 async def test_viewer_cannot_replace_repayment_set(

@@ -634,8 +634,14 @@ async def replace_repayment_responsibility_set(
         person = people_by_id.get(allocation.person_id)
         if person is None or person.household_id != loan.household_id:
             raise HTTPException(422, "Responsible person must belong to the loan household")
+        historical_interval = (
+            payload.effective_to is not None
+            and person.effective_to is not None
+            and person.effective_from <= effective_from
+            and person.effective_to >= payload.effective_to
+        )
         if (
-            not person.is_active
+            (not person.is_active and not historical_interval)
             or person.effective_from > effective_from
             or (
                 person.effective_to is not None
@@ -648,12 +654,23 @@ async def replace_repayment_responsibility_set(
             )
     previous = list(
         await session.scalars(
-            select(LoanRepaymentResponsibility).where(
+            select(LoanRepaymentResponsibility)
+            .where(
                 LoanRepaymentResponsibility.loan_id == loan.id,
                 LoanRepaymentResponsibility.effective_from == effective_from,
             )
+            .order_by(LoanRepaymentResponsibility.person_id)
         )
     )
+    previous_allocations = [
+        {
+            "person_id": str(item.person_id),
+            "responsibility_percentage": f"{item.responsibility_percentage:.2f}",
+            "effective_to": item.effective_to.isoformat() if item.effective_to else None,
+            "notes": item.notes,
+        }
+        for item in previous
+    ]
     await session.execute(
         delete(LoanRepaymentResponsibility).where(
             LoanRepaymentResponsibility.loan_id == loan.id,
@@ -683,6 +700,7 @@ async def replace_repayment_responsibility_set(
         effective_from=effective_from.isoformat(),
         effective_to=payload.effective_to.isoformat() if payload.effective_to else None,
         previous_responsibility_ids=[str(item.id) for item in previous],
+        previous_allocations=previous_allocations,
         resulting_responsibility_ids=[str(item.id) for item in records],
         allocations=[
             {
