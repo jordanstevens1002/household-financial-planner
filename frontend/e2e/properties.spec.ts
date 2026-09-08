@@ -255,16 +255,31 @@ test('selects and restores a dated property position', async ({ page }) => {
           status: 201,
         });
       } else {
+        const setupLoan = ((wizardPayload?.loans as
+          Record<string, unknown>[] | undefined) ?? [])[0];
         await route.fulfill({
           contentType: 'application/json',
-          json: loanPayload
-            ? [
-                {
-                  ...loanPayload,
-                  id: '7a959699-d6a5-4b32-a15f-cbe2a460ce55',
-                },
-              ]
-            : [],
+          json: [
+            ...(loanPayload
+              ? [
+                  {
+                    ...loanPayload,
+                    id: '7a959699-d6a5-4b32-a15f-cbe2a460ce55',
+                  },
+                ]
+              : []),
+            ...(setupLoan
+              ? [
+                  {
+                    ...setupLoan,
+                    currency: 'NZD',
+                    id: '748c93ca-e467-46c2-af52-edbd535b872f',
+                    loan_group_id: null,
+                    property_id: propertyId,
+                  },
+                ]
+              : []),
+          ],
         });
       }
       return;
@@ -661,6 +676,9 @@ test('selects and restores a dated property position', async ({ page }) => {
   await page.getByLabel('Property value (NZD)').fill('810000');
   await page.getByLabel('Total property debt (NZD)').fill('250000');
   await page.getByRole('button', { name: 'Add loan' }).click();
+  await page.getByLabel('Borrowers for loan 1 (optional)').click();
+  await page.getByRole('option', { name: 'Alex' }).click();
+  await page.keyboard.press('Escape');
   await page.getByLabel('Loan name').fill('Setup mortgage');
   await page.getByLabel('Loan type').click();
   await page.getByRole('option', { name: 'Home loan' }).click();
@@ -684,6 +702,7 @@ test('selects and restores a dated property position', async ({ page }) => {
       },
       loans: [
         {
+          borrower_person_ids: [firstPersonId],
           display_name: 'Setup mortgage',
           is_active: true,
           loan_type_id: loanTypeId,
@@ -697,4 +716,8 @@ test('selects and restores a dated property position', async ({ page }) => {
         purchase_price: null,
       },
     });
+  await page.getByRole('button', { name: 'Review loans' }).click();
+  const loansTable = page.getByRole('table', { name: 'Property loans' });
+  await expect(loansTable).toContainText('Setup mortgage');
+  await expect(loansTable).toContainText('Alex');
 });

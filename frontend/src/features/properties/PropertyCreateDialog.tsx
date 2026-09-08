@@ -24,10 +24,16 @@ import { AdvancedSection } from '../../shared/AdvancedSection';
 import { useNotification } from '../../shared/notificationContext';
 import { useAuth } from '../auth/AuthContext';
 import { localCalendarDate } from '../people/localDate';
+import {
+  MAX_SETUP_BORROWERS,
+  setupBorrowerLabel,
+  setupBorrowerOptionDisabled,
+} from './propertySetupBorrowers';
 
 type Country = components['schemas']['CountryRead'];
 type Baseline = components['schemas']['BaselineRead'];
 type Lookup = components['schemas']['LookupRead'];
+type Person = components['schemas']['PersonRead'];
 type PropertySummary = components['schemas']['PropertySummaryRead'];
 type PropertyWizard = components['schemas']['PropertyWizardRead'];
 
@@ -35,6 +41,9 @@ const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 const moneyPattern = /^\d+(?:\.\d{1,2})?$/;
 
 const setupLoanSchema = z.object({
+  borrowerPersonIds: z
+    .array(z.string().uuid())
+    .max(MAX_SETUP_BORROWERS, 'Choose no more than 20 borrowers'),
   displayName: z.string().trim().min(1, 'Enter a loan name').max(200),
   initialInterestRate: z
     .string()
@@ -81,6 +90,7 @@ const setupLoanSchema = z.object({
 type SetupLoanFields = z.input<typeof setupLoanSchema>;
 
 const setupLoanDefaults: SetupLoanFields = {
+  borrowerPersonIds: [],
   displayName: '',
   initialInterestRate: '',
   interestCalculationMethod: '',
@@ -286,6 +296,10 @@ export function PropertyCreateDialog({
   const mode = useWatch({ control: form.control, name: 'mode' });
   const loans = useWatch({ control: form.control, name: 'loans' });
   const totalDebt = useWatch({ control: form.control, name: 'totalDebt' });
+  const positionDate = useWatch({
+    control: form.control,
+    name: 'positionDate',
+  });
   const existingPropertyId = useWatch({
     control: form.control,
     name: 'existingPropertyId',
@@ -301,6 +315,17 @@ export function PropertyCreateDialog({
     enabled: open && mode === 'CURRENT_SNAPSHOT',
     queryFn: () => apiRequest<Lookup[]>('/api/v1/lookups/loan_type'),
     queryKey: ['lookups', 'loan_type'],
+  });
+  const people = useQuery({
+    enabled:
+      open &&
+      mode === 'CURRENT_SNAPSHOT' &&
+      existingPropertyId.length === 0 &&
+      (loans?.length ?? 0) > 0,
+    queryFn: () =>
+      apiRequest<Person[]>(`/api/v1/households/${householdId}/people`),
+    queryKey: ['people', householdId],
+    retry: false,
   });
   const linkedLoanCents = (loans ?? []).reduce(
     (total, loan) => total + (moneyCents(loan.openingBalance) ?? 0n),
@@ -359,6 +384,7 @@ export function PropertyCreateDialog({
             loans:
               fields.mode === 'CURRENT_SNAPSHOT'
                 ? fields.loans.map((loan) => ({
+                    borrower_person_ids: loan.borrowerPersonIds,
                     display_name: loan.displayName,
                     initial_interest_rate: loan.initialInterestRate,
                     interest_calculation_method: loan.interestCalculationMethod,
@@ -625,6 +651,22 @@ export function PropertyCreateDialog({
                     unavailable until the catalogue is restored.
                   </Alert>
                 ) : null}
+                {people.error ? (
+                  <Alert
+                    action={
+                      <Button
+                        color="inherit"
+                        onClick={() => void people.refetch()}
+                      >
+                        Retry people
+                      </Button>
+                    }
+                    severity="warning"
+                  >
+                    Household people could not be loaded. Loans may still be
+                    saved without named borrowers.
+                  </Alert>
+                ) : null}
                 {setupLoans.fields.map((loan, index) => {
                   const errors = form.formState.errors.loans?.[index];
                   return (
@@ -684,6 +726,49 @@ export function PropertyCreateDialog({
                           )}
                         />
                       </Stack>
+                      <Controller
+                        control={form.control}
+                        name={`loans.${index}.borrowerPersonIds`}
+                        render={({ field }) => (
+                          <Autocomplete
+                            disableCloseOnSelect
+                            disabled={people.isPending || Boolean(people.error)}
+                            getOptionDisabled={(option) =>
+                              setupBorrowerOptionDisabled(
+                                field.value,
+                                option.id,
+                              )
+                            }
+                            getOptionLabel={(person) =>
+                              setupBorrowerLabel(person, positionDate)
+                            }
+                            isOptionEqualToValue={(option, value) =>
+                              option.id === value.id
+                            }
+                            multiple
+                            onChange={(_, selected) =>
+                              field.onChange(
+                                selected.map((person) => person.id),
+                              )
+                            }
+                            options={people.data ?? []}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                error={Boolean(errors?.borrowerPersonIds)}
+                                helperText={
+                                  errors?.borrowerPersonIds?.message ??
+                                  'Scheduled repayments are shared equally unless an Advanced dated override applies.'
+                                }
+                                label={`Borrowers for loan ${index + 1} (optional)`}
+                              />
+                            )}
+                            value={(people.data ?? []).filter((person) =>
+                              field.value.includes(person.id),
+                            )}
+                          />
+                        )}
+                      />
                       <Stack direction="row" spacing={2}>
                         <TextField
                           error={Boolean(errors?.openingBalance)}
