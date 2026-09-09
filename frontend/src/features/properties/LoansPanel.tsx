@@ -28,6 +28,7 @@ import { formatCurrency, formatDate } from '../../shared/format';
 import { useNotification } from '../../shared/notificationContext';
 import { useAuth } from '../auth/AuthContext';
 import { localCalendarDate } from '../people/localDate';
+import { RepaymentOverridesPanel } from './RepaymentOverridesPanel';
 
 type Loan = components['schemas']['LoanRead'];
 type LoanGroup = components['schemas']['LoanGroupRead'];
@@ -732,6 +733,13 @@ export function LoansPanel({
           title="No property loans"
         />
       )}
+      {propertyLoans.length ? (
+        <RepaymentOverridesPanel
+          canEdit={canEdit}
+          householdId={householdId}
+          loans={propertyLoans}
+        />
+      ) : null}
 
       <Dialog
         fullWidth

@@ -18,6 +18,7 @@ test('selects and restores a dated property position', async ({ page }) => {
   let expensePayload: Record<string, unknown> | null = null;
   let loanPayload: Record<string, unknown> | null = null;
   let borrowerReplacement: Record<string, unknown> | null = null;
+  let repaymentOverride: Record<string, unknown> | null = null;
   let loanGroups: Record<string, unknown>[] = [];
   let wizardPayload: Record<string, unknown> | null = null;
   await page.addInitScript((id) => {
@@ -199,6 +200,7 @@ test('selects and restores a dated property position', async ({ page }) => {
             effective_to: null,
             household_id: householdId,
             id: firstPersonId,
+            is_active: true,
           },
           {
             display_name: 'Sam Borrower',
@@ -206,6 +208,7 @@ test('selects and restores a dated property position', async ({ page }) => {
             effective_to: null,
             household_id: householdId,
             id: secondPersonId,
+            is_active: true,
           },
         ],
       });
@@ -295,6 +298,33 @@ test('selects and restores a dated property position', async ({ page }) => {
         json: {
           ...loanPayload,
           id: '7a959699-d6a5-4b32-a15f-cbe2a460ce55',
+        },
+      });
+      return;
+    }
+    if (
+      path.endsWith(
+        '/loans/7a959699-d6a5-4b32-a15f-cbe2a460ce55/repayment-responsibilities',
+      )
+    ) {
+      await route.fulfill({ contentType: 'application/json', json: [] });
+      return;
+    }
+    if (
+      path.endsWith(
+        '/loans/7a959699-d6a5-4b32-a15f-cbe2a460ce55/repayment-responsibilities/2027-01-01',
+      ) &&
+      request.method() === 'PUT'
+    ) {
+      repaymentOverride = request.postDataJSON() as Record<string, unknown>;
+      await route.fulfill({
+        contentType: 'application/json',
+        json: {
+          effective_from: '2027-01-01',
+          effective_to: null,
+          responsibilities: [],
+          total_percentage: '100',
+          warnings: [],
         },
       });
       return;
@@ -547,6 +577,30 @@ test('selects and restores a dated property position', async ({ page }) => {
   await expect(
     page.getByRole('table', { name: 'Property loans' }),
   ).toContainText('Alex, Sam Borrower');
+  await page
+    .getByRole('button', { name: 'Advanced repayment overrides' })
+    .click();
+  const overrideDialog = page.getByRole('dialog', {
+    name: 'Advanced repayment overrides',
+  });
+  await expect(
+    overrideDialog.getByText('Borrower defaults: Alex, Sam Borrower'),
+  ).toBeVisible();
+  await overrideDialog.getByLabel('Effective from').fill('2027-01-01');
+  await overrideDialog.getByLabel('Person 1').click();
+  await page.getByRole('option', { name: 'Sam Borrower' }).click();
+  await overrideDialog.getByLabel('Share %').fill('100');
+  await overrideDialog.getByRole('button', { name: 'Save override' }).click();
+  await expect(page.getByText('Repayment override added')).toBeVisible();
+  await expect
+    .poll(() => repaymentOverride)
+    .toMatchObject({
+      allocations: [
+        { person_id: secondPersonId, responsibility_percentage: '100' },
+      ],
+      effective_to: null,
+    });
+  await overrideDialog.getByRole('button', { name: 'Close' }).click();
   await expect(
     page.getByText(/derived opening balance NZD 305,000\.00/),
   ).toBeVisible();
