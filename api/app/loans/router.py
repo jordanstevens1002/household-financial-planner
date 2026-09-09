@@ -1,12 +1,15 @@
 """Loan API routes."""
 
+import base64
+import binascii
+import json
 import uuid
 from datetime import UTC, date, datetime, time
 from decimal import Decimal
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import delete, func, select
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -29,7 +32,10 @@ from app.loans.schemas import (
     LoanGroupRemovalCreate,
     LoanGroupUpdate,
     LoanRead,
+    LoanRepaymentResponsibilityClose,
     LoanRepaymentResponsibilityRead,
+    LoanRepaymentResponsibilityRevisionPage,
+    LoanRepaymentResponsibilityRevisionRead,
     LoanRepaymentResponsibilitySetCreate,
     LoanRepaymentResponsibilitySetRead,
     LoanScheduleRead,
@@ -53,6 +59,7 @@ from app.models import (
     LoanBorrower,
     LoanGroup,
     LoanRepaymentResponsibility,
+    LoanRepaymentResponsibilityRevision,
     LookupItem,
     Person,
     Property,
@@ -606,6 +613,89 @@ async def list_repayment_responsibilities(
     )
 
 
+def _responsibility_snapshot(
+    responsibilities: list[LoanRepaymentResponsibility],
+) -> list[dict[str, object]]:
+    return [
+        {
+            "person_id": str(item.person_id),
+            "responsibility_percentage": f"{item.responsibility_percentage:.2f}",
+            "effective_to": item.effective_to.isoformat() if item.effective_to else None,
+            "notes": item.notes,
+        }
+        for item in responsibilities
+    ]
+
+
+def _responsibility_log_snapshot(
+    allocations: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Exclude household free text from broadly retained operational logs."""
+    return [
+        {key: value for key, value in allocation.items() if key != "notes"}
+        for allocation in allocations
+    ]
+
+
+def _encode_revision_cursor(revision: LoanRepaymentResponsibilityRevision) -> str:
+    value = json.dumps(
+        [revision.created_at.isoformat(), str(revision.id)],
+        separators=(",", ":"),
+    ).encode()
+    return base64.urlsafe_b64encode(value).decode().rstrip("=")
+
+
+def _decode_revision_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
+    try:
+        padding = "=" * (-len(cursor) % 4)
+        created_at_value, revision_id_value = json.loads(base64.urlsafe_b64decode(cursor + padding))
+        return datetime.fromisoformat(created_at_value), uuid.UUID(revision_id_value)
+    except (ValueError, TypeError, json.JSONDecodeError, binascii.Error) as error:
+        raise HTTPException(422, "Invalid revision cursor") from error
+
+
+@router.get(
+    "/loans/{loan_id}/repayment-responsibility-revisions",
+    response_model=LoanRepaymentResponsibilityRevisionPage,
+)
+async def list_repayment_responsibility_revisions(
+    loan_id: uuid.UUID,
+    cursor: Annotated[str | None, Query(max_length=500)] = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> LoanRepaymentResponsibilityRevisionPage:
+    await _loan_with_access(loan_id, HouseholdRole.VIEWER, user, session)
+    query = select(LoanRepaymentResponsibilityRevision).where(
+        LoanRepaymentResponsibilityRevision.loan_id == loan_id
+    )
+    if cursor is not None:
+        created_at, revision_id = _decode_revision_cursor(cursor)
+        query = query.where(
+            or_(
+                LoanRepaymentResponsibilityRevision.created_at > created_at,
+                and_(
+                    LoanRepaymentResponsibilityRevision.created_at == created_at,
+                    LoanRepaymentResponsibilityRevision.id > revision_id,
+                ),
+            )
+        )
+    revisions = list(
+        await session.scalars(
+            query.order_by(
+                LoanRepaymentResponsibilityRevision.created_at,
+                LoanRepaymentResponsibilityRevision.id,
+            ).limit(limit + 1)
+        )
+    )
+    has_next_page = len(revisions) > limit
+    items = revisions[:limit]
+    return LoanRepaymentResponsibilityRevisionPage(
+        items=[LoanRepaymentResponsibilityRevisionRead.model_validate(item) for item in items],
+        next_cursor=_encode_revision_cursor(items[-1]) if has_next_page else None,
+    )
+
+
 @router.put(
     "/loans/{loan_id}/repayment-responsibilities/{effective_from}",
     response_model=LoanRepaymentResponsibilitySetRead,
@@ -662,15 +752,7 @@ async def replace_repayment_responsibility_set(
             .order_by(LoanRepaymentResponsibility.person_id)
         )
     )
-    previous_allocations = [
-        {
-            "person_id": str(item.person_id),
-            "responsibility_percentage": f"{item.responsibility_percentage:.2f}",
-            "effective_to": item.effective_to.isoformat() if item.effective_to else None,
-            "notes": item.notes,
-        }
-        for item in previous
-    ]
+    previous_allocations = _responsibility_snapshot(previous)
     await session.execute(
         delete(LoanRepaymentResponsibility).where(
             LoanRepaymentResponsibility.loan_id == loan.id,
@@ -690,6 +772,17 @@ async def replace_repayment_responsibility_set(
     ]
     session.add_all(records)
     await session.flush()
+    resulting_allocations = _responsibility_snapshot(records)
+    session.add(
+        LoanRepaymentResponsibilityRevision(
+            loan_id=loan.id,
+            actor_user_id=user.id,
+            effective_from=effective_from,
+            action="REPLACED" if previous else "CREATED",
+            previous_allocations=previous_allocations,
+            resulting_allocations=resulting_allocations,
+        )
+    )
     await session.commit()
     logger.info(
         "loan_repayment_responsibility_set_replaced",
@@ -700,15 +793,9 @@ async def replace_repayment_responsibility_set(
         effective_from=effective_from.isoformat(),
         effective_to=payload.effective_to.isoformat() if payload.effective_to else None,
         previous_responsibility_ids=[str(item.id) for item in previous],
-        previous_allocations=previous_allocations,
+        previous_allocations=_responsibility_log_snapshot(previous_allocations),
         resulting_responsibility_ids=[str(item.id) for item in records],
-        allocations=[
-            {
-                "person_id": str(record.person_id),
-                "responsibility_percentage": f"{record.responsibility_percentage:.2f}",
-            }
-            for record in records
-        ],
+        allocations=_responsibility_log_snapshot(resulting_allocations),
     )
     return LoanRepaymentResponsibilitySetRead(
         effective_from=effective_from,
@@ -717,6 +804,78 @@ async def replace_repayment_responsibility_set(
             LoanRepaymentResponsibilityRead.model_validate(record) for record in records
         ],
         total_percentage=Decimal("100"),
+        warnings=[],
+    )
+
+
+@router.patch(
+    "/loans/{loan_id}/repayment-responsibilities/{effective_from}/closure",
+    response_model=LoanRepaymentResponsibilitySetRead,
+)
+async def close_repayment_responsibility_set(
+    loan_id: uuid.UUID,
+    effective_from: date,
+    payload: LoanRepaymentResponsibilityClose,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> LoanRepaymentResponsibilitySetRead:
+    accessible = await _loan_with_access(loan_id, HouseholdRole.EDITOR, user, session)
+    loan = await session.scalar(select(Loan).where(Loan.id == accessible.id).with_for_update())
+    assert loan is not None
+    if payload.effective_to < effective_from:
+        raise HTTPException(422, "effective_to must not precede effective_from")
+    records = list(
+        await session.scalars(
+            select(LoanRepaymentResponsibility)
+            .where(
+                LoanRepaymentResponsibility.loan_id == loan.id,
+                LoanRepaymentResponsibility.effective_from == effective_from,
+            )
+            .order_by(LoanRepaymentResponsibility.person_id)
+        )
+    )
+    if not records:
+        raise HTTPException(404, "Repayment responsibility set not found")
+    existing_end_dates = {record.effective_to for record in records}
+    if len(existing_end_dates) != 1:
+        raise HTTPException(409, "Repayment responsibility set has inconsistent end dates")
+    existing_end = next(iter(existing_end_dates))
+    if existing_end is not None and payload.effective_to >= existing_end:
+        raise HTTPException(409, "Closure must shorten the existing allocation interval")
+    previous_allocations = _responsibility_snapshot(records)
+    for record in records:
+        record.effective_to = payload.effective_to
+    resulting_allocations = _responsibility_snapshot(records)
+    revision = LoanRepaymentResponsibilityRevision(
+        loan_id=loan.id,
+        actor_user_id=user.id,
+        effective_from=effective_from,
+        action="CLOSED",
+        previous_allocations=previous_allocations,
+        resulting_allocations=resulting_allocations,
+    )
+    session.add(revision)
+    await session.commit()
+    logger.info(
+        "loan_repayment_responsibility_set_closed",
+        actor_user_id=str(user.id),
+        household_id=str(loan.household_id),
+        property_id=str(loan.property_id) if loan.property_id else None,
+        loan_id=str(loan.id),
+        effective_from=effective_from.isoformat(),
+        previous_allocations=_responsibility_log_snapshot(previous_allocations),
+        resulting_allocations=_responsibility_log_snapshot(resulting_allocations),
+        revision_id=str(revision.id),
+    )
+    return LoanRepaymentResponsibilitySetRead(
+        effective_from=effective_from,
+        effective_to=payload.effective_to,
+        responsibilities=[
+            LoanRepaymentResponsibilityRead.model_validate(record) for record in records
+        ],
+        total_percentage=sum(
+            (record.responsibility_percentage for record in records), Decimal("0")
+        ),
         warnings=[],
     )
 

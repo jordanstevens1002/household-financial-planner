@@ -3662,6 +3662,51 @@
         "title": "LoanRepaymentAllocationRead",
         "type": "object"
       },
+      "LoanRepaymentAllocationSnapshot": {
+        "properties": {
+          "effective_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective To"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "person_id": {
+            "format": "uuid",
+            "title": "Person Id",
+            "type": "string"
+          },
+          "responsibility_percentage": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Responsibility Percentage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "person_id",
+          "responsibility_percentage",
+          "effective_to",
+          "notes"
+        ],
+        "title": "LoanRepaymentAllocationSnapshot",
+        "type": "object"
+      },
       "LoanRepaymentProjectionRead": {
         "properties": {
           "allocations": {
@@ -3743,6 +3788,20 @@
         "title": "LoanRepaymentProjectionRead",
         "type": "object"
       },
+      "LoanRepaymentResponsibilityClose": {
+        "properties": {
+          "effective_to": {
+            "format": "date",
+            "title": "Effective To",
+            "type": "string"
+          }
+        },
+        "required": [
+          "effective_to"
+        ],
+        "title": "LoanRepaymentResponsibilityClose",
+        "type": "object"
+      },
       "LoanRepaymentResponsibilityRead": {
         "properties": {
           "effective_from": {
@@ -3803,6 +3862,92 @@
           "loan_id"
         ],
         "title": "LoanRepaymentResponsibilityRead",
+        "type": "object"
+      },
+      "LoanRepaymentResponsibilityRevisionPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LoanRepaymentResponsibilityRevisionRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "LoanRepaymentResponsibilityRevisionPage",
+        "type": "object"
+      },
+      "LoanRepaymentResponsibilityRevisionRead": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/LoanRepaymentRevisionAction"
+          },
+          "actor_user_id": {
+            "format": "uuid",
+            "title": "Actor User Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "effective_from": {
+            "format": "date",
+            "title": "Effective From",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "loan_id": {
+            "format": "uuid",
+            "title": "Loan Id",
+            "type": "string"
+          },
+          "previous_allocations": {
+            "items": {
+              "$ref": "#/components/schemas/LoanRepaymentAllocationSnapshot"
+            },
+            "title": "Previous Allocations",
+            "type": "array"
+          },
+          "resulting_allocations": {
+            "items": {
+              "$ref": "#/components/schemas/LoanRepaymentAllocationSnapshot"
+            },
+            "title": "Resulting Allocations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "loan_id",
+          "actor_user_id",
+          "effective_from",
+          "action",
+          "previous_allocations",
+          "resulting_allocations",
+          "created_at"
+        ],
+        "title": "LoanRepaymentResponsibilityRevisionRead",
         "type": "object"
       },
       "LoanRepaymentResponsibilitySetCreate": {
@@ -3883,6 +4028,15 @@
         ],
         "title": "LoanRepaymentResponsibilitySetRead",
         "type": "object"
+      },
+      "LoanRepaymentRevisionAction": {
+        "enum": [
+          "CREATED",
+          "REPLACED",
+          "CLOSED"
+        ],
+        "title": "LoanRepaymentRevisionAction",
+        "type": "string"
       },
       "LoanScheduleRead": {
         "properties": {
@@ -13662,6 +13816,183 @@
           }
         ],
         "summary": "Replace Repayment Responsibility Set",
+        "tags": [
+          "loans"
+        ]
+      }
+    },
+    "/api/v1/loans/{loan_id}/repayment-responsibilities/{effective_from}/closure": {
+      "patch": {
+        "operationId": "close_repayment_responsibility_set_api_v1_loans__loan_id__repayment_responsibilities__effective_from__closure_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "loan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Loan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "effective_from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Effective From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoanRepaymentResponsibilityClose"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanRepaymentResponsibilitySetRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Close Repayment Responsibility Set",
+        "tags": [
+          "loans"
+        ]
+      }
+    },
+    "/api/v1/loans/{loan_id}/repayment-responsibility-revisions": {
+      "get": {
+        "operationId": "list_repayment_responsibility_revisions_api_v1_loans__loan_id__repayment_responsibility_revisions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "loan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Loan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanRepaymentResponsibilityRevisionPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Repayment Responsibility Revisions",
         "tags": [
           "loans"
         ]

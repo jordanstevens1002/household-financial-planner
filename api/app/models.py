@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from enum import StrEnum
 
@@ -490,6 +490,37 @@ class LoanRepaymentResponsibility(Base):
     effective_from: Mapped[date] = mapped_column(Date, index=True)
     effective_to: Mapped[date | None] = mapped_column(Date)
     notes: Mapped[str | None] = mapped_column(String(2000))
+
+
+class LoanRepaymentResponsibilityRevision(Base):
+    __tablename__ = "loan_repayment_responsibility_revisions"
+    __table_args__ = (
+        CheckConstraint("action IN ('CREATED', 'REPLACED', 'CLOSED')"),
+        Index(
+            "ix_loan_repayment_revision_cursor",
+            "loan_id",
+            "created_at",
+            "id",
+        ),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    loan_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("loans.id", ondelete="CASCADE"), index=True
+    )
+    actor_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("application_users.id", ondelete="RESTRICT"), index=True
+    )
+    effective_from: Mapped[date] = mapped_column(Date, index=True)
+    action: Mapped[str] = mapped_column(String(20))
+    previous_allocations: Mapped[list[dict[str, object]]] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql")
+    )
+    resulting_allocations: Mapped[list[dict[str, object]]] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql")
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), server_default=func.now()
+    )
 
 
 class Goal(Base):

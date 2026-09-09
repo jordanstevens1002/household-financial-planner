@@ -888,6 +888,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/loans/{loan_id}/repayment-responsibilities/{effective_from}/closure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Close Repayment Responsibility Set */
+        patch: operations["close_repayment_responsibility_set_api_v1_loans__loan_id__repayment_responsibilities__effective_from__closure_patch"];
+        trace?: never;
+    };
+    "/api/v1/loans/{loan_id}/repayment-responsibility-revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Repayment Responsibility Revisions */
+        get: operations["list_repayment_responsibility_revisions_api_v1_loans__loan_id__repayment_responsibility_revisions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/loans/{loan_id}/schedule": {
         parameters: {
             query?: never;
@@ -2731,6 +2765,20 @@ export interface components {
             /** Responsibility Percentage */
             responsibility_percentage: string;
         };
+        /** LoanRepaymentAllocationSnapshot */
+        LoanRepaymentAllocationSnapshot: {
+            /** Effective To */
+            effective_to: string | null;
+            /** Notes */
+            notes: string | null;
+            /**
+             * Person Id
+             * Format: uuid
+             */
+            person_id: string;
+            /** Responsibility Percentage */
+            responsibility_percentage: string;
+        };
         /** LoanRepaymentProjectionRead */
         LoanRepaymentProjectionRead: {
             /** Allocations */
@@ -2758,6 +2806,14 @@ export interface components {
             repayment_frequency: string;
             /** Warnings */
             warnings: string[];
+        };
+        /** LoanRepaymentResponsibilityClose */
+        LoanRepaymentResponsibilityClose: {
+            /**
+             * Effective To
+             * Format: date
+             */
+            effective_to: string;
         };
         /** LoanRepaymentResponsibilityRead */
         LoanRepaymentResponsibilityRead: {
@@ -2788,6 +2844,46 @@ export interface components {
             /** Responsibility Percentage */
             responsibility_percentage: string;
         };
+        /** LoanRepaymentResponsibilityRevisionPage */
+        LoanRepaymentResponsibilityRevisionPage: {
+            /** Items */
+            items: components["schemas"]["LoanRepaymentResponsibilityRevisionRead"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
+        /** LoanRepaymentResponsibilityRevisionRead */
+        LoanRepaymentResponsibilityRevisionRead: {
+            action: components["schemas"]["LoanRepaymentRevisionAction"];
+            /**
+             * Actor User Id
+             * Format: uuid
+             */
+            actor_user_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Effective From
+             * Format: date
+             */
+            effective_from: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Loan Id
+             * Format: uuid
+             */
+            loan_id: string;
+            /** Previous Allocations */
+            previous_allocations: components["schemas"]["LoanRepaymentAllocationSnapshot"][];
+            /** Resulting Allocations */
+            resulting_allocations: components["schemas"]["LoanRepaymentAllocationSnapshot"][];
+        };
         /** LoanRepaymentResponsibilitySetCreate */
         LoanRepaymentResponsibilitySetCreate: {
             /** Allocations */
@@ -2811,6 +2907,11 @@ export interface components {
             /** Warnings */
             warnings: string[];
         };
+        /**
+         * LoanRepaymentRevisionAction
+         * @enum {string}
+         */
+        LoanRepaymentRevisionAction: "CREATED" | "REPLACED" | "CLOSED";
         /** LoanScheduleRead */
         LoanScheduleRead: {
             /** Data Quality Flags */
@@ -6800,6 +6901,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LoanRepaymentResponsibilitySetRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_repayment_responsibility_set_api_v1_loans__loan_id__repayment_responsibilities__effective_from__closure_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                loan_id: string;
+                effective_from: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoanRepaymentResponsibilityClose"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanRepaymentResponsibilitySetRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_repayment_responsibility_revisions_api_v1_loans__loan_id__repayment_responsibility_revisions_get: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                loan_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanRepaymentResponsibilityRevisionPage"];
                 };
             };
             /** @description Validation Error */

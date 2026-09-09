@@ -265,6 +265,40 @@ class LoanRepaymentResponsibilitySetRead(BaseModel):
     warnings: list[str]
 
 
+class LoanRepaymentResponsibilityClose(BaseModel):
+    effective_to: date
+
+
+class LoanRepaymentAllocationSnapshot(BaseModel):
+    person_id: uuid.UUID
+    responsibility_percentage: Decimal
+    effective_to: date | None
+    notes: str | None
+
+
+class LoanRepaymentRevisionAction(StrEnum):
+    CREATED = "CREATED"
+    REPLACED = "REPLACED"
+    CLOSED = "CLOSED"
+
+
+class LoanRepaymentResponsibilityRevisionRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    loan_id: uuid.UUID
+    actor_user_id: uuid.UUID
+    effective_from: date
+    action: LoanRepaymentRevisionAction
+    previous_allocations: list[LoanRepaymentAllocationSnapshot]
+    resulting_allocations: list[LoanRepaymentAllocationSnapshot]
+    created_at: datetime
+
+
+class LoanRepaymentResponsibilityRevisionPage(BaseModel):
+    items: list[LoanRepaymentResponsibilityRevisionRead]
+    next_cursor: str | None
+
+
 class LoanEventCreate(BaseModel):
     event_type_id: uuid.UUID
     idempotency_key: str | None = Field(default=None, min_length=1, max_length=100)

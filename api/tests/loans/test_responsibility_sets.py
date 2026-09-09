@@ -27,11 +27,19 @@ async def test_same_date_set_is_replaced_atomically_and_audited(
         lambda event, **values: events.append((event, values)),
     )
 
-    initial = await replace_repayment_responsibilities(
-        client,
-        str(loan["id"]),
-        "2026-01-01",
-        [(str(first["id"]), 60), (str(second["id"]), 40)],
+    sensitive_note = "Private repayment arrangement"
+    initial = await client.put(
+        f"/api/v1/loans/{loan['id']}/repayment-responsibilities/2026-01-01",
+        json={
+            "allocations": [
+                {
+                    "person_id": first["id"],
+                    "responsibility_percentage": 60,
+                    "notes": sensitive_note,
+                },
+                {"person_id": second["id"], "responsibility_percentage": 40},
+            ]
+        },
     )
     assert initial.status_code == 200, initial.text
     initial_ids = {responsibility["id"] for responsibility in initial.json()["responsibilities"]}
@@ -65,18 +73,23 @@ async def test_same_date_set_is_replaced_atomically_and_audited(
             "person_id": first["id"],
             "responsibility_percentage": "60.00",
             "effective_to": None,
-            "notes": None,
         },
         second["id"]: {
             "person_id": second["id"],
             "responsibility_percentage": "40.00",
             "effective_to": None,
-            "notes": None,
         },
     }
     assert values["allocations"] == [
-        {"person_id": second["id"], "responsibility_percentage": "100.00"}
+        {
+            "person_id": second["id"],
+            "responsibility_percentage": "100.00",
+            "effective_to": None,
+        }
     ]
+    assert sensitive_note not in repr(events)
+    revisions = await client.get(f"/api/v1/loans/{loan['id']}/repayment-responsibility-revisions")
+    assert revisions.json()["items"][0]["resulting_allocations"][0]["notes"] == sensitive_note
 
 
 async def test_set_validation_rejects_partial_duplicate_and_invalid_intervals(
