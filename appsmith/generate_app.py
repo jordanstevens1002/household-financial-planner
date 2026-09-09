@@ -1703,7 +1703,7 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
             ),
             text(
                 "LoanResponsibilityHelp",
-                "Optional: attribute repayments to household people for reporting. This does not change or duplicate the household repayment total. A newer effective date replaces the earlier allocation.",
+                "Optional: attribute repayments to one household person for a dated interval. This Appsmith form saves one complete 100% allocation; a same-date save replaces the existing set.",
                 350,
                 356,
                 visible="{{appsmith.store.propertySection === 'LOANS' && appsmith.store.loanAdvancedMode}}",
@@ -1753,12 +1753,12 @@ def page_widgets(name: str) -> list[dict[str, Any]]:
             ),
             button(
                 "CreateLoanResponsibilityButton",
-                "Add responsibility",
-                "{{CreateLoanResponsibility.run(() => { const warning = Array.isArray(CreateLoanResponsibility.data?.warnings) && CreateLoanResponsibility.data.warnings.length ? ' ' + CreateLoanResponsibility.data.warnings.join(' ') : ''; showAlert('Repayment responsibility added.' + warning, warning ? 'warning' : 'success'); ListLoanResponsibilities.run(); resetWidget('LoanResponsiblePerson', true); resetWidget('LoanResponsibilityPercentage', true); resetWidget('LoanResponsibilityFrom', true); resetWidget('LoanResponsibilityTo', true); resetWidget('LoanResponsibilityNotes', true); }, () => showAlert(JSON.stringify(CreateLoanResponsibility.data?.detail || 'Could not add repayment responsibility'), 'error'))}}",
+                "Save responsibility set",
+                "{{CreateLoanResponsibility.run(() => { showAlert('Repayment responsibility set saved.', 'success'); ListLoanResponsibilities.run(); resetWidget('LoanResponsiblePerson', true); resetWidget('LoanResponsibilityPercentage', true); resetWidget('LoanResponsibilityFrom', true); resetWidget('LoanResponsibilityTo', true); resetWidget('LoanResponsibilityNotes', true); }, () => showAlert(JSON.stringify(CreateLoanResponsibility.data?.detail || 'Could not save repayment responsibility set'), 'error'))}}",
                 375,
                 2,
                 20,
-                disabled="{{!appsmith.store.loanId || !LoanResponsiblePerson.selectedOptionValue || !/^\\d+(\\.\\d{1,2})?$/.test((LoanResponsibilityPercentage.text || '').trim()) || Number(LoanResponsibilityPercentage.text) <= 0 || Number(LoanResponsibilityPercentage.text) > 100 || !/^\\d{4}-\\d{2}-\\d{2}$/.test((LoanResponsibilityFrom.text || '').trim()) || ((LoanResponsibilityTo.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(LoanResponsibilityTo.text.trim()))}}",
+                disabled="{{!appsmith.store.loanId || !LoanResponsiblePerson.selectedOptionValue || Number(LoanResponsibilityPercentage.text) !== 100 || !/^\\d{4}-\\d{2}-\\d{2}$/.test((LoanResponsibilityFrom.text || '').trim()) || ((LoanResponsibilityTo.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(LoanResponsibilityTo.text.trim()))}}",
                 visible="{{appsmith.store.propertySection === 'LOANS' && appsmith.store.loanAdvancedMode}}",
             ),
             table(
@@ -2953,9 +2953,9 @@ def actions() -> list[dict[str, Any]]:
         action(
             "Properties",
             "CreateLoanResponsibility",
-            "POST",
-            "/api/v1/loans/{{appsmith.store.loanId}}/repayment-responsibilities",
-            body="{{({ person_id: LoanResponsiblePerson.selectedOptionValue, responsibility_percentage: Number(LoanResponsibilityPercentage.text), effective_from: String(LoanResponsibilityFrom.text || '').trim(), effective_to: String(LoanResponsibilityTo.text || '').trim() || null, notes: String(LoanResponsibilityNotes.text || '').trim() || null })}}",
+            "PUT",
+            "/api/v1/loans/{{appsmith.store.loanId}}/repayment-responsibilities/{{String(LoanResponsibilityFrom.text || '').trim()}}",
+            body="{{({ effective_to: String(LoanResponsibilityTo.text || '').trim() || null, allocations: [{ person_id: LoanResponsiblePerson.selectedOptionValue, responsibility_percentage: Number(LoanResponsibilityPercentage.text), notes: String(LoanResponsibilityNotes.text || '').trim() || null }] })}}",
         ),
         action(
             "Retirement",

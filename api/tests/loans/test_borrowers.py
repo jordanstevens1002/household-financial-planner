@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import HouseholdMembership, HouseholdRole
 from tests.households.test_households import create_household
-from tests.loans.test_loans import create_loan
+from tests.loans.test_loans import create_loan, replace_repayment_responsibilities
 from tests.loans.test_loans import loan_setup as loan_setup
 
 
@@ -96,16 +96,14 @@ async def test_advanced_override_precedes_borrowers_without_deleting_defaults(
         loan_setup,
         borrower_person_ids=[first["id"], second["id"]],
     )
-    override = await client.post(
-        f"/api/v1/loans/{loan['id']}/repayment-responsibilities",
-        json={
-            "person_id": second["id"],
-            "responsibility_percentage": 100,
-            "effective_from": "2021-01-01",
-            "effective_to": "2021-12-31",
-        },
+    override = await replace_repayment_responsibilities(
+        client,
+        str(loan["id"]),
+        "2021-01-01",
+        [(str(second["id"]), 100)],
+        effective_to="2021-12-31",
     )
-    assert override.status_code == 201
+    assert override.status_code == 200
 
     during = await client.get(
         f"/api/v1/households/{loan_setup['household_id']}/cashflow",

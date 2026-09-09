@@ -18369,7 +18369,7 @@
                   "bottomRow": 356,
                   "leftColumn": 2,
                   "rightColumn": 62,
-                  "text": "Optional: attribute repayments to household people for reporting. This does not change or duplicate the household repayment total. A newer effective date replaces the earlier allocation.",
+                  "text": "Optional: attribute repayments to one household person for a dated interval. This Appsmith form saves one complete 100% allocation; a same-date save replaces the existing set.",
                   "isVisible": "{{appsmith.store.propertySection === 'LOANS' && appsmith.store.loanAdvancedMode}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -18564,10 +18564,10 @@
                   "bottomRow": 379,
                   "leftColumn": 2,
                   "rightColumn": 20,
-                  "text": "Add responsibility",
-                  "onClick": "{{CreateLoanResponsibility.run(() => { const warning = Array.isArray(CreateLoanResponsibility.data?.warnings) && CreateLoanResponsibility.data.warnings.length ? ' ' + CreateLoanResponsibility.data.warnings.join(' ') : ''; showAlert('Repayment responsibility added.' + warning, warning ? 'warning' : 'success'); ListLoanResponsibilities.run(); resetWidget('LoanResponsiblePerson', true); resetWidget('LoanResponsibilityPercentage', true); resetWidget('LoanResponsibilityFrom', true); resetWidget('LoanResponsibilityTo', true); resetWidget('LoanResponsibilityNotes', true); }, () => showAlert(JSON.stringify(CreateLoanResponsibility.data?.detail || 'Could not add repayment responsibility'), 'error'))}}",
+                  "text": "Save responsibility set",
+                  "onClick": "{{CreateLoanResponsibility.run(() => { showAlert('Repayment responsibility set saved.', 'success'); ListLoanResponsibilities.run(); resetWidget('LoanResponsiblePerson', true); resetWidget('LoanResponsibilityPercentage', true); resetWidget('LoanResponsibilityFrom', true); resetWidget('LoanResponsibilityTo', true); resetWidget('LoanResponsibilityNotes', true); }, () => showAlert(JSON.stringify(CreateLoanResponsibility.data?.detail || 'Could not save repayment responsibility set'), 'error'))}}",
                   "isVisible": "{{appsmith.store.propertySection === 'LOANS' && appsmith.store.loanAdvancedMode}}",
-                  "isDisabled": "{{!appsmith.store.loanId || !LoanResponsiblePerson.selectedOptionValue || !/^\\d+(\\.\\d{1,2})?$/.test((LoanResponsibilityPercentage.text || '').trim()) || Number(LoanResponsibilityPercentage.text) <= 0 || Number(LoanResponsibilityPercentage.text) > 100 || !/^\\d{4}-\\d{2}-\\d{2}$/.test((LoanResponsibilityFrom.text || '').trim()) || ((LoanResponsibilityTo.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(LoanResponsibilityTo.text.trim()))}}",
+                  "isDisabled": "{{!appsmith.store.loanId || !LoanResponsiblePerson.selectedOptionValue || Number(LoanResponsibilityPercentage.text) !== 100 || !/^\\d{4}-\\d{2}-\\d{2}$/.test((LoanResponsibilityFrom.text || '').trim()) || ((LoanResponsibilityTo.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(LoanResponsibilityTo.text.trim()))}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
                   "version": 1,
@@ -21968,7 +21968,7 @@
                   "bottomRow": 356,
                   "leftColumn": 2,
                   "rightColumn": 62,
-                  "text": "Optional: attribute repayments to household people for reporting. This does not change or duplicate the household repayment total. A newer effective date replaces the earlier allocation.",
+                  "text": "Optional: attribute repayments to one household person for a dated interval. This Appsmith form saves one complete 100% allocation; a same-date save replaces the existing set.",
                   "isVisible": "{{appsmith.store.propertySection === 'LOANS' && appsmith.store.loanAdvancedMode}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
@@ -22163,10 +22163,10 @@
                   "bottomRow": 379,
                   "leftColumn": 2,
                   "rightColumn": 20,
-                  "text": "Add responsibility",
-                  "onClick": "{{CreateLoanResponsibility.run(() => { const warning = Array.isArray(CreateLoanResponsibility.data?.warnings) && CreateLoanResponsibility.data.warnings.length ? ' ' + CreateLoanResponsibility.data.warnings.join(' ') : ''; showAlert('Repayment responsibility added.' + warning, warning ? 'warning' : 'success'); ListLoanResponsibilities.run(); resetWidget('LoanResponsiblePerson', true); resetWidget('LoanResponsibilityPercentage', true); resetWidget('LoanResponsibilityFrom', true); resetWidget('LoanResponsibilityTo', true); resetWidget('LoanResponsibilityNotes', true); }, () => showAlert(JSON.stringify(CreateLoanResponsibility.data?.detail || 'Could not add repayment responsibility'), 'error'))}}",
+                  "text": "Save responsibility set",
+                  "onClick": "{{CreateLoanResponsibility.run(() => { showAlert('Repayment responsibility set saved.', 'success'); ListLoanResponsibilities.run(); resetWidget('LoanResponsiblePerson', true); resetWidget('LoanResponsibilityPercentage', true); resetWidget('LoanResponsibilityFrom', true); resetWidget('LoanResponsibilityTo', true); resetWidget('LoanResponsibilityNotes', true); }, () => showAlert(JSON.stringify(CreateLoanResponsibility.data?.detail || 'Could not save repayment responsibility set'), 'error'))}}",
                   "isVisible": "{{appsmith.store.propertySection === 'LOANS' && appsmith.store.loanAdvancedMode}}",
-                  "isDisabled": "{{!appsmith.store.loanId || !LoanResponsiblePerson.selectedOptionValue || !/^\\d+(\\.\\d{1,2})?$/.test((LoanResponsibilityPercentage.text || '').trim()) || Number(LoanResponsibilityPercentage.text) <= 0 || Number(LoanResponsibilityPercentage.text) > 100 || !/^\\d{4}-\\d{2}-\\d{2}$/.test((LoanResponsibilityFrom.text || '').trim()) || ((LoanResponsibilityTo.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(LoanResponsibilityTo.text.trim()))}}",
+                  "isDisabled": "{{!appsmith.store.loanId || !LoanResponsiblePerson.selectedOptionValue || Number(LoanResponsibilityPercentage.text) !== 100 || !/^\\d{4}-\\d{2}-\\d{2}$/.test((LoanResponsibilityFrom.text || '').trim()) || ((LoanResponsibilityTo.text || '').trim() && !/^\\d{4}-\\d{2}-\\d{2}$/.test(LoanResponsibilityTo.text.trim()))}}",
                   "isLoading": false,
                   "renderMode": "CANVAS",
                   "version": 1,
@@ -39752,7 +39752,7 @@
         "actionConfiguration": {
           "timeoutInMillisecond": 10000,
           "paginationType": "NONE",
-          "path": "/api/v1/loans/{{appsmith.store.loanId}}/repayment-responsibilities",
+          "path": "/api/v1/loans/{{appsmith.store.loanId}}/repayment-responsibilities/{{String(LoanResponsibilityFrom.text || '').trim()}}",
           "headers": [
             {
               "key": "Authorization",
@@ -39770,11 +39770,11 @@
           "encodeParamsToggle": true,
           "queryParameters": [],
           "bodyFormData": [],
-          "httpMethod": "POST",
+          "httpMethod": "PUT",
           "formData": {
             "apiContentType": "application/json"
           },
-          "body": "{{({ person_id: LoanResponsiblePerson.selectedOptionValue, responsibility_percentage: Number(LoanResponsibilityPercentage.text), effective_from: String(LoanResponsibilityFrom.text || '').trim(), effective_to: String(LoanResponsibilityTo.text || '').trim() || null, notes: String(LoanResponsibilityNotes.text || '').trim() || null })}}"
+          "body": "{{({ effective_to: String(LoanResponsibilityTo.text || '').trim() || null, allocations: [{ person_id: LoanResponsiblePerson.selectedOptionValue, responsibility_percentage: Number(LoanResponsibilityPercentage.text), notes: String(LoanResponsibilityNotes.text || '').trim() || null }] })}}"
         },
         "runBehaviour": "MANUAL",
         "dynamicBindingPathList": [
@@ -39787,7 +39787,8 @@
         "messages": [],
         "jsonPathKeys": [
           "appsmith.store.loanId",
-          "({ person_id: LoanResponsiblePerson.selectedOptionValue, responsibility_percentage: Number(LoanResponsibilityPercentage.text), effective_from: String(LoanResponsibilityFrom.text || '').trim(), effective_to: String(LoanResponsibilityTo.text || '').trim() || null, notes: String(LoanResponsibilityNotes.text || '').trim() || null })"
+          "String(LoanResponsibilityFrom.text || '').trim()",
+          "({ effective_to: String(LoanResponsibilityTo.text || '').trim() || null, allocations: [{ person_id: LoanResponsiblePerson.selectedOptionValue, responsibility_percentage: Number(LoanResponsibilityPercentage.text), notes: String(LoanResponsibilityNotes.text || '').trim() || null }] })"
         ],
         "confirmBeforeExecute": false,
         "userPermissions": []
@@ -39811,7 +39812,7 @@
         "actionConfiguration": {
           "timeoutInMillisecond": 10000,
           "paginationType": "NONE",
-          "path": "/api/v1/loans/{{appsmith.store.loanId}}/repayment-responsibilities",
+          "path": "/api/v1/loans/{{appsmith.store.loanId}}/repayment-responsibilities/{{String(LoanResponsibilityFrom.text || '').trim()}}",
           "headers": [
             {
               "key": "Authorization",
@@ -39829,11 +39830,11 @@
           "encodeParamsToggle": true,
           "queryParameters": [],
           "bodyFormData": [],
-          "httpMethod": "POST",
+          "httpMethod": "PUT",
           "formData": {
             "apiContentType": "application/json"
           },
-          "body": "{{({ person_id: LoanResponsiblePerson.selectedOptionValue, responsibility_percentage: Number(LoanResponsibilityPercentage.text), effective_from: String(LoanResponsibilityFrom.text || '').trim(), effective_to: String(LoanResponsibilityTo.text || '').trim() || null, notes: String(LoanResponsibilityNotes.text || '').trim() || null })}}"
+          "body": "{{({ effective_to: String(LoanResponsibilityTo.text || '').trim() || null, allocations: [{ person_id: LoanResponsiblePerson.selectedOptionValue, responsibility_percentage: Number(LoanResponsibilityPercentage.text), notes: String(LoanResponsibilityNotes.text || '').trim() || null }] })}}"
         },
         "runBehaviour": "MANUAL",
         "dynamicBindingPathList": [
@@ -39846,7 +39847,8 @@
         "messages": [],
         "jsonPathKeys": [
           "appsmith.store.loanId",
-          "({ person_id: LoanResponsiblePerson.selectedOptionValue, responsibility_percentage: Number(LoanResponsibilityPercentage.text), effective_from: String(LoanResponsibilityFrom.text || '').trim(), effective_to: String(LoanResponsibilityTo.text || '').trim() || null, notes: String(LoanResponsibilityNotes.text || '').trim() || null })"
+          "String(LoanResponsibilityFrom.text || '').trim()",
+          "({ effective_to: String(LoanResponsibilityTo.text || '').trim() || null, allocations: [{ person_id: LoanResponsiblePerson.selectedOptionValue, responsibility_percentage: Number(LoanResponsibilityPercentage.text), notes: String(LoanResponsibilityNotes.text || '').trim() || null }] })"
         ],
         "confirmBeforeExecute": false,
         "userPermissions": []

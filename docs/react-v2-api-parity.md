@@ -86,7 +86,7 @@ decorators, so route changes require an intentional matrix update.
 | PUT | `/api/v1/loans/{loan_id}/borrowers` | Replace ordinary borrower associations | #109 |
 | GET | `/api/v1/properties/{property_id}/loan-debt-reconciliation` | Dated linked-loan and recorded-debt comparison | #94 |
 | GET | `/api/v1/loans/{loan_id}/repayment-responsibilities` | Responsibility history | #45 |
-| POST | `/api/v1/loans/{loan_id}/repayment-responsibilities` | Advanced responsibility override | #45 |
+| PUT | `/api/v1/loans/{loan_id}/repayment-responsibilities/{effective_from}` | Atomic advanced responsibility allocation set | #116 |
 | POST | `/api/v1/loans/{loan_id}/events` | Dated loan event | #46 |
 | GET | `/api/v1/loans/{loan_id}/schedule` | Amortisation schedule | #46 |
 | POST | `/api/v1/loans/{loan_id}/refinance` | Refinancing | #46 |

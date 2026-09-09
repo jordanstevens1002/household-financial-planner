@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 import pytest
-from httpx import AsyncClient
+from httpx import AsyncClient, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -113,6 +113,29 @@ async def create_loan(
     response = await client.post(f"/api/v1/households/{setup['household_id']}/loans", json=payload)
     assert response.status_code == 201, response.text
     return response.json()
+
+
+async def replace_repayment_responsibilities(
+    client: AsyncClient,
+    loan_id: str,
+    effective_from: str,
+    allocations: list[tuple[str, int]],
+    *,
+    effective_to: str | None = None,
+) -> Response:
+    return await client.put(
+        f"/api/v1/loans/{loan_id}/repayment-responsibilities/{effective_from}",
+        json={
+            "effective_to": effective_to,
+            "allocations": [
+                {
+                    "person_id": person_id,
+                    "responsibility_percentage": percentage,
+                }
+                for person_id, percentage in allocations
+            ],
+        },
+    )
 
 
 async def test_loan_can_be_corrected_and_closed_with_audit(
@@ -726,25 +749,14 @@ async def test_advanced_repayment_responsibility_is_optional_dated_attribution(
         json={"display_name": "Second payer", "effective_from": "2020-01-01"},
     )
     assert first_person.status_code == second_person.status_code == 201
-    first = await client.post(
-        f"/api/v1/loans/{loan['id']}/repayment-responsibilities",
-        json={
-            "person_id": first_person.json()["id"],
-            "responsibility_percentage": 70,
-            "effective_from": "2020-01-01",
-        },
+    created = await replace_repayment_responsibilities(
+        client,
+        str(loan["id"]),
+        "2020-01-01",
+        [(first_person.json()["id"], 70), (second_person.json()["id"], 30)],
     )
-    second = await client.post(
-        f"/api/v1/loans/{loan['id']}/repayment-responsibilities",
-        json={
-            "person_id": second_person.json()["id"],
-            "responsibility_percentage": 30,
-            "effective_from": "2020-01-01",
-        },
-    )
-    assert first.status_code == second.status_code == 201
-    assert first.json()["warnings"]
-    assert second.json()["total_percentage"] == "100.00"
+    assert created.status_code == 200
+    assert created.json()["total_percentage"] == "100"
     listed = await client.get(f"/api/v1/loans/{loan['id']}/repayment-responsibilities")
     assert listed.status_code == 200
     assert {item["responsibility_percentage"] for item in listed.json()} == {
@@ -761,15 +773,13 @@ async def test_advanced_repayment_responsibility_is_optional_dated_attribution(
     allocations = {item["display_name"]: item for item in body["loan_repayments"][0]["allocations"]}
     assert allocations["First payer"]["annual_amount"] == "25200.00"
     assert allocations["Second payer"]["annual_amount"] == "10800.00"
-    changed = await client.post(
-        f"/api/v1/loans/{loan['id']}/repayment-responsibilities",
-        json={
-            "person_id": second_person.json()["id"],
-            "responsibility_percentage": 100,
-            "effective_from": "2021-01-01",
-        },
+    changed = await replace_repayment_responsibilities(
+        client,
+        str(loan["id"]),
+        "2021-01-01",
+        [(second_person.json()["id"], 100)],
     )
-    assert changed.status_code == 201
+    assert changed.status_code == 200
     changed_cashflow = await client.get(
         f"/api/v1/households/{loan_setup['household_id']}/cashflow",
         params={"as_of": "2021-02-01"},
@@ -783,18 +793,16 @@ async def test_advanced_repayment_responsibility_is_optional_dated_attribution(
         f"/api/v1/households/{other_household['id']}/people",
         json={"display_name": "Outside payer", "effective_from": "2020-01-01"},
     )
-    rejected = await client.post(
-        f"/api/v1/loans/{loan['id']}/repayment-responsibilities",
-        json={
-            "person_id": outsider.json()["id"],
-            "responsibility_percentage": 100,
-            "effective_from": "2020-01-01",
-        },
+    rejected = await replace_repayment_responsibilities(
+        client,
+        str(loan["id"]),
+        "2020-01-01",
+        [(outsider.json()["id"], 100)],
     )
     assert rejected.status_code == 422
 
 
-async def test_cashflow_preserves_inactive_repayment_responsibility(
+async def test_repayment_sets_reject_people_outside_the_effective_interval(
     client: AsyncClient, loan_setup: dict[str, str]
 ) -> None:
     loan = await create_loan(client, loan_setup)
@@ -811,47 +819,26 @@ async def test_cashflow_preserves_inactive_repayment_responsibility(
         json={"display_name": "Current payer", "effective_from": "2020-01-01"},
     )
     assert inactive.status_code == active.status_code == 201
-    assigned = await client.post(
-        f"/api/v1/loans/{loan['id']}/repayment-responsibilities",
-        json={
-            "person_id": inactive.json()["id"],
-            "responsibility_percentage": 100,
-            "effective_from": "2020-01-01",
-        },
+    assigned = await replace_repayment_responsibilities(
+        client,
+        str(loan["id"]),
+        "2019-01-01",
+        [(inactive.json()["id"], 100)],
+        effective_to="2019-12-31",
     )
-    assert assigned.status_code == 201
+    assert assigned.status_code == 200
 
-    fully_inactive = await client.get(
-        f"/api/v1/households/{loan_setup['household_id']}/cashflow",
-        params={"as_of": "2020-02-01"},
+    response = await replace_repayment_responsibilities(
+        client,
+        str(loan["id"]),
+        "2021-01-01",
+        [(inactive.json()["id"], 60), (active.json()["id"], 40)],
     )
-    projection = fully_inactive.json()["loan_repayments"][0]
-    assert projection["allocations"][0]["display_name"] == "Historical payer"
-    assert projection["allocations"][0]["responsibility_percentage"] == "100.00"
-    assert "inactive people" in projection["warnings"][0]
-    assert "Historical payer" in projection["warnings"][0]
-
-    for person, percentage in ((inactive, 60), (active, 40)):
-        response = await client.post(
-            f"/api/v1/loans/{loan['id']}/repayment-responsibilities",
-            json={
-                "person_id": person.json()["id"],
-                "responsibility_percentage": percentage,
-                "effective_from": "2021-01-01",
-            },
-        )
-        assert response.status_code == 201
-    partially_inactive = await client.get(
-        f"/api/v1/households/{loan_setup['household_id']}/cashflow",
-        params={"as_of": "2021-02-01"},
-    )
-    projection = partially_inactive.json()["loan_repayments"][0]
-    allocations = {
-        item["display_name"]: item["responsibility_percentage"]
-        for item in projection["allocations"]
-    }
-    assert allocations == {"Historical payer": "60.00", "Current payer": "40.00"}
-    assert any("Historical payer" in warning for warning in projection["warnings"])
+    assert response.status_code == 422
+    listed = await client.get(f"/api/v1/loans/{loan['id']}/repayment-responsibilities")
+    assert listed.status_code == 200
+    assert len(listed.json()) == 1
+    assert listed.json()[0]["person_id"] == inactive.json()["id"]
 
 
 async def test_schedule_applies_offsets_rate_changes_lump_sums_and_redraw(

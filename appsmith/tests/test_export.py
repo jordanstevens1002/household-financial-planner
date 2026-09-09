@@ -1519,19 +1519,23 @@ class AppsmithExportTests(unittest.TestCase):
         }
         for name, method in (
             ("ListLoanResponsibilities", "GET"),
-            ("CreateLoanResponsibility", "POST"),
+            ("CreateLoanResponsibility", "PUT"),
         ):
             action = actions[name]
-            self.assertEqual(
-                action["actionConfiguration"]["path"],
-                "/api/v1/loans/{{appsmith.store.loanId}}/repayment-responsibilities",
-            )
             self.assertEqual(action["actionConfiguration"]["httpMethod"], method)
+        self.assertEqual(
+            actions["ListLoanResponsibilities"]["actionConfiguration"]["path"],
+            "/api/v1/loans/{{appsmith.store.loanId}}/repayment-responsibilities",
+        )
+        self.assertIn(
+            "LoanResponsibilityFrom.text",
+            actions["CreateLoanResponsibility"]["actionConfiguration"]["path"],
+        )
         body = actions["CreateLoanResponsibility"]["actionConfiguration"]["body"]
+        self.assertIn("allocations", body)
         for widget in (
             "LoanResponsiblePerson",
             "LoanResponsibilityPercentage",
-            "LoanResponsibilityFrom",
             "LoanResponsibilityTo",
             "LoanResponsibilityNotes",
         ):
@@ -1549,10 +1553,10 @@ class AppsmithExportTests(unittest.TestCase):
             "Advanced repayment responsibility",
         )
         help_text = by_name["LoanResponsibilityHelp"]["text"]
-        self.assertIn("does not change or duplicate", help_text)
-        self.assertIn("newer effective date replaces", help_text)
+        self.assertIn("same-date save replaces the existing set", help_text)
+        self.assertIn("dated interval", help_text)
         create = by_name["CreateLoanResponsibilityButton"]
-        self.assertIn("CreateLoanResponsibility.data?.warnings", create["onClick"])
+        self.assertIn("Repayment responsibility set saved", create["onClick"])
         self.assertIn("appsmith.store.loanId", create["isDisabled"])
 
     def test_property_workflow_sections_do_not_overlap_in_edit_mode(self) -> None:

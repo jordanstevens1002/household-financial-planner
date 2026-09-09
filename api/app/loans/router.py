@@ -6,7 +6,7 @@ from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -29,9 +29,9 @@ from app.loans.schemas import (
     LoanGroupRemovalCreate,
     LoanGroupUpdate,
     LoanRead,
-    LoanRepaymentResponsibilityCreate,
     LoanRepaymentResponsibilityRead,
-    LoanRepaymentResponsibilityResult,
+    LoanRepaymentResponsibilitySetCreate,
+    LoanRepaymentResponsibilitySetRead,
     LoanScheduleRead,
     LoanUpdate,
     PropertyDebtReconciliationRead,
@@ -584,40 +584,6 @@ async def replace_loan_borrowers(
     return loan
 
 
-async def _responsibility_total(
-    loan_id: uuid.UUID, effective_date: date, session: AsyncSession
-) -> Decimal:
-    latest_effective_from = (
-        select(func.max(LoanRepaymentResponsibility.effective_from))
-        .where(
-            LoanRepaymentResponsibility.loan_id == loan_id,
-            LoanRepaymentResponsibility.effective_from <= effective_date,
-        )
-        .scalar_subquery()
-    )
-    total = await session.scalar(
-        select(
-            func.coalesce(func.sum(LoanRepaymentResponsibility.responsibility_percentage), 0)
-        ).where(
-            LoanRepaymentResponsibility.loan_id == loan_id,
-            LoanRepaymentResponsibility.effective_from == latest_effective_from,
-            or_(
-                LoanRepaymentResponsibility.effective_to.is_(None),
-                LoanRepaymentResponsibility.effective_to >= effective_date,
-            ),
-        )
-    )
-    return Decimal(total or 0)
-
-
-def _responsibility_warnings(total: Decimal) -> list[str]:
-    if total == Decimal("100"):
-        return []
-    return [
-        f"Repayment responsibility totals {total:.2f}% rather than 100.00% for the effective date"
-    ]
-
-
 @router.get(
     "/loans/{loan_id}/repayment-responsibilities",
     response_model=list[LoanRepaymentResponsibilityRead],
@@ -640,31 +606,118 @@ async def list_repayment_responsibilities(
     )
 
 
-@router.post(
-    "/loans/{loan_id}/repayment-responsibilities",
-    response_model=LoanRepaymentResponsibilityResult,
-    status_code=201,
+@router.put(
+    "/loans/{loan_id}/repayment-responsibilities/{effective_from}",
+    response_model=LoanRepaymentResponsibilitySetRead,
 )
-async def create_repayment_responsibility(
+async def replace_repayment_responsibility_set(
     loan_id: uuid.UUID,
-    payload: LoanRepaymentResponsibilityCreate,
+    effective_from: date,
+    payload: LoanRepaymentResponsibilitySetCreate,
     user: ApplicationUser = Depends(current_user),
     session: AsyncSession = Depends(get_session),
-) -> LoanRepaymentResponsibilityResult:
-    loan = await _loan_with_access(loan_id, HouseholdRole.EDITOR, user, session)
-    person = await session.get(Person, payload.person_id)
-    if person is None or person.household_id != loan.household_id:
-        raise HTTPException(422, "Responsible person must belong to the loan household")
-    record = LoanRepaymentResponsibility(loan_id=loan.id, **payload.model_dump())
-    session.add(record)
+) -> LoanRepaymentResponsibilitySetRead:
+    accessible = await _loan_with_access(loan_id, HouseholdRole.EDITOR, user, session)
+    loan = await session.scalar(select(Loan).where(Loan.id == accessible.id).with_for_update())
+    assert loan is not None
+    if payload.effective_to is not None and payload.effective_to < effective_from:
+        raise HTTPException(422, "effective_to must not precede effective_from")
+    people = list(
+        await session.scalars(
+            select(Person).where(
+                Person.id.in_([allocation.person_id for allocation in payload.allocations])
+            )
+        )
+    )
+    people_by_id = {person.id: person for person in people}
+    for allocation in payload.allocations:
+        person = people_by_id.get(allocation.person_id)
+        if person is None or person.household_id != loan.household_id:
+            raise HTTPException(422, "Responsible person must belong to the loan household")
+        historical_interval = (
+            payload.effective_to is not None
+            and person.effective_to is not None
+            and person.effective_from <= effective_from
+            and person.effective_to >= payload.effective_to
+        )
+        if (
+            (not person.is_active and not historical_interval)
+            or person.effective_from > effective_from
+            or (
+                person.effective_to is not None
+                and (payload.effective_to is None or person.effective_to < payload.effective_to)
+            )
+        ):
+            raise HTTPException(
+                422,
+                "Responsible people must be active for the complete allocation interval",
+            )
+    previous = list(
+        await session.scalars(
+            select(LoanRepaymentResponsibility)
+            .where(
+                LoanRepaymentResponsibility.loan_id == loan.id,
+                LoanRepaymentResponsibility.effective_from == effective_from,
+            )
+            .order_by(LoanRepaymentResponsibility.person_id)
+        )
+    )
+    previous_allocations = [
+        {
+            "person_id": str(item.person_id),
+            "responsibility_percentage": f"{item.responsibility_percentage:.2f}",
+            "effective_to": item.effective_to.isoformat() if item.effective_to else None,
+            "notes": item.notes,
+        }
+        for item in previous
+    ]
+    await session.execute(
+        delete(LoanRepaymentResponsibility).where(
+            LoanRepaymentResponsibility.loan_id == loan.id,
+            LoanRepaymentResponsibility.effective_from == effective_from,
+        )
+    )
+    records = [
+        LoanRepaymentResponsibility(
+            loan_id=loan.id,
+            person_id=allocation.person_id,
+            responsibility_percentage=allocation.responsibility_percentage,
+            effective_from=effective_from,
+            effective_to=payload.effective_to,
+            notes=allocation.notes,
+        )
+        for allocation in payload.allocations
+    ]
+    session.add_all(records)
     await session.flush()
-    total = await _responsibility_total(loan.id, payload.effective_from, session)
     await session.commit()
-    await session.refresh(record)
-    return LoanRepaymentResponsibilityResult(
-        responsibility=LoanRepaymentResponsibilityRead.model_validate(record),
-        total_percentage=total,
-        warnings=_responsibility_warnings(total),
+    logger.info(
+        "loan_repayment_responsibility_set_replaced",
+        actor_user_id=str(user.id),
+        household_id=str(loan.household_id),
+        property_id=str(loan.property_id) if loan.property_id else None,
+        loan_id=str(loan.id),
+        effective_from=effective_from.isoformat(),
+        effective_to=payload.effective_to.isoformat() if payload.effective_to else None,
+        previous_responsibility_ids=[str(item.id) for item in previous],
+        previous_allocations=previous_allocations,
+        resulting_responsibility_ids=[str(item.id) for item in records],
+        allocations=[
+            {
+                "person_id": str(record.person_id),
+                "responsibility_percentage": f"{record.responsibility_percentage:.2f}",
+            }
+            for record in records
+        ],
+    )
+    return LoanRepaymentResponsibilitySetRead(
+        effective_from=effective_from,
+        effective_to=payload.effective_to,
+        responsibilities=[
+            LoanRepaymentResponsibilityRead.model_validate(record) for record in records
+        ],
+        total_percentage=Decimal("100"),
+        warnings=[],
     )
 
 
