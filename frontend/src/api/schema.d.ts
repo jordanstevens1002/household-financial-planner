@@ -6878,7 +6878,9 @@ export interface operations {
     };
     replace_repayment_responsibility_set_api_v1_loans__loan_id__repayment_responsibilities__effective_from__put: {
         parameters: {
-            query?: never;
+            query?: {
+                create_only?: boolean;
+            };
             header?: {
                 "X-Development-Subject"?: string | null;
             };
