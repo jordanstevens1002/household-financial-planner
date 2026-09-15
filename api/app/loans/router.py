@@ -704,6 +704,7 @@ async def replace_repayment_responsibility_set(
     loan_id: uuid.UUID,
     effective_from: date,
     payload: LoanRepaymentResponsibilitySetCreate,
+    create_only: bool = False,
     user: ApplicationUser = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ) -> LoanRepaymentResponsibilitySetRead:
@@ -752,6 +753,8 @@ async def replace_repayment_responsibility_set(
             .order_by(LoanRepaymentResponsibility.person_id)
         )
     )
+    if create_only and previous:
+        raise HTTPException(409, "A repayment responsibility set already begins on this date")
     previous_allocations = _responsibility_snapshot(previous)
     await session.execute(
         delete(LoanRepaymentResponsibility).where(

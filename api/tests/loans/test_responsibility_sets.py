@@ -130,6 +130,32 @@ async def test_set_validation_rejects_partial_duplicate_and_invalid_intervals(
     assert "effective_to must not precede" in reversed_dates.text
 
 
+async def test_create_only_rejects_a_concurrent_same_date_set_without_overwriting(
+    client: AsyncClient,
+    loan_setup: dict[str, str],
+) -> None:
+    first = await create_person(client, loan_setup["household_id"], "First editor choice")
+    second = await create_person(client, loan_setup["household_id"], "Stale editor choice")
+    loan = await create_loan(client, loan_setup)
+    url = f"/api/v1/loans/{loan['id']}/repayment-responsibilities/2026-01-01"
+
+    created = await client.put(
+        url,
+        params={"create_only": True},
+        json={"allocations": [{"person_id": first["id"], "responsibility_percentage": 100}]},
+    )
+    stale_editor = await client.put(
+        url,
+        params={"create_only": True},
+        json={"allocations": [{"person_id": second["id"], "responsibility_percentage": 100}]},
+    )
+
+    assert created.status_code == 200
+    assert stale_editor.status_code == 409
+    listed = await client.get(f"/api/v1/loans/{loan['id']}/repayment-responsibilities")
+    assert [item["person_id"] for item in listed.json()] == [first["id"]]
+
+
 @pytest.mark.parametrize(
     "person_payload",
     [

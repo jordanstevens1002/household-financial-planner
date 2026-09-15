@@ -13762,6 +13762,16 @@
             }
           },
           {
+            "in": "query",
+            "name": "create_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Create Only",
+              "type": "boolean"
+            }
+          },
+          {
             "in": "header",
             "name": "X-Development-Subject",
             "required": false,
