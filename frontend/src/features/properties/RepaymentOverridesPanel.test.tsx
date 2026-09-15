@@ -1,6 +1,6 @@
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -290,5 +290,205 @@ describe('advanced repayment overrides', () => {
     await user.click(screen.getByRole('button', { name: 'Retry' }));
     expect(await screen.findByText('No dated overrides')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Save override' })).toBeEnabled();
+  });
+
+  it('requires confirmation before replacing a dated allocation set', async () => {
+    let correction: { body: unknown; path: string } | null = null;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith(`/households/${householdId}/people`))
+          return Promise.resolve(response(people));
+        if (path.endsWith(`/loans/${loanId}/repayment-responsibilities`))
+          return Promise.resolve(
+            response([
+              {
+                effective_from: '2027-01-01',
+                effective_to: null,
+                id: 'b25dd779-761c-4909-a917-5e0e60b9d6e8',
+                loan_id: loanId,
+                notes: 'Original',
+                person_id: firstPersonId,
+                responsibility_percentage: '100.00',
+              },
+            ]),
+          );
+        if (path.endsWith(`/repayment-responsibilities/2027-01-01`)) {
+          correction = {
+            body: typeof init?.body === 'string' ? JSON.parse(init.body) : null,
+            path,
+          };
+          return Promise.resolve(
+            response({
+              effective_from: '2027-01-01',
+              effective_to: null,
+              responsibilities: [],
+              total_percentage: '100',
+              warnings: [],
+            }),
+          );
+        }
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    const user = userEvent.setup();
+    renderPanel();
+    await user.click(
+      screen.getByRole('button', { name: 'Advanced repayment overrides' }),
+    );
+    await user.click(await screen.findByRole('button', { name: 'Correct' }));
+    expect(screen.getByLabelText('Effective from')).toBeDisabled();
+    const notes = screen.getByRole('textbox', { name: 'Notes (optional)' });
+    await user.clear(notes);
+    await user.type(notes, 'Corrected');
+    await user.click(screen.getByRole('button', { name: 'Save correction' }));
+    expect(screen.getByText('Save corrected allocation?')).toBeVisible();
+    expect(correction).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(correction).toBeNull();
+    await waitFor(() =>
+      expect(screen.queryByText('Save corrected allocation?')).toBeNull(),
+    );
+    await user.click(screen.getByRole('button', { name: 'Save correction' }));
+    await screen.findByText('Save corrected allocation?');
+    const confirmationButtons = screen.getAllByRole('button', {
+      name: 'Save correction',
+    });
+    await user.click(confirmationButtons.at(-1)!);
+
+    await waitFor(() => expect(correction).not.toBeNull());
+    expect(correction).toMatchObject({
+      body: {
+        allocations: [{ notes: 'Corrected' }],
+        expected_revision: {
+          effective_to: null,
+          responsibility_ids: ['b25dd779-761c-4909-a917-5e0e60b9d6e8'],
+        },
+      },
+      path: `/api/v1/loans/${loanId}/repayment-responsibilities/2027-01-01`,
+    });
+  });
+
+  it('uses the closure endpoint to end an ongoing override', async () => {
+    let closure: { body: unknown; method: string | undefined } | null = null;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.endsWith(`/households/${householdId}/people`))
+          return Promise.resolve(response(people));
+        if (path.endsWith(`/loans/${loanId}/repayment-responsibilities`))
+          return Promise.resolve(
+            response([
+              {
+                effective_from: '2027-01-01',
+                effective_to: null,
+                id: 'b25dd779-761c-4909-a917-5e0e60b9d6e8',
+                loan_id: loanId,
+                notes: null,
+                person_id: firstPersonId,
+                responsibility_percentage: '100.00',
+              },
+            ]),
+          );
+        if (path.endsWith('/repayment-responsibilities/2027-01-01/closure')) {
+          closure = {
+            body: typeof init?.body === 'string' ? JSON.parse(init.body) : null,
+            method: init?.method,
+          };
+          return Promise.resolve(
+            response({
+              effective_from: '2027-01-01',
+              effective_to: '2027-06-30',
+              responsibilities: [],
+              total_percentage: '100',
+              warnings: [],
+            }),
+          );
+        }
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    const user = userEvent.setup();
+    renderPanel();
+    await user.click(
+      screen.getByRole('button', { name: 'Advanced repayment overrides' }),
+    );
+    await user.click(await screen.findByRole('button', { name: 'End' }));
+    await user.type(
+      screen.getByLabelText('Effective to (optional)'),
+      '2027-06-30',
+    );
+    await user.click(screen.getByRole('button', { name: 'End override' }));
+    expect(screen.getByText('End repayment override?')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'End override' }));
+
+    await waitFor(() => expect(closure).not.toBeNull());
+    expect(closure).toEqual({
+      body: {
+        effective_to: '2027-06-30',
+        expected_revision: {
+          effective_to: null,
+          responsibility_ids: ['b25dd779-761c-4909-a917-5e0e60b9d6e8'],
+        },
+      },
+      method: 'PATCH',
+    });
+  });
+
+  it('dismisses a stale confirmation and refreshes before another correction', async () => {
+    let historyRequests = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input) => {
+        const path = pathOf(input);
+        if (path.endsWith(`/households/${householdId}/people`))
+          return Promise.resolve(response(people));
+        if (path.endsWith(`/loans/${loanId}/repayment-responsibilities`)) {
+          historyRequests += 1;
+          return Promise.resolve(
+            response([
+              {
+                effective_from: '2027-01-01',
+                effective_to: historyRequests > 1 ? '2027-06-30' : null,
+                id: 'b25dd779-761c-4909-a917-5e0e60b9d6e8',
+                loan_id: loanId,
+                notes: null,
+                person_id: firstPersonId,
+                responsibility_percentage: '100.00',
+              },
+            ]),
+          );
+        }
+        if (path.endsWith(`/repayment-responsibilities/2027-01-01`))
+          return Promise.resolve(response({ detail: 'Set changed' }, 409));
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    const user = userEvent.setup();
+    renderPanel();
+    await user.click(
+      screen.getByRole('button', { name: 'Advanced repayment overrides' }),
+    );
+    await user.click(await screen.findByRole('button', { name: 'Correct' }));
+    await user.click(screen.getByRole('button', { name: 'Save correction' }));
+    const confirmation = await screen.findByRole('dialog', {
+      name: 'Save corrected allocation?',
+    });
+    await user.click(
+      within(confirmation).getByRole('button', { name: 'Save correction' }),
+    );
+
+    expect(
+      await screen.findByText(/Another editor changed this override/),
+    ).toBeVisible();
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Save corrected allocation?' }),
+      ).toBeNull(),
+    );
+    expect(screen.getByText('Add dated override')).toBeVisible();
+    await waitFor(() => expect(historyRequests).toBe(2));
   });
 });

@@ -156,6 +156,63 @@ async def test_create_only_rejects_a_concurrent_same_date_set_without_overwritin
     assert [item["person_id"] for item in listed.json()] == [first["id"]]
 
 
+async def test_closure_invalidates_stale_correction_and_competing_closure(
+    client: AsyncClient,
+    loan_setup: dict[str, str],
+) -> None:
+    person = await create_person(client, loan_setup["household_id"], "Payer")
+    loan = await create_loan(client, loan_setup)
+    url = f"/api/v1/loans/{loan['id']}/repayment-responsibilities/2026-01-01"
+    created = await client.put(
+        url,
+        json={"allocations": [{"person_id": person["id"], "responsibility_percentage": 100}]},
+    )
+    assert created.status_code == 200
+    responsibility_id = created.json()["responsibilities"][0]["id"]
+    reviewed_revision = {
+        "responsibility_ids": [responsibility_id],
+        "effective_to": None,
+    }
+
+    malformed = await client.put(
+        url,
+        json={
+            "allocations": [{"person_id": person["id"], "responsibility_percentage": 100}],
+            "expected_revision": {
+                "responsibility_ids": [responsibility_id, responsibility_id],
+                "effective_to": None,
+            },
+        },
+    )
+    closed = await client.patch(
+        f"{url}/closure",
+        json={"effective_to": "2026-12-31", "expected_revision": reviewed_revision},
+    )
+
+    correction = await client.put(
+        url,
+        json={
+            "allocations": [{"person_id": person["id"], "responsibility_percentage": 100}],
+            "expected_revision": reviewed_revision,
+        },
+    )
+    closure = await client.patch(
+        f"{url}/closure",
+        json={
+            "effective_to": "2026-12-31",
+            "expected_revision": reviewed_revision,
+        },
+    )
+
+    assert malformed.status_code == 422
+    assert "expected responsibility IDs must be unique" in malformed.text
+    assert closed.status_code == 200
+    assert correction.status_code == 409
+    assert closure.status_code == 409
+    listed = await client.get(f"/api/v1/loans/{loan['id']}/repayment-responsibilities")
+    assert listed.json()[0]["effective_to"] == "2026-12-31"
+
+
 @pytest.mark.parametrize(
     "person_payload",
     [

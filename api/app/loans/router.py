@@ -637,6 +637,19 @@ def _responsibility_log_snapshot(
     ]
 
 
+def _responsibility_revision_matches(
+    responsibilities: list[LoanRepaymentResponsibility],
+    expected_ids: list[uuid.UUID],
+    expected_effective_to: date | None,
+) -> bool:
+    end_dates = {item.effective_to for item in responsibilities}
+    return (
+        {item.id for item in responsibilities} == set(expected_ids)
+        and len(end_dates) == 1
+        and next(iter(end_dates)) == expected_effective_to
+    )
+
+
 def _encode_revision_cursor(revision: LoanRepaymentResponsibilityRevision) -> str:
     value = json.dumps(
         [revision.created_at.isoformat(), str(revision.id)],
@@ -755,6 +768,14 @@ async def replace_repayment_responsibility_set(
     )
     if create_only and previous:
         raise HTTPException(409, "A repayment responsibility set already begins on this date")
+    if payload.expected_revision is not None and not _responsibility_revision_matches(
+        previous,
+        payload.expected_revision.responsibility_ids,
+        payload.expected_revision.effective_to,
+    ):
+        raise HTTPException(
+            409, "The repayment responsibility set changed; reload before correcting"
+        )
     previous_allocations = _responsibility_snapshot(previous)
     await session.execute(
         delete(LoanRepaymentResponsibility).where(
@@ -839,6 +860,12 @@ async def close_repayment_responsibility_set(
     )
     if not records:
         raise HTTPException(404, "Repayment responsibility set not found")
+    if payload.expected_revision is not None and not _responsibility_revision_matches(
+        records,
+        payload.expected_revision.responsibility_ids,
+        payload.expected_revision.effective_to,
+    ):
+        raise HTTPException(409, "The repayment responsibility set changed; reload before ending")
     existing_end_dates = {record.effective_to for record in records}
     if len(existing_end_dates) != 1:
         raise HTTPException(409, "Repayment responsibility set has inconsistent end dates")
