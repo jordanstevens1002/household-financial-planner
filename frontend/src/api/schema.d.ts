@@ -2814,6 +2814,14 @@ export interface components {
              * Format: date
              */
             effective_to: string;
+            expected_revision?: components["schemas"]["LoanRepaymentResponsibilityPrecondition"] | null;
+        };
+        /** LoanRepaymentResponsibilityPrecondition */
+        LoanRepaymentResponsibilityPrecondition: {
+            /** Effective To */
+            effective_to?: string | null;
+            /** Responsibility Ids */
+            responsibility_ids: string[];
         };
         /** LoanRepaymentResponsibilityRead */
         LoanRepaymentResponsibilityRead: {
@@ -2890,6 +2898,7 @@ export interface components {
             allocations: components["schemas"]["LoanRepaymentAllocationCreate"][];
             /** Effective To */
             effective_to?: string | null;
+            expected_revision?: components["schemas"]["LoanRepaymentResponsibilityPrecondition"] | null;
         };
         /** LoanRepaymentResponsibilitySetRead */
         LoanRepaymentResponsibilitySetRead: {

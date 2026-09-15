@@ -3794,12 +3794,53 @@
             "format": "date",
             "title": "Effective To",
             "type": "string"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LoanRepaymentResponsibilityPrecondition"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "effective_to"
         ],
         "title": "LoanRepaymentResponsibilityClose",
+        "type": "object"
+      },
+      "LoanRepaymentResponsibilityPrecondition": {
+        "properties": {
+          "effective_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective To"
+          },
+          "responsibility_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Responsibility Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "responsibility_ids"
+        ],
+        "title": "LoanRepaymentResponsibilityPrecondition",
         "type": "object"
       },
       "LoanRepaymentResponsibilityRead": {
@@ -3972,6 +4013,16 @@
               }
             ],
             "title": "Effective To"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LoanRepaymentResponsibilityPrecondition"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [

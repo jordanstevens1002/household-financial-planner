@@ -232,9 +232,22 @@ class LoanRepaymentAllocationCreate(BaseModel):
     notes: str | None = Field(default=None, max_length=2000)
 
 
+class LoanRepaymentResponsibilityPrecondition(BaseModel):
+    responsibility_ids: list[uuid.UUID] = Field(min_length=1, max_length=20)
+    effective_to: date | None = None
+
+    @field_validator("responsibility_ids")
+    @classmethod
+    def responsibility_ids_are_unique(cls, value: list[uuid.UUID]) -> list[uuid.UUID]:
+        if len(value) != len(set(value)):
+            raise ValueError("expected responsibility IDs must be unique")
+        return value
+
+
 class LoanRepaymentResponsibilitySetCreate(BaseModel):
     effective_to: date | None = None
     allocations: list[LoanRepaymentAllocationCreate] = Field(min_length=1, max_length=20)
+    expected_revision: LoanRepaymentResponsibilityPrecondition | None = None
 
     @field_validator("allocations")
     @classmethod
@@ -267,6 +280,7 @@ class LoanRepaymentResponsibilitySetRead(BaseModel):
 
 class LoanRepaymentResponsibilityClose(BaseModel):
     effective_to: date
+    expected_revision: LoanRepaymentResponsibilityPrecondition | None = None
 
 
 class LoanRepaymentAllocationSnapshot(BaseModel):

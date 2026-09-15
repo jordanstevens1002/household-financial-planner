@@ -19,6 +19,8 @@ test('selects and restores a dated property position', async ({ page }) => {
   let loanPayload: Record<string, unknown> | null = null;
   let borrowerReplacement: Record<string, unknown> | null = null;
   let repaymentOverride: Record<string, unknown> | null = null;
+  let repaymentCorrection: Record<string, unknown> | null = null;
+  let repaymentClosure: Record<string, unknown> | null = null;
   let loanGroups: Record<string, unknown>[] = [];
   let wizardPayload: Record<string, unknown> | null = null;
   await page.addInitScript((id) => {
@@ -307,7 +309,32 @@ test('selects and restores a dated property position', async ({ page }) => {
         '/loans/7a959699-d6a5-4b32-a15f-cbe2a460ce55/repayment-responsibilities',
       )
     ) {
-      await route.fulfill({ contentType: 'application/json', json: [] });
+      await route.fulfill({
+        contentType: 'application/json',
+        json: repaymentOverride
+          ? [
+              {
+                effective_from: '2027-01-01',
+                effective_to: repaymentClosure ? '2027-06-30' : null,
+                id: '5ec136de-9474-4436-86fe-7735bad71155',
+                loan_id: '7a959699-d6a5-4b32-a15f-cbe2a460ce55',
+                notes: repaymentCorrection ? 'Corrected browser note' : null,
+                person_id: secondPersonId,
+                responsibility_percentage: '100.00',
+              },
+            ]
+          : [],
+      });
+      return;
+    }
+    if (
+      path.endsWith(
+        '/loans/7a959699-d6a5-4b32-a15f-cbe2a460ce55/repayment-responsibilities/2027-01-01/closure',
+      ) &&
+      request.method() === 'PATCH'
+    ) {
+      repaymentClosure = request.postDataJSON() as Record<string, unknown>;
+      await route.fulfill({ contentType: 'application/json', json: {} });
       return;
     }
     if (
@@ -316,7 +343,9 @@ test('selects and restores a dated property position', async ({ page }) => {
       ) &&
       request.method() === 'PUT'
     ) {
-      repaymentOverride = request.postDataJSON() as Record<string, unknown>;
+      const payload = request.postDataJSON() as Record<string, unknown>;
+      if (url.searchParams.has('create_only')) repaymentOverride = payload;
+      else repaymentCorrection = payload;
       await route.fulfill({
         contentType: 'application/json',
         json: {
@@ -599,6 +628,41 @@ test('selects and restores a dated property position', async ({ page }) => {
         { person_id: secondPersonId, responsibility_percentage: '100' },
       ],
       effective_to: null,
+    });
+  await overrideDialog.getByRole('button', { name: 'Correct' }).click();
+  await overrideDialog
+    .getByLabel('Notes (optional)')
+    .fill('Corrected browser note');
+  await overrideDialog.getByRole('button', { name: 'Save correction' }).click();
+  await page
+    .getByRole('dialog', { name: 'Save corrected allocation?' })
+    .getByRole('button', { name: 'Save correction' })
+    .click();
+  await expect(page.getByText('Repayment override corrected')).toBeVisible();
+  await expect
+    .poll(() => repaymentCorrection)
+    .toMatchObject({
+      expected_revision: {
+        effective_to: null,
+        responsibility_ids: ['5ec136de-9474-4436-86fe-7735bad71155'],
+      },
+    });
+  await overrideDialog.getByRole('button', { name: 'End' }).click();
+  await overrideDialog.getByLabel('Effective to (optional)').fill('2027-06-30');
+  await overrideDialog.getByRole('button', { name: 'End override' }).click();
+  await page
+    .getByRole('dialog', { name: 'End repayment override?' })
+    .getByRole('button', { name: 'End override' })
+    .click();
+  await expect(page.getByText('Repayment override ended')).toBeVisible();
+  await expect
+    .poll(() => repaymentClosure)
+    .toEqual({
+      effective_to: '2027-06-30',
+      expected_revision: {
+        effective_to: null,
+        responsibility_ids: ['5ec136de-9474-4436-86fe-7735bad71155'],
+      },
     });
   await overrideDialog.getByRole('button', { name: 'Close' }).click();
   await expect(

@@ -17,6 +17,7 @@ import { useMemo, useState } from 'react';
 import { ApiError, apiRequest } from '../../api/client';
 import type { components } from '../../api/schema';
 import { DataTable, type DataColumn } from '../../shared/DataTable';
+import { ConfirmDialog } from '../../shared/ConfirmDialog';
 import { EmptyState } from '../../shared/EmptyState';
 import { formatDate } from '../../shared/format';
 import { useNotification } from '../../shared/notificationContext';
@@ -39,6 +40,8 @@ interface OverrideRow {
   effectiveFrom: string;
   effectiveTo: string | null;
 }
+
+type EditMode = 'create' | 'correct' | 'close';
 
 const emptyAllocation = (): RepaymentAllocationDraft => ({
   notes: '',
@@ -70,11 +73,19 @@ export function RepaymentOverridesPanel({
     emptyAllocation(),
   ]);
   const [validationError, setValidationError] = useState('');
+  const [mode, setMode] = useState<EditMode>('create');
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [expectedRevision, setExpectedRevision] = useState<{
+    effectiveTo: string | null;
+    responsibilityIds: string[];
+  } | null>(null);
   const resetDraft = () => {
     setEffectiveFrom(localCalendarDate());
     setEffectiveTo('');
     setAllocations([emptyAllocation()]);
     setValidationError('');
+    setMode('create');
+    setExpectedRevision(null);
   };
   const selectedLoan = loans.find((loan) => loan.id === loanId) ?? loans[0];
   const selectedLoanId = selectedLoan?.id ?? '';
@@ -109,9 +120,25 @@ export function RepaymentOverridesPanel({
     return [...grouped.values()];
   }, [history.data]);
   const save = useMutation({
-    mutationFn: (drafts: RepaymentAllocationDraft[]) =>
-      apiRequest<ResponsibilitySet>(
-        `/api/v1/loans/${selectedLoanId}/repayment-responsibilities/${effectiveFrom}?create_only=true`,
+    mutationFn: (drafts: RepaymentAllocationDraft[]) => {
+      if (mode === 'close') {
+        return apiRequest<ResponsibilitySet>(
+          `/api/v1/loans/${selectedLoanId}/repayment-responsibilities/${effectiveFrom}/closure`,
+          {
+            body: JSON.stringify({
+              effective_to: effectiveTo,
+              expected_revision: {
+                effective_to: expectedRevision?.effectiveTo ?? null,
+                responsibility_ids: expectedRevision?.responsibilityIds ?? [],
+              },
+            }),
+            csrfToken: auth.csrfToken(),
+            method: 'PATCH',
+          },
+        );
+      }
+      return apiRequest<ResponsibilitySet>(
+        `/api/v1/loans/${selectedLoanId}/repayment-responsibilities/${effectiveFrom}${mode === 'create' ? '?create_only=true' : ''}`,
         {
           body: JSON.stringify({
             allocations: drafts.map((item) => ({
@@ -120,16 +147,30 @@ export function RepaymentOverridesPanel({
               responsibility_percentage: item.percentage,
             })),
             effective_to: effectiveTo || null,
+            ...(mode === 'correct'
+              ? {
+                  expected_revision: {
+                    effective_to: expectedRevision?.effectiveTo ?? null,
+                    responsibility_ids:
+                      expectedRevision?.responsibilityIds ?? [],
+                  },
+                }
+              : {}),
           }),
           csrfToken: auth.csrfToken(),
           method: 'PUT',
         },
-      ),
+      );
+    },
     onError: (error) => {
       if (error instanceof ApiError && error.status === 409) {
-        setValidationError(
-          'Another editor already added an override for this date. Review the refreshed history and choose another date.',
-        );
+        const message =
+          mode === 'create'
+            ? 'Another editor already added an override for this date. Review the refreshed history and choose another date.'
+            : 'Another editor changed this override. Review the refreshed history before trying again.';
+        setConfirmationOpen(false);
+        resetDraft();
+        setValidationError(message);
         void queryClient.invalidateQueries({
           queryKey: ['repayment-responsibilities', selectedLoanId],
         });
@@ -137,9 +178,11 @@ export function RepaymentOverridesPanel({
       notify(errorMessage(error), 'error');
     },
     onSuccess: async () => {
-      setAllocations([emptyAllocation()]);
-      setValidationError('');
-      notify('Repayment override added', 'success');
+      const action =
+        mode === 'create' ? 'added' : mode === 'close' ? 'ended' : 'corrected';
+      setConfirmationOpen(false);
+      resetDraft();
+      notify(`Repayment override ${action}`, 'success');
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ['repayment-responsibilities', selectedLoanId],
@@ -181,21 +224,87 @@ export function RepaymentOverridesPanel({
           .filter(Boolean)
           .join('; ') || '—',
     },
+    ...(canEdit
+      ? [
+          {
+            key: 'actions',
+            label: 'Actions',
+            render: (row: OverrideRow) => (
+              <Stack direction="row" spacing={1}>
+                <Button
+                  onClick={() => {
+                    setMode('correct');
+                    setEffectiveFrom(row.effectiveFrom);
+                    setEffectiveTo(row.effectiveTo ?? '');
+                    setAllocations(
+                      row.allocations.map((item) => ({
+                        notes: item.notes ?? '',
+                        percentage: item.responsibility_percentage,
+                        personId: item.person_id,
+                      })),
+                    );
+                    setExpectedRevision({
+                      effectiveTo: row.effectiveTo,
+                      responsibilityIds: row.allocations.map((item) => item.id),
+                    });
+                    setValidationError('');
+                  }}
+                >
+                  Correct
+                </Button>
+                <Button
+                  disabled={row.effectiveTo != null}
+                  onClick={() => {
+                    setMode('close');
+                    setEffectiveFrom(row.effectiveFrom);
+                    setEffectiveTo('');
+                    setAllocations(
+                      row.allocations.map((item) => ({
+                        notes: item.notes ?? '',
+                        percentage: item.responsibility_percentage,
+                        personId: item.person_id,
+                      })),
+                    );
+                    setExpectedRevision({
+                      effectiveTo: row.effectiveTo,
+                      responsibilityIds: row.allocations.map((item) => item.id),
+                    });
+                    setValidationError('');
+                  }}
+                >
+                  End
+                </Button>
+              </Stack>
+            ),
+          },
+        ]
+      : []),
   ];
 
   const submit = () => {
+    if (mode === 'close') {
+      if (!effectiveTo || effectiveTo < effectiveFrom) {
+        setValidationError('Choose an end date on or after the start date');
+        return;
+      }
+      setConfirmationOpen(true);
+      return;
+    }
     const error = validateRepaymentOverride({
       allocations,
       effectiveFrom,
       effectiveTo,
-      existingStartDates: rows.map((row) => row.effectiveFrom),
+      existingStartDates: rows
+        .map((row) => row.effectiveFrom)
+        .filter((start) => mode === 'create' || start !== effectiveFrom),
       people: people.data ?? [],
     });
     if (error) {
       setValidationError(error);
       return;
     }
-    save.mutate(allocations);
+    if (mode === 'correct') setConfirmationOpen(true);
+    else save.mutate(allocations);
   };
 
   return (
@@ -277,9 +386,16 @@ export function RepaymentOverridesPanel({
             )}
             {canEdit ? (
               <Stack spacing={2}>
-                <Typography variant="h3">Add dated override</Typography>
+                <Typography variant="h3">
+                  {mode === 'create'
+                    ? 'Add dated override'
+                    : mode === 'close'
+                      ? 'End dated override'
+                      : 'Correct dated override'}
+                </Typography>
                 <Stack direction="row" spacing={2}>
                   <TextField
+                    disabled={mode !== 'create'}
                     fullWidth
                     label="Effective from"
                     onChange={(event) => setEffectiveFrom(event.target.value)}
@@ -296,91 +412,102 @@ export function RepaymentOverridesPanel({
                     value={effectiveTo}
                   />
                 </Stack>
-                {allocations.map((allocation, index) => (
-                  <Stack direction="row" key={index} spacing={2}>
-                    <TextField
-                      disabled={people.isPending || Boolean(people.error)}
-                      fullWidth
-                      label={`Person ${index + 1}`}
-                      onChange={(event) =>
-                        setAllocations((current) =>
-                          current.map((item, itemIndex) =>
-                            itemIndex === index
-                              ? { ...item, personId: event.target.value }
-                              : item,
-                          ),
-                        )
-                      }
-                      select
-                      value={allocation.personId}
-                    >
-                      {(people.data ?? []).map((person) => (
-                        <MenuItem key={person.id} value={person.id}>
-                          {person.display_name}
-                          {!personActiveForOverride(
-                            person,
-                            effectiveFrom,
-                            effectiveTo,
-                          )
-                            ? ' (inactive for these dates)'
-                            : ''}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                    <TextField
-                      label="Share %"
-                      onChange={(event) =>
-                        setAllocations((current) =>
-                          current.map((item, itemIndex) =>
-                            itemIndex === index
-                              ? { ...item, percentage: event.target.value }
-                              : item,
-                          ),
-                        )
-                      }
-                      value={allocation.percentage}
-                    />
-                    <TextField
-                      error={allocation.notes.length > 2_000}
-                      fullWidth
-                      helperText={`${allocation.notes.length.toLocaleString()} / 2,000 characters`}
-                      label="Notes (optional)"
-                      onChange={(event) =>
-                        setAllocations((current) =>
-                          current.map((item, itemIndex) =>
-                            itemIndex === index
-                              ? { ...item, notes: event.target.value }
-                              : item,
-                          ),
-                        )
-                      }
-                      slotProps={{ htmlInput: { maxLength: 2_000 } }}
-                      value={allocation.notes}
-                    />
-                    {allocations.length > 1 ? (
-                      <Button
-                        onClick={() =>
+                {mode !== 'close' &&
+                  allocations.map((allocation, index) => (
+                    <Stack direction="row" key={index} spacing={2}>
+                      <TextField
+                        disabled={people.isPending || Boolean(people.error)}
+                        fullWidth
+                        label={`Person ${index + 1}`}
+                        onChange={(event) =>
                           setAllocations((current) =>
-                            current.filter(
-                              (_, itemIndex) => itemIndex !== index,
+                            current.map((item, itemIndex) =>
+                              itemIndex === index
+                                ? { ...item, personId: event.target.value }
+                                : item,
                             ),
                           )
                         }
+                        select
+                        value={allocation.personId}
                       >
-                        Remove
-                      </Button>
-                    ) : null}
-                  </Stack>
-                ))}
-                <Button
-                  disabled={allocations.length >= 20}
-                  onClick={() =>
-                    setAllocations((current) => [...current, emptyAllocation()])
-                  }
-                  sx={{ alignSelf: 'flex-start' }}
-                >
-                  Add person
-                </Button>
+                        {(people.data ?? []).map((person) => (
+                          <MenuItem key={person.id} value={person.id}>
+                            {person.display_name}
+                            {!personActiveForOverride(
+                              person,
+                              effectiveFrom,
+                              effectiveTo,
+                            )
+                              ? ' (inactive for these dates)'
+                              : ''}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                      <TextField
+                        label="Share %"
+                        onChange={(event) =>
+                          setAllocations((current) =>
+                            current.map((item, itemIndex) =>
+                              itemIndex === index
+                                ? { ...item, percentage: event.target.value }
+                                : item,
+                            ),
+                          )
+                        }
+                        value={allocation.percentage}
+                      />
+                      <TextField
+                        error={allocation.notes.length > 2_000}
+                        fullWidth
+                        helperText={`${allocation.notes.length.toLocaleString()} / 2,000 characters`}
+                        label="Notes (optional)"
+                        onChange={(event) =>
+                          setAllocations((current) =>
+                            current.map((item, itemIndex) =>
+                              itemIndex === index
+                                ? { ...item, notes: event.target.value }
+                                : item,
+                            ),
+                          )
+                        }
+                        slotProps={{ htmlInput: { maxLength: 2_000 } }}
+                        value={allocation.notes}
+                      />
+                      {allocations.length > 1 ? (
+                        <Button
+                          onClick={() =>
+                            setAllocations((current) =>
+                              current.filter(
+                                (_, itemIndex) => itemIndex !== index,
+                              ),
+                            )
+                          }
+                        >
+                          Remove
+                        </Button>
+                      ) : null}
+                    </Stack>
+                  ))}
+                {mode !== 'close' ? (
+                  <Button
+                    disabled={allocations.length >= 20}
+                    onClick={() =>
+                      setAllocations((current) => [
+                        ...current,
+                        emptyAllocation(),
+                      ])
+                    }
+                    sx={{ alignSelf: 'flex-start' }}
+                  >
+                    Add person
+                  </Button>
+                ) : null}
+                {mode !== 'create' ? (
+                  <Button onClick={resetDraft} sx={{ alignSelf: 'flex-start' }}>
+                    Cancel change
+                  </Button>
+                ) : null}
                 {validationError ? (
                   <Alert severity="error">{validationError}</Alert>
                 ) : null}
@@ -412,11 +539,32 @@ export function RepaymentOverridesPanel({
               onClick={submit}
               variant="contained"
             >
-              Save override
+              {mode === 'create'
+                ? 'Save override'
+                : mode === 'close'
+                  ? 'End override'
+                  : 'Save correction'}
             </Button>
           ) : null}
         </DialogActions>
       </Dialog>
+      <ConfirmDialog
+        confirmLabel={mode === 'close' ? 'End override' : 'Save correction'}
+        description={
+          mode === 'close'
+            ? `End this repayment override on ${effectiveTo}? Its earlier history will remain recorded.`
+            : 'Replace this dated allocation set with the corrected values? Both versions will remain in the audit history.'
+        }
+        onCancel={() => setConfirmationOpen(false)}
+        onConfirm={() => save.mutate(allocations)}
+        open={confirmationOpen}
+        pending={save.isPending}
+        title={
+          mode === 'close'
+            ? 'End repayment override?'
+            : 'Save corrected allocation?'
+        }
+      />
     </>
   );
 }
