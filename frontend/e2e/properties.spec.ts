@@ -21,6 +21,7 @@ test('selects and restores a dated property position', async ({ page }) => {
   let repaymentOverride: Record<string, unknown> | null = null;
   let repaymentCorrection: Record<string, unknown> | null = null;
   let repaymentClosure: Record<string, unknown> | null = null;
+  let loanEventPayload: Record<string, unknown> | null = null;
   let loanGroups: Record<string, unknown>[] = [];
   let wizardPayload: Record<string, unknown> | null = null;
   await page.addInitScript((id) => {
@@ -192,6 +193,28 @@ test('selects and restores a dated property position', async ({ page }) => {
       });
       return;
     }
+    if (path.endsWith('/event-types')) {
+      await route.fulfill({
+        contentType: 'application/json',
+        json: [
+          {
+            code: 'LOAN_RATE_CHANGED',
+            display_name: 'Loan rate changed',
+            id: '0dfcf9aa-e911-4e99-b872-71a9ddf7f635',
+            is_active: true,
+            priority: 100,
+          },
+        ],
+      });
+      return;
+    }
+    if (path.endsWith(`/households/${householdId}/timeline`)) {
+      await route.fulfill({
+        contentType: 'application/json',
+        json: { data_quality_flags: [], events: [], household_id: householdId },
+      });
+      return;
+    }
     if (path.endsWith(`/households/${householdId}/people`)) {
       await route.fulfill({
         contentType: 'application/json',
@@ -287,6 +310,28 @@ test('selects and restores a dated property position', async ({ page }) => {
           ],
         });
       }
+      return;
+    }
+    if (
+      path.endsWith('/loans/7a959699-d6a5-4b32-a15f-cbe2a460ce55/events') &&
+      request.method() === 'POST'
+    ) {
+      loanEventPayload = request.postDataJSON() as Record<string, unknown>;
+      await route.fulfill({
+        contentType: 'application/json',
+        json: {
+          ...loanEventPayload,
+          created_by_user_id: 'cf3c01a8-b3cc-4c09-a504-ed193c290744',
+          data_quality_flags: [],
+          event_priority: 100,
+          event_type_code: 'LOAN_RATE_CHANGED',
+          household_id: householdId,
+          id: '56985b3d-ceb1-41e3-ac0a-b0df56b4cae8',
+          loan_id: '7a959699-d6a5-4b32-a15f-cbe2a460ce55',
+          recorded_at: '2026-09-15T01:00:00Z',
+        },
+        status: 201,
+      });
       return;
     }
     if (
@@ -606,6 +651,25 @@ test('selects and restores a dated property position', async ({ page }) => {
   await expect(
     page.getByRole('table', { name: 'Property loans' }),
   ).toContainText('Alex, Sam Borrower');
+  await page.getByRole('button', { name: 'Loan events' }).click();
+  const loanEventsDialog = page.getByRole('dialog', { name: 'Loan events' });
+  await expect(loanEventsDialog.getByText('No loan events')).toBeVisible();
+  await loanEventsDialog.getByLabel('Change type').click();
+  await page.getByRole('option', { name: 'Rate changed' }).click();
+  await loanEventsDialog.getByLabel('Classification').click();
+  await page.getByRole('option', { name: 'Planned — considering' }).click();
+  await loanEventsDialog.getByLabel('Effective at').fill('2027-01-02T12:00');
+  await loanEventsDialog.getByLabel('Annual interest rate %').fill('5.25');
+  await loanEventsDialog.getByRole('button', { name: 'Save event' }).click();
+  await expect(page.getByText('Loan event added')).toBeVisible();
+  await expect
+    .poll(() => loanEventPayload)
+    .toMatchObject({
+      classification: 'PLANNED',
+      event_type_id: '0dfcf9aa-e911-4e99-b872-71a9ddf7f635',
+      percentage: '5.25',
+    });
+  await loanEventsDialog.getByRole('button', { name: 'Close' }).click();
   await page
     .getByRole('button', { name: 'Advanced repayment overrides' })
     .click();
