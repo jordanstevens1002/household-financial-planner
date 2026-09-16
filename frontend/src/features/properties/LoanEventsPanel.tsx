@@ -6,9 +6,11 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
   MenuItem,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -22,13 +24,13 @@ import { EmptyState } from '../../shared/EmptyState';
 import { formatCurrency, formatDate } from '../../shared/format';
 import { useNotification } from '../../shared/notificationContext';
 import { useAuth } from '../auth/AuthContext';
-import { localCalendarDate } from '../people/localDate';
 import {
   eventDisplayName,
   LOAN_EVENT_CODES,
   type LoanEventDraft,
   validateLoanEvent,
   valueKind,
+  utcInstant,
 } from './loanEventValidation';
 
 type Loan = components['schemas']['LoanRead'];
@@ -39,7 +41,7 @@ type Timeline = components['schemas']['TimelineRead'];
 const defaults = (): LoanEventDraft => ({
   amount: '',
   classification: 'OBSERVED',
-  effectiveAt: `${localCalendarDate()}T12:00`,
+  effectiveAt: new Date().toISOString().slice(0, 16),
   eventTypeId: '',
   idempotencyKey: '',
   notes: '',
@@ -111,7 +113,7 @@ export function LoanEventsPanel({
         body: JSON.stringify({
           amount: kind === 'amount' ? draft.amount : null,
           classification: draft.classification,
-          effective_at: new Date(draft.effectiveAt).toISOString(),
+          effective_at: utcInstant(draft.effectiveAt),
           event_type_id: draft.eventTypeId,
           idempotency_key: draft.idempotencyKey.trim() || null,
           is_enabled: true,
@@ -174,6 +176,25 @@ export function LoanEventsPanel({
       key: 'status',
       label: 'Status',
       render: (event) => (event.is_enabled ? 'Enabled' : 'Disabled'),
+    },
+    {
+      key: 'quality',
+      label: 'Quality',
+      render: (event) =>
+        event.data_quality_flags.length ? (
+          <Tooltip title={event.data_quality_flags.join(', ')}>
+            <IconButton
+              aria-label={`Data quality: ${event.data_quality_flags.join(', ')}`}
+              size="small"
+            >
+              <Typography aria-hidden="true" component="span">
+                ⓘ
+              </Typography>
+            </IconButton>
+          </Tooltip>
+        ) : (
+          '—'
+        ),
     },
   ];
 
@@ -282,7 +303,8 @@ export function LoanEventsPanel({
                   </TextField>
                   <TextField
                     fullWidth
-                    label="Effective at"
+                    helperText="Stored and applied as a UTC instant."
+                    label="Effective at (UTC)"
                     onChange={(event) =>
                       setDraft((current) => ({
                         ...current,

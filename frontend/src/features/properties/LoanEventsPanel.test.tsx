@@ -128,7 +128,10 @@ describe('loan events', () => {
             response({
               data_quality_flags: [],
               events: [
-                recordedEvent,
+                {
+                  ...recordedEvent,
+                  data_quality_flags: ['OBSERVED_EVENT_IN_FUTURE'],
+                },
                 { ...recordedEvent, id: 'other', loan_id: 'other-loan' },
               ],
               household_id: householdId,
@@ -146,6 +149,9 @@ describe('loan events', () => {
     });
     expect(table).toHaveTextContent('Rate Changed');
     expect(table).toHaveTextContent('5.7500%');
+    expect(
+      screen.getByLabelText('Data quality: OBSERVED_EVENT_IN_FUTURE'),
+    ).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Save event' })).toBeNull();
   });
 

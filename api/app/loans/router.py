@@ -17,6 +17,7 @@ from app.core.dependencies import ROLE_LEVEL, current_user, require_household_ro
 from app.core.logging import get_logger
 from app.events.router import _event_read
 from app.events.schemas import FinancialEventRead
+from app.events.timeline import event_quality_flags
 from app.loans.calculations import generate_schedule, minimum_repayment, money, payments_per_year
 from app.loans.schemas import (
     DebtReconciliationStatus,
@@ -928,8 +929,8 @@ def _validate_loan_event(payload: LoanEventCreate, event_type: EventType) -> Non
         raise HTTPException(422, f"{event_type.code} requires amount")
     if event_type.code == "LOAN_TERM_CHANGED":
         term = payload.payload.get("term_months")
-        if not isinstance(term, int) or term <= 0:
-            raise HTTPException(422, "LOAN_TERM_CHANGED requires positive term_months")
+        if not isinstance(term, int) or isinstance(term, bool) or not 1 <= term <= 1200:
+            raise HTTPException(422, "LOAN_TERM_CHANGED requires term_months from 1 to 1200")
 
 
 @router.post("/loans/{loan_id}/events", response_model=FinancialEventRead, status_code=201)
@@ -965,7 +966,14 @@ async def create_loan_event(
         notes=payload.notes,
         classification=payload.classification,
         is_enabled=payload.is_enabled,
-        data_quality_flags=[],
+        data_quality_flags=event_quality_flags(
+            event_type.code,
+            payload.classification,
+            payload.effective_at.date(),
+            date.today(),
+            False,
+            payload.amount,
+        ),
         created_by_user_id=user.id,
     )
     session.add(event)

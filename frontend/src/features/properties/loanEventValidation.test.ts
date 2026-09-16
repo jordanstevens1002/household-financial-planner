@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   eventDisplayName,
   type LoanEventDraft,
+  utcInstant,
   validateLoanEvent,
   valueKind,
 } from './loanEventValidation';
@@ -29,18 +30,42 @@ describe('loan event validation', () => {
     [
       { percentage: '' },
       'LOAN_RATE_CHANGED',
-      'Enter a rate from 0 to 100 percent',
+      'Enter a rate from 0 to 100 percent with up to 4 decimal places',
     ],
     [
       { percentage: '100.1' },
       'LOAN_RATE_CHANGED',
-      'Enter a rate from 0 to 100 percent',
+      'Enter a rate from 0 to 100 percent with up to 4 decimal places',
     ],
-    [{ amount: '-1' }, 'LOAN_REDRAWN', 'Enter a non-negative amount'],
+    [
+      { percentage: '1.12345' },
+      'LOAN_RATE_CHANGED',
+      'Enter a rate from 0 to 100 percent with up to 4 decimal places',
+    ],
+    [
+      { amount: '-1' },
+      'LOAN_REDRAWN',
+      'Enter a non-negative amount with up to 18 digits and 2 decimal places',
+    ],
+    [
+      { amount: '1e3' },
+      'LOAN_REDRAWN',
+      'Enter a non-negative amount with up to 18 digits and 2 decimal places',
+    ],
+    [
+      { amount: '1.234' },
+      'LOAN_REDRAWN',
+      'Enter a non-negative amount with up to 18 digits and 2 decimal places',
+    ],
     [
       { termMonths: '12.5' },
       'LOAN_TERM_CHANGED',
-      'Enter a positive whole number of months',
+      'Enter a whole number of months from 1 to 1,200',
+    ],
+    [
+      { termMonths: '1201' },
+      'LOAN_TERM_CHANGED',
+      'Enter a whole number of months from 1 to 1,200',
     ],
     [
       { notes: 'x'.repeat(2_001) },
@@ -62,5 +87,29 @@ describe('loan event validation', () => {
     expect(valueKind('LOAN_TERM_CHANGED')).toBe('term');
     expect(valueKind('LOAN_INTEREST_ONLY_STARTED')).toBe('none');
     expect(eventDisplayName('LOAN_LUMP_SUM_PAID')).toBe('Lump Sum Paid');
+  });
+
+  it('accepts values at the API decimal and term boundaries', () => {
+    expect(
+      validateLoanEvent(
+        { ...draft, amount: '9999999999999999.99' },
+        'LOAN_REDRAWN',
+      ),
+    ).toBeNull();
+    expect(
+      validateLoanEvent(
+        { ...draft, percentage: '100.0000' },
+        'LOAN_RATE_CHANGED',
+      ),
+    ).toBeNull();
+    expect(
+      validateLoanEvent({ ...draft, termMonths: '1200' }, 'LOAN_TERM_CHANGED'),
+    ).toBeNull();
+  });
+
+  it('treats the entered date and time as UTC in a non-UTC timezone', () => {
+    vi.stubEnv('TZ', 'Australia/Sydney');
+    expect(utcInstant('2027-01-02T00:30')).toBe('2027-01-02T00:30:00.000Z');
+    vi.unstubAllEnvs();
   });
 });
