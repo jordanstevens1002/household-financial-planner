@@ -1,17 +1,18 @@
 """Loan tests."""
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 import pytest
 from httpx import AsyncClient, Response
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.loans.calculations import minimum_repayment
 from app.models import (
     EventType,
+    FinancialEvent,
     Household,
     HouseholdMembership,
     HouseholdRole,
@@ -965,6 +966,70 @@ async def test_repayment_term_interest_only_and_closure_events(
     assert Decimal(entries[0]["principal"]) > 0
     assert entries[2]["principal"] == "0.00"
     assert schedule.json()["payoff_date"] == "2020-06-15"
+
+
+async def test_loan_term_event_rejects_unbounded_schedule_before_persistence(
+    client: AsyncClient, loan_setup: dict[str, str], session: AsyncSession
+) -> None:
+    loan = await create_loan(client, loan_setup)
+    response = await client.post(
+        f"/api/v1/loans/{loan['id']}/events",
+        json={
+            "event_type_id": loan_setup["LOAN_TERM_CHANGED"],
+            "effective_at": "2020-01-15T00:00:00+00:00",
+            "payload": {"term_months": 1201},
+            "classification": "OBSERVED",
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == ("LOAN_TERM_CHANGED requires term_months from 1 to 1200")
+    assert (
+        await session.scalar(
+            select(func.count(FinancialEvent.id)).where(
+                FinancialEvent.loan_id == uuid.UUID(str(loan["id"]))
+            )
+        )
+        == 0
+    )
+
+
+@pytest.mark.parametrize(
+    ("classification", "effective_at", "expected_flag"),
+    [
+        (
+            "OBSERVED",
+            datetime.combine(date.today() + timedelta(days=1), datetime.min.time(), UTC),
+            "OBSERVED_EVENT_IN_FUTURE",
+        ),
+        (
+            "PLANNED",
+            datetime.combine(date.today() - timedelta(days=1), datetime.min.time(), UTC),
+            "PLANNED_OR_PROJECTED_EVENT_IN_PAST",
+        ),
+    ],
+)
+async def test_loan_events_report_classification_date_quality_flags(
+    client: AsyncClient,
+    loan_setup: dict[str, str],
+    classification: str,
+    effective_at: datetime,
+    expected_flag: str,
+) -> None:
+    loan = await create_loan(client, loan_setup)
+    response = await client.post(
+        f"/api/v1/loans/{loan['id']}/events",
+        json={
+            "event_type_id": loan_setup["LOAN_RATE_CHANGED"],
+            "effective_at": effective_at.isoformat(),
+            "percentage": "5.2500",
+            "payload": {},
+            "classification": classification,
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    assert expected_flag in response.json()["data_quality_flags"]
 
 
 @pytest.mark.parametrize(

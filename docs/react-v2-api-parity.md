@@ -107,8 +107,8 @@ decorators, so route changes require an intentional matrix update.
 | POST | `/api/v1/retirement-accounts/{account_id}/contribution-profiles` | Contribution profile | #49 |
 | POST | `/api/v1/retirement-accounts/{account_id}/events` | Balance adjustment | #49 |
 | GET | `/api/v1/retirement-accounts/{account_id}/projection` | Projection | #49 |
-| GET | `/api/v1/event-types` | Event-type discovery | #50 |
-| GET | `/api/v1/households/{household_id}/timeline` | Complete or filtered timeline | #50 |
+| GET | `/api/v1/event-types` | Event-type discovery | #50, #120 |
+| GET | `/api/v1/households/{household_id}/timeline` | Complete or filtered timeline, including loan-event history | #50, #120 |
 | POST | `/api/v1/households/{household_id}/events` | Planned event creation | #50 |
 | PATCH | `/api/v1/events/{event_id}` | Planned event update | #50 |
 | PATCH | `/api/v1/events/{event_id}/enabled` | Enable or disable event | #50 |

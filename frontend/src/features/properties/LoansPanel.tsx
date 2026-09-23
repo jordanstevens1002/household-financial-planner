@@ -29,6 +29,7 @@ import { useNotification } from '../../shared/notificationContext';
 import { useAuth } from '../auth/AuthContext';
 import { localCalendarDate } from '../people/localDate';
 import { RepaymentOverridesPanel } from './RepaymentOverridesPanel';
+import { LoanEventsPanel } from './LoanEventsPanel';
 
 type Loan = components['schemas']['LoanRead'];
 type LoanGroup = components['schemas']['LoanGroupRead'];
@@ -734,11 +735,18 @@ export function LoansPanel({
         />
       )}
       {propertyLoans.length ? (
-        <RepaymentOverridesPanel
-          canEdit={canEdit}
-          householdId={householdId}
-          loans={propertyLoans}
-        />
+        <Stack direction="row" spacing={2}>
+          <RepaymentOverridesPanel
+            canEdit={canEdit}
+            householdId={householdId}
+            loans={propertyLoans}
+          />
+          <LoanEventsPanel
+            canEdit={canEdit}
+            householdId={householdId}
+            loans={propertyLoans}
+          />
+        </Stack>
       ) : null}
 
       <Dialog

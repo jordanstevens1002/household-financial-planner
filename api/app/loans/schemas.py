@@ -318,7 +318,7 @@ class LoanEventCreate(BaseModel):
     idempotency_key: str | None = Field(default=None, min_length=1, max_length=100)
     effective_at: datetime
     amount: Decimal | None = Field(default=None, ge=0, max_digits=18, decimal_places=2)
-    percentage: Decimal | None = Field(default=None, ge=0, le=100, decimal_places=4)
+    percentage: Decimal | None = Field(default=None, ge=0, le=100, max_digits=7, decimal_places=4)
     payload: dict[str, object] = Field(default_factory=dict)
     notes: str | None = Field(default=None, max_length=2000)
     classification: EventClassification
