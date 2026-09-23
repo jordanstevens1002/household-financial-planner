@@ -90,7 +90,7 @@ decorators, so route changes require an intentional matrix update.
 | PUT | `/api/v1/loans/{loan_id}/repayment-responsibilities/{effective_from}` | Create or safely correct an advanced responsibility allocation set | #116, #118, #119 |
 | PATCH | `/api/v1/loans/{loan_id}/repayment-responsibilities/{effective_from}/closure` | Close a dated responsibility override | #117, #119 |
 | POST | `/api/v1/loans/{loan_id}/events` | Dated loan event | #46 |
-| GET | `/api/v1/loans/{loan_id}/schedule` | Amortisation schedule | #46 |
+| GET | `/api/v1/loans/{loan_id}/schedule` | Amortisation schedule and balance analysis | #46, #121 |
 | POST | `/api/v1/loans/{loan_id}/refinance` | Refinancing | #46 |
 | GET | `/api/v1/households/{household_id}/goals` | Loan-goal list | #46 |
 | POST | `/api/v1/households/{household_id}/goals` | Household loan goal | #46 |

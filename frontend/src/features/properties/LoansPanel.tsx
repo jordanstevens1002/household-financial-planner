@@ -30,6 +30,7 @@ import { useAuth } from '../auth/AuthContext';
 import { localCalendarDate } from '../people/localDate';
 import { RepaymentOverridesPanel } from './RepaymentOverridesPanel';
 import { LoanEventsPanel } from './LoanEventsPanel';
+import { LoanSchedulePanel } from './LoanSchedulePanel';
 
 type Loan = components['schemas']['LoanRead'];
 type LoanGroup = components['schemas']['LoanGroupRead'];
@@ -746,6 +747,7 @@ export function LoansPanel({
             householdId={householdId}
             loans={propertyLoans}
           />
+          <LoanSchedulePanel loans={propertyLoans} />
         </Stack>
       ) : null}
 
