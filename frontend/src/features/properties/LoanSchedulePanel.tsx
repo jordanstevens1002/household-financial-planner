@@ -72,22 +72,22 @@ export function LoanSchedulePanel({ loans }: { loans: Loan[] }) {
   const schedule = useQuery({
     enabled: open && Boolean(selectedLoanId),
     queryFn: () => {
-      const query = throughDate
-        ? `?through_date=${encodeURIComponent(throughDate)}`
-        : '';
+      const query = new URLSearchParams({
+        entry_limit: String(PAGE_SIZE),
+        entry_offset: String(page * PAGE_SIZE),
+      });
+      if (throughDate) query.set('through_date', throughDate);
       return apiRequest<Schedule>(
-        `/api/v1/loans/${selectedLoanId}/schedule${query}`,
+        `/api/v1/loans/${selectedLoanId}/schedule?${query.toString()}`,
       );
     },
-    queryKey: ['loan-schedule', selectedLoanId, throughDate],
+    queryKey: ['loan-schedule', selectedLoanId, throughDate, page],
     retry: false,
   });
   const entries = schedule.data?.entries ?? [];
-  const pageCount = Math.max(1, Math.ceil(entries.length / PAGE_SIZE));
-  const displayedPage = Math.min(page, pageCount - 1);
-  const visibleEntries = entries.slice(
-    displayedPage * PAGE_SIZE,
-    (displayedPage + 1) * PAGE_SIZE,
+  const pageCount = Math.max(
+    1,
+    Math.ceil((schedule.data?.entry_total ?? 0) / PAGE_SIZE),
   );
 
   const columns: DataColumn<ScheduleEntry>[] = [
@@ -286,25 +286,27 @@ export function LoanSchedulePanel({ loans }: { loans: Loan[] }) {
                       getRowKey={(entry) =>
                         `${entry.payment_number}-${entry.payment_date}`
                       }
-                      rows={visibleEntries}
+                      rows={entries}
                     />
                     <Stack
                       direction="row"
                       sx={{ alignItems: 'center', justifyContent: 'flex-end' }}
                     >
                       <Button
-                        disabled={displayedPage === 0}
-                        onClick={() => setPage(displayedPage - 1)}
+                        disabled={page === 0 || schedule.isFetching}
+                        onClick={() => setPage(page - 1)}
                       >
                         Previous
                       </Button>
                       <Typography aria-live="polite" sx={{ px: 2 }}>
-                        Page {displayedPage + 1} of {pageCount} ·{' '}
-                        {entries.length} payments
+                        Page {page + 1} of {pageCount} ·{' '}
+                        {schedule.data.entry_total} payments
                       </Typography>
                       <Button
-                        disabled={displayedPage + 1 >= pageCount}
-                        onClick={() => setPage(displayedPage + 1)}
+                        disabled={
+                          !schedule.data.has_more || schedule.isFetching
+                        }
+                        onClick={() => setPage(page + 1)}
                       >
                         Next
                       </Button>

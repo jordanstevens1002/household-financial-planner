@@ -4105,6 +4105,22 @@
             "title": "Entries",
             "type": "array"
           },
+          "entry_limit": {
+            "title": "Entry Limit",
+            "type": "integer"
+          },
+          "entry_offset": {
+            "title": "Entry Offset",
+            "type": "integer"
+          },
+          "entry_total": {
+            "title": "Entry Total",
+            "type": "integer"
+          },
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
           "interest_saved_vs_no_offset": {
             "anyOf": [
               {
@@ -4153,6 +4169,10 @@
         "required": [
           "loan_id",
           "entries",
+          "entry_offset",
+          "entry_limit",
+          "entry_total",
+          "has_more",
           "total_interest",
           "total_repayments",
           "payoff_date",
@@ -14088,6 +14108,29 @@
                 }
               ],
               "title": "Through Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "entry_offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Entry Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "entry_limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Entry Limit",
+              "type": "integer"
             }
           },
           {

@@ -316,7 +316,7 @@ export function LoansPanel({
         },
       ),
     onError: (error) => notify(errorMessage(error), 'error'),
-    onSuccess: async () => {
+    onSuccess: async (savedLoan) => {
       setDialogOpen(false);
       form.reset(defaults);
       notify(editingLoan ? 'Loan corrected' : 'Loan added', 'success');
@@ -329,6 +329,9 @@ export function LoansPanel({
           queryKey: ['property-state', propertyId],
         }),
         queryClient.invalidateQueries({ queryKey: ['household-cashflow'] }),
+        queryClient.invalidateQueries({
+          queryKey: ['loan-schedule', savedLoan.id],
+        }),
       ]);
     },
   });
@@ -438,7 +441,7 @@ export function LoansPanel({
         method: 'POST',
       }),
     onError: (error) => notify(errorMessage(error), 'error'),
-    onSuccess: async () => {
+    onSuccess: async (closedLoan) => {
       setClosingLoan(null);
       notify('Loan closed', 'success');
       await Promise.all([
@@ -446,6 +449,9 @@ export function LoansPanel({
           queryKey: ['household-loans', householdId],
         }),
         queryClient.invalidateQueries({ queryKey: ['household-cashflow'] }),
+        queryClient.invalidateQueries({
+          queryKey: ['loan-schedule', closedLoan.id],
+        }),
       ]);
     },
   });

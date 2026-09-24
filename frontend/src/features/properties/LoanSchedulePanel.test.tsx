@@ -81,6 +81,10 @@ const entries = Array.from({ length: 26 }, (_, index) => ({
 const schedule = {
   data_quality_flags: ['DAILY_INTEREST_USES_ACTUAL_365_BASIS'],
   entries,
+  entry_limit: 25,
+  entry_offset: 0,
+  entry_total: entries.length,
+  has_more: true,
   interest_saved_vs_no_offset: '4500.00',
   loan_id: loanId,
   payoff_date: '2051-01-01',
@@ -95,7 +99,19 @@ describe('loan schedule analysis', () => {
   it('shows backend totals, assumptions, warnings and paged balance progression', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn<typeof fetch>(() => Promise.resolve(response(schedule))),
+      vi.fn<typeof fetch>((input) => {
+        const request = new URL(pathOf(input), 'http://localhost');
+        const offset = Number(request.searchParams.get('entry_offset') ?? 0);
+        const pageEntries = entries.slice(offset, offset + 25);
+        return Promise.resolve(
+          response({
+            ...schedule,
+            entries: pageEntries,
+            entry_offset: offset,
+            has_more: offset + pageEntries.length < entries.length,
+          }),
+        );
+      }),
     );
     const user = userEvent.setup();
     renderPanel();
@@ -122,6 +138,9 @@ describe('loan schedule analysis', () => {
     expect(
       screen.getByRole('table', { name: 'Loan balance progression' }),
     ).toHaveTextContent('26');
+    expect(
+      pathOf(vi.mocked(fetch).mock.calls.at(-1)?.[0] as RequestInfo),
+    ).toContain('entry_offset=25');
   });
 
   it('recovers a non-projectable loan by applying a bounded through date', async () => {
@@ -142,7 +161,13 @@ describe('loan schedule analysis', () => {
             ),
           );
         return Promise.resolve(
-          response({ ...schedule, entries: [], payoff_date: null }),
+          response({
+            ...schedule,
+            entries: [],
+            entry_total: 0,
+            has_more: false,
+            payoff_date: null,
+          }),
         );
       }),
     );

@@ -842,6 +842,45 @@ async def test_repayment_sets_reject_people_outside_the_effective_interval(
     assert listed.json()[0]["person_id"] == inactive.json()["id"]
 
 
+async def test_schedule_rejects_excessive_horizon_and_pages_entries(
+    client: AsyncClient, loan_setup: dict[str, str]
+) -> None:
+    loan = await create_loan(
+        client,
+        loan_setup,
+        scheduled_repayment=None,
+        term_months=36,
+    )
+    excessive = await client.get(
+        f"/api/v1/loans/{loan['id']}/schedule",
+        params={"through_date": "2121-01-01"},
+    )
+    assert excessive.status_code == 422
+    assert "cannot be more than 100 years" in excessive.json()["detail"]
+
+    first = await client.get(f"/api/v1/loans/{loan['id']}/schedule")
+    assert first.status_code == 200
+    assert len(first.json()["entries"]) == 25
+    assert first.json()["entry_offset"] == 0
+    assert first.json()["entry_limit"] == 25
+    assert first.json()["entry_total"] == 36
+    assert first.json()["has_more"] is True
+
+    second = await client.get(
+        f"/api/v1/loans/{loan['id']}/schedule",
+        params={"entry_offset": 25, "entry_limit": 25},
+    )
+    assert second.status_code == 200
+    assert len(second.json()["entries"]) == 11
+    assert second.json()["entries"][0]["payment_number"] == 26
+    assert second.json()["has_more"] is False
+
+    oversized_page = await client.get(
+        f"/api/v1/loans/{loan['id']}/schedule", params={"entry_limit": 101}
+    )
+    assert oversized_page.status_code == 422
+
+
 async def test_schedule_applies_offsets_rate_changes_lump_sums_and_redraw(
     client: AsyncClient, loan_setup: dict[str, str]
 ) -> None:

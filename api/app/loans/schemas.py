@@ -346,6 +346,10 @@ class ScheduleEntry(BaseModel):
 class LoanScheduleRead(BaseModel):
     loan_id: uuid.UUID
     entries: list[ScheduleEntry]
+    entry_offset: int
+    entry_limit: int
+    entry_total: int
+    has_more: bool
     total_interest: Decimal
     total_repayments: Decimal
     payoff_date: date | None

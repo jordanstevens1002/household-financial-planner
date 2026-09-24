@@ -339,6 +339,10 @@ test('selects and restores a dated property position', async ({ page }) => {
         contentType: 'application/json',
         json: {
           data_quality_flags: ['DAILY_INTEREST_USES_ACTUAL_365_BASIS'],
+          entry_limit: 25,
+          entry_offset: 0,
+          entry_total: 1,
+          has_more: false,
           entries: [
             {
               annual_interest_rate: '5.7500',
