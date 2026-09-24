@@ -193,6 +193,20 @@ test('selects and restores a dated property position', async ({ page }) => {
       });
       return;
     }
+    if (path.endsWith('/lookups/goal_type')) {
+      await route.fulfill({
+        contentType: 'application/json',
+        json: [
+          {
+            code: 'MAXIMUM_WEEKLY_REPAYMENT',
+            display_name: 'Maximum weekly repayment',
+            id: 'dc9c85a0-7f86-4457-a80d-a080a1550ece',
+            is_active: true,
+          },
+        ],
+      });
+      return;
+    }
     if (path.endsWith('/event-types')) {
       await route.fulfill({
         contentType: 'application/json',
@@ -310,6 +324,39 @@ test('selects and restores a dated property position', async ({ page }) => {
           ],
         });
       }
+      return;
+    }
+    if (path.endsWith(`/households/${householdId}/goals`)) {
+      await route.fulfill({
+        contentType: 'application/json',
+        json: [
+          {
+            display_name: 'Comfortable payment',
+            goal_type_id: 'dc9c85a0-7f86-4457-a80d-a080a1550ece',
+            household_id: householdId,
+            id: '7d9dc27f-0fdd-4d21-943c-e456c47e3cdd',
+            is_active: true,
+            loan_id: '7a959699-d6a5-4b32-a15f-cbe2a460ce55',
+            priority: 0,
+            target_amount: '650.00',
+          },
+        ],
+      });
+      return;
+    }
+    if (path.endsWith('/target-calculation')) {
+      await route.fulfill({
+        contentType: 'application/json',
+        json: {
+          estimated_payoff_date: '2056-06-30',
+          goal_id: '7d9dc27f-0fdd-4d21-943c-e456c47e3cdd',
+          loan_id: '7a959699-d6a5-4b32-a15f-cbe2a460ce55',
+          repayment_frequency: 'MONTHLY',
+          required_repayment: '2200.00',
+          target_amount: '650.00',
+          within_target: true,
+        },
+      });
       return;
     }
     if (
@@ -716,6 +763,21 @@ test('selects and restores a dated property position', async ({ page }) => {
     ),
   ).toBeVisible();
   await scheduleDialog.getByRole('button', { name: 'Close' }).click();
+  await page.getByRole('button', { name: 'Loan targets' }).click();
+  const targetsDialog = page.getByRole('dialog', {
+    name: 'Loan targets and repayment comfort',
+  });
+  await expect(
+    targetsDialog.getByRole('table', { name: 'Household loan targets' }),
+  ).toContainText('NZ$650.00');
+  await targetsDialog.getByLabel('Saved target').click();
+  await page.getByRole('option', { name: 'Comfortable payment' }).click();
+  await targetsDialog.getByRole('button', { name: 'Calculate' }).click();
+  await expect(targetsDialog.getByText('Within your target')).toBeVisible();
+  await expect(
+    targetsDialog.getByText(/Required monthly repayment/),
+  ).toBeVisible();
+  await targetsDialog.getByRole('button', { name: 'Close' }).click();
   await page
     .getByRole('button', { name: 'Advanced repayment overrides' })
     .click();
