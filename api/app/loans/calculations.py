@@ -231,6 +231,10 @@ def generate_schedule(
     return LoanScheduleRead(
         loan_id=loan.id,
         entries=entries,
+        entry_offset=0,
+        entry_limit=len(entries),
+        entry_total=len(entries),
+        has_more=False,
         total_interest=money(total_interest),
         total_repayments=money(total_repayments),
         payoff_date=(

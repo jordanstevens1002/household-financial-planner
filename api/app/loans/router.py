@@ -70,6 +70,7 @@ from app.models import (
 router = APIRouter(prefix="/api/v1", tags=["loans"])
 logger = get_logger(component="loans")
 MAX_RECONCILIATION_YEARS = 100
+MAX_SCHEDULE_YEARS = 100
 
 LOAN_EVENT_CODES = {
     "LOAN_RATE_CHANGED",
@@ -1006,10 +1007,20 @@ async def _loan_events(
 async def loan_schedule(
     loan_id: uuid.UUID,
     through_date: date | None = None,
+    entry_offset: Annotated[int, Query(ge=0)] = 0,
+    entry_limit: Annotated[int, Query(ge=1, le=100)] = 25,
     user: ApplicationUser = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ) -> LoanScheduleRead:
     loan = await _loan_with_access(loan_id, HouseholdRole.VIEWER, user, session)
+    latest_supported_date = date(
+        min(date.max.year, loan.opening_balance_date.year + MAX_SCHEDULE_YEARS), 12, 31
+    )
+    if through_date is not None and through_date > latest_supported_date:
+        raise HTTPException(
+            422,
+            f"through_date cannot be more than {MAX_SCHEDULE_YEARS} years after loan opening",
+        )
     events = await _loan_events(loan_id, session)
     try:
         schedule = generate_schedule(loan, events, through_date)
@@ -1021,12 +1032,18 @@ async def loan_schedule(
                 loan,
                 [(event, code) for event, code in events if code != "LOAN_OFFSET_CHANGED"],
                 through_date,
+                include_entries=False,
             )
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
         schedule.interest_saved_vs_no_offset = max(
             Decimal("0"), no_offset.total_interest - schedule.total_interest
         )
+    schedule.entry_total = len(schedule.entries)
+    schedule.entry_offset = entry_offset
+    schedule.entry_limit = entry_limit
+    schedule.entries = schedule.entries[entry_offset : entry_offset + entry_limit]
+    schedule.has_more = entry_offset + len(schedule.entries) < schedule.entry_total
     return schedule
 
 

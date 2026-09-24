@@ -334,6 +334,38 @@ test('selects and restores a dated property position', async ({ page }) => {
       });
       return;
     }
+    if (path.endsWith('/loans/7a959699-d6a5-4b32-a15f-cbe2a460ce55/schedule')) {
+      await route.fulfill({
+        contentType: 'application/json',
+        json: {
+          data_quality_flags: ['DAILY_INTEREST_USES_ACTUAL_365_BASIS'],
+          entry_limit: 25,
+          entry_offset: 0,
+          entry_total: 1,
+          has_more: false,
+          entries: [
+            {
+              annual_interest_rate: '5.7500',
+              closing_balance: '304260.27',
+              interest: '1460.27',
+              offset_balance: '0.00',
+              opening_balance: '305000.00',
+              payment_date: '2026-07-31',
+              payment_number: 1,
+              principal: '739.73',
+              repayment: '2200.00',
+            },
+          ],
+          interest_saved_vs_no_offset: null,
+          loan_id: '7a959699-d6a5-4b32-a15f-cbe2a460ce55',
+          payoff_date: '2056-06-30',
+          remaining_balance: '0.00',
+          total_interest: '487000.00',
+          total_repayments: '792000.00',
+        },
+      });
+      return;
+    }
     if (
       path.endsWith('/loans/7a959699-d6a5-4b32-a15f-cbe2a460ce55/borrowers') &&
       request.method() === 'PUT'
@@ -670,6 +702,20 @@ test('selects and restores a dated property position', async ({ page }) => {
       percentage: '5.25',
     });
   await loanEventsDialog.getByRole('button', { name: 'Close' }).click();
+  await page.getByRole('button', { name: 'Analyse schedule' }).click();
+  const scheduleDialog = page.getByRole('dialog', {
+    name: 'Loan schedule analysis',
+  });
+  await expect(scheduleDialog.getByText('NZ$487,000.00')).toBeVisible();
+  await expect(
+    scheduleDialog.getByRole('table', { name: 'Loan balance progression' }),
+  ).toContainText('NZ$304,260.27');
+  await expect(
+    scheduleDialog.getByLabel(
+      'Schedule warnings: DAILY_INTEREST_USES_ACTUAL_365_BASIS',
+    ),
+  ).toBeVisible();
+  await scheduleDialog.getByRole('button', { name: 'Close' }).click();
   await page
     .getByRole('button', { name: 'Advanced repayment overrides' })
     .click();

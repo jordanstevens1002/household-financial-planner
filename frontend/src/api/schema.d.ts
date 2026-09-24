@@ -2927,6 +2927,14 @@ export interface components {
             data_quality_flags: string[];
             /** Entries */
             entries: components["schemas"]["ScheduleEntry"][];
+            /** Entry Limit */
+            entry_limit: number;
+            /** Entry Offset */
+            entry_offset: number;
+            /** Entry Total */
+            entry_total: number;
+            /** Has More */
+            has_more: boolean;
             /** Interest Saved Vs No Offset */
             interest_saved_vs_no_offset?: string | null;
             /**
@@ -7003,6 +7011,8 @@ export interface operations {
         parameters: {
             query?: {
                 through_date?: string | null;
+                entry_offset?: number;
+                entry_limit?: number;
             };
             header?: {
                 "X-Development-Subject"?: string | null;

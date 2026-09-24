@@ -637,6 +637,7 @@ describe('property loan records', () => {
   });
 
   it('corrects and closes a loan while explaining conflicting recorded debt', async () => {
+    const invalidate = vi.spyOn(QueryClient.prototype, 'invalidateQueries');
     let current = loan();
     const patches: Record<string, unknown>[] = [];
     vi.stubGlobal(
@@ -704,6 +705,10 @@ describe('property loan records', () => {
     );
     expect(await screen.findByText('Loan corrected')).toBeVisible();
     expect(patches[0]).toMatchObject({ scheduled_repayment: '2250' });
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: ['loan-schedule', current.id],
+    });
+    invalidate.mockClear();
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 
     await user.click(
@@ -717,6 +722,9 @@ describe('property loan records', () => {
     const effectiveDate = patches[1]?.effective_date;
     expect(typeof effectiveDate).toBe('string');
     expect(effectiveDate as string).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: ['loan-schedule', current.id],
+    });
     expect(await screen.findByText('Closed')).toBeVisible();
     await waitFor(() =>
       expect(screen.queryByRole('dialog', { name: 'Close loan?' })).toBeNull(),
