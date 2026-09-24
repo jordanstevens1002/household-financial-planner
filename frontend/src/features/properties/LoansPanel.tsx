@@ -31,6 +31,7 @@ import { localCalendarDate } from '../people/localDate';
 import { RepaymentOverridesPanel } from './RepaymentOverridesPanel';
 import { LoanEventsPanel } from './LoanEventsPanel';
 import { LoanSchedulePanel } from './LoanSchedulePanel';
+import { LoanTargetsPanel } from './LoanTargetsPanel';
 
 type Loan = components['schemas']['LoanRead'];
 type LoanGroup = components['schemas']['LoanGroupRead'];
@@ -754,6 +755,11 @@ export function LoansPanel({
             loans={propertyLoans}
           />
           <LoanSchedulePanel loans={propertyLoans} />
+          <LoanTargetsPanel
+            canEdit={canEdit}
+            householdId={householdId}
+            loans={propertyLoans}
+          />
         </Stack>
       ) : null}
 

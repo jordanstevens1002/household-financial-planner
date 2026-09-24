@@ -21,7 +21,7 @@
     "generate:api": "openapi-typescript openapi.json -o src/api/schema.d.ts",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run --coverage",
+    "test": "vitest run --coverage --maxWorkers=1",
     "typecheck": "tsc -b --pretty false"
   },
   "dependencies": {
