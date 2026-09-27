@@ -267,7 +267,13 @@ export function LoanTargetsPanel({
             ) : (
               <>
                 <Stack direction="row" sx={{ justifyContent: 'space-between' }}>
-                  <Typography variant="h3">Saved targets</Typography>
+                  <Typography
+                    component="h3"
+                    sx={{ fontWeight: 700 }}
+                    variant="h6"
+                  >
+                    Saved targets
+                  </Typography>
                   {canEdit ? (
                     <Button
                       disabled={!weeklyGoalType || !activeLoans.length}
@@ -308,7 +314,13 @@ export function LoanTargetsPanel({
                 )}
                 {loanGoals.length ? (
                   <Stack spacing={2}>
-                    <Typography variant="h3">Calculate a target</Typography>
+                    <Typography
+                      component="h3"
+                      sx={{ fontWeight: 700 }}
+                      variant="h6"
+                    >
+                      Calculate a target
+                    </Typography>
                     <Stack direction="row" spacing={2}>
                       <TextField
                         fullWidth
