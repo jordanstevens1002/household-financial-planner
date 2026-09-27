@@ -486,6 +486,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/households/{household_id}/goals/{goal_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Goal */
+        patch: operations["update_goal_api_v1_households__household_id__goals__goal_id__patch"];
+        trace?: never;
+    };
     "/api/v1/households/{household_id}/income-projection": {
         parameters: {
             query?: never;
@@ -2125,6 +2142,21 @@ export interface components {
             target_date?: string | null;
             /** Target Percentage */
             target_percentage?: string | null;
+        };
+        /** GoalUpdate */
+        GoalUpdate: {
+            /** Display Name */
+            display_name?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
+            /** Loan Id */
+            loan_id?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Priority */
+            priority?: number | null;
+            /** Target Amount */
+            target_amount?: number | string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -5712,6 +5744,44 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_goal_api_v1_households__household_id__goals__goal_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                household_id: string;
+                goal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

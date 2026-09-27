@@ -23,6 +23,7 @@ from app.loans.schemas import (
     DebtReconciliationStatus,
     GoalCreate,
     GoalRead,
+    GoalUpdate,
     LoanBorrowerReplace,
     LoanCloseCreate,
     LoanCreate,
@@ -1107,6 +1108,7 @@ async def create_goal(
     household_id: uuid.UUID,
     payload: GoalCreate,
     _: Annotated[HouseholdMembership, Depends(require_household_role(HouseholdRole.EDITOR))],
+    user: ApplicationUser = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ) -> Goal:
     goal_type = await session.get(LookupItem, payload.goal_type_id)
@@ -1124,10 +1126,19 @@ async def create_goal(
         loan = await session.get(Loan, payload.loan_id)
         if loan is None or loan.household_id != household_id:
             raise HTTPException(422, "Goal loan must belong to the household")
+        if not loan.is_active:
+            raise HTTPException(422, "New goals require an active loan")
     goal = Goal(household_id=household_id, **payload.model_dump())
     session.add(goal)
     await session.commit()
     await session.refresh(goal)
+    logger.info(
+        "household_goal_created",
+        actor_user_id=str(user.id),
+        goal_id=str(goal.id),
+        household_id=str(household_id),
+        loan_id=str(goal.loan_id) if goal.loan_id else None,
+    )
     return goal
 
 
@@ -1144,6 +1155,64 @@ async def list_goals(
     )
 
 
+@router.patch("/households/{household_id}/goals/{goal_id}", response_model=GoalRead)
+async def update_goal(
+    household_id: uuid.UUID,
+    goal_id: uuid.UUID,
+    payload: GoalUpdate,
+    _: Annotated[HouseholdMembership, Depends(require_household_role(HouseholdRole.EDITOR))],
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Goal:
+    goal = await session.scalar(
+        select(Goal).where(Goal.id == goal_id, Goal.household_id == household_id).with_for_update()
+    )
+    if goal is None:
+        raise HTTPException(404, "Goal not found")
+    changes = payload.model_dump(exclude_unset=True)
+    if "target_amount" in changes and goal.target_amount is None:
+        raise HTTPException(422, "Only amount goals can update target_amount")
+    if "loan_id" in changes:
+        loan_id = changes["loan_id"]
+        if loan_id is None:
+            raise HTTPException(422, "Loan target requires a loan")
+        loan = await session.get(Loan, loan_id)
+        if loan is None or loan.household_id != household_id:
+            raise HTTPException(422, "Goal loan must belong to the household")
+        if not loan.is_active:
+            raise HTTPException(422, "Active goals require an active loan")
+    if changes.get("is_active", goal.is_active) and goal.loan_id is not None:
+        target_loan = await session.get(Loan, changes.get("loan_id", goal.loan_id))
+        if target_loan is None or not target_loan.is_active:
+            raise HTTPException(422, "Active goals require an active loan")
+    previous = {
+        "display_name": goal.display_name,
+        "is_active": goal.is_active,
+        "loan_id": str(goal.loan_id) if goal.loan_id else None,
+        "priority": goal.priority,
+        "target_amount": str(goal.target_amount) if goal.target_amount is not None else None,
+    }
+    for field, value in changes.items():
+        setattr(goal, field, value)
+    await session.commit()
+    await session.refresh(goal)
+    logger.info(
+        "household_goal_updated",
+        actor_user_id=str(user.id),
+        goal_id=str(goal.id),
+        household_id=str(household_id),
+        previous=previous,
+        resulting={
+            "display_name": goal.display_name,
+            "is_active": goal.is_active,
+            "loan_id": str(goal.loan_id) if goal.loan_id else None,
+            "priority": goal.priority,
+            "target_amount": str(goal.target_amount) if goal.target_amount is not None else None,
+        },
+    )
+    return goal
+
+
 @router.post("/loans/{loan_id}/target-calculation", response_model=TargetCalculationRead)
 async def target_calculation(
     loan_id: uuid.UUID,
@@ -1152,9 +1221,13 @@ async def target_calculation(
     session: AsyncSession = Depends(get_session),
 ) -> TargetCalculationRead:
     loan = await _loan_with_access(loan_id, HouseholdRole.VIEWER, user, session)
+    if not loan.is_active:
+        raise HTTPException(422, "Target calculations require an active loan")
     goal = await session.get(Goal, payload.goal_id)
     if goal is None or goal.household_id != loan.household_id or goal.loan_id != loan.id:
         raise HTTPException(404, "Loan goal not found")
+    if not goal.is_active:
+        raise HTTPException(422, "Active loan goal required")
     goal_type = await session.get(LookupItem, goal.goal_type_id)
     if (
         goal_type is None
@@ -1174,7 +1247,13 @@ async def target_calculation(
         + payload.as_of.month
         - loan.opening_balance_date.month,
     )
-    remaining_months = max(1, loan.term_months - elapsed_months)
+    effective_term = loan.term_months
+    for event, code in events:
+        if code == "LOAN_TERM_CHANGED" and event.effective_at.date() <= payload.as_of:
+            changed_term = event.payload.get("term_months")
+            if isinstance(changed_term, int) and not isinstance(changed_term, bool):
+                effective_term = changed_term
+    remaining_months = max(1, effective_term - elapsed_months)
     periods = max(1, (remaining_months * payments_per_year(loan.repayment_frequency) + 11) // 12)
     current_rate = (
         partial_schedule.entries[-1].annual_interest_rate

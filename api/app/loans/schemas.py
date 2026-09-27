@@ -404,6 +404,22 @@ class GoalRead(GoalCreate):
     household_id: uuid.UUID
 
 
+class GoalUpdate(BaseModel):
+    loan_id: uuid.UUID | None = None
+    display_name: str | None = Field(default=None, min_length=1, max_length=200)
+    target_amount: Decimal | None = Field(default=None, ge=0, max_digits=18, decimal_places=2)
+    priority: int | None = Field(default=None, ge=0)
+    is_active: bool | None = None
+    notes: str | None = Field(default=None, max_length=2000)
+
+    @model_validator(mode="after")
+    def supplied_operational_fields_are_not_null(self) -> GoalUpdate:
+        for field in {"loan_id", "display_name", "target_amount", "priority", "is_active"}:
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f"{field} cannot be null")
+        return self
+
+
 class TargetCalculationRequest(BaseModel):
     goal_id: uuid.UUID
     as_of: date

@@ -94,6 +94,7 @@ decorators, so route changes require an intentional matrix update.
 | POST | `/api/v1/loans/{loan_id}/refinance` | Refinancing | #46 |
 | GET | `/api/v1/households/{household_id}/goals` | Loan-goal list | #46 |
 | POST | `/api/v1/households/{household_id}/goals` | Household loan goal | #46 |
+| PATCH | `/api/v1/households/{household_id}/goals/{goal_id}` | Correct or deactivate household loan goal | #122 |
 | POST | `/api/v1/loans/{loan_id}/target-calculation` | Target calculation | #46 |
 | GET | `/api/v1/households/{household_id}/purchase-plans` | Purchase-plan list | #47 |
 | POST | `/api/v1/households/{household_id}/purchase-plans` | Plan and funding | #47 |

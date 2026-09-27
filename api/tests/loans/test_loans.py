@@ -1143,6 +1143,150 @@ async def test_configurable_weekly_repayment_target(
     assert [item["id"] for item in listed.json()] == [goal.json()["id"]]
 
 
+async def test_target_calculation_uses_effective_term_change_events(
+    client: AsyncClient, loan_setup: dict[str, str]
+) -> None:
+    loan = await create_loan(client, loan_setup)
+    goal = await client.post(
+        f"/api/v1/households/{loan_setup['household_id']}/goals",
+        json={
+            "loan_id": loan["id"],
+            "goal_type_id": loan_setup["goal_type_id"],
+            "display_name": "Term-aware target",
+            "target_amount": "700.00",
+            "priority": 0,
+        },
+    )
+    baseline = await client.post(
+        f"/api/v1/loans/{loan['id']}/target-calculation",
+        json={"goal_id": goal.json()["id"], "as_of": "2020-03-01"},
+    )
+    await add_loan_event(
+        client,
+        loan_setup,
+        str(loan["id"]),
+        "LOAN_TERM_CHANGED",
+        payload={"term_months": 120},
+        effective_at="2020-02-01T00:00:00+00:00",
+    )
+    shortened = await client.post(
+        f"/api/v1/loans/{loan['id']}/target-calculation",
+        json={"goal_id": goal.json()["id"], "as_of": "2020-03-01"},
+    )
+    await add_loan_event(
+        client,
+        loan_setup,
+        str(loan["id"]),
+        "LOAN_TERM_CHANGED",
+        payload={"term_months": 480},
+        effective_at="2020-02-15T00:00:00+00:00",
+    )
+    extended = await client.post(
+        f"/api/v1/loans/{loan['id']}/target-calculation",
+        json={"goal_id": goal.json()["id"], "as_of": "2020-03-01"},
+    )
+
+    assert baseline.status_code == shortened.status_code == extended.status_code == 200
+    assert Decimal(shortened.json()["required_repayment"]) > Decimal(
+        baseline.json()["required_repayment"]
+    )
+    assert Decimal(extended.json()["required_repayment"]) < Decimal(
+        baseline.json()["required_repayment"]
+    )
+
+
+async def test_targets_can_be_corrected_and_deactivated_with_audit(
+    client: AsyncClient, loan_setup: dict[str, str], caplog
+) -> None:
+    loan = await create_loan(client, loan_setup)
+    created = await client.post(
+        f"/api/v1/households/{loan_setup['household_id']}/goals",
+        json={
+            "loan_id": loan["id"],
+            "goal_type_id": loan_setup["goal_type_id"],
+            "display_name": "Original target",
+            "target_amount": "700.00",
+            "priority": 0,
+        },
+    )
+    with caplog.at_level("INFO"):
+        corrected = await client.patch(
+            f"/api/v1/households/{loan_setup['household_id']}/goals/{created.json()['id']}",
+            json={"display_name": "Corrected target", "target_amount": "650.00"},
+        )
+        deactivated = await client.patch(
+            f"/api/v1/households/{loan_setup['household_id']}/goals/{created.json()['id']}",
+            json={"is_active": False},
+        )
+    assert corrected.status_code == 200
+    assert corrected.json()["target_amount"] == "650.00"
+    invalid_null = await client.patch(
+        f"/api/v1/households/{loan_setup['household_id']}/goals/{created.json()['id']}",
+        json={"target_amount": None},
+    )
+    assert invalid_null.status_code == 422
+    assert deactivated.status_code == 200
+    assert deactivated.json()["is_active"] is False
+    calculation = await client.post(
+        f"/api/v1/loans/{loan['id']}/target-calculation",
+        json={"goal_id": created.json()["id"], "as_of": "2020-03-01"},
+    )
+    assert calculation.status_code == 422
+    assert "household_goal_updated" in caplog.text
+    assert str(created.json()["id"]) in caplog.text
+    assert "previous" in caplog.text
+    assert "resulting" in caplog.text
+
+
+async def test_closed_loan_target_is_rejected_and_viewer_cannot_update(
+    client: AsyncClient, session: AsyncSession, loan_setup: dict[str, str]
+) -> None:
+    active_loan = await create_loan(client, loan_setup)
+    goal = await client.post(
+        f"/api/v1/households/{loan_setup['household_id']}/goals",
+        json={
+            "loan_id": active_loan["id"],
+            "goal_type_id": loan_setup["goal_type_id"],
+            "display_name": "Protected target",
+            "target_amount": "700.00",
+            "priority": 0,
+        },
+    )
+    loan_record = await session.get(Loan, uuid.UUID(str(active_loan["id"])))
+    assert loan_record is not None
+    loan_record.is_active = False
+    await session.commit()
+    rejected = await client.post(
+        f"/api/v1/households/{loan_setup['household_id']}/goals",
+        json={
+            "loan_id": active_loan["id"],
+            "goal_type_id": loan_setup["goal_type_id"],
+            "display_name": "Closed-loan target",
+            "target_amount": "500.00",
+            "priority": 0,
+        },
+    )
+    assert rejected.status_code == 422
+    closed_calculation = await client.post(
+        f"/api/v1/loans/{active_loan['id']}/target-calculation",
+        json={"goal_id": goal.json()["id"], "as_of": "2020-03-01"},
+    )
+    assert closed_calculation.status_code == 422
+    membership = await session.scalar(
+        select(HouseholdMembership).where(
+            HouseholdMembership.household_id == uuid.UUID(loan_setup["household_id"])
+        )
+    )
+    assert membership is not None
+    membership.role = HouseholdRole.VIEWER
+    await session.commit()
+    blocked = await client.patch(
+        f"/api/v1/households/{loan_setup['household_id']}/goals/{goal.json()['id']}",
+        json={"is_active": False},
+    )
+    assert blocked.status_code == 403
+
+
 async def test_cross_household_property_is_rejected_and_viewer_cannot_write(
     client: AsyncClient, session: AsyncSession, loan_setup: dict[str, str]
 ) -> None:
