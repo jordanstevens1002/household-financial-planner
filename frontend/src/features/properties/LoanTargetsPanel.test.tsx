@@ -1,6 +1,6 @@
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -18,6 +18,7 @@ const loanId = '997d68f7-bf03-4f70-97bb-80cfe8619d09';
 const goalTypeId = '951bd6cd-82db-4a37-a56f-95c36b02f9d1';
 const comfortableGoalId = '4b640e69-b982-4612-a4de-96f9bfca0191';
 const tightGoalId = '55c01216-44d6-4199-a45f-10a6a4617184';
+const otherGoalTypeId = '78289322-2a10-4936-9696-660dd8d66ce7';
 
 const loan: components['schemas']['LoanRead'] = {
   account_reference_masked: null,
@@ -76,6 +77,38 @@ const goals: components['schemas']['GoalRead'][] = [
     target_date: null,
     target_percentage: null,
   },
+  {
+    display_name: 'Inactive weekly target',
+    goal_type_id: goalTypeId,
+    household_id: householdId,
+    id: 'abcb71af-994f-424f-b0bd-9bb099654b21',
+    is_active: false,
+    loan_id: loanId,
+    notes: null,
+    person_id: null,
+    priority: 3,
+    property_id: null,
+    target_amount: '300.00',
+    target_boolean: null,
+    target_date: null,
+    target_percentage: null,
+  },
+  {
+    display_name: 'Different loan goal',
+    goal_type_id: otherGoalTypeId,
+    household_id: householdId,
+    id: '29181711-f3d7-4686-b474-f171820866b9',
+    is_active: true,
+    loan_id: loanId,
+    notes: null,
+    person_id: null,
+    priority: 4,
+    property_id: null,
+    target_amount: '1000.00',
+    target_boolean: null,
+    target_date: null,
+    target_percentage: null,
+  },
 ];
 
 function response(body: unknown, status = 200) {
@@ -127,6 +160,12 @@ function catalogueResponse(input: RequestInfo | URL) {
           id: goalTypeId,
           is_active: true,
         },
+        {
+          code: 'TARGET_BALANCE',
+          display_name: 'Target balance',
+          id: otherGoalTypeId,
+          is_active: true,
+        },
       ]),
     );
   throw new Error(`Unexpected request: ${path}`);
@@ -170,6 +209,8 @@ describe('loan targets and repayment comfort', () => {
     expect(
       await screen.findByRole('table', { name: 'Household loan targets' }),
     ).toHaveTextContent('NZ$700.00');
+    expect(screen.queryByText('Inactive weekly target')).toBeNull();
+    expect(screen.queryByText('Different loan goal')).toBeNull();
 
     await user.click(screen.getByLabelText('Saved target'));
     await user.click(
@@ -187,6 +228,78 @@ describe('loan targets and repayment comfort', () => {
     expect(await screen.findByText('Above your target')).toBeVisible();
     expect(calculations).toHaveLength(2);
     expect(calculations[1]).toMatchObject({ goal_id: tightGoalId });
+  });
+
+  it('corrects and deactivates targets while excluding closed loans', async () => {
+    const requests: Array<{ method: string; body: Record<string, unknown> }> =
+      [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        const path = pathOf(input);
+        if (path.includes(`/goals/${comfortableGoalId}`)) {
+          const body = JSON.parse(init?.body as string) as Record<
+            string,
+            unknown
+          >;
+          requests.push({ method: init?.method ?? 'GET', body });
+          return Promise.resolve(response({ ...goals[0], ...body }));
+        }
+        return catalogueResponse(input);
+      }),
+    );
+    const closedLoan = {
+      ...loan,
+      display_name: 'Closed loan',
+      id: '32279e11-8950-4337-bea0-e33942716f02',
+      is_active: false,
+    };
+    const user = userEvent.setup();
+    render(
+      <ThemeProvider theme={appTheme}>
+        <QueryClientProvider client={new QueryClient()}>
+          <NotificationProvider>
+            <LoanTargetsPanel
+              canEdit
+              householdId={householdId}
+              loans={[loan, closedLoan]}
+            />
+          </NotificationProvider>
+        </QueryClientProvider>
+      </ThemeProvider>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Loan targets' }));
+    const correctButtons = await screen.findAllByRole('button', {
+      name: 'Correct',
+    });
+    await user.click(correctButtons[0]!);
+    const correction = screen.getByRole('dialog', {
+      name: 'Correct loan target',
+    });
+    await user.click(within(correction).getByLabelText('Loan'));
+    expect(screen.queryByRole('option', { name: 'Closed loan' })).toBeNull();
+    await user.keyboard('{Escape}');
+    const name = within(correction).getByLabelText('Target name');
+    await user.clear(name);
+    await user.type(name, 'Updated comfort');
+    await user.click(
+      within(correction).getByRole('button', { name: 'Save correction' }),
+    );
+    expect(await screen.findByText('Loan target updated')).toBeVisible();
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: /loan target$/ })).toBeNull(),
+    );
+    await user.click(screen.getAllByRole('button', { name: 'Deactivate' })[0]!);
+    await user.click(screen.getByRole('button', { name: 'Deactivate target' }));
+    expect(await screen.findByText('Loan target deactivated')).toBeVisible();
+    expect(requests).toHaveLength(2);
+    expect(requests[0]?.method).toBe('PATCH');
+    expect(requests[0]?.body.display_name).toBe('Updated comfort');
+    expect(requests[1]).toEqual({
+      method: 'PATCH',
+      body: { is_active: false },
+    });
   });
 
   it('creates a validated loan-specific target and refreshes the list', async () => {

@@ -49,6 +49,8 @@ export function LoanTargetsPanel({
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [deactivatingGoal, setDeactivatingGoal] = useState<Goal | null>(null);
   const [loanId, setLoanId] = useState(loans[0]?.id ?? '');
   const [displayName, setDisplayName] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
@@ -73,13 +75,17 @@ export function LoanTargetsPanel({
   const weeklyGoalType = goalTypes.data?.find(
     (item) => item.code === 'MAXIMUM_WEEKLY_REPAYMENT',
   );
+  const activeLoans = loans.filter((loan) => loan.is_active);
   const loanGoals = useMemo(
     () =>
       (goals.data ?? []).filter(
         (goal) =>
-          goal.loan_id && loans.some((loan) => loan.id === goal.loan_id),
+          goal.is_active &&
+          goal.goal_type_id === weeklyGoalType?.id &&
+          goal.loan_id &&
+          loans.some((loan) => loan.id === goal.loan_id && loan.is_active),
       ),
-    [goals.data, loans],
+    [goals.data, loans, weeklyGoalType?.id],
   );
   const selectedGoal = loanGoals.find((goal) => goal.id === goalId);
   const selectedLoan = loans.find((loan) => loan.id === selectedGoal?.loan_id);
@@ -90,29 +96,55 @@ export function LoanTargetsPanel({
     mutationFn: () => {
       if (!weeklyGoalType)
         throw new Error('Weekly repayment goal type is unavailable');
-      return apiRequest<Goal>(`/api/v1/households/${householdId}/goals`, {
+      const path: `/api/${string}` = editingGoal
+        ? `/api/v1/households/${householdId}/goals/${editingGoal.id}`
+        : `/api/v1/households/${householdId}/goals`;
+      return apiRequest<Goal>(path, {
         body: JSON.stringify({
           display_name: displayName.trim(),
-          goal_type_id: weeklyGoalType.id,
-          is_active: true,
+          ...(editingGoal
+            ? {}
+            : { goal_type_id: weeklyGoalType.id, is_active: true }),
           loan_id: loanId,
           notes: notes.trim() || null,
           priority: 0,
           target_amount: targetAmount.trim(),
         }),
         csrfToken: auth.csrfToken(),
-        method: 'POST',
+        method: editingGoal ? 'PATCH' : 'POST',
       });
     },
     onError: (error) => notify(errorMessage(error), 'error'),
     onSuccess: async (goal) => {
       setCreateOpen(false);
+      setEditingGoal(null);
       setDisplayName('');
       setTargetAmount('');
       setNotes('');
       setGoalId(goal.id);
       setResult(null);
-      notify('Loan target added', 'success');
+      notify(
+        editingGoal ? 'Loan target updated' : 'Loan target added',
+        'success',
+      );
+      await queryClient.invalidateQueries({
+        queryKey: ['household-goals', householdId],
+      });
+    },
+  });
+  const deactivateGoal = useMutation({
+    mutationFn: (goal: Goal) =>
+      apiRequest<Goal>(`/api/v1/households/${householdId}/goals/${goal.id}`, {
+        body: JSON.stringify({ is_active: false }),
+        csrfToken: auth.csrfToken(),
+        method: 'PATCH',
+      }),
+    onError: (error) => notify(errorMessage(error), 'error'),
+    onSuccess: async () => {
+      setDeactivatingGoal(null);
+      setGoalId('');
+      setResult(null);
+      notify('Loan target deactivated', 'success');
       await queryClient.invalidateQueries({
         queryKey: ['household-goals', householdId],
       });
@@ -159,6 +191,34 @@ export function LoanTargetsPanel({
       label: 'Status',
       render: (goal) => (goal.is_active ? 'Active' : 'Inactive'),
     },
+    ...(canEdit
+      ? [
+          {
+            key: 'actions',
+            label: 'Actions',
+            render: (goal: Goal) => (
+              <Stack direction="row" spacing={1}>
+                <Button
+                  onClick={() => {
+                    setEditingGoal(goal);
+                    setLoanId(goal.loan_id ?? '');
+                    setDisplayName(goal.display_name);
+                    setTargetAmount(goal.target_amount ?? '');
+                    setNotes(goal.notes ?? '');
+                    setCreateOpen(true);
+                  }}
+                  size="small"
+                >
+                  Correct
+                </Button>
+                <Button onClick={() => setDeactivatingGoal(goal)} size="small">
+                  Deactivate
+                </Button>
+              </Stack>
+            ),
+          },
+        ]
+      : []),
   ];
 
   const closePanel = () => {
@@ -210,8 +270,15 @@ export function LoanTargetsPanel({
                   <Typography variant="h3">Saved targets</Typography>
                   {canEdit ? (
                     <Button
-                      disabled={!weeklyGoalType}
-                      onClick={() => setCreateOpen(true)}
+                      disabled={!weeklyGoalType || !activeLoans.length}
+                      onClick={() => {
+                        setEditingGoal(null);
+                        setLoanId(activeLoans[0]?.id ?? '');
+                        setDisplayName('');
+                        setTargetAmount('');
+                        setNotes('');
+                        setCreateOpen(true);
+                      }}
                     >
                       Add target
                     </Button>
@@ -345,7 +412,9 @@ export function LoanTargetsPanel({
         }}
         open={createOpen}
       >
-        <DialogTitle>Add a loan target</DialogTitle>
+        <DialogTitle>
+          {editingGoal ? 'Correct loan target' : 'Add a loan target'}
+        </DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             <TextField
@@ -359,7 +428,7 @@ export function LoanTargetsPanel({
               select
               value={loanId}
             >
-              {loans.map((loan) => (
+              {activeLoans.map((loan) => (
                 <MenuItem key={loan.id} value={loan.id}>
                   {loan.display_name}
                 </MenuItem>
@@ -407,7 +476,34 @@ export function LoanTargetsPanel({
             onClick={() => createGoal.mutate()}
             variant="contained"
           >
-            Save target
+            {editingGoal ? 'Save correction' : 'Save target'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        onClose={() => {
+          if (!deactivateGoal.isPending) setDeactivatingGoal(null);
+        }}
+        open={Boolean(deactivatingGoal)}
+      >
+        <DialogTitle>Deactivate this loan target?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            {deactivatingGoal?.display_name} will be removed from active
+            planning without deleting its stored record.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeactivatingGoal(null)}>Cancel</Button>
+          <Button
+            color="error"
+            disabled={deactivateGoal.isPending}
+            onClick={() => {
+              if (deactivatingGoal) deactivateGoal.mutate(deactivatingGoal);
+            }}
+          >
+            Deactivate target
           </Button>
         </DialogActions>
       </Dialog>
