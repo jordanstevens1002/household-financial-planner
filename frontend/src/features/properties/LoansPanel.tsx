@@ -30,6 +30,7 @@ import { useAuth } from '../auth/AuthContext';
 import { localCalendarDate } from '../people/localDate';
 import { RepaymentOverridesPanel } from './RepaymentOverridesPanel';
 import { LoanEventsPanel } from './LoanEventsPanel';
+import { LoanRefinancePanel } from './LoanRefinancePanel';
 import { LoanSchedulePanel } from './LoanSchedulePanel';
 import { LoanTargetsPanel } from './LoanTargetsPanel';
 
@@ -759,6 +760,12 @@ export function LoansPanel({
             canEdit={canEdit}
             householdId={householdId}
             loans={propertyLoans}
+          />
+          <LoanRefinancePanel
+            canEdit={canEdit}
+            householdId={householdId}
+            loans={propertyLoans}
+            propertyId={propertyId}
           />
         </Stack>
       ) : null}
