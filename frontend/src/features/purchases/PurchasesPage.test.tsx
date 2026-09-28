@@ -209,12 +209,55 @@ describe('purchase plan records', () => {
       const body = call?.[1]?.body;
       if (typeof body !== 'string') throw new Error('Expected JSON body');
       expect(JSON.parse(body)).toMatchObject({
+        costs: [],
         currency: 'NZD',
         display_name: 'First investment',
+        funding_sources: [],
+        ownership: [],
         provider_code: 'AU',
         target_price_max: '650000',
         target_price_min: '500000',
       });
     });
+  });
+
+  it('rejects unsafe monetary formats before sending them', async () => {
+    const user = userEvent.setup();
+    const fetchMock = standardFetch();
+    vi.stubGlobal('fetch', fetchMock);
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'Add purchase plan' }),
+    );
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Add purchase plan',
+    });
+    await user.type(
+      within(dialog).getByRole('textbox', { name: /Plan name/ }),
+      'Unsafe plan',
+    );
+    await user.click(
+      within(dialog).getByRole('combobox', { name: /Purchase type/ }),
+    );
+    await user.click(screen.getByRole('option', { name: 'Established home' }));
+    await user.type(
+      within(dialog).getByLabelText('Minimum price (NZD)'),
+      '1e5',
+    );
+    await user.type(
+      within(dialog).getByLabelText('Maximum price (NZD)'),
+      '100.001',
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Save plan' }));
+
+    expect(
+      await within(dialog).findByText(/no more than two decimal places/i),
+    ).toBeVisible();
+    expect(
+      fetchMock.mock.calls.some(
+        ([input, init]) =>
+          pathOf(input).endsWith('/purchase-plans') && init?.method === 'POST',
+      ),
+    ).toBe(false);
   });
 });

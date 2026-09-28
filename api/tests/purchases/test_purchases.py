@@ -194,6 +194,70 @@ async def test_purchase_plan_rejects_invalid_provider_ownership_and_hidden_acces
     assert hidden.status_code == 404
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("target_price_min", "1e100"),
+        ("target_price_max", "100.001"),
+        ("desired_buffer", "-1"),
+        ("minimum_monthly_surplus", "12345678901234567.89"),
+    ],
+)
+async def test_purchase_plan_rejects_unsafe_money_values(
+    client: AsyncClient,
+    purchase_type: LookupItem,
+    field: str,
+    value: str,
+) -> None:
+    household = await create_household(client)
+    payload = {
+        "display_name": "Validated plan",
+        "purchase_type_id": str(purchase_type.id),
+        "intended_use": "PERSONAL",
+        "target_price_min": "100.00",
+        "target_price_max": "200.00",
+        "target_date": "2027-01-01",
+        field: value,
+    }
+    response = await client.post(
+        f"/api/v1/households/{household['id']}/purchase-plans", json=payload
+    )
+    assert response.status_code == 422
+
+
+async def test_purchase_plan_requires_consistent_identified_owners(
+    client: AsyncClient, purchase_type: LookupItem
+) -> None:
+    household = await create_household(client)
+    base = {
+        "display_name": "Ownership validation",
+        "purchase_type_id": str(purchase_type.id),
+        "intended_use": "PERSONAL",
+        "target_price_min": "100.00",
+        "target_price_max": "200.00",
+        "target_date": "2027-01-01",
+    }
+    anonymous = await client.post(
+        f"/api/v1/households/{household['id']}/purchase-plans",
+        json=base | {"ownership": [{"owner_type": "EXTERNAL_PARTY", "ownership_percentage": 100}]},
+    )
+    inconsistent = await client.post(
+        f"/api/v1/households/{household['id']}/purchase-plans",
+        json=base
+        | {
+            "ownership": [
+                {
+                    "owner_type": "HOUSEHOLD",
+                    "external_owner_name": "Not applicable",
+                    "ownership_percentage": 100,
+                }
+            ]
+        },
+    )
+    assert anonymous.status_code == 422
+    assert inconsistent.status_code == 422
+
+
 async def test_purchase_calculation_requires_material_assumptions(
     client: AsyncClient, purchase_type: LookupItem
 ) -> None:
