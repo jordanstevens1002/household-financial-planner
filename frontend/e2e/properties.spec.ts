@@ -22,6 +22,8 @@ test('selects and restores a dated property position', async ({ page }) => {
   let repaymentCorrection: Record<string, unknown> | null = null;
   let repaymentClosure: Record<string, unknown> | null = null;
   let loanEventPayload: Record<string, unknown> | null = null;
+  let refinancePayload: Record<string, unknown> | null = null;
+  let replacementLoan: Record<string, unknown> | null = null;
   let loanGroups: Record<string, unknown>[] = [];
   let wizardPayload: Record<string, unknown> | null = null;
   await page.addInitScript((id) => {
@@ -307,9 +309,11 @@ test('selects and restores a dated property position', async ({ page }) => {
                   {
                     ...loanPayload,
                     id: '7a959699-d6a5-4b32-a15f-cbe2a460ce55',
+                    is_active: refinancePayload ? false : true,
                   },
                 ]
               : []),
+            ...(replacementLoan ? [replacementLoan] : []),
             ...(setupLoan
               ? [
                   {
@@ -324,6 +328,35 @@ test('selects and restores a dated property position', async ({ page }) => {
           ],
         });
       }
+      return;
+    }
+    if (
+      path.endsWith('/loans/7a959699-d6a5-4b32-a15f-cbe2a460ce55/refinance') &&
+      request.method() === 'POST'
+    ) {
+      refinancePayload = request.postDataJSON() as Record<string, unknown>;
+      replacementLoan = {
+        ...(refinancePayload.replacement_loan as Record<string, unknown>),
+        household_id: householdId,
+        id: 'ab6dc973-7aad-4dda-86a5-41e850615a10',
+      };
+      await route.fulfill({
+        contentType: 'application/json',
+        json: {
+          closed_loan_id: '7a959699-d6a5-4b32-a15f-cbe2a460ce55',
+          refinance_event: {
+            classification: 'OBSERVED',
+            data_quality_flags: [],
+            effective_at: refinancePayload.effective_at,
+            event_type_code: 'LOAN_REFINANCED',
+            id: '92ece39a-343b-4b14-beaa-5f80755992b7',
+            is_enabled: true,
+            loan_id: '7a959699-d6a5-4b32-a15f-cbe2a460ce55',
+          },
+          replacement_loan: replacementLoan,
+        },
+        status: 201,
+      });
       return;
     }
     if (path.endsWith(`/households/${householdId}/goals`)) {
@@ -849,6 +882,43 @@ test('selects and restores a dated property position', async ({ page }) => {
   await expect(
     page.getByRole('table', { name: 'Property loans' }),
   ).toContainText('Ungrouped');
+  await page.getByRole('button', { name: 'Record refinance' }).click();
+  const refinanceDialog = page.getByRole('dialog', {
+    name: 'Record a completed refinance',
+  });
+  await refinanceDialog.getByLabel('Refinance date').fill('2026-09-27');
+  await refinanceDialog
+    .getByLabel('Replacement loan name')
+    .fill('Refinanced mortgage');
+  await refinanceDialog
+    .getByLabel('Payout or opening balance (NZD)')
+    .fill('295000');
+  await refinanceDialog.getByLabel('Annual interest rate %').fill('4.9');
+  await refinanceDialog
+    .getByRole('button', { name: 'Review refinance' })
+    .click();
+  await page
+    .getByRole('dialog', { name: 'Confirm completed refinance' })
+    .getByRole('button', { name: 'Record refinance' })
+    .click();
+  await expect(page.getByText('Refinance recorded')).toBeVisible();
+  await expect
+    .poll(() => refinancePayload)
+    .toMatchObject({
+      effective_at: '2026-09-27T00:00:00Z',
+      replacement_loan: {
+        borrower_person_ids: [firstPersonId, secondPersonId],
+        display_name: 'Refinanced mortgage',
+        is_active: true,
+        loan_group_id: null,
+        opening_balance: '295000',
+        property_id: propertyId,
+      },
+    });
+  await expect(
+    refinanceDialog.getByText(/prior loan is closed/i),
+  ).toBeVisible();
+  await refinanceDialog.getByRole('button', { name: 'Close' }).click();
 
   await page.reload();
   await expect(page.getByRole('button', { name: 'Selected' })).toBeVisible();

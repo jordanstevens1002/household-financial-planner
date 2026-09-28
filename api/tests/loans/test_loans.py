@@ -1089,7 +1089,7 @@ async def test_repayment_frequencies(
 
 
 async def test_refinancing_is_atomic_and_closes_old_schedule(
-    client: AsyncClient, loan_setup: dict[str, str]
+    client: AsyncClient, loan_setup: dict[str, str], caplog
 ) -> None:
     old = await create_loan(client, loan_setup)
     replacement = loan_payload(loan_setup, display_name="Replacement loan") | {
@@ -1097,14 +1097,15 @@ async def test_refinancing_is_atomic_and_closes_old_schedule(
         "opening_balance_date": "2022-01-01",
         "initial_interest_rate": "4.5000",
     }
-    response = await client.post(
-        f"/api/v1/loans/{old['id']}/refinance",
-        json={
-            "effective_at": "2022-01-01T00:00:00+00:00",
-            "replacement_loan": replacement,
-            "idempotency_key": "refinance-2022",
-        },
-    )
+    with caplog.at_level("INFO"):
+        response = await client.post(
+            f"/api/v1/loans/{old['id']}/refinance",
+            json={
+                "effective_at": "2022-01-01T00:00:00+00:00",
+                "replacement_loan": replacement,
+                "idempotency_key": "refinance-2022",
+            },
+        )
     assert response.status_code == 201, response.text
     body = response.json()
     assert body["closed_loan_id"] == old["id"]
@@ -1114,6 +1115,70 @@ async def test_refinancing_is_atomic_and_closes_old_schedule(
     assert schedule.json()["payoff_date"] == "2022-01-01"
     old_read = await client.get(f"/api/v1/loans/{old['id']}")
     assert old_read.json()["is_active"] is False
+    assert "loan_refinanced" in caplog.text
+    assert loan_setup["household_id"] in caplog.text
+    assert old["id"] in caplog.text
+
+    repeated = await client.post(
+        f"/api/v1/loans/{old['id']}/refinance",
+        json={
+            "effective_at": "2022-02-01T00:00:00+00:00",
+            "replacement_loan": replacement | {"opening_balance_date": "2022-02-01"},
+        },
+    )
+    assert repeated.status_code == 409
+
+
+async def test_refinancing_requires_active_replacement_and_preserves_associations(
+    client: AsyncClient, loan_setup: dict[str, str]
+) -> None:
+    group = await client.post(
+        f"/api/v1/households/{loan_setup['household_id']}/loan-groups",
+        json={"display_name": "Original split", "property_id": loan_setup["property_id"]},
+    )
+    other_group = await client.post(
+        f"/api/v1/households/{loan_setup['household_id']}/loan-groups",
+        json={"display_name": "Other split", "property_id": loan_setup["property_id"]},
+    )
+    old = await create_loan(client, loan_setup, loan_group_id=group.json()["id"])
+    replacement = loan_payload(loan_setup, display_name="Replacement") | {
+        "loan_group_id": group.json()["id"],
+        "opening_balance_date": "2022-01-01",
+    }
+
+    inactive = await client.post(
+        f"/api/v1/loans/{old['id']}/refinance",
+        json={
+            "effective_at": "2022-01-01T00:00:00+00:00",
+            "replacement_loan": replacement | {"is_active": False},
+        },
+    )
+    assert inactive.status_code == 422
+    moved = await client.post(
+        f"/api/v1/loans/{old['id']}/refinance",
+        json={
+            "effective_at": "2022-01-01T00:00:00+00:00",
+            "replacement_loan": replacement | {"loan_group_id": other_group.json()["id"]},
+        },
+    )
+    assert moved.status_code == 422
+    future_date = date.today() + timedelta(days=1)
+    future = await client.post(
+        f"/api/v1/loans/{old['id']}/refinance",
+        json={
+            "effective_at": datetime.combine(future_date, datetime.min.time(), UTC).isoformat(),
+            "replacement_loan": replacement | {"opening_balance_date": future_date.isoformat()},
+        },
+    )
+    assert future.status_code == 422
+    predates_source = await client.post(
+        f"/api/v1/loans/{old['id']}/refinance",
+        json={
+            "effective_at": "2019-12-31T00:00:00+00:00",
+            "replacement_loan": replacement | {"opening_balance_date": "2019-12-31"},
+        },
+    )
+    assert predates_source.status_code == 422
 
 
 async def test_configurable_weekly_repayment_target(

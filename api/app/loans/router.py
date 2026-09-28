@@ -1055,11 +1055,25 @@ async def refinance_loan(
     user: ApplicationUser = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ) -> RefinanceRead:
-    old_loan = await _loan_with_access(loan_id, HouseholdRole.EDITOR, user, session)
+    accessible_loan = await _loan_with_access(loan_id, HouseholdRole.EDITOR, user, session)
+    old_loan = await session.scalar(
+        select(Loan).where(Loan.id == accessible_loan.id).with_for_update()
+    )
+    assert old_loan is not None
+    if not old_loan.is_active:
+        raise HTTPException(409, "Only an active loan can be refinanced")
+    if not payload.replacement_loan.is_active:
+        raise HTTPException(422, "A replacement loan must be active")
+    if payload.effective_at.date() < old_loan.opening_balance_date:
+        raise HTTPException(422, "Refinance date cannot predate the refinanced loan")
+    if payload.effective_at.date() > date.today():
+        raise HTTPException(422, "A completed refinance cannot be future-dated")
     if payload.replacement_loan.opening_balance_date != payload.effective_at.date():
         raise HTTPException(422, "Replacement opening date must equal refinance effective date")
     if payload.replacement_loan.property_id != old_loan.property_id:
         raise HTTPException(422, "Replacement loan must retain the refinanced property")
+    if payload.replacement_loan.loan_group_id != old_loan.loan_group_id:
+        raise HTTPException(422, "Replacement loan must retain the refinanced split group")
     event_type = await session.scalar(
         select(EventType).where(EventType.code == "LOAN_REFINANCED", EventType.is_active.is_(True))
     )
@@ -1094,7 +1108,14 @@ async def refinance_loan(
     await session.refresh(replacement)
     await session.refresh(event)
     logger.info(
-        "loan_refinanced", loan_id=str(old_loan.id), replacement_loan_id=str(replacement.id)
+        "loan_refinanced",
+        actor_user_id=str(user.id),
+        household_id=str(old_loan.household_id),
+        loan_id=str(old_loan.id),
+        replacement_loan_id=str(replacement.id),
+        effective_date=payload.effective_at.date().isoformat(),
+        property_id=str(old_loan.property_id) if old_loan.property_id else None,
+        loan_group_id=str(old_loan.loan_group_id) if old_loan.loan_group_id else None,
     )
     return RefinanceRead(
         closed_loan_id=old_loan.id,
