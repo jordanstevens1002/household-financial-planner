@@ -3,10 +3,14 @@
 import uuid
 from datetime import date
 from decimal import Decimal
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.models import OwnerType
+
+Money = Annotated[Decimal, Field(max_digits=18, decimal_places=2)]
+NonNegativeMoney = Annotated[Decimal, Field(ge=0, max_digits=18, decimal_places=2)]
 
 
 class PurchaseProviderRead(BaseModel):
@@ -17,7 +21,7 @@ class PurchaseProviderRead(BaseModel):
 class FundingSourceCreate(BaseModel):
     display_name: str = Field(min_length=1, max_length=200)
     source_type: str = Field(min_length=1, max_length=80)
-    amount: Decimal = Field(ge=0)
+    amount: NonNegativeMoney
     available_date: date
     is_borrowed: bool = False
     notes: str | None = Field(default=None, max_length=2000)
@@ -26,7 +30,7 @@ class FundingSourceCreate(BaseModel):
 class CostCreate(BaseModel):
     code: str = Field(min_length=1, max_length=80)
     display_name: str = Field(min_length=1, max_length=200)
-    amount: Decimal = Field(ge=0)
+    amount: NonNegativeMoney
     is_estimate: bool = True
 
 
@@ -36,19 +40,36 @@ class OwnershipCreate(BaseModel):
     external_owner_name: str | None = Field(default=None, max_length=200)
     ownership_percentage: Decimal = Field(gt=0, le=100)
 
+    @model_validator(mode="after")
+    def validate_owner(self) -> OwnershipCreate:
+        if self.owner_type == OwnerType.PERSON:
+            if self.person_id is None:
+                raise ValueError("PERSON ownership requires person_id")
+            if self.external_owner_name is not None:
+                raise ValueError("PERSON ownership cannot have an external owner name")
+        elif self.person_id is not None:
+            raise ValueError("Only PERSON ownership can reference person_id")
+        if self.owner_type == OwnerType.EXTERNAL_PARTY:
+            if not self.external_owner_name or not self.external_owner_name.strip():
+                raise ValueError("EXTERNAL_PARTY ownership requires external_owner_name")
+            self.external_owner_name = self.external_owner_name.strip()
+        elif self.external_owner_name is not None:
+            raise ValueError("External owner name requires EXTERNAL_PARTY ownership")
+        return self
+
 
 class PurchasePlanCreate(BaseModel):
     display_name: str = Field(min_length=1, max_length=200)
     purchase_type_id: uuid.UUID
     target_location: dict[str, object] = Field(default_factory=dict)
     intended_use: str = Field(min_length=1, max_length=100)
-    target_price_min: Decimal = Field(ge=0)
-    target_price_max: Decimal = Field(ge=0)
+    target_price_min: NonNegativeMoney
+    target_price_max: NonNegativeMoney
     target_date: date
     currency: str | None = Field(default=None, pattern=r"^[A-Z]{3}$")
-    desired_buffer: Decimal = Field(default=Decimal("0"), ge=0)
+    desired_buffer: NonNegativeMoney = Decimal("0")
     max_lvr: Decimal | None = Field(default=None, ge=0, le=100)
-    minimum_monthly_surplus: Decimal | None = None
+    minimum_monthly_surplus: Money | None = None
     provider_code: str | None = Field(default=None, min_length=1, max_length=80)
     provider_settings: dict[str, object] = Field(default_factory=dict)
     funding_sources: list[FundingSourceCreate] = Field(default_factory=list)
@@ -90,11 +111,11 @@ class PurchasePlanRead(BaseModel):
 
 
 class FeasibilityRequest(BaseModel):
-    purchase_price: Decimal = Field(gt=0)
-    maximum_additional_borrowing: Decimal = Field(ge=0)
+    purchase_price: Money = Field(gt=0)
+    maximum_additional_borrowing: NonNegativeMoney
     annual_interest_rate: Decimal = Field(ge=0, le=100)
     loan_term_years: int = Field(gt=0, le=100)
-    current_monthly_surplus: Decimal
+    current_monthly_surplus: Money
 
 
 class CalculatedCost(BaseModel):
