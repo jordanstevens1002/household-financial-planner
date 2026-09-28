@@ -1060,6 +1060,36 @@ async def refinance_loan(
         select(Loan).where(Loan.id == accessible_loan.id).with_for_update()
     )
     assert old_loan is not None
+    event_type = await session.scalar(
+        select(EventType).where(EventType.code == "LOAN_REFINANCED", EventType.is_active.is_(True))
+    )
+    if event_type is None:
+        raise HTTPException(422, "Active LOAN_REFINANCED event type required")
+    if payload.idempotency_key is not None:
+        duplicate = await session.scalar(
+            select(FinancialEvent).where(
+                FinancialEvent.household_id == old_loan.household_id,
+                FinancialEvent.idempotency_key == payload.idempotency_key,
+            )
+        )
+        if duplicate is not None:
+            if duplicate.loan_id != old_loan.id or duplicate.event_type_id != event_type.id:
+                raise HTTPException(409, "Idempotency key belongs to another financial event")
+            replacement_id = duplicate.payload.get("replacement_loan_id")
+            try:
+                replacement_uuid = uuid.UUID(str(replacement_id))
+            except TypeError, ValueError, AttributeError:
+                replacement_uuid = None
+            replacement = (
+                await session.get(Loan, replacement_uuid) if replacement_uuid is not None else None
+            )
+            if replacement is None:
+                raise HTTPException(409, "The original refinance result is unavailable")
+            return RefinanceRead(
+                closed_loan_id=old_loan.id,
+                replacement_loan=LoanRead.model_validate(replacement),
+                refinance_event=_event_read(duplicate, event_type),
+            )
     if not old_loan.is_active:
         raise HTTPException(409, "Only an active loan can be refinanced")
     if not payload.replacement_loan.is_active:
@@ -1074,21 +1104,36 @@ async def refinance_loan(
         raise HTTPException(422, "Replacement loan must retain the refinanced property")
     if payload.replacement_loan.loan_group_id != old_loan.loan_group_id:
         raise HTTPException(422, "Replacement loan must retain the refinanced split group")
-    event_type = await session.scalar(
-        select(EventType).where(EventType.code == "LOAN_REFINANCED", EventType.is_active.is_(True))
+    if payload.replacement_loan.currency not in (None, old_loan.currency):
+        raise HTTPException(422, "Replacement loan must retain the refinanced currency")
+    replacement_payload = payload.replacement_loan.model_copy(
+        update={"currency": old_loan.currency}
     )
-    if event_type is None:
-        raise HTTPException(422, "Active LOAN_REFINANCED event type required")
-    if payload.idempotency_key is not None:
-        duplicate = await session.scalar(
-            select(FinancialEvent.id).where(
-                FinancialEvent.household_id == old_loan.household_id,
-                FinancialEvent.idempotency_key == payload.idempotency_key,
+    existing_borrower_ids = canonical_borrower_ids(
+        list(
+            await session.scalars(
+                select(LoanBorrower.person_id).where(LoanBorrower.loan_id == old_loan.id)
             )
         )
-        if duplicate is not None:
-            raise HTTPException(409, "Duplicate event idempotency key")
-    replacement = await create_loan_record(old_loan.household_id, payload.replacement_loan, session)
+    )
+    if canonical_borrower_ids(replacement_payload.borrower_person_ids) != existing_borrower_ids:
+        raise HTTPException(422, "Replacement loan must retain the refinanced borrowers")
+    later_observed_event = await session.scalar(
+        select(FinancialEvent.id)
+        .where(
+            FinancialEvent.loan_id == old_loan.id,
+            FinancialEvent.classification == EventClassification.OBSERVED,
+            FinancialEvent.is_enabled.is_(True),
+            FinancialEvent.effective_at > payload.effective_at,
+        )
+        .limit(1)
+    )
+    if later_observed_event is not None:
+        raise HTTPException(
+            409,
+            "Refinance date conflicts with a later observed event on the refinanced loan",
+        )
+    replacement = await create_loan_record(old_loan.household_id, replacement_payload, session)
     event = FinancialEvent(
         household_id=old_loan.household_id,
         loan_id=old_loan.id,

@@ -1119,6 +1119,18 @@ async def test_refinancing_is_atomic_and_closes_old_schedule(
     assert loan_setup["household_id"] in caplog.text
     assert old["id"] in caplog.text
 
+    replay = await client.post(
+        f"/api/v1/loans/{old['id']}/refinance",
+        json={
+            "effective_at": "2022-01-01T00:00:00+00:00",
+            "replacement_loan": replacement,
+            "idempotency_key": "refinance-2022",
+        },
+    )
+    assert replay.status_code == 201
+    assert replay.json()["replacement_loan"]["id"] == body["replacement_loan"]["id"]
+    assert replay.json()["refinance_event"]["id"] == body["refinance_event"]["id"]
+
     repeated = await client.post(
         f"/api/v1/loans/{old['id']}/refinance",
         json={
@@ -1140,8 +1152,18 @@ async def test_refinancing_requires_active_replacement_and_preserves_association
         f"/api/v1/households/{loan_setup['household_id']}/loan-groups",
         json={"display_name": "Other split", "property_id": loan_setup["property_id"]},
     )
-    old = await create_loan(client, loan_setup, loan_group_id=group.json()["id"])
+    borrower = await client.post(
+        f"/api/v1/households/{loan_setup['household_id']}/people",
+        json={"display_name": "Original borrower", "effective_from": "2020-01-01"},
+    )
+    old = await create_loan(
+        client,
+        loan_setup,
+        loan_group_id=group.json()["id"],
+        borrower_person_ids=[borrower.json()["id"]],
+    )
     replacement = loan_payload(loan_setup, display_name="Replacement") | {
+        "borrower_person_ids": [borrower.json()["id"]],
         "loan_group_id": group.json()["id"],
         "opening_balance_date": "2022-01-01",
     }
@@ -1162,6 +1184,22 @@ async def test_refinancing_requires_active_replacement_and_preserves_association
         },
     )
     assert moved.status_code == 422
+    changed_currency = await client.post(
+        f"/api/v1/loans/{old['id']}/refinance",
+        json={
+            "effective_at": "2022-01-01T00:00:00+00:00",
+            "replacement_loan": replacement | {"currency": "NZD"},
+        },
+    )
+    assert changed_currency.status_code == 422
+    changed_borrowers = await client.post(
+        f"/api/v1/loans/{old['id']}/refinance",
+        json={
+            "effective_at": "2022-01-01T00:00:00+00:00",
+            "replacement_loan": replacement | {"borrower_person_ids": []},
+        },
+    )
+    assert changed_borrowers.status_code == 422
     future_date = date.today() + timedelta(days=1)
     future = await client.post(
         f"/api/v1/loans/{old['id']}/refinance",
@@ -1179,6 +1217,48 @@ async def test_refinancing_requires_active_replacement_and_preserves_association
         },
     )
     assert predates_source.status_code == 422
+
+
+@pytest.mark.parametrize(
+    ("event_code", "amount", "percentage"),
+    [
+        ("LOAN_RATE_CHANGED", None, 5),
+        ("LOAN_REPAYMENT_CHANGED", 3200, None),
+        ("LOAN_CLOSED", None, None),
+        ("LOAN_REFINANCED", None, None),
+    ],
+)
+async def test_backdated_refinance_rejects_later_observed_loan_events(
+    client: AsyncClient,
+    loan_setup: dict[str, str],
+    event_code: str,
+    amount: int | None,
+    percentage: int | None,
+) -> None:
+    old = await create_loan(client, loan_setup)
+    await add_loan_event(
+        client,
+        loan_setup,
+        str(old["id"]),
+        event_code,
+        amount=amount,
+        percentage=percentage,
+        effective_at="2022-02-01T00:00:00+00:00",
+    )
+    replacement = loan_payload(loan_setup, display_name="Replacement") | {
+        "opening_balance_date": "2022-01-01"
+    }
+
+    response = await client.post(
+        f"/api/v1/loans/{old['id']}/refinance",
+        json={
+            "effective_at": "2022-01-01T00:00:00+00:00",
+            "replacement_loan": replacement,
+        },
+    )
+
+    assert response.status_code == 409
+    assert "later observed event" in response.json()["detail"]
 
 
 async def test_configurable_weekly_repayment_target(

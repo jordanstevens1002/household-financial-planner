@@ -108,11 +108,13 @@ describe('loan refinancing', () => {
 
   it('reviews and records an observed replacement while preserving associations', async () => {
     let saved: Record<string, unknown> | null = null;
+    let savedIdempotencyKey: unknown;
     vi.stubGlobal(
       'fetch',
       vi.fn<typeof fetch>((input, init) => {
         if (pathOf(input).endsWith(`/loans/${loanId}/refinance`)) {
           saved = JSON.parse(init?.body as string) as Record<string, unknown>;
+          savedIdempotencyKey = saved.idempotency_key;
           const replacement = (saved.replacement_loan ?? {}) as Record<
             string,
             unknown
@@ -135,10 +137,9 @@ describe('loan refinancing', () => {
         return catalogue(input);
       }),
     );
-    const user = userEvent.setup();
     renderPanel();
 
-    await user.click(screen.getByRole('button', { name: 'Record refinance' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Record refinance' }));
     const dialog = screen.getByRole('dialog', {
       name: 'Record a completed refinance',
     });
@@ -163,7 +164,7 @@ describe('loan refinancing', () => {
     fireEvent.change(within(dialog).getByLabelText('Annual interest rate %'), {
       target: { value: '4.9000' },
     });
-    await user.click(
+    fireEvent.click(
       within(dialog).getByRole('button', { name: 'Review refinance' }),
     );
     expect(
@@ -171,7 +172,7 @@ describe('loan refinancing', () => {
         name: 'Confirm completed refinance',
       }),
     ).toHaveTextContent('Current mortgage');
-    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(saved).toBeNull();
     await waitFor(() =>
       expect(
@@ -181,10 +182,17 @@ describe('loan refinancing', () => {
     const reopenedDialog = screen.getByRole('dialog', {
       name: 'Record a completed refinance',
     });
-    await user.click(
+    fireEvent.click(
       within(reopenedDialog).getByRole('button', { name: 'Review refinance' }),
     );
-    await user.click(screen.getByRole('button', { name: 'Record refinance' }));
+    const secondConfirmation = await screen.findByRole('dialog', {
+      name: 'Confirm completed refinance',
+    });
+    fireEvent.click(
+      within(secondConfirmation).getByRole('button', {
+        name: 'Record refinance',
+      }),
+    );
 
     expect(await screen.findByText('Refinance recorded')).toBeVisible();
     expect(saved).toMatchObject({
@@ -199,9 +207,78 @@ describe('loan refinancing', () => {
         property_id: propertyId,
       },
     });
+    expect(typeof savedIdempotencyKey).toBe('string');
     expect(
       await screen.findByText(/Better mortgage was created/),
     ).toBeVisible();
+  });
+
+  it('reuses its idempotency key when an ambiguous failure is retried', async () => {
+    const attempts: Record<string, unknown>[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        if (pathOf(input).endsWith(`/loans/${loanId}/refinance`)) {
+          const payload = JSON.parse(init?.body as string) as Record<
+            string,
+            unknown
+          >;
+          attempts.push(payload);
+          if (attempts.length === 1) {
+            return Promise.resolve(
+              response({ detail: 'Gateway timeout' }, 504),
+            );
+          }
+          return Promise.resolve(
+            response(
+              {
+                closed_loan_id: loanId,
+                refinance_event: { effective_at: '2026-09-27T00:00:00Z' },
+                replacement_loan: {
+                  ...activeLoan,
+                  ...(payload.replacement_loan as Record<string, unknown>),
+                  id: '13dfb7c8-2fd1-48b5-98ec-bc83c6d24585',
+                },
+              },
+              201,
+            ),
+          );
+        }
+        return catalogue(input);
+      }),
+    );
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByRole('button', { name: 'Record refinance' }));
+    const dialog = screen.getByRole('dialog', {
+      name: 'Record a completed refinance',
+    });
+    fireEvent.change(within(dialog).getByLabelText('Refinance date'), {
+      target: { value: '2026-09-27' },
+    });
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Review refinance' }),
+    );
+    const confirmation = screen.getByRole('dialog', {
+      name: 'Confirm completed refinance',
+    });
+    await user.click(
+      within(confirmation).getByRole('button', { name: 'Record refinance' }),
+    );
+    expect(
+      (await screen.findAllByText(/Gateway timeout/)).length,
+    ).toBeGreaterThan(0);
+    await user.click(
+      within(confirmation).getByRole('button', { name: 'Record refinance' }),
+    );
+
+    expect(await screen.findByText('Refinance recorded')).toBeVisible();
+    expect(attempts).toHaveLength(2);
+    expect(attempts[0]?.idempotency_key).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    );
+    expect(attempts[1]?.idempotency_key).toBe(attempts[0]?.idempotency_key);
   });
 
   it('blocks invalid financial values before confirmation', async () => {

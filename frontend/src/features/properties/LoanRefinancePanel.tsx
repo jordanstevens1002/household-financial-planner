@@ -127,6 +127,7 @@ export function LoanRefinancePanel({
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [result, setResult] = useState<RefinanceResult | null>(null);
+  const [idempotencyKey, setIdempotencyKey] = useState('');
   const form = useForm<Fields, unknown, ValidFields>({
     defaultValues: activeLoans[0] ? fieldsForLoan(activeLoans[0]) : undefined,
     resolver: zodResolver(refinanceSchema),
@@ -157,11 +158,12 @@ export function LoanRefinancePanel({
       : []);
   const refinance = useMutation({
     mutationFn: (fields: ValidFields) => {
-      const loan = activeLoans.find((item) => item.id === fields.sourceLoanId);
-      if (!loan) throw new Error('Choose an active loan');
+      const loan = loans.find((item) => item.id === fields.sourceLoanId);
+      if (!loan) throw new Error('The refinanced loan is no longer available');
       return apiRequest<RefinanceResult>(`/api/v1/loans/${loan.id}/refinance`, {
         body: JSON.stringify({
           effective_at: `${fields.effectiveDate}T00:00:00Z`,
+          idempotency_key: idempotencyKey,
           notes: fields.notes.trim() || null,
           replacement_loan: {
             account_reference_masked: fields.accountReference || null,
@@ -189,7 +191,23 @@ export function LoanRefinancePanel({
         method: 'POST',
       });
     },
-    onError: (error) => notify(errorMessage(error), 'error'),
+    onError: async (error) => {
+      notify(errorMessage(error), 'error');
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['household-loans', householdId],
+        }),
+        queryClient.invalidateQueries({ queryKey: ['property', propertyId] }),
+        queryClient.invalidateQueries({
+          queryKey: ['property-state', propertyId],
+        }),
+        queryClient.invalidateQueries({ queryKey: ['household-cashflow'] }),
+        queryClient.invalidateQueries({ queryKey: ['loan-schedule'] }),
+        queryClient.invalidateQueries({
+          queryKey: ['household-timeline', householdId],
+        }),
+      ]);
+    },
     onSuccess: async (saved) => {
       setConfirmOpen(false);
       setResult(saved);
@@ -216,6 +234,7 @@ export function LoanRefinancePanel({
   const openDialog = () => {
     form.reset(fieldsForLoan(activeLoans[0]!));
     setResult(null);
+    setIdempotencyKey(crypto.randomUUID());
     setOpen(true);
   };
   const selectSource = (loanId: string) => {
