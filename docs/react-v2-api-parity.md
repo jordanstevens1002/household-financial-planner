@@ -98,6 +98,14 @@ decorators, so route changes require an intentional matrix update.
 | POST | `/api/v1/loans/{loan_id}/target-calculation` | Target calculation | #46 |
 | GET | `/api/v1/households/{household_id}/purchase-plans` | Purchase-plan list | #47 |
 | POST | `/api/v1/households/{household_id}/purchase-plans` | Plan and funding | #47 |
+| GET | `/api/v1/purchase-plans/{plan_id}` | Complete purchase-plan detail | #168 |
+| POST | `/api/v1/purchase-plans/{plan_id}/funding-sources` | Add plan funding | #168 |
+| PATCH | `/api/v1/purchase-plans/{plan_id}/funding-sources/{child_id}` | Correct plan funding | #168 |
+| DELETE | `/api/v1/purchase-plans/{plan_id}/funding-sources/{child_id}` | Retire plan funding | #168 |
+| POST | `/api/v1/purchase-plans/{plan_id}/costs` | Add user-entered cost | #168 |
+| PATCH | `/api/v1/purchase-plans/{plan_id}/costs/{child_id}` | Correct user-entered cost | #168 |
+| DELETE | `/api/v1/purchase-plans/{plan_id}/costs/{child_id}` | Retire user-entered cost | #168 |
+| PUT | `/api/v1/purchase-plans/{plan_id}/ownership` | Replace proposed ownership | #168 |
 | POST | `/api/v1/purchase-plans/{plan_id}/calculate` | Purchase feasibility | #47 |
 | GET | `/api/v1/purchase-providers` | Installed purchase-provider discovery | #39, #47 |
 | GET | `/api/v1/retirement-providers` | Provider discovery | #48 |

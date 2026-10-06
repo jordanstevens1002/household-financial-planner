@@ -3357,15 +3357,44 @@ export interface components {
              */
             as_of: string;
             /** Ownership */
-            ownership: components["schemas"]["app__properties__schemas__OwnershipRead"][];
+            ownership: components["schemas"]["OwnershipRead"][];
             /** Total Percentage */
             total_percentage: string;
             /** Warnings */
             warnings: string[];
         };
+        /** OwnershipRead */
+        OwnershipRead: {
+            /**
+             * Effective From
+             * Format: date
+             */
+            effective_from: string;
+            /** Effective To */
+            effective_to?: string | null;
+            /** External Owner Name */
+            external_owner_name?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Notes */
+            notes?: string | null;
+            owner_type: components["schemas"]["OwnerType"];
+            /** Ownership Percentage */
+            ownership_percentage: string;
+            /** Person Id */
+            person_id?: string | null;
+            /**
+             * Property Id
+             * Format: uuid
+             */
+            property_id: string;
+        };
         /** OwnershipResult */
         OwnershipResult: {
-            ownership: components["schemas"]["app__properties__schemas__OwnershipRead"];
+            ownership: components["schemas"]["OwnershipRead"];
             /** Total Percentage */
             total_percentage: string;
             /** Warnings */
@@ -3796,11 +3825,33 @@ export interface components {
             /** Loans */
             loans: components["schemas"]["LoanRead"][];
             /** Ownership */
-            ownership: components["schemas"]["app__properties__schemas__OwnershipRead"][];
+            ownership: components["schemas"]["OwnershipRead"][];
             property: components["schemas"]["PropertyRead"];
             valuation: components["schemas"]["ValuationRead"] | null;
             /** Warnings */
             warnings: string[];
+        };
+        /** PurchaseOwnershipRead */
+        PurchaseOwnershipRead: {
+            /** External Owner Name */
+            external_owner_name?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            owner_type: components["schemas"]["OwnerType"];
+            /** Ownership Percentage */
+            ownership_percentage: string;
+            /** Person Id */
+            person_id?: string | null;
+            /**
+             * Purchase Plan Id
+             * Format: uuid
+             */
+            purchase_plan_id: string;
+            /** Revision */
+            revision: number;
         };
         /** PurchasePlanCreate */
         PurchasePlanCreate: {
@@ -3883,7 +3934,7 @@ export interface components {
             /** Notes */
             notes: string | null;
             /** Ownership */
-            ownership: components["schemas"]["app__purchases__schemas__OwnershipRead"][];
+            ownership: components["schemas"]["PurchaseOwnershipRead"][];
             /** Provider Code */
             provider_code: string | null;
             /** Provider Settings */
@@ -4867,35 +4918,6 @@ export interface components {
             /** Person Id */
             person_id?: string | null;
         };
-        /** OwnershipRead */
-        app__properties__schemas__OwnershipRead: {
-            /**
-             * Effective From
-             * Format: date
-             */
-            effective_from: string;
-            /** Effective To */
-            effective_to?: string | null;
-            /** External Owner Name */
-            external_owner_name?: string | null;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Notes */
-            notes?: string | null;
-            owner_type: components["schemas"]["OwnerType"];
-            /** Ownership Percentage */
-            ownership_percentage: string;
-            /** Person Id */
-            person_id?: string | null;
-            /**
-             * Property Id
-             * Format: uuid
-             */
-            property_id: string;
-        };
         /** OwnershipCreate */
         app__purchases__schemas__OwnershipCreate: {
             /** External Owner Name */
@@ -4905,28 +4927,6 @@ export interface components {
             ownership_percentage: number | string;
             /** Person Id */
             person_id?: string | null;
-        };
-        /** OwnershipRead */
-        app__purchases__schemas__OwnershipRead: {
-            /** External Owner Name */
-            external_owner_name?: string | null;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            owner_type: components["schemas"]["OwnerType"];
-            /** Ownership Percentage */
-            ownership_percentage: string;
-            /** Person Id */
-            person_id?: string | null;
-            /**
-             * Purchase Plan Id
-             * Format: uuid
-             */
-            purchase_plan_id: string;
-            /** Revision */
-            revision: number;
         };
     };
     responses: never;
@@ -7943,7 +7943,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__properties__schemas__OwnershipRead"][];
+                    "application/json": components["schemas"]["OwnershipRead"][];
                 };
             };
             /** @description Validation Error */
@@ -8562,7 +8562,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__purchases__schemas__OwnershipRead"][];
+                    "application/json": components["schemas"]["PurchaseOwnershipRead"][];
                 };
             };
             /** @description Validation Error */

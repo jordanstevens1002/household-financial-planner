@@ -44,8 +44,9 @@ from app.purchases.schemas import (
     FundingSourceCreate,
     FundingSourceRead,
     FundingSourceUpdate,
-    OwnershipRead,
+    OwnershipCreate,
     OwnershipSetReplace,
+    PurchaseOwnershipRead,
     PurchasePlanCreate,
     PurchasePlanDetail,
     PurchasePlanRead,
@@ -154,7 +155,7 @@ def _revision(
 
 
 async def _validate_ownership_people(
-    plan: PurchasePlan, ownership: list, session: AsyncSession
+    plan: PurchasePlan, ownership: list[OwnershipCreate], session: AsyncSession
 ) -> None:
     person_ids = {item.person_id for item in ownership if item.person_id is not None}
     if not person_ids:
@@ -339,7 +340,7 @@ async def get_purchase_plan(
         **PurchasePlanRead.model_validate(plan).model_dump(),
         funding_sources=[FundingSourceRead.model_validate(item) for item in funding],
         costs=[CostRead.model_validate(item) for item in costs],
-        ownership=[OwnershipRead.model_validate(item) for item in ownership],
+        ownership=[PurchaseOwnershipRead.model_validate(item) for item in ownership],
     )
 
 
@@ -499,7 +500,7 @@ async def retire_cost(
     await session.commit()
 
 
-@router.put("/purchase-plans/{plan_id}/ownership", response_model=list[OwnershipRead])
+@router.put("/purchase-plans/{plan_id}/ownership", response_model=list[PurchaseOwnershipRead])
 async def replace_ownership(
     plan_id: uuid.UUID,
     payload: OwnershipSetReplace,

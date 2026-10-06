@@ -90,7 +90,7 @@ class OwnershipCreate(BaseModel):
         return self
 
 
-class OwnershipRead(OwnershipCreate):
+class PurchaseOwnershipRead(OwnershipCreate):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID
     purchase_plan_id: uuid.UUID
@@ -169,7 +169,7 @@ class PurchasePlanRead(BaseModel):
 class PurchasePlanDetail(PurchasePlanRead):
     funding_sources: list[FundingSourceRead]
     costs: list[CostRead]
-    ownership: list[OwnershipRead]
+    ownership: list[PurchaseOwnershipRead]
 
 
 class FeasibilityRequest(BaseModel):
