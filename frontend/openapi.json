@@ -520,6 +520,20 @@
         "title": "CalculatedCost",
         "type": "object"
       },
+      "ChildRetire": {
+        "properties": {
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "title": "ChildRetire",
+        "type": "object"
+      },
       "ContributionProfileCreate": {
         "properties": {
           "annual_pre_tax_cap": {
@@ -769,6 +783,123 @@
           "amount"
         ],
         "title": "CostCreate",
+        "type": "object"
+      },
+      "CostRead": {
+        "properties": {
+          "amount": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Amount",
+            "type": "string"
+          },
+          "code": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Code",
+            "type": "string"
+          },
+          "display_name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_estimate": {
+            "default": true,
+            "title": "Is Estimate",
+            "type": "boolean"
+          },
+          "purchase_plan_id": {
+            "format": "uuid",
+            "title": "Purchase Plan Id",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code",
+          "display_name",
+          "amount",
+          "id",
+          "purchase_plan_id",
+          "revision"
+        ],
+        "title": "CostRead",
+        "type": "object"
+      },
+      "CostUpdate": {
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "is_estimate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Estimate"
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "title": "CostUpdate",
         "type": "object"
       },
       "CountryRead": {
@@ -1457,6 +1588,165 @@
           "available_date"
         ],
         "title": "FundingSourceCreate",
+        "type": "object"
+      },
+      "FundingSourceRead": {
+        "properties": {
+          "amount": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Amount",
+            "type": "string"
+          },
+          "available_date": {
+            "format": "date",
+            "title": "Available Date",
+            "type": "string"
+          },
+          "display_name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_borrowed": {
+            "default": false,
+            "title": "Is Borrowed",
+            "type": "boolean"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "purchase_plan_id": {
+            "format": "uuid",
+            "title": "Purchase Plan Id",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "source_type": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Source Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "display_name",
+          "source_type",
+          "amount",
+          "available_date",
+          "id",
+          "purchase_plan_id",
+          "revision"
+        ],
+        "title": "FundingSourceRead",
+        "type": "object"
+      },
+      "FundingSourceUpdate": {
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "available_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Date"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "is_borrowed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Borrowed"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "source_type": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Type"
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "title": "FundingSourceUpdate",
         "type": "object"
       },
       "GlobalRole": {
@@ -4881,7 +5171,7 @@
           },
           "ownership": {
             "items": {
-              "$ref": "#/components/schemas/OwnershipRead"
+              "$ref": "#/components/schemas/app__properties__schemas__OwnershipRead"
             },
             "title": "Ownership",
             "type": "array"
@@ -4908,95 +5198,10 @@
         "title": "OwnershipPosition",
         "type": "object"
       },
-      "OwnershipRead": {
-        "properties": {
-          "effective_from": {
-            "format": "date",
-            "title": "Effective From",
-            "type": "string"
-          },
-          "effective_to": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Effective To"
-          },
-          "external_owner_name": {
-            "anyOf": [
-              {
-                "maxLength": 200,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "External Owner Name"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "notes": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notes"
-          },
-          "owner_type": {
-            "$ref": "#/components/schemas/OwnerType"
-          },
-          "ownership_percentage": {
-            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,6}0*$)\\d{0,3}\\.\\d{0,2}0*$)",
-            "title": "Ownership Percentage",
-            "type": "string"
-          },
-          "person_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Person Id"
-          },
-          "property_id": {
-            "format": "uuid",
-            "title": "Property Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "owner_type",
-          "ownership_percentage",
-          "effective_from",
-          "id",
-          "property_id"
-        ],
-        "title": "OwnershipRead",
-        "type": "object"
-      },
       "OwnershipResult": {
         "properties": {
           "ownership": {
-            "$ref": "#/components/schemas/OwnershipRead"
+            "$ref": "#/components/schemas/app__properties__schemas__OwnershipRead"
           },
           "total_percentage": {
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
@@ -5017,6 +5222,33 @@
           "warnings"
         ],
         "title": "OwnershipResult",
+        "type": "object"
+      },
+      "OwnershipSetReplace": {
+        "properties": {
+          "expected_revision_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Expected Revision Ids",
+            "type": "array"
+          },
+          "ownership": {
+            "items": {
+              "$ref": "#/components/schemas/app__purchases__schemas__OwnershipCreate"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Ownership",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ownership"
+        ],
+        "title": "OwnershipSetReplace",
         "type": "object"
       },
       "PasswordChangeRequest": {
@@ -6373,7 +6605,7 @@
           },
           "ownership": {
             "items": {
-              "$ref": "#/components/schemas/OwnershipRead"
+              "$ref": "#/components/schemas/app__properties__schemas__OwnershipRead"
             },
             "title": "Ownership",
             "type": "array"
@@ -6584,6 +6816,157 @@
           "target_date"
         ],
         "title": "PurchasePlanCreate",
+        "type": "object"
+      },
+      "PurchasePlanDetail": {
+        "properties": {
+          "costs": {
+            "items": {
+              "$ref": "#/components/schemas/CostRead"
+            },
+            "title": "Costs",
+            "type": "array"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "desired_buffer": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Desired Buffer",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "funding_sources": {
+            "items": {
+              "$ref": "#/components/schemas/FundingSourceRead"
+            },
+            "title": "Funding Sources",
+            "type": "array"
+          },
+          "household_id": {
+            "format": "uuid",
+            "title": "Household Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "intended_use": {
+            "title": "Intended Use",
+            "type": "string"
+          },
+          "max_lvr": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Lvr"
+          },
+          "minimum_monthly_surplus": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Monthly Surplus"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "ownership": {
+            "items": {
+              "$ref": "#/components/schemas/app__purchases__schemas__OwnershipRead"
+            },
+            "title": "Ownership",
+            "type": "array"
+          },
+          "provider_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Code"
+          },
+          "provider_settings": {
+            "additionalProperties": true,
+            "title": "Provider Settings",
+            "type": "object"
+          },
+          "purchase_type_id": {
+            "format": "uuid",
+            "title": "Purchase Type Id",
+            "type": "string"
+          },
+          "target_date": {
+            "format": "date",
+            "title": "Target Date",
+            "type": "string"
+          },
+          "target_location": {
+            "additionalProperties": true,
+            "title": "Target Location",
+            "type": "object"
+          },
+          "target_price_max": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Target Price Max",
+            "type": "string"
+          },
+          "target_price_min": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Target Price Min",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "household_id",
+          "display_name",
+          "purchase_type_id",
+          "target_location",
+          "intended_use",
+          "target_price_min",
+          "target_price_max",
+          "target_date",
+          "currency",
+          "desired_buffer",
+          "max_lvr",
+          "minimum_monthly_surplus",
+          "provider_code",
+          "provider_settings",
+          "notes",
+          "funding_sources",
+          "costs",
+          "ownership"
+        ],
+        "title": "PurchasePlanDetail",
         "type": "object"
       },
       "PurchasePlanRead": {
@@ -9459,6 +9842,91 @@
         "title": "OwnershipCreate",
         "type": "object"
       },
+      "app__properties__schemas__OwnershipRead": {
+        "properties": {
+          "effective_from": {
+            "format": "date",
+            "title": "Effective From",
+            "type": "string"
+          },
+          "effective_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective To"
+          },
+          "external_owner_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Owner Name"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "owner_type": {
+            "$ref": "#/components/schemas/OwnerType"
+          },
+          "ownership_percentage": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,6}0*$)\\d{0,3}\\.\\d{0,2}0*$)",
+            "title": "Ownership Percentage",
+            "type": "string"
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Id"
+          },
+          "property_id": {
+            "format": "uuid",
+            "title": "Property Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_type",
+          "ownership_percentage",
+          "effective_from",
+          "id",
+          "property_id"
+        ],
+        "title": "OwnershipRead",
+        "type": "object"
+      },
       "app__purchases__schemas__OwnershipCreate": {
         "properties": {
           "external_owner_name": {
@@ -9508,6 +9976,65 @@
           "ownership_percentage"
         ],
         "title": "OwnershipCreate",
+        "type": "object"
+      },
+      "app__purchases__schemas__OwnershipRead": {
+        "properties": {
+          "external_owner_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Owner Name"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "owner_type": {
+            "$ref": "#/components/schemas/OwnerType"
+          },
+          "ownership_percentage": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Ownership Percentage",
+            "type": "string"
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Id"
+          },
+          "purchase_plan_id": {
+            "format": "uuid",
+            "title": "Purchase Plan Id",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "owner_type",
+          "ownership_percentage",
+          "id",
+          "purchase_plan_id",
+          "revision"
+        ],
+        "title": "OwnershipRead",
         "type": "object"
       }
     },
@@ -15466,7 +15993,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/OwnershipRead"
+                    "$ref": "#/components/schemas/app__properties__schemas__OwnershipRead"
                   },
                   "title": "Response List Ownership Api V1 Properties  Property Id  Ownership Get",
                   "type": "array"
@@ -16099,6 +16626,70 @@
         ]
       }
     },
+    "/api/v1/purchase-plans/{plan_id}": {
+      "get": {
+        "operationId": "get_purchase_plan_api_v1_purchase_plans__plan_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchasePlanDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Purchase Plan",
+        "tags": [
+          "purchase planning"
+        ]
+      }
+    },
     "/api/v1/purchase-plans/{plan_id}/calculate": {
       "post": {
         "operationId": "calculate_purchase_plan_api_v1_purchase_plans__plan_id__calculate_post",
@@ -16168,6 +16759,550 @@
           }
         ],
         "summary": "Calculate Purchase Plan",
+        "tags": [
+          "purchase planning"
+        ]
+      }
+    },
+    "/api/v1/purchase-plans/{plan_id}/costs": {
+      "post": {
+        "operationId": "create_cost_api_v1_purchase_plans__plan_id__costs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CostCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Cost",
+        "tags": [
+          "purchase planning"
+        ]
+      }
+    },
+    "/api/v1/purchase-plans/{plan_id}/costs/{child_id}": {
+      "delete": {
+        "operationId": "retire_cost_api_v1_purchase_plans__plan_id__costs__child_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "child_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Child Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChildRetire"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Retire Cost",
+        "tags": [
+          "purchase planning"
+        ]
+      },
+      "patch": {
+        "operationId": "update_cost_api_v1_purchase_plans__plan_id__costs__child_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "child_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Child Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CostUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Cost",
+        "tags": [
+          "purchase planning"
+        ]
+      }
+    },
+    "/api/v1/purchase-plans/{plan_id}/funding-sources": {
+      "post": {
+        "operationId": "create_funding_source_api_v1_purchase_plans__plan_id__funding_sources_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FundingSourceCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FundingSourceRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Funding Source",
+        "tags": [
+          "purchase planning"
+        ]
+      }
+    },
+    "/api/v1/purchase-plans/{plan_id}/funding-sources/{child_id}": {
+      "delete": {
+        "operationId": "retire_funding_source_api_v1_purchase_plans__plan_id__funding_sources__child_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "child_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Child Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChildRetire"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Retire Funding Source",
+        "tags": [
+          "purchase planning"
+        ]
+      },
+      "patch": {
+        "operationId": "update_funding_source_api_v1_purchase_plans__plan_id__funding_sources__child_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "child_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Child Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FundingSourceUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FundingSourceRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Funding Source",
+        "tags": [
+          "purchase planning"
+        ]
+      }
+    },
+    "/api/v1/purchase-plans/{plan_id}/ownership": {
+      "put": {
+        "operationId": "replace_ownership_api_v1_purchase_plans__plan_id__ownership_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnershipSetReplace"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/app__purchases__schemas__OwnershipRead"
+                  },
+                  "title": "Response Replace Ownership Api V1 Purchase Plans  Plan Id  Ownership Put",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Replace Ownership",
         "tags": [
           "purchase planning"
         ]

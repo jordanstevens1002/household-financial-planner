@@ -27,11 +27,43 @@ class FundingSourceCreate(BaseModel):
     notes: str | None = Field(default=None, max_length=2000)
 
 
+class FundingSourceRead(FundingSourceCreate):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    purchase_plan_id: uuid.UUID
+    revision: int
+
+
+class FundingSourceUpdate(BaseModel):
+    expected_revision: int = Field(ge=1)
+    display_name: str | None = Field(default=None, min_length=1, max_length=200)
+    source_type: str | None = Field(default=None, min_length=1, max_length=80)
+    amount: NonNegativeMoney | None = None
+    available_date: date | None = None
+    is_borrowed: bool | None = None
+    notes: str | None = Field(default=None, max_length=2000)
+
+
 class CostCreate(BaseModel):
     code: str = Field(min_length=1, max_length=80)
     display_name: str = Field(min_length=1, max_length=200)
     amount: NonNegativeMoney
     is_estimate: bool = True
+
+
+class CostRead(CostCreate):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    purchase_plan_id: uuid.UUID
+    revision: int
+
+
+class CostUpdate(BaseModel):
+    expected_revision: int = Field(ge=1)
+    code: str | None = Field(default=None, min_length=1, max_length=80)
+    display_name: str | None = Field(default=None, min_length=1, max_length=200)
+    amount: NonNegativeMoney | None = None
+    is_estimate: bool | None = None
 
 
 class OwnershipCreate(BaseModel):
@@ -56,6 +88,30 @@ class OwnershipCreate(BaseModel):
         elif self.external_owner_name is not None:
             raise ValueError("External owner name requires EXTERNAL_PARTY ownership")
         return self
+
+
+class OwnershipRead(OwnershipCreate):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    purchase_plan_id: uuid.UUID
+    revision: int
+
+
+class OwnershipSetReplace(BaseModel):
+    expected_revision_ids: list[uuid.UUID] = Field(default_factory=list, max_length=50)
+    ownership: list[OwnershipCreate] = Field(min_length=1, max_length=50)
+
+    @model_validator(mode="after")
+    def validate_set(self) -> OwnershipSetReplace:
+        if len(set(self.expected_revision_ids)) != len(self.expected_revision_ids):
+            raise ValueError("expected_revision_ids must be unique")
+        if sum(item.ownership_percentage for item in self.ownership) != 100:
+            raise ValueError("ownership percentages must total 100")
+        return self
+
+
+class ChildRetire(BaseModel):
+    expected_revision: int = Field(ge=1)
 
 
 class PurchasePlanCreate(BaseModel):
@@ -108,6 +164,12 @@ class PurchasePlanRead(BaseModel):
     provider_code: str | None
     provider_settings: dict[str, object]
     notes: str | None
+
+
+class PurchasePlanDetail(PurchasePlanRead):
+    funding_sources: list[FundingSourceRead]
+    costs: list[CostRead]
+    ownership: list[OwnershipRead]
 
 
 class FeasibilityRequest(BaseModel):

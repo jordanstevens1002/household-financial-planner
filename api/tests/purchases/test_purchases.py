@@ -1,13 +1,23 @@
 """Purchase-planning tests."""
 
+import uuid
 from datetime import date
 from decimal import Decimal
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Household, LookupItem, Person, PurchasePlan
+from app.models import (
+    Household,
+    HouseholdMembership,
+    HouseholdRole,
+    LookupItem,
+    Person,
+    PurchasePlan,
+    PurchasePlanChildRevision,
+)
 from app.purchases.calculations import calculate_feasibility, monthly_repayment
 from tests.households.test_households import create_household
 
@@ -286,3 +296,182 @@ async def test_purchase_calculation_requires_material_assumptions(
         "loan_term_years",
         "current_monthly_surplus",
     }
+
+
+async def test_purchase_plan_detail_children_are_correctable_and_recoverable(
+    client: AsyncClient,
+    session: AsyncSession,
+    purchase_type: LookupItem,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    household = await create_household(client)
+    person = (
+        await client.post(
+            f"/api/v1/households/{household['id']}/people",
+            json={"display_name": "Detail owner", "effective_from": "2020-01-01"},
+        )
+    ).json()
+    plan = (
+        await client.post(
+            f"/api/v1/households/{household['id']}/purchase-plans",
+            json={
+                "display_name": "Audited details",
+                "purchase_type_id": str(purchase_type.id),
+                "intended_use": "PERSONAL",
+                "target_price_min": "500000.00",
+                "target_price_max": "600000.00",
+                "target_date": "2028-01-01",
+            },
+        )
+    ).json()
+    funding = await client.post(
+        f"/api/v1/purchase-plans/{plan['id']}/funding-sources",
+        json={
+            "display_name": "Savings",
+            "source_type": "SAVINGS",
+            "amount": "100000.00",
+            "available_date": "2027-01-01",
+            "notes": "private funding note",
+        },
+    )
+    cost = await client.post(
+        f"/api/v1/purchase-plans/{plan['id']}/costs",
+        json={"code": "LEGAL", "display_name": "Legal fees", "amount": "2500.00"},
+    )
+    assert funding.status_code == 201
+    assert cost.status_code == 201
+    funding_body = funding.json()
+    corrected = await client.patch(
+        f"/api/v1/purchase-plans/{plan['id']}/funding-sources/{funding_body['id']}",
+        json={"expected_revision": 1, "amount": "110000.00"},
+    )
+    assert corrected.status_code == 200
+    assert corrected.json()["revision"] == 2
+    stale = await client.patch(
+        f"/api/v1/purchase-plans/{plan['id']}/funding-sources/{funding_body['id']}",
+        json={"expected_revision": 1, "amount": "120000.00"},
+    )
+    assert stale.status_code == 409
+    retired = await client.request(
+        "DELETE",
+        f"/api/v1/purchase-plans/{plan['id']}/costs/{cost.json()['id']}",
+        json={"expected_revision": 1},
+    )
+    assert retired.status_code == 204
+    ownership = await client.put(
+        f"/api/v1/purchase-plans/{plan['id']}/ownership",
+        json={
+            "expected_revision_ids": [],
+            "ownership": [
+                {
+                    "owner_type": "PERSON",
+                    "person_id": person["id"],
+                    "ownership_percentage": "65.0000",
+                },
+                {
+                    "owner_type": "EXTERNAL_PARTY",
+                    "external_owner_name": "Family member",
+                    "ownership_percentage": "35.0000",
+                },
+            ],
+        },
+    )
+    assert ownership.status_code == 200
+    detail = await client.get(f"/api/v1/purchase-plans/{plan['id']}")
+    assert detail.status_code == 200
+    assert detail.json()["funding_sources"][0]["amount"] == "110000.00"
+    assert detail.json()["costs"] == []
+    assert len(detail.json()["ownership"]) == 2
+    revisions = list(
+        await session.scalars(
+            select(PurchasePlanChildRevision).where(
+                PurchasePlanChildRevision.purchase_plan_id == uuid.UUID(plan["id"])
+            )
+        )
+    )
+    assert [item.action for item in revisions] == [
+        "CREATED",
+        "CREATED",
+        "CORRECTED",
+        "RETIRED",
+        "REPLACED",
+    ]
+    assert revisions[2].previous_state["amount"] == "100000.00"
+    assert revisions[2].previous_state["notes"] == "private funding note"
+    assert "private funding note" not in caplog.text
+    membership = await session.scalar(
+        select(HouseholdMembership).where(
+            HouseholdMembership.household_id == uuid.UUID(household["id"])
+        )
+    )
+    assert membership is not None
+    membership.role = HouseholdRole.VIEWER
+    await session.commit()
+    assert (await client.get(f"/api/v1/purchase-plans/{plan['id']}")).status_code == 200
+    denied = await client.post(
+        f"/api/v1/purchase-plans/{plan['id']}/costs",
+        json={"code": "DENIED", "display_name": "Denied", "amount": "1.00"},
+    )
+    assert denied.status_code == 403
+
+
+async def test_purchase_ownership_replacement_rejects_stale_and_cross_household_people(
+    client: AsyncClient,
+    session: AsyncSession,
+    purchase_type: LookupItem,
+) -> None:
+    household = await create_household(client)
+    other = Household(display_name="Other ownership", currency="AUD")
+    session.add(other)
+    await session.flush()
+    outsider = Person(
+        household_id=other.id,
+        display_name="Outsider",
+        is_active=True,
+        effective_from=date(2020, 1, 1),
+    )
+    session.add(outsider)
+    await session.commit()
+    plan = (
+        await client.post(
+            f"/api/v1/households/{household['id']}/purchase-plans",
+            json={
+                "display_name": "Ownership checks",
+                "purchase_type_id": str(purchase_type.id),
+                "intended_use": "PERSONAL",
+                "target_price_min": "1.00",
+                "target_price_max": "2.00",
+                "target_date": "2028-01-01",
+            },
+        )
+    ).json()
+    cross_household = await client.put(
+        f"/api/v1/purchase-plans/{plan['id']}/ownership",
+        json={
+            "expected_revision_ids": [],
+            "ownership": [
+                {
+                    "owner_type": "PERSON",
+                    "person_id": str(outsider.id),
+                    "ownership_percentage": 100,
+                }
+            ],
+        },
+    )
+    assert cross_household.status_code == 422
+    created = await client.put(
+        f"/api/v1/purchase-plans/{plan['id']}/ownership",
+        json={
+            "expected_revision_ids": [],
+            "ownership": [{"owner_type": "HOUSEHOLD", "ownership_percentage": 100}],
+        },
+    )
+    assert created.status_code == 200
+    stale = await client.put(
+        f"/api/v1/purchase-plans/{plan['id']}/ownership",
+        json={
+            "expected_revision_ids": [],
+            "ownership": [{"owner_type": "HOUSEHOLD", "ownership_percentage": 100}],
+        },
+    )
+    assert stale.status_code == 409

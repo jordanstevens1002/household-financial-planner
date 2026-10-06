@@ -24,6 +24,7 @@ from app.models import (
     PurchaseFundingSource,
     PurchaseOwnershipAllocation,
     PurchasePlan,
+    PurchasePlanChildRevision,
 )
 from app.purchases.calculations import calculate_feasibility, money
 from app.purchases.providers.base import PurchaseContext
@@ -34,9 +35,19 @@ from app.purchases.providers.registry import (
 )
 from app.purchases.schemas import (
     CalculatedCost,
+    ChildRetire,
+    CostCreate,
+    CostRead,
+    CostUpdate,
     FeasibilityRead,
     FeasibilityRequest,
+    FundingSourceCreate,
+    FundingSourceRead,
+    FundingSourceUpdate,
+    OwnershipRead,
+    OwnershipSetReplace,
     PurchasePlanCreate,
+    PurchasePlanDetail,
     PurchasePlanRead,
     PurchaseProviderRead,
 )
@@ -83,6 +94,116 @@ async def _plan_with_access(
     return plan
 
 
+def _funding_snapshot(item: PurchaseFundingSource) -> dict[str, object]:
+    return {
+        "id": str(item.id),
+        "display_name": item.display_name,
+        "source_type": item.source_type,
+        "amount": str(item.amount),
+        "available_date": item.available_date.isoformat(),
+        "is_borrowed": item.is_borrowed,
+        "notes": item.notes,
+        "is_active": item.is_active,
+        "revision": item.revision,
+    }
+
+
+def _cost_snapshot(item: PurchaseCost) -> dict[str, object]:
+    return {
+        "id": str(item.id),
+        "code": item.code,
+        "display_name": item.display_name,
+        "amount": str(item.amount),
+        "is_estimate": item.is_estimate,
+        "is_active": item.is_active,
+        "revision": item.revision,
+    }
+
+
+def _ownership_snapshot(item: PurchaseOwnershipAllocation) -> dict[str, object]:
+    return {
+        "id": str(item.id),
+        "owner_type": item.owner_type.value,
+        "person_id": str(item.person_id) if item.person_id else None,
+        "external_owner_name": item.external_owner_name,
+        "ownership_percentage": str(item.ownership_percentage),
+        "is_active": item.is_active,
+        "revision": item.revision,
+    }
+
+
+def _revision(
+    plan: PurchasePlan,
+    user: ApplicationUser,
+    child_type: str,
+    action: str,
+    previous: dict[str, object] | list[dict[str, object]] | None,
+    resulting: dict[str, object] | list[dict[str, object]] | None,
+    child_id: uuid.UUID | None = None,
+) -> PurchasePlanChildRevision:
+    return PurchasePlanChildRevision(
+        purchase_plan_id=plan.id,
+        household_id=plan.household_id,
+        actor_user_id=user.id,
+        child_type=child_type,
+        child_id=child_id,
+        action=action,
+        previous_state=previous,
+        resulting_state=resulting,
+    )
+
+
+async def _validate_ownership_people(
+    plan: PurchasePlan, ownership: list, session: AsyncSession
+) -> None:
+    person_ids = {item.person_id for item in ownership if item.person_id is not None}
+    if not person_ids:
+        return
+    found = set(
+        await session.scalars(
+            select(Person.id).where(
+                Person.id.in_(person_ids), Person.household_id == plan.household_id
+            )
+        )
+    )
+    if found != person_ids:
+        raise HTTPException(422, "Ownership people must belong to the household")
+
+
+async def _funding_with_lock(
+    plan: PurchasePlan, child_id: uuid.UUID, session: AsyncSession
+) -> PurchaseFundingSource:
+    item = await session.scalar(
+        select(PurchaseFundingSource)
+        .where(
+            PurchaseFundingSource.id == child_id,
+            PurchaseFundingSource.purchase_plan_id == plan.id,
+            PurchaseFundingSource.is_active.is_(True),
+        )
+        .with_for_update()
+    )
+    if item is None:
+        raise HTTPException(404, "Funding source not found")
+    return item
+
+
+async def _cost_with_lock(
+    plan: PurchasePlan, child_id: uuid.UUID, session: AsyncSession
+) -> PurchaseCost:
+    item = await session.scalar(
+        select(PurchaseCost)
+        .where(
+            PurchaseCost.id == child_id,
+            PurchaseCost.purchase_plan_id == plan.id,
+            PurchaseCost.is_active.is_(True),
+        )
+        .with_for_update()
+    )
+    if item is None:
+        raise HTTPException(404, "Purchase cost not found")
+    return item
+
+
 @router.get("/households/{household_id}/purchase-plans", response_model=list[PurchasePlanRead])
 async def list_purchase_plans(
     household_id: uuid.UUID,
@@ -103,6 +224,7 @@ async def create_purchase_plan(
     household_id: uuid.UUID,
     payload: PurchasePlanCreate,
     _: Annotated[HouseholdMembership, Depends(require_household_role(HouseholdRole.EDITOR))],
+    user: ApplicationUser = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ) -> PurchasePlan:
     household = await session.get(Household, household_id)
@@ -135,21 +257,292 @@ async def create_purchase_plan(
     plan = PurchasePlan(household_id=household_id, **values)
     session.add(plan)
     await session.flush()
+    funding = [
+        PurchaseFundingSource(purchase_plan_id=plan.id, **item.model_dump())
+        for item in payload.funding_sources
+    ]
+    costs = [PurchaseCost(purchase_plan_id=plan.id, **item.model_dump()) for item in payload.costs]
+    ownership = [
+        PurchaseOwnershipAllocation(purchase_plan_id=plan.id, **item.model_dump())
+        for item in payload.ownership
+    ]
+    session.add_all(funding)
+    session.add_all(costs)
+    session.add_all(ownership)
+    await session.flush()
     session.add_all(
         [
-            PurchaseFundingSource(purchase_plan_id=plan.id, **item.model_dump())
-            for item in payload.funding_sources
+            _revision(plan, user, "FUNDING", "CREATED", None, _funding_snapshot(item), item.id)
+            for item in funding
         ]
-        + [PurchaseCost(purchase_plan_id=plan.id, **item.model_dump()) for item in payload.costs]
         + [
-            PurchaseOwnershipAllocation(purchase_plan_id=plan.id, **item.model_dump())
-            for item in payload.ownership
+            _revision(plan, user, "COST", "CREATED", None, _cost_snapshot(item), item.id)
+            for item in costs
         ]
+        + (
+            [
+                _revision(
+                    plan,
+                    user,
+                    "OWNERSHIP",
+                    "REPLACED",
+                    [],
+                    [_ownership_snapshot(item) for item in ownership],
+                )
+            ]
+            if ownership
+            else []
+        )
     )
     await session.commit()
     await session.refresh(plan)
-    logger.info("purchase_plan_created", purchase_plan_id=str(plan.id))
+    logger.info(
+        "purchase_plan_created",
+        actor_user_id=str(user.id),
+        household_id=str(household_id),
+        purchase_plan_id=str(plan.id),
+    )
     return plan
+
+
+@router.get("/purchase-plans/{plan_id}", response_model=PurchasePlanDetail)
+async def get_purchase_plan(
+    plan_id: uuid.UUID,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> PurchasePlanDetail:
+    plan = await _plan_with_access(plan_id, HouseholdRole.VIEWER, user, session)
+    funding = list(
+        await session.scalars(
+            select(PurchaseFundingSource).where(
+                PurchaseFundingSource.purchase_plan_id == plan.id,
+                PurchaseFundingSource.is_active.is_(True),
+            )
+        )
+    )
+    costs = list(
+        await session.scalars(
+            select(PurchaseCost).where(
+                PurchaseCost.purchase_plan_id == plan.id, PurchaseCost.is_active.is_(True)
+            )
+        )
+    )
+    ownership = list(
+        await session.scalars(
+            select(PurchaseOwnershipAllocation).where(
+                PurchaseOwnershipAllocation.purchase_plan_id == plan.id,
+                PurchaseOwnershipAllocation.is_active.is_(True),
+            )
+        )
+    )
+    return PurchasePlanDetail(
+        **PurchasePlanRead.model_validate(plan).model_dump(),
+        funding_sources=[FundingSourceRead.model_validate(item) for item in funding],
+        costs=[CostRead.model_validate(item) for item in costs],
+        ownership=[OwnershipRead.model_validate(item) for item in ownership],
+    )
+
+
+@router.post(
+    "/purchase-plans/{plan_id}/funding-sources",
+    response_model=FundingSourceRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_funding_source(
+    plan_id: uuid.UUID,
+    payload: FundingSourceCreate,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> PurchaseFundingSource:
+    plan = await _plan_with_access(plan_id, HouseholdRole.EDITOR, user, session)
+    item = PurchaseFundingSource(purchase_plan_id=plan.id, **payload.model_dump())
+    session.add(item)
+    await session.flush()
+    session.add(_revision(plan, user, "FUNDING", "CREATED", None, _funding_snapshot(item), item.id))
+    await session.commit()
+    logger.info(
+        "purchase_funding_source_created",
+        actor_user_id=str(user.id),
+        household_id=str(plan.household_id),
+        purchase_plan_id=str(plan.id),
+        child_id=str(item.id),
+        revision=item.revision,
+    )
+    return item
+
+
+@router.patch(
+    "/purchase-plans/{plan_id}/funding-sources/{child_id}",
+    response_model=FundingSourceRead,
+)
+async def update_funding_source(
+    plan_id: uuid.UUID,
+    child_id: uuid.UUID,
+    payload: FundingSourceUpdate,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> PurchaseFundingSource:
+    plan = await _plan_with_access(plan_id, HouseholdRole.EDITOR, user, session)
+    item = await _funding_with_lock(plan, child_id, session)
+    if item.revision != payload.expected_revision:
+        raise HTTPException(409, "Funding source changed; reload before correcting it")
+    previous = _funding_snapshot(item)
+    for field, value in payload.model_dump(
+        exclude={"expected_revision"}, exclude_unset=True
+    ).items():
+        setattr(item, field, value)
+    item.revision += 1
+    resulting = _funding_snapshot(item)
+    session.add(_revision(plan, user, "FUNDING", "CORRECTED", previous, resulting, item.id))
+    await session.commit()
+    logger.info(
+        "purchase_funding_source_corrected",
+        actor_user_id=str(user.id),
+        household_id=str(plan.household_id),
+        purchase_plan_id=str(plan.id),
+        child_id=str(item.id),
+        revision=item.revision,
+    )
+    return item
+
+
+@router.delete(
+    "/purchase-plans/{plan_id}/funding-sources/{child_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+async def retire_funding_source(
+    plan_id: uuid.UUID,
+    child_id: uuid.UUID,
+    payload: ChildRetire,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    plan = await _plan_with_access(plan_id, HouseholdRole.EDITOR, user, session)
+    item = await _funding_with_lock(plan, child_id, session)
+    if item.revision != payload.expected_revision:
+        raise HTTPException(409, "Funding source changed; reload before removing it")
+    previous = _funding_snapshot(item)
+    item.is_active = False
+    item.revision += 1
+    session.add(
+        _revision(plan, user, "FUNDING", "RETIRED", previous, _funding_snapshot(item), item.id)
+    )
+    await session.commit()
+
+
+@router.post(
+    "/purchase-plans/{plan_id}/costs",
+    response_model=CostRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_cost(
+    plan_id: uuid.UUID,
+    payload: CostCreate,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> PurchaseCost:
+    plan = await _plan_with_access(plan_id, HouseholdRole.EDITOR, user, session)
+    item = PurchaseCost(purchase_plan_id=plan.id, **payload.model_dump())
+    session.add(item)
+    await session.flush()
+    session.add(_revision(plan, user, "COST", "CREATED", None, _cost_snapshot(item), item.id))
+    await session.commit()
+    logger.info(
+        "purchase_cost_created",
+        actor_user_id=str(user.id),
+        household_id=str(plan.household_id),
+        purchase_plan_id=str(plan.id),
+        child_id=str(item.id),
+        revision=item.revision,
+    )
+    return item
+
+
+@router.patch("/purchase-plans/{plan_id}/costs/{child_id}", response_model=CostRead)
+async def update_cost(
+    plan_id: uuid.UUID,
+    child_id: uuid.UUID,
+    payload: CostUpdate,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> PurchaseCost:
+    plan = await _plan_with_access(plan_id, HouseholdRole.EDITOR, user, session)
+    item = await _cost_with_lock(plan, child_id, session)
+    if item.revision != payload.expected_revision:
+        raise HTTPException(409, "Purchase cost changed; reload before correcting it")
+    previous = _cost_snapshot(item)
+    for field, value in payload.model_dump(
+        exclude={"expected_revision"}, exclude_unset=True
+    ).items():
+        setattr(item, field, value)
+    item.revision += 1
+    session.add(_revision(plan, user, "COST", "CORRECTED", previous, _cost_snapshot(item), item.id))
+    await session.commit()
+    return item
+
+
+@router.delete("/purchase-plans/{plan_id}/costs/{child_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def retire_cost(
+    plan_id: uuid.UUID,
+    child_id: uuid.UUID,
+    payload: ChildRetire,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    plan = await _plan_with_access(plan_id, HouseholdRole.EDITOR, user, session)
+    item = await _cost_with_lock(plan, child_id, session)
+    if item.revision != payload.expected_revision:
+        raise HTTPException(409, "Purchase cost changed; reload before removing it")
+    previous = _cost_snapshot(item)
+    item.is_active = False
+    item.revision += 1
+    session.add(_revision(plan, user, "COST", "RETIRED", previous, _cost_snapshot(item), item.id))
+    await session.commit()
+
+
+@router.put("/purchase-plans/{plan_id}/ownership", response_model=list[OwnershipRead])
+async def replace_ownership(
+    plan_id: uuid.UUID,
+    payload: OwnershipSetReplace,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> list[PurchaseOwnershipAllocation]:
+    plan = await _plan_with_access(plan_id, HouseholdRole.EDITOR, user, session)
+    await session.scalar(
+        select(PurchasePlan.id).where(PurchasePlan.id == plan.id).with_for_update()
+    )
+    existing = list(
+        await session.scalars(
+            select(PurchaseOwnershipAllocation).where(
+                PurchaseOwnershipAllocation.purchase_plan_id == plan.id,
+                PurchaseOwnershipAllocation.is_active.is_(True),
+            )
+        )
+    )
+    if {item.id for item in existing} != set(payload.expected_revision_ids):
+        raise HTTPException(409, "Ownership changed; reload before replacing it")
+    await _validate_ownership_people(plan, payload.ownership, session)
+    previous = [_ownership_snapshot(item) for item in existing]
+    for item in existing:
+        item.is_active = False
+        item.revision += 1
+    resulting_items = [
+        PurchaseOwnershipAllocation(purchase_plan_id=plan.id, **item.model_dump())
+        for item in payload.ownership
+    ]
+    session.add_all(resulting_items)
+    await session.flush()
+    resulting = [_ownership_snapshot(item) for item in resulting_items]
+    session.add(_revision(plan, user, "OWNERSHIP", "REPLACED", previous, resulting))
+    await session.commit()
+    logger.info(
+        "purchase_ownership_replaced",
+        actor_user_id=str(user.id),
+        household_id=str(plan.household_id),
+        purchase_plan_id=str(plan.id),
+        previous_ids=[item["id"] for item in previous],
+        resulting_ids=[item["id"] for item in resulting],
+    )
+    return resulting_items
 
 
 @router.post("/purchase-plans/{plan_id}/calculate", response_model=FeasibilityRead)
@@ -164,11 +557,19 @@ async def calculate_purchase_plan(
     assert purchase_type is not None
     funding = list(
         await session.scalars(
-            select(PurchaseFundingSource).where(PurchaseFundingSource.purchase_plan_id == plan.id)
+            select(PurchaseFundingSource).where(
+                PurchaseFundingSource.purchase_plan_id == plan.id,
+                PurchaseFundingSource.is_active.is_(True),
+            )
         )
     )
     stored_costs = list(
-        await session.scalars(select(PurchaseCost).where(PurchaseCost.purchase_plan_id == plan.id))
+        await session.scalars(
+            select(PurchaseCost).where(
+                PurchaseCost.purchase_plan_id == plan.id,
+                PurchaseCost.is_active.is_(True),
+            )
+        )
     )
     provider_costs: list[CalculatedCost] = []
     assumptions: list[str] = []
