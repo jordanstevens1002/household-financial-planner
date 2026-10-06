@@ -104,14 +104,18 @@ const propertiesRoute = createRoute({
   path: '/properties',
 });
 
+const purchasesRoute = createRoute({
+  component: lazyRouteComponent(
+    () => import('../features/purchases/PurchasesPage'),
+    'PurchasesPage',
+  ),
+  getParentRoute: () => rootRoute,
+  path: '/purchases',
+});
+
 function placeholderRoute(
   path:
-    | '/households'
-    | '/properties'
-    | '/purchases'
-    | '/retirement'
-    | '/scenarios'
-    | '/timeline',
+    '/households' | '/properties' | '/retirement' | '/scenarios' | '/timeline',
 ) {
   return createRoute({
     component: lazyRouteComponent(
@@ -133,7 +137,7 @@ const routeTree = rootRoute.addChildren([
   incomeRoute,
   cashFlowRoute,
   propertiesRoute,
-  placeholderRoute('/purchases'),
+  purchasesRoute,
   placeholderRoute('/retirement'),
   placeholderRoute('/timeline'),
   placeholderRoute('/scenarios'),
