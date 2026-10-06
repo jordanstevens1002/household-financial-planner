@@ -16,7 +16,9 @@ COPY app ./app
 COPY alembic.ini ./
 COPY alembic ./alembic
 COPY scripts ./scripts
-RUN pip install --upgrade pip "setuptools>=78.1.1" && pip install .
+RUN pip install --upgrade pip "setuptools>=78.1.1" \
+    && pip install . \
+    && pip uninstall --yes pip
 
 USER app
 EXPOSE 8000
@@ -25,6 +27,6 @@ CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --
 FROM runtime AS test
 USER root
 COPY tests ./tests
-RUN pip install ".[test]"
+RUN python -m ensurepip --upgrade && python -m pip install ".[test]"
 USER app
 CMD ["sh", "scripts/check.sh"]
