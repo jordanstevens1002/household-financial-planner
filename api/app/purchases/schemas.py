@@ -43,6 +43,22 @@ class FundingSourceUpdate(BaseModel):
     is_borrowed: bool | None = None
     notes: str | None = Field(default=None, max_length=2000)
 
+    @model_validator(mode="after")
+    def validate_correction(self) -> FundingSourceUpdate:
+        mutable_fields = self.model_fields_set - {"expected_revision"}
+        if not mutable_fields:
+            raise ValueError("At least one funding source field must be corrected")
+        required_fields = {
+            "display_name",
+            "source_type",
+            "amount",
+            "available_date",
+            "is_borrowed",
+        }
+        if any(getattr(self, field) is None for field in mutable_fields & required_fields):
+            raise ValueError("Required funding source fields cannot be null")
+        return self
+
 
 class CostCreate(BaseModel):
     code: str = Field(min_length=1, max_length=80)
@@ -64,6 +80,15 @@ class CostUpdate(BaseModel):
     display_name: str | None = Field(default=None, min_length=1, max_length=200)
     amount: NonNegativeMoney | None = None
     is_estimate: bool | None = None
+
+    @model_validator(mode="after")
+    def validate_correction(self) -> CostUpdate:
+        mutable_fields = self.model_fields_set - {"expected_revision"}
+        if not mutable_fields:
+            raise ValueError("At least one purchase cost field must be corrected")
+        if any(getattr(self, field) is None for field in mutable_fields):
+            raise ValueError("Purchase cost fields cannot be null")
+        return self
 
 
 class OwnershipCreate(BaseModel):

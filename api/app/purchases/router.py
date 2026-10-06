@@ -388,9 +388,10 @@ async def update_funding_source(
     if item.revision != payload.expected_revision:
         raise HTTPException(409, "Funding source changed; reload before correcting it")
     previous = _funding_snapshot(item)
-    for field, value in payload.model_dump(
-        exclude={"expected_revision"}, exclude_unset=True
-    ).items():
+    changes = payload.model_dump(exclude={"expected_revision"}, exclude_unset=True)
+    if all(getattr(item, field) == value for field, value in changes.items()):
+        raise HTTPException(422, "Funding source correction does not change any values")
+    for field, value in changes.items():
         setattr(item, field, value)
     item.revision += 1
     resulting = _funding_snapshot(item)
@@ -428,6 +429,14 @@ async def retire_funding_source(
         _revision(plan, user, "FUNDING", "RETIRED", previous, _funding_snapshot(item), item.id)
     )
     await session.commit()
+    logger.info(
+        "purchase_funding_source_retired",
+        actor_user_id=str(user.id),
+        household_id=str(plan.household_id),
+        purchase_plan_id=str(plan.id),
+        child_id=str(item.id),
+        revision=item.revision,
+    )
 
 
 @router.post(
@@ -471,13 +480,22 @@ async def update_cost(
     if item.revision != payload.expected_revision:
         raise HTTPException(409, "Purchase cost changed; reload before correcting it")
     previous = _cost_snapshot(item)
-    for field, value in payload.model_dump(
-        exclude={"expected_revision"}, exclude_unset=True
-    ).items():
+    changes = payload.model_dump(exclude={"expected_revision"}, exclude_unset=True)
+    if all(getattr(item, field) == value for field, value in changes.items()):
+        raise HTTPException(422, "Purchase cost correction does not change any values")
+    for field, value in changes.items():
         setattr(item, field, value)
     item.revision += 1
     session.add(_revision(plan, user, "COST", "CORRECTED", previous, _cost_snapshot(item), item.id))
     await session.commit()
+    logger.info(
+        "purchase_cost_corrected",
+        actor_user_id=str(user.id),
+        household_id=str(plan.household_id),
+        purchase_plan_id=str(plan.id),
+        child_id=str(item.id),
+        revision=item.revision,
+    )
     return item
 
 
@@ -498,6 +516,14 @@ async def retire_cost(
     item.revision += 1
     session.add(_revision(plan, user, "COST", "RETIRED", previous, _cost_snapshot(item), item.id))
     await session.commit()
+    logger.info(
+        "purchase_cost_retired",
+        actor_user_id=str(user.id),
+        household_id=str(plan.household_id),
+        purchase_plan_id=str(plan.id),
+        child_id=str(item.id),
+        revision=item.revision,
+    )
 
 
 @router.put("/purchase-plans/{plan_id}/ownership", response_model=list[PurchaseOwnershipRead])

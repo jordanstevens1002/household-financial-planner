@@ -415,6 +415,118 @@ async def test_purchase_plan_detail_children_are_correctable_and_recoverable(
     assert denied.status_code == 403
 
 
+async def test_purchase_child_corrections_reject_null_and_noop_payloads(
+    client: AsyncClient,
+    session: AsyncSession,
+    purchase_type: LookupItem,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    household = await create_household(client)
+    plan = (
+        await client.post(
+            f"/api/v1/households/{household['id']}/purchase-plans",
+            json={
+                "display_name": "Correction validation",
+                "purchase_type_id": str(purchase_type.id),
+                "intended_use": "PERSONAL",
+                "target_price_min": "400000.00",
+                "target_price_max": "500000.00",
+                "target_date": "2028-01-01",
+            },
+        )
+    ).json()
+    funding = (
+        await client.post(
+            f"/api/v1/purchase-plans/{plan['id']}/funding-sources",
+            json={
+                "display_name": "Savings",
+                "source_type": "SAVINGS",
+                "amount": "75000.00",
+                "available_date": "2027-01-01",
+                "is_borrowed": False,
+                "notes": "clearable note",
+            },
+        )
+    ).json()
+    cost = (
+        await client.post(
+            f"/api/v1/purchase-plans/{plan['id']}/costs",
+            json={
+                "code": "LEGAL",
+                "display_name": "Legal fees",
+                "amount": "2500.00",
+                "is_estimate": True,
+            },
+        )
+    ).json()
+    funding_url = f"/api/v1/purchase-plans/{plan['id']}/funding-sources/{funding['id']}"
+    cost_url = f"/api/v1/purchase-plans/{plan['id']}/costs/{cost['id']}"
+
+    for field in (
+        "display_name",
+        "source_type",
+        "amount",
+        "available_date",
+        "is_borrowed",
+    ):
+        response = await client.patch(funding_url, json={"expected_revision": 1, field: None})
+        assert response.status_code == 422, field
+    for field in ("code", "display_name", "amount", "is_estimate"):
+        response = await client.patch(cost_url, json={"expected_revision": 1, field: None})
+        assert response.status_code == 422, field
+
+    assert (await client.patch(funding_url, json={"expected_revision": 1})).status_code == 422
+    assert (await client.patch(cost_url, json={"expected_revision": 1})).status_code == 422
+    assert (
+        await client.patch(funding_url, json={"expected_revision": 1, "amount": "75000.00"})
+    ).status_code == 422
+    assert (
+        await client.patch(cost_url, json={"expected_revision": 1, "display_name": "Legal fees"})
+    ).status_code == 422
+
+    cleared = await client.patch(funding_url, json={"expected_revision": 1, "notes": None})
+    corrected_cost = await client.patch(
+        cost_url, json={"expected_revision": 1, "amount": "2600.00"}
+    )
+    assert cleared.status_code == 200
+    assert cleared.json()["notes"] is None
+    assert cleared.json()["revision"] == 2
+    assert corrected_cost.status_code == 200
+    assert corrected_cost.json()["revision"] == 2
+
+    retired_funding = await client.request("DELETE", funding_url, json={"expected_revision": 2})
+    retired_cost = await client.request("DELETE", cost_url, json={"expected_revision": 2})
+    assert retired_funding.status_code == 204
+    assert retired_cost.status_code == 204
+
+    revisions = list(
+        await session.scalars(
+            select(PurchasePlanChildRevision).where(
+                PurchasePlanChildRevision.purchase_plan_id == uuid.UUID(plan["id"])
+            )
+        )
+    )
+    assert [item.action for item in revisions] == [
+        "CREATED",
+        "CREATED",
+        "CORRECTED",
+        "CORRECTED",
+        "RETIRED",
+        "RETIRED",
+    ]
+    for event in (
+        "purchase_funding_source_retired",
+        "purchase_cost_corrected",
+        "purchase_cost_retired",
+    ):
+        assert event in caplog.text
+    assert household["id"] in caplog.text
+    assert plan["id"] in caplog.text
+    assert funding["id"] in caplog.text
+    assert cost["id"] in caplog.text
+    assert "clearable note" not in caplog.text
+
+
 async def test_purchase_ownership_replacement_rejects_stale_and_cross_household_people(
     client: AsyncClient,
     session: AsyncSession,
