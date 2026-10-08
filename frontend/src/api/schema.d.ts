@@ -1268,6 +1268,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/purchase-plans/{plan_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Purchase Plan */
+        get: operations["get_purchase_plan_api_v1_purchase_plans__plan_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/purchase-plans/{plan_id}/calculate": {
         parameters: {
             query?: never;
@@ -1279,6 +1296,93 @@ export interface paths {
         put?: never;
         /** Calculate Purchase Plan */
         post: operations["calculate_purchase_plan_api_v1_purchase_plans__plan_id__calculate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-plans/{plan_id}/costs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Cost */
+        post: operations["create_cost_api_v1_purchase_plans__plan_id__costs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-plans/{plan_id}/costs/{child_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Retire Cost */
+        delete: operations["retire_cost_api_v1_purchase_plans__plan_id__costs__child_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Cost */
+        patch: operations["update_cost_api_v1_purchase_plans__plan_id__costs__child_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/purchase-plans/{plan_id}/funding-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Funding Source */
+        post: operations["create_funding_source_api_v1_purchase_plans__plan_id__funding_sources_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-plans/{plan_id}/funding-sources/{child_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Retire Funding Source */
+        delete: operations["retire_funding_source_api_v1_purchase_plans__plan_id__funding_sources__child_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Funding Source */
+        patch: operations["update_funding_source_api_v1_purchase_plans__plan_id__funding_sources__child_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/purchase-plans/{plan_id}/ownership": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace Ownership */
+        put: operations["replace_ownership_api_v1_purchase_plans__plan_id__ownership_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1739,6 +1843,11 @@ export interface components {
             /** Source */
             source: string;
         };
+        /** ChildRetire */
+        ChildRetire: {
+            /** Expected Revision */
+            expected_revision: number;
+        };
         /** ContributionProfileCreate */
         ContributionProfileCreate: {
             /** Annual Pre Tax Cap */
@@ -1824,6 +1933,45 @@ export interface components {
              * @default true
              */
             is_estimate: boolean;
+        };
+        /** CostRead */
+        CostRead: {
+            /** Amount */
+            amount: string;
+            /** Code */
+            code: string;
+            /** Display Name */
+            display_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Is Estimate
+             * @default true
+             */
+            is_estimate: boolean;
+            /**
+             * Purchase Plan Id
+             * Format: uuid
+             */
+            purchase_plan_id: string;
+            /** Revision */
+            revision: number;
+        };
+        /** CostUpdate */
+        CostUpdate: {
+            /** Amount */
+            amount?: number | string | null;
+            /** Code */
+            code?: string | null;
+            /** Display Name */
+            display_name?: string | null;
+            /** Expected Revision */
+            expected_revision: number;
+            /** Is Estimate */
+            is_estimate?: boolean | null;
         };
         /** CountryRead */
         CountryRead: {
@@ -2061,6 +2209,56 @@ export interface components {
             notes?: string | null;
             /** Source Type */
             source_type: string;
+        };
+        /** FundingSourceRead */
+        FundingSourceRead: {
+            /** Amount */
+            amount: string;
+            /**
+             * Available Date
+             * Format: date
+             */
+            available_date: string;
+            /** Display Name */
+            display_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Is Borrowed
+             * @default false
+             */
+            is_borrowed: boolean;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Purchase Plan Id
+             * Format: uuid
+             */
+            purchase_plan_id: string;
+            /** Revision */
+            revision: number;
+            /** Source Type */
+            source_type: string;
+        };
+        /** FundingSourceUpdate */
+        FundingSourceUpdate: {
+            /** Amount */
+            amount?: number | string | null;
+            /** Available Date */
+            available_date?: string | null;
+            /** Display Name */
+            display_name?: string | null;
+            /** Expected Revision */
+            expected_revision: number;
+            /** Is Borrowed */
+            is_borrowed?: boolean | null;
+            /** Notes */
+            notes?: string | null;
+            /** Source Type */
+            source_type?: string | null;
         };
         /**
          * GlobalRole
@@ -3202,6 +3400,13 @@ export interface components {
             /** Warnings */
             warnings: string[];
         };
+        /** OwnershipSetReplace */
+        OwnershipSetReplace: {
+            /** Expected Revision Ids */
+            expected_revision_ids?: string[];
+            /** Ownership */
+            ownership: components["schemas"]["app__purchases__schemas__OwnershipCreate"][];
+        };
         /** PasswordChangeRequest */
         PasswordChangeRequest: {
             /** Current Password */
@@ -3626,6 +3831,28 @@ export interface components {
             /** Warnings */
             warnings: string[];
         };
+        /** PurchaseOwnershipRead */
+        PurchaseOwnershipRead: {
+            /** External Owner Name */
+            external_owner_name?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            owner_type: components["schemas"]["OwnerType"];
+            /** Ownership Percentage */
+            ownership_percentage: string;
+            /** Person Id */
+            person_id?: string | null;
+            /**
+             * Purchase Plan Id
+             * Format: uuid
+             */
+            purchase_plan_id: string;
+            /** Revision */
+            revision: number;
+        };
         /** PurchasePlanCreate */
         PurchasePlanCreate: {
             /** Costs */
@@ -3675,6 +3902,63 @@ export interface components {
             target_price_max: number | string;
             /** Target Price Min */
             target_price_min: number | string;
+        };
+        /** PurchasePlanDetail */
+        PurchasePlanDetail: {
+            /** Costs */
+            costs: components["schemas"]["CostRead"][];
+            /** Currency */
+            currency: string;
+            /** Desired Buffer */
+            desired_buffer: string;
+            /** Display Name */
+            display_name: string;
+            /** Funding Sources */
+            funding_sources: components["schemas"]["FundingSourceRead"][];
+            /**
+             * Household Id
+             * Format: uuid
+             */
+            household_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Intended Use */
+            intended_use: string;
+            /** Max Lvr */
+            max_lvr: string | null;
+            /** Minimum Monthly Surplus */
+            minimum_monthly_surplus: string | null;
+            /** Notes */
+            notes: string | null;
+            /** Ownership */
+            ownership: components["schemas"]["PurchaseOwnershipRead"][];
+            /** Provider Code */
+            provider_code: string | null;
+            /** Provider Settings */
+            provider_settings: {
+                [key: string]: unknown;
+            };
+            /**
+             * Purchase Type Id
+             * Format: uuid
+             */
+            purchase_type_id: string;
+            /**
+             * Target Date
+             * Format: date
+             */
+            target_date: string;
+            /** Target Location */
+            target_location: {
+                [key: string]: unknown;
+            };
+            /** Target Price Max */
+            target_price_max: string;
+            /** Target Price Min */
+            target_price_min: string;
         };
         /** PurchasePlanRead */
         PurchasePlanRead: {
@@ -7963,6 +8247,39 @@ export interface operations {
             };
         };
     };
+    get_purchase_plan_api_v1_purchase_plans__plan_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                plan_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchasePlanDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     calculate_purchase_plan_api_v1_purchase_plans__plan_id__calculate_post: {
         parameters: {
             query?: never;
@@ -7987,6 +8304,265 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FeasibilityRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_cost_api_v1_purchase_plans__plan_id__costs_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                plan_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CostCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retire_cost_api_v1_purchase_plans__plan_id__costs__child_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                plan_id: string;
+                child_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChildRetire"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_cost_api_v1_purchase_plans__plan_id__costs__child_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                plan_id: string;
+                child_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CostUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_funding_source_api_v1_purchase_plans__plan_id__funding_sources_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                plan_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FundingSourceCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FundingSourceRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retire_funding_source_api_v1_purchase_plans__plan_id__funding_sources__child_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                plan_id: string;
+                child_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChildRetire"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_funding_source_api_v1_purchase_plans__plan_id__funding_sources__child_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                plan_id: string;
+                child_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FundingSourceUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FundingSourceRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    replace_ownership_api_v1_purchase_plans__plan_id__ownership_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                plan_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OwnershipSetReplace"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseOwnershipRead"][];
                 };
             };
             /** @description Validation Error */

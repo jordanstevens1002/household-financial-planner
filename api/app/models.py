@@ -12,9 +12,11 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Index,
+    Integer,
     Numeric,
     String,
     UniqueConstraint,
+    Uuid,
     func,
     text,
 )
@@ -809,6 +811,8 @@ class PurchaseFundingSource(Base):
     available_date: Mapped[date] = mapped_column(Date)
     is_borrowed: Mapped[bool] = mapped_column(Boolean)
     notes: Mapped[str | None] = mapped_column(String(2000))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
 
 
 class PurchaseCost(Base):
@@ -822,6 +826,8 @@ class PurchaseCost(Base):
     display_name: Mapped[str] = mapped_column(String(200))
     amount: Mapped[Decimal] = mapped_column(Numeric(18, 2))
     is_estimate: Mapped[bool] = mapped_column(Boolean)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
 
 
 class PurchaseOwnershipAllocation(Base):
@@ -839,6 +845,39 @@ class PurchaseOwnershipAllocation(Base):
     )
     external_owner_name: Mapped[str | None] = mapped_column(String(200))
     ownership_percentage: Mapped[Decimal] = mapped_column(Numeric(7, 4))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+
+
+class PurchasePlanChildRevision(Base):
+    __tablename__ = "purchase_plan_child_revisions"
+    __table_args__ = (
+        CheckConstraint("child_type IN ('FUNDING', 'COST', 'OWNERSHIP')"),
+        CheckConstraint("action IN ('CREATED', 'CORRECTED', 'RETIRED', 'REPLACED')"),
+        Index("ix_purchase_child_revision_plan_cursor", "purchase_plan_id", "created_at", "id"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    purchase_plan_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("purchase_plans.id", ondelete="CASCADE"), index=True
+    )
+    household_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("households.id", ondelete="CASCADE"), index=True
+    )
+    actor_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("application_users.id", ondelete="RESTRICT"), index=True
+    )
+    child_type: Mapped[str] = mapped_column(String(20))
+    child_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    action: Mapped[str] = mapped_column(String(20))
+    previous_state: Mapped[dict[str, object] | list[dict[str, object]] | None] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql")
+    )
+    resulting_state: Mapped[dict[str, object] | list[dict[str, object]] | None] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql")
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), server_default=func.now()
+    )
 
 
 class Scenario(Base):
