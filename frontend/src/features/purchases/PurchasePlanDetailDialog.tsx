@@ -21,6 +21,7 @@ import { DataTable, type DataColumn } from '../../shared/DataTable';
 import { formatCurrency, formatDate } from '../../shared/format';
 import { useNotification } from '../../shared/notificationContext';
 import { useAuth } from '../auth/AuthContext';
+import { PurchaseFeasibilityPanel } from './PurchaseFeasibilityPanel';
 
 type Detail = components['schemas']['PurchasePlanDetail'];
 type Funding = components['schemas']['FundingSourceRead'];
@@ -746,6 +747,7 @@ export function PurchasePlanDetailDialog({
               <Alert severity="info">No proposed ownership recorded.</Alert>
             )}
           </Stack>
+          <PurchaseFeasibilityPanel plan={plan} />
         </Stack>
       </DialogContent>
       <DialogActions>

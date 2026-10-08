@@ -112,6 +112,7 @@ async def test_purchase_plan_with_australian_example_and_feasibility(
         f"/api/v1/purchase-plans/{plan['id']}/calculate",
         json={
             "purchase_price": 500000,
+            "desired_buffer": 5000,
             "maximum_additional_borrowing": 450000,
             "annual_interest_rate": 6,
             "loan_term_years": 30,
@@ -120,15 +121,16 @@ async def test_purchase_plan_with_australian_example_and_feasibility(
     )
     assert calculation.status_code == 200, calculation.text
     body = calculation.json()
-    assert body["required_total"] == "537000.00"
+    assert body["required_total"] == "532000.00"
     assert body["available_equity_funding"] == "100000.00"
-    assert body["additional_loan_required"] == "437000.00"
+    assert body["additional_loan_required"] == "432000.00"
     assert body["is_feasible"] is False
     assert body["failed_thresholds"] == ["max_lvr"]
     assert {item["source"] for item in body["costs"]} == {"USER", "AU_PURCHASE"}
     assert any("6% over 30 years" in item for item in body["assumptions_used"])
     assert any("6000 AUD" in item for item in body["assumptions_used"])
     assert any("450000 AUD" in item for item in body["assumptions_used"])
+    assert any("5000 AUD" in item for item in body["assumptions_used"])
     listed = await client.get(f"/api/v1/households/{household['id']}/purchase-plans")
     assert listed.status_code == 200
     assert listed.json()[0]["id"] == plan["id"]

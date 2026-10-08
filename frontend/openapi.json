@@ -1200,6 +1200,22 @@
             ],
             "title": "Current Monthly Surplus"
           },
+          "desired_buffer": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desired Buffer"
+          },
           "loan_term_years": {
             "exclusiveMinimum": 0.0,
             "maximum": 100.0,

@@ -630,10 +630,13 @@ async def calculate_purchase_plan(
     available = [item for item in funding if item.available_date <= plan.target_date]
     equity = sum((item.amount for item in available if not item.is_borrowed), Decimal("0"))
     borrowed = sum((item.amount for item in available if item.is_borrowed), Decimal("0"))
+    desired_buffer = (
+        plan.desired_buffer if payload.desired_buffer is None else payload.desired_buffer
+    )
     values = calculate_feasibility(
         payload.purchase_price,
         sum((item.amount for item in costs), Decimal("0")),
-        plan.desired_buffer,
+        desired_buffer,
         equity,
         borrowed,
         payload.maximum_additional_borrowing,
@@ -646,6 +649,10 @@ async def calculate_purchase_plan(
     assumptions.extend(
         [
             "Only funding available by the target date is included.",
+            (
+                "The calculation includes a desired post-purchase buffer of "
+                f"{desired_buffer} {plan.currency}."
+            ),
             (
                 "Loan repayment uses a constant principal-and-interest rate of "
                 f"{payload.annual_interest_rate}% over {payload.loan_term_years} years."

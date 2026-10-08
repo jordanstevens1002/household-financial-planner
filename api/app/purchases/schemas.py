@@ -199,6 +199,7 @@ class PurchasePlanDetail(PurchasePlanRead):
 
 class FeasibilityRequest(BaseModel):
     purchase_price: Money = Field(gt=0)
+    desired_buffer: NonNegativeMoney | None = None
     maximum_additional_borrowing: NonNegativeMoney
     annual_interest_rate: Decimal = Field(ge=0, le=100)
     loan_term_years: int = Field(gt=0, le=100)

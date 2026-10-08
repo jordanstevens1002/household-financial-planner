@@ -2082,6 +2082,8 @@ export interface components {
             annual_interest_rate: number | string;
             /** Current Monthly Surplus */
             current_monthly_surplus: number | string;
+            /** Desired Buffer */
+            desired_buffer?: number | string | null;
             /** Loan Term Years */
             loan_term_years: number;
             /** Maximum Additional Borrowing */
