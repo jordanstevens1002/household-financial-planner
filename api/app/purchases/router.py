@@ -2,11 +2,11 @@
 
 import uuid
 from datetime import date
-from decimal import Decimal
+from decimal import Decimal, DecimalException
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -18,7 +18,6 @@ from app.models import (
     HouseholdMembership,
     HouseholdRole,
     LookupItem,
-    OwnerType,
     Person,
     PurchaseCost,
     PurchaseFundingSource,
@@ -155,7 +154,10 @@ def _revision(
 
 
 async def _validate_ownership_people(
-    plan: PurchasePlan, ownership: list[OwnershipCreate], session: AsyncSession
+    household_id: uuid.UUID,
+    target_date: date,
+    ownership: list[OwnershipCreate],
+    session: AsyncSession,
 ) -> None:
     person_ids = {item.person_id for item in ownership if item.person_id is not None}
     if not person_ids:
@@ -163,12 +165,19 @@ async def _validate_ownership_people(
     found = set(
         await session.scalars(
             select(Person.id).where(
-                Person.id.in_(person_ids), Person.household_id == plan.household_id
+                Person.id.in_(person_ids),
+                Person.household_id == household_id,
+                Person.is_active.is_(True),
+                Person.effective_from <= target_date,
+                or_(Person.effective_to.is_(None), Person.effective_to >= target_date),
             )
         )
     )
     if found != person_ids:
-        raise HTTPException(422, "Ownership people must belong to the household")
+        raise HTTPException(
+            422,
+            "Ownership people must be active household members on the plan target date",
+        )
 
 
 async def _funding_with_lock(
@@ -245,13 +254,7 @@ async def create_purchase_plan(
             )
         except (PurchaseProviderError, ValueError) as exc:
             raise HTTPException(422, str(exc)) from exc
-    for owner in payload.ownership:
-        if owner.person_id is not None:
-            person = await session.get(Person, owner.person_id)
-            if person is None or person.household_id != household_id:
-                raise HTTPException(422, "Ownership person must belong to the household")
-        if owner.owner_type == OwnerType.PERSON and owner.person_id is None:
-            raise HTTPException(422, "PERSON ownership requires person_id")
+    await _validate_ownership_people(household_id, payload.target_date, payload.ownership, session)
     values = payload.model_dump(exclude={"funding_sources", "costs", "ownership"})
     values["currency"] = payload.currency or household.currency
     values["provider_settings"] = provider_settings
@@ -547,7 +550,9 @@ async def replace_ownership(
     )
     if {item.id for item in existing} != set(payload.expected_revision_ids):
         raise HTTPException(409, "Ownership changed; reload before replacing it")
-    await _validate_ownership_people(plan, payload.ownership, session)
+    await _validate_ownership_people(
+        plan.household_id, plan.target_date, payload.ownership, session
+    )
     previous = [_ownership_snapshot(item) for item in existing]
     for item in existing:
         item.is_active = False
@@ -620,16 +625,25 @@ async def calculate_purchase_plan(
                 ),
                 provider_settings,
             )
-        except (PurchaseProviderError, ValueError) as exc:
+        except (DecimalException, PurchaseProviderError, ValueError) as exc:
             raise HTTPException(422, str(exc)) from exc
         provider_costs = [
-            CalculatedCost(**item.__dict__, source=plan.provider_code) for item in result.costs
+            CalculatedCost(
+                id=f"provider-{index}-{item.code}",
+                **item.__dict__,
+                source=plan.provider_code,
+            )
+            for index, item in enumerate(result.costs)
         ]
         assumptions.extend(result.assumptions)
         warnings.extend(result.warnings)
     costs = [
         CalculatedCost(
-            code=item.code, display_name=item.display_name, amount=item.amount, source="USER"
+            id=f"user-{item.id}",
+            code=item.code,
+            display_name=item.display_name,
+            amount=item.amount,
+            source="USER",
         )
         for item in stored_costs
     ] + provider_costs
@@ -639,19 +653,22 @@ async def calculate_purchase_plan(
     desired_buffer = (
         plan.desired_buffer if payload.desired_buffer is None else payload.desired_buffer
     )
-    values = calculate_feasibility(
-        payload.purchase_price,
-        sum((item.amount for item in costs), Decimal("0")),
-        desired_buffer,
-        equity,
-        borrowed,
-        payload.maximum_additional_borrowing,
-        payload.annual_interest_rate,
-        payload.loan_term_years,
-        payload.current_monthly_surplus,
-        plan.max_lvr,
-        plan.minimum_monthly_surplus,
-    )
+    try:
+        values = calculate_feasibility(
+            payload.purchase_price,
+            sum((item.amount for item in costs), Decimal("0")),
+            desired_buffer,
+            equity,
+            borrowed,
+            payload.maximum_additional_borrowing,
+            payload.annual_interest_rate,
+            payload.loan_term_years,
+            payload.current_monthly_surplus,
+            plan.max_lvr,
+            plan.minimum_monthly_surplus,
+        )
+    except DecimalException as exc:
+        raise HTTPException(422, "Calculation values exceed supported precision") from exc
     assumptions.extend(
         [
             "Only funding available by the target date is included.",
@@ -673,6 +690,12 @@ async def calculate_purchase_plan(
             ),
         ]
     )
+    within_target_range = plan.target_price_min <= payload.purchase_price <= plan.target_price_max
+    if not within_target_range:
+        warnings.append(
+            "The calculation price is outside the saved plan target range of "
+            f"{plan.target_price_min}–{plan.target_price_max} {plan.currency}."
+        )
     return FeasibilityRead(
         purchase_plan_id=plan.id,
         calculation_date=date.today(),
@@ -688,6 +711,7 @@ async def calculate_purchase_plan(
         lvr=values.lvr,
         funding_gap=values.funding_gap,
         required_total=values.required_total,
+        is_within_target_price_range=within_target_range,
         is_feasible=not values.failed_thresholds,
         failed_thresholds=values.failed_thresholds,
         assumptions_used=assumptions,

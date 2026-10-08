@@ -1840,6 +1840,8 @@ export interface components {
             code: string;
             /** Display Name */
             display_name: string;
+            /** Id */
+            id: string;
             /** Source */
             source: string;
         };
@@ -2056,6 +2058,8 @@ export interface components {
             funding_gap: string;
             /** Is Feasible */
             is_feasible: boolean;
+            /** Is Within Target Price Range */
+            is_within_target_price_range: boolean;
             /** Lvr */
             lvr: string;
             /** Monthly Loan Repayment */

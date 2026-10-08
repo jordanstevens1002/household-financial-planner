@@ -208,6 +208,7 @@ class FeasibilityRequest(BaseModel):
 
 
 class CalculatedCost(BaseModel):
+    id: str
     code: str
     display_name: str
     amount: Decimal
@@ -229,6 +230,7 @@ class FeasibilityRead(BaseModel):
     lvr: Decimal
     funding_gap: Decimal
     required_total: Decimal
+    is_within_target_price_range: bool
     is_feasible: bool
     failed_thresholds: list[str]
     assumptions_used: list[str]

@@ -249,6 +249,14 @@ export function PurchaseFeasibilityPanel({ plan }: { plan: Detail }) {
             </Alert>
             <WarningInfo warnings={result.warnings} />
           </Stack>
+          {!result.is_within_target_price_range ? (
+            <Alert severity="warning">
+              This price is outside the saved target range of{' '}
+              {formatCurrency(plan.target_price_min, plan.currency)} to{' '}
+              {formatCurrency(plan.target_price_max, plan.currency)}. The result
+              only assesses the other saved comfort thresholds.
+            </Alert>
+          ) : null}
           <Typography color="text.secondary" variant="body2">
             Calculated {formatDate(result.calculation_date)} using{' '}
             {result.currency}.
@@ -322,7 +330,7 @@ export function PurchaseFeasibilityPanel({ plan }: { plan: Detail }) {
             <DataTable
               caption="Calculated purchase costs"
               columns={costColumns}
-              getRowKey={(cost) => `${cost.source}-${cost.code}`}
+              getRowKey={(cost) => cost.id}
               rows={result.costs}
             />
           ) : (

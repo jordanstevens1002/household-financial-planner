@@ -570,6 +570,12 @@ export function PurchasePlanDetailDialog({
       </Dialog>
     );
   const plan = detail.data;
+  const eligibleOwners = people.data.filter(
+    (person) =>
+      person.is_active &&
+      person.effective_from <= plan.target_date &&
+      (person.effective_to == null || person.effective_to >= plan.target_date),
+  );
   const ownerName = (owner: Owner) =>
     owner.owner_type === 'HOUSEHOLD'
       ? 'Household jointly'
@@ -782,7 +788,7 @@ export function PurchasePlanDetailDialog({
         <OwnershipDialog
           detail={plan}
           onClose={() => setOwnershipOpen(false)}
-          people={people.data}
+          people={eligibleOwners}
         />
       ) : null}
       {retire ? (

@@ -85,6 +85,7 @@ test('creates and lists a purchase plan', async ({ page }) => {
           failed_thresholds: [],
           funding_gap: '0.00',
           is_feasible: true,
+          is_within_target_price_range: true,
           lvr: '92.8571',
           monthly_loan_repayment: '3896.00',
           projected_monthly_surplus: '1104.00',

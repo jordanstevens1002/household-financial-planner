@@ -5,6 +5,7 @@ from decimal import Decimal
 
 import pytest
 from httpx import AsyncClient
+from pydantic import ValidationError
 
 from app.purchases.providers.australia import AustralianPurchaseProvider
 from app.purchases.providers.base import PurchaseContext, PurchaseProviderResult
@@ -36,6 +37,12 @@ def test_australian_provider_warns_about_zero_settings_and_currency() -> None:
     assert all(item.amount == 0 for item in result.costs)
     assert any("settings are zero" in warning for warning in result.warnings)
     assert any("ALL plan" in warning for warning in result.warnings)
+
+
+@pytest.mark.parametrize("fees", ["1e100000", "1.001"])
+def test_australian_provider_rejects_unsupported_fee_precision(fees: str) -> None:
+    with pytest.raises(ValidationError):
+        AustralianPurchaseProvider().validate_settings({"registration_fees": fees})
 
 
 class ExampleProvider:

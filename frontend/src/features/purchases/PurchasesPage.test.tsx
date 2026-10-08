@@ -79,12 +79,14 @@ const feasibilityResult = {
       amount: '1200.00',
       code: 'INSPECTION',
       display_name: 'Building inspection',
+      id: 'user-cost-1',
       source: 'USER',
     },
     {
       amount: '0.00',
       code: 'TRANSFER_DUTY',
       display_name: 'Transfer duty',
+      id: 'provider-cost-1',
       source: 'AU',
     },
   ],
@@ -93,6 +95,7 @@ const feasibilityResult = {
   failed_thresholds: ['Projected monthly surplus is below the saved minimum'],
   funding_gap: '0.00',
   is_feasible: false,
+  is_within_target_price_range: true,
   lvr: '81.3333',
   monthly_loan_repayment: '3657.00',
   projected_monthly_surplus: '-657.00',
@@ -143,7 +146,11 @@ async function renderPage() {
   await waitFor(() => expect(router.state.status).toBe('idle'));
 }
 
-function standardFetch(canEdit = true, plans: unknown[] = []) {
+function standardFetch(
+  canEdit = true,
+  plans: unknown[] = [],
+  householdPeople: unknown[] = [person],
+) {
   return vi.fn<typeof fetch>((input, init) => {
     const path = pathOf(input);
     if (path.endsWith('/auth/session'))
@@ -227,7 +234,8 @@ function standardFetch(canEdit = true, plans: unknown[] = []) {
       return Promise.resolve(response(feasibilityResult));
     if (path.includes(`/purchase-plans/${plan.id}/`))
       return Promise.resolve(response({}, init?.method === 'POST' ? 201 : 200));
-    if (path.endsWith('/people')) return Promise.resolve(response([person]));
+    if (path.endsWith('/people'))
+      return Promise.resolve(response(householdPeople));
     throw new Error(`Unexpected request: ${path}`);
   });
 }
@@ -465,6 +473,77 @@ describe('purchase plan records', () => {
 
     await user.type(within(detail).getByLabelText('Purchase price (NZD)'), '1');
     expect(within(detail).queryAllByText('NZ$610,000.00')).toHaveLength(0);
+  });
+
+  it('qualifies results outside the saved target range', async () => {
+    const user = userEvent.setup();
+    const fallback = standardFetch(true, [plan]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) =>
+        pathOf(input).endsWith(`/${plan.id}/calculate`)
+          ? Promise.resolve(
+              response({
+                ...feasibilityResult,
+                is_feasible: true,
+                is_within_target_price_range: false,
+                purchase_price: '1.00',
+              }),
+            )
+          : fallback(input, init),
+      ),
+    );
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'View details' }),
+    );
+    const detail = await screen.findByRole('dialog', { name: 'Next home' });
+    const purchasePrice = within(detail).getByLabelText('Purchase price (NZD)');
+    await user.clear(purchasePrice);
+    await user.type(purchasePrice, '1');
+    await user.click(within(detail).getByRole('button', { name: 'Calculate' }));
+
+    expect(
+      await within(detail).findByText(/outside the saved target range/i),
+    ).toBeVisible();
+    expect(within(detail).getByText(/only assesses the other/i)).toBeVisible();
+  });
+
+  it('excludes people who are inactive on the purchase target date', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      standardFetch(
+        true,
+        [plan],
+        [
+          person,
+          {
+            ...person,
+            display_name: 'Expired owner',
+            effective_to: '2027-12-31',
+            id: '00000000-0000-0000-0000-000000000099',
+          },
+        ],
+      ),
+    );
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'View details' }),
+    );
+    const detail = await screen.findByRole('dialog', { name: 'Next home' });
+    await user.click(
+      within(detail).getByRole('button', { name: 'Replace ownership' }),
+    );
+    const ownership = await screen.findByRole('dialog', {
+      name: 'Replace proposed ownership',
+    });
+    await user.click(within(ownership).getByLabelText('Person'));
+
+    expect(
+      await screen.findByRole('option', { name: 'Alex Example' }),
+    ).toBeVisible();
+    expect(screen.queryByRole('option', { name: 'Expired owner' })).toBeNull();
   });
 
   it('rejects invalid assumptions and reports calculation API failures', async () => {

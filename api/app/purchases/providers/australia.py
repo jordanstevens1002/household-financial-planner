@@ -16,7 +16,7 @@ class AustralianPurchaseSettings(BaseModel):
 
     transfer_duty_rate: Decimal = Field(default=Decimal("0"), ge=0, le=100)
     buyer_surcharge_rate: Decimal = Field(default=Decimal("0"), ge=0, le=100)
-    registration_fees: Decimal = Field(default=Decimal("0"), ge=0)
+    registration_fees: Decimal = Field(default=Decimal("0"), ge=0, max_digits=18, decimal_places=2)
 
 
 class AustralianPurchaseProvider:
