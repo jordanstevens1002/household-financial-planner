@@ -26,6 +26,7 @@ import { useNotification } from '../../shared/notificationContext';
 import { useAuth } from '../auth/AuthContext';
 import { useHousehold } from '../households/HouseholdContext';
 import { localCalendarDate } from '../people/localDate';
+import { PurchasePlanDetailDialog } from './PurchasePlanDetailDialog';
 
 type Access = components['schemas']['HouseholdAccessRead'];
 type Lookup = components['schemas']['LookupRead'];
@@ -207,6 +208,7 @@ function PlanDialog({
               fullWidth
               label="Target date"
               onChange={field('targetDate')}
+              slotProps={{ inputLabel: { shrink: true } }}
               type="date"
               value={form.targetDate}
             />
@@ -273,8 +275,8 @@ function PlanDialog({
             value={form.notes}
           />
           <Alert severity="info">
-            Funding sources, costs and proposed ownership become available with
-            the audited plan-detail workflow.
+            Save the plan first, then open its details to add funding sources,
+            costs and proposed ownership.
           </Alert>
           <AdvancedSection description="Installed providers can estimate jurisdiction-specific purchase costs. Their settings remain optional and country-neutral.">
             <Stack spacing={2}>
@@ -325,6 +327,7 @@ function PlanDialog({
 export function PurchasesPage() {
   const household = useHousehold();
   const [createOpen, setCreateOpen] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const householdId = household.selected?.id ?? null;
   const plans = useQuery({
     enabled: householdId !== null,
@@ -409,6 +412,13 @@ export function PurchasesPage() {
           ?.display_name ??
         (row.provider_code ? 'Provider unavailable' : 'None'),
     },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (row) => (
+        <Button onClick={() => setSelectedPlanId(row.id)}>View details</Button>
+      ),
+    },
   ];
   return (
     <Stack spacing={3}>
@@ -468,6 +478,14 @@ export function PurchasesPage() {
           onClose={() => setCreateOpen(false)}
           providers={providers.data}
           purchaseTypes={purchaseTypes.data}
+        />
+      ) : null}
+      {selectedPlanId && access.data ? (
+        <PurchasePlanDetailDialog
+          canEdit={access.data.can_edit}
+          householdId={selected.id}
+          onClose={() => setSelectedPlanId(null)}
+          planId={selectedPlanId}
         />
       ) : null}
     </Stack>

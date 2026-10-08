@@ -1,4 +1,5 @@
 import {
+  Navigate,
   createRootRoute,
   createRoute,
   createRouter,
@@ -104,11 +105,17 @@ const propertiesRoute = createRoute({
   path: '/properties',
 });
 
-const purchasesRoute = createRoute({
+const purchasePlansRoute = createRoute({
   component: lazyRouteComponent(
     () => import('../features/purchases/PurchasesPage'),
     'PurchasesPage',
   ),
+  getParentRoute: () => rootRoute,
+  path: '/purchase-plans',
+});
+
+const legacyPurchasesRoute = createRoute({
+  component: () => <Navigate replace to="/purchase-plans" />,
   getParentRoute: () => rootRoute,
   path: '/purchases',
 });
@@ -137,7 +144,8 @@ const routeTree = rootRoute.addChildren([
   incomeRoute,
   cashFlowRoute,
   propertiesRoute,
-  purchasesRoute,
+  purchasePlansRoute,
+  legacyPurchasesRoute,
   placeholderRoute('/retirement'),
   placeholderRoute('/timeline'),
   placeholderRoute('/scenarios'),

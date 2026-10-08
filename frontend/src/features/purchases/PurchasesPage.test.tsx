@@ -37,6 +37,32 @@ const purchaseType = {
   is_active: true,
 };
 const provider = { code: 'AU', display_name: 'Australian purchase costs' };
+const plan = {
+  currency: 'NZD',
+  desired_buffer: '10000.00',
+  display_name: 'Next home',
+  household_id: householdId,
+  id: '00000000-0000-0000-0000-000000000003',
+  intended_use: 'Owner occupied',
+  max_lvr: '80',
+  minimum_monthly_surplus: '500',
+  notes: null,
+  provider_code: 'AU',
+  provider_settings: {},
+  purchase_type_id: purchaseType.id,
+  target_date: '2028-01-10',
+  target_location: {},
+  target_price_max: '900000.00',
+  target_price_min: '750000.00',
+};
+const person = {
+  display_name: 'Alex Example',
+  effective_from: '2026-01-01',
+  effective_to: null,
+  household_id: householdId,
+  id: '00000000-0000-0000-0000-000000000004',
+  is_active: true,
+};
 
 function response(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -57,7 +83,7 @@ async function renderPage() {
   localStorage.setItem(selectionKeys.household, householdId);
   const router = createAppRouter();
   router.update({
-    history: createMemoryHistory({ initialEntries: ['/purchases'] }),
+    history: createMemoryHistory({ initialEntries: ['/purchase-plans'] }),
   });
   render(
     <ThemeProvider theme={appTheme}>
@@ -114,7 +140,50 @@ function standardFetch(canEdit = true, plans: unknown[] = []) {
       return Promise.resolve(response([purchaseType]));
     if (path.endsWith('/purchase-providers'))
       return Promise.resolve(response([provider]));
-    if (path.endsWith('/people')) return Promise.resolve(response([]));
+    if (path.endsWith(`/purchase-plans/${plan.id}`))
+      return Promise.resolve(
+        response({
+          ...plan,
+          costs: [
+            {
+              amount: '1200.00',
+              code: 'INSPECTION',
+              display_name: 'Building inspection',
+              id: '00000000-0000-0000-0000-000000000006',
+              is_estimate: true,
+              purchase_plan_id: plan.id,
+              revision: 1,
+            },
+          ],
+          funding_sources: [
+            {
+              amount: '150000.00',
+              available_date: '2027-12-01',
+              display_name: 'Savings',
+              id: '00000000-0000-0000-0000-000000000005',
+              is_borrowed: false,
+              notes: null,
+              purchase_plan_id: plan.id,
+              revision: 1,
+              source_type: 'CASH',
+            },
+          ],
+          ownership: [
+            {
+              external_owner_name: null,
+              id: '00000000-0000-0000-0000-000000000007',
+              owner_type: 'PERSON',
+              ownership_percentage: '100',
+              person_id: person.id,
+              purchase_plan_id: plan.id,
+              revision: 1,
+            },
+          ],
+        }),
+      );
+    if (path.includes(`/purchase-plans/${plan.id}/`))
+      return Promise.resolve(response({}, init?.method === 'POST' ? 201 : 200));
+    if (path.endsWith('/people')) return Promise.resolve(response([person]));
     throw new Error(`Unexpected request: ${path}`);
   });
 }
@@ -126,34 +195,166 @@ describe('purchase plan records', () => {
   });
 
   it('shows saved plans with friendly type and provider names', async () => {
-    vi.stubGlobal(
-      'fetch',
-      standardFetch(true, [
-        {
-          currency: 'NZD',
-          desired_buffer: '10000.00',
-          display_name: 'Next home',
-          household_id: householdId,
-          id: '00000000-0000-0000-0000-000000000003',
-          intended_use: 'Owner occupied',
-          max_lvr: '80',
-          minimum_monthly_surplus: '500',
-          notes: null,
-          provider_code: 'AU',
-          provider_settings: {},
-          purchase_type_id: purchaseType.id,
-          target_date: '2028-01-10',
-          target_location: {},
-          target_price_max: '900000.00',
-          target_price_min: '750000.00',
-        },
-      ]),
-    );
+    vi.stubGlobal('fetch', standardFetch(true, [plan]));
     await renderPage();
 
     expect(await screen.findByText('Next home')).toBeVisible();
     expect(screen.getByText('Established home')).toBeVisible();
     expect(screen.getByText('Australian purchase costs')).toBeVisible();
+  });
+
+  it('opens complete plan details with friendly ownership labels', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('fetch', standardFetch(true, [plan]));
+    await renderPage();
+
+    await user.click(
+      await screen.findByRole('button', { name: 'View details' }),
+    );
+    const dialog = await screen.findByRole('dialog', { name: 'Next home' });
+
+    expect(within(dialog).getByText('Savings')).toBeVisible();
+    expect(within(dialog).getByText('Building inspection')).toBeVisible();
+    expect(within(dialog).getByText('Alex Example')).toBeVisible();
+    expect(within(dialog).getByText('NZ$150,000.00')).toBeVisible();
+  });
+
+  it('sends precise funding and ownership mutations from the detail view', async () => {
+    const user = userEvent.setup();
+    const fetchMock = standardFetch(true, [plan]);
+    vi.stubGlobal('fetch', fetchMock);
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'View details' }),
+    );
+    const detail = await screen.findByRole('dialog', { name: 'Next home' });
+    await user.click(
+      within(detail).getByRole('button', { name: 'Add funding source' }),
+    );
+    const editor = await screen.findByRole('dialog', {
+      name: 'Add funding source',
+    });
+    const availableDate = within(editor).getByLabelText('Available date');
+    expect(
+      editor.querySelector(`label[for="${availableDate.id}"]`),
+    ).toHaveAttribute('data-shrink', 'true');
+    await user.type(within(editor).getByLabelText('Name'), 'Gift');
+    await user.type(within(editor).getByLabelText('Source type'), 'GIFT');
+    await user.type(availableDate, '2027-01-15');
+    await user.type(within(editor).getByLabelText('Amount'), '25000.25');
+    await user.click(within(editor).getByRole('button', { name: 'Save' }));
+
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(
+          ([input, init]) =>
+            pathOf(input).endsWith('/funding-sources') &&
+            init?.method === 'POST' &&
+            typeof init.body === 'string' &&
+            init.body.includes('25000.25'),
+        ),
+      ).toBe(true),
+    );
+
+    await user.click(
+      within(detail).getByRole('button', { name: 'Replace ownership' }),
+    );
+    const ownership = await screen.findByRole('dialog', {
+      name: 'Replace proposed ownership',
+    });
+    await user.click(
+      within(ownership).getByRole('button', { name: 'Replace ownership' }),
+    );
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(
+          ([input, init]) =>
+            pathOf(input).endsWith('/ownership') && init?.method === 'PUT',
+        ),
+      ).toBe(true),
+    );
+  });
+
+  it('keeps detail records read-only for viewers', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('fetch', standardFetch(false, [plan]));
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'View details' }),
+    );
+    const dialog = await screen.findByRole('dialog', { name: 'Next home' });
+
+    expect(within(dialog).getByText('Savings')).toBeVisible();
+    expect(
+      within(dialog).queryByRole('button', { name: 'Add funding source' }),
+    ).toBeNull();
+    expect(
+      within(dialog).queryByRole('button', { name: 'Replace ownership' }),
+    ).toBeNull();
+  });
+
+  it('requires confirmation before removing a saved financial input', async () => {
+    const user = userEvent.setup();
+    const fetchMock = standardFetch(true, [plan]);
+    vi.stubGlobal('fetch', fetchMock);
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'View details' }),
+    );
+    const detail = await screen.findByRole('dialog', { name: 'Next home' });
+    const costRow = within(detail)
+      .getByText('Building inspection')
+      .closest('tr');
+    if (!costRow) throw new Error('Expected cost row');
+    await user.click(within(costRow).getByRole('button', { name: 'Remove' }));
+
+    const confirmation = await screen.findByRole('dialog', {
+      name: 'Remove Building inspection?',
+    });
+    expect(within(confirmation).getByText(/audited history/i)).toBeVisible();
+    await user.click(
+      within(confirmation).getByRole('button', { name: 'Remove' }),
+    );
+
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(
+          ([input, init]) =>
+            pathOf(input).endsWith(
+              '/costs/00000000-0000-0000-0000-000000000006',
+            ) && init?.method === 'DELETE',
+        ),
+      ).toBe(true),
+    );
+  });
+
+  it('distinguishes a failed detail request and offers retry', async () => {
+    const user = userEvent.setup();
+    const fallback = standardFetch(true, [plan]);
+    let detailAttempts = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) => {
+        if (pathOf(input).endsWith(`/purchase-plans/${plan.id}`)) {
+          detailAttempts += 1;
+          return Promise.resolve(
+            response({ detail: 'Temporary failure' }, 500),
+          );
+        }
+        return fallback(input, init);
+      }),
+    );
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'View details' }),
+    );
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Purchase plan details',
+    });
+
+    expect(within(dialog).getByText(/Temporary failure/)).toBeVisible();
+    await user.click(within(dialog).getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(detailAttempts).toBe(2));
   });
 
   it('does not offer creation to a viewer', async () => {
