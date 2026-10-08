@@ -199,6 +199,8 @@ class PurchasePlanDetail(PurchasePlanRead):
 
 class FeasibilityRequest(BaseModel):
     purchase_price: Money = Field(gt=0)
+    desired_buffer: NonNegativeMoney | None = None
+    provider_settings: dict[str, object] | None = None
     maximum_additional_borrowing: NonNegativeMoney
     annual_interest_rate: Decimal = Field(ge=0, le=100)
     loan_term_years: int = Field(gt=0, le=100)
@@ -206,6 +208,7 @@ class FeasibilityRequest(BaseModel):
 
 
 class CalculatedCost(BaseModel):
+    id: str
     code: str
     display_name: str
     amount: Decimal
@@ -227,6 +230,7 @@ class FeasibilityRead(BaseModel):
     lvr: Decimal
     funding_gap: Decimal
     required_total: Decimal
+    is_within_target_price_range: bool
     is_feasible: bool
     failed_thresholds: list[str]
     assumptions_used: list[str]

@@ -112,6 +112,8 @@ async def test_purchase_plan_with_australian_example_and_feasibility(
         f"/api/v1/purchase-plans/{plan['id']}/calculate",
         json={
             "purchase_price": 500000,
+            "desired_buffer": 5000,
+            "provider_settings": {"transfer_duty_rate": 4},
             "maximum_additional_borrowing": 450000,
             "annual_interest_rate": 6,
             "loan_term_years": 30,
@@ -120,15 +122,42 @@ async def test_purchase_plan_with_australian_example_and_feasibility(
     )
     assert calculation.status_code == 200, calculation.text
     body = calculation.json()
-    assert body["required_total"] == "537000.00"
+    assert body["required_total"] == "527000.00"
     assert body["available_equity_funding"] == "100000.00"
-    assert body["additional_loan_required"] == "437000.00"
+    assert body["additional_loan_required"] == "427000.00"
     assert body["is_feasible"] is False
     assert body["failed_thresholds"] == ["max_lvr"]
+    assert body["is_within_target_price_range"] is True
     assert {item["source"] for item in body["costs"]} == {"USER", "AU_PURCHASE"}
     assert any("6% over 30 years" in item for item in body["assumptions_used"])
     assert any("6000 AUD" in item for item in body["assumptions_used"])
     assert any("450000 AUD" in item for item in body["assumptions_used"])
+    assert any("5000 AUD" in item for item in body["assumptions_used"])
+    outside = await client.post(
+        f"/api/v1/purchase-plans/{plan['id']}/calculate",
+        json={
+            "purchase_price": 1,
+            "maximum_additional_borrowing": 0,
+            "annual_interest_rate": 6,
+            "loan_term_years": 30,
+            "current_monthly_surplus": 0,
+        },
+    )
+    assert outside.status_code == 200
+    assert outside.json()["is_within_target_price_range"] is False
+    assert any("outside the saved plan target range" in item for item in outside.json()["warnings"])
+    invalid_fee = await client.post(
+        f"/api/v1/purchase-plans/{plan['id']}/calculate",
+        json={
+            "purchase_price": 500000,
+            "provider_settings": {"registration_fees": "1e100000"},
+            "maximum_additional_borrowing": 0,
+            "annual_interest_rate": 6,
+            "loan_term_years": 30,
+            "current_monthly_surplus": 0,
+        },
+    )
+    assert invalid_fee.status_code == 422
     listed = await client.get(f"/api/v1/households/{household['id']}/purchase-plans")
     assert listed.status_code == 200
     assert listed.json()[0]["id"] == plan["id"]
@@ -176,6 +205,29 @@ async def test_purchase_plan_rejects_invalid_provider_ownership_and_hidden_acces
         },
     )
     assert cross_person.status_code == 422
+    expired_person = Person(
+        household_id=uuid.UUID(household["id"]),
+        display_name="Expired",
+        is_active=True,
+        effective_from=date(2020, 1, 1),
+        effective_to=date(2026, 12, 31),
+    )
+    session.add(expired_person)
+    await session.commit()
+    expired_owner = await client.post(
+        f"/api/v1/households/{household['id']}/purchase-plans",
+        json=base
+        | {
+            "ownership": [
+                {
+                    "owner_type": "PERSON",
+                    "person_id": str(expired_person.id),
+                    "ownership_percentage": 100,
+                }
+            ]
+        },
+    )
+    assert expired_owner.status_code == 422
     hidden_plan = PurchasePlan(
         household_id=other.id,
         display_name="Hidden",
@@ -543,6 +595,14 @@ async def test_purchase_ownership_replacement_rejects_stale_and_cross_household_
         effective_from=date(2020, 1, 1),
     )
     session.add(outsider)
+    inactive = Person(
+        household_id=uuid.UUID(household["id"]),
+        display_name="Inactive at target",
+        is_active=True,
+        effective_from=date(2020, 1, 1),
+        effective_to=date(2027, 12, 31),
+    )
+    session.add(inactive)
     await session.commit()
     plan = (
         await client.post(
@@ -571,6 +631,21 @@ async def test_purchase_ownership_replacement_rejects_stale_and_cross_household_
         },
     )
     assert cross_household.status_code == 422
+    inactive_at_target = await client.put(
+        f"/api/v1/purchase-plans/{plan['id']}/ownership",
+        json={
+            "expected_revision_ids": [],
+            "ownership": [
+                {
+                    "owner_type": "PERSON",
+                    "person_id": str(inactive.id),
+                    "ownership_percentage": 100,
+                }
+            ],
+        },
+    )
+    assert inactive_at_target.status_code == 422
+    assert "active household members" in inactive_at_target.text
     created = await client.put(
         f"/api/v1/purchase-plans/{plan['id']}/ownership",
         json={

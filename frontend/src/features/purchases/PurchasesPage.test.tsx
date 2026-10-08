@@ -5,7 +5,13 @@ import {
   createMemoryHistory,
   type AnyRouter,
 } from '@tanstack/react-router';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { createAppRouter } from '../../app/router';
@@ -63,6 +69,42 @@ const person = {
   id: '00000000-0000-0000-0000-000000000004',
   is_active: true,
 };
+const feasibilityResult = {
+  additional_loan_required: '610000.00',
+  assumptions_used: ['Only available funding is included.'],
+  available_equity_funding: '150000.00',
+  calculation_date: '2026-10-08',
+  costs: [
+    {
+      amount: '1200.00',
+      code: 'INSPECTION',
+      display_name: 'Building inspection',
+      id: 'user-cost-1',
+      source: 'USER',
+    },
+    {
+      amount: '0.00',
+      code: 'TRANSFER_DUTY',
+      display_name: 'Transfer duty',
+      id: 'provider-cost-1',
+      source: 'AU',
+    },
+  ],
+  currency: 'NZD',
+  existing_borrowed_funding: '0.00',
+  failed_thresholds: ['Projected monthly surplus is below the saved minimum'],
+  funding_gap: '0.00',
+  is_feasible: false,
+  is_within_target_price_range: true,
+  lvr: '81.3333',
+  monthly_loan_repayment: '3657.00',
+  projected_monthly_surplus: '-657.00',
+  purchase_plan_id: plan.id,
+  purchase_price: '750000.00',
+  required_total: '786200.00',
+  total_debt_funding: '610000.00',
+  warnings: ['Provider estimate excludes legal advice.'],
+};
 
 function response(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -104,7 +146,11 @@ async function renderPage() {
   await waitFor(() => expect(router.state.status).toBe('idle'));
 }
 
-function standardFetch(canEdit = true, plans: unknown[] = []) {
+function standardFetch(
+  canEdit = true,
+  plans: unknown[] = [],
+  householdPeople: unknown[] = [person],
+) {
   return vi.fn<typeof fetch>((input, init) => {
     const path = pathOf(input);
     if (path.endsWith('/auth/session'))
@@ -181,9 +227,15 @@ function standardFetch(canEdit = true, plans: unknown[] = []) {
           ],
         }),
       );
+    if (
+      path.endsWith(`/purchase-plans/${plan.id}/calculate`) &&
+      init?.method === 'POST'
+    )
+      return Promise.resolve(response(feasibilityResult));
     if (path.includes(`/purchase-plans/${plan.id}/`))
       return Promise.resolve(response({}, init?.method === 'POST' ? 201 : 200));
-    if (path.endsWith('/people')) return Promise.resolve(response([person]));
+    if (path.endsWith('/people'))
+      return Promise.resolve(response(householdPeople));
     throw new Error(`Unexpected request: ${path}`);
   });
 }
@@ -355,6 +407,182 @@ describe('purchase plan records', () => {
     expect(within(dialog).getByText(/Temporary failure/)).toBeVisible();
     await user.click(within(dialog).getByRole('button', { name: 'Retry' }));
     await waitFor(() => expect(detailAttempts).toBe(2));
+  });
+
+  it('calculates feasibility with provenance and clears stale results', async () => {
+    const user = userEvent.setup();
+    const fetchMock = standardFetch(true, [plan]);
+    vi.stubGlobal('fetch', fetchMock);
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'View details' }),
+    );
+    const detail = await screen.findByRole('dialog', { name: 'Next home' });
+    await user.click(within(detail).getByText('Advanced'));
+    fireEvent.change(
+      within(detail).getByLabelText('Provider settings (JSON)'),
+      {
+        target: { value: '{"transfer_duty_rate":5}' },
+      },
+    );
+    await user.clear(
+      within(detail).getByLabelText('Maximum additional borrowing (NZD)'),
+    );
+    await user.type(
+      within(detail).getByLabelText('Maximum additional borrowing (NZD)'),
+      '650000',
+    );
+    await user.clear(
+      within(detail).getByLabelText('Current monthly surplus (NZD)'),
+    );
+    await user.type(
+      within(detail).getByLabelText('Current monthly surplus (NZD)'),
+      '3000',
+    );
+    await user.click(within(detail).getByRole('button', { name: 'Calculate' }));
+
+    expect(
+      await within(detail).findByText(/does not satisfy every saved/i),
+    ).toBeVisible();
+    expect(within(detail).getByText('Household entry')).toBeVisible();
+    expect(within(detail).getByText('AU provider')).toBeVisible();
+    expect(
+      within(detail).getByText(
+        /returned zero for every provider-derived cost/i,
+      ),
+    ).toBeVisible();
+    expect(within(detail).getAllByText('NZ$610,000.00')).toHaveLength(2);
+    await user.hover(
+      within(detail).getByRole('button', { name: '1 calculation warnings' }),
+    );
+    expect(
+      await screen.findByText('Provider estimate excludes legal advice.'),
+    ).toBeVisible();
+    const call = fetchMock.mock.calls.find(([input]) =>
+      pathOf(input).endsWith(`/${plan.id}/calculate`),
+    );
+    const body = call?.[1]?.body;
+    if (typeof body !== 'string') throw new Error('Expected JSON body');
+    expect(JSON.parse(body)).toMatchObject({
+      current_monthly_surplus: '3000',
+      desired_buffer: '10000.00',
+      maximum_additional_borrowing: '650000',
+      provider_settings: { transfer_duty_rate: 5 },
+      purchase_price: '750000.00',
+    });
+
+    await user.type(within(detail).getByLabelText('Purchase price (NZD)'), '1');
+    expect(within(detail).queryAllByText('NZ$610,000.00')).toHaveLength(0);
+  });
+
+  it('qualifies results outside the saved target range', async () => {
+    const user = userEvent.setup();
+    const fallback = standardFetch(true, [plan]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((input, init) =>
+        pathOf(input).endsWith(`/${plan.id}/calculate`)
+          ? Promise.resolve(
+              response({
+                ...feasibilityResult,
+                is_feasible: true,
+                is_within_target_price_range: false,
+                purchase_price: '1.00',
+              }),
+            )
+          : fallback(input, init),
+      ),
+    );
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'View details' }),
+    );
+    const detail = await screen.findByRole('dialog', { name: 'Next home' });
+    const purchasePrice = within(detail).getByLabelText('Purchase price (NZD)');
+    await user.clear(purchasePrice);
+    await user.type(purchasePrice, '1');
+    await user.click(within(detail).getByRole('button', { name: 'Calculate' }));
+
+    expect(
+      await within(detail).findByText(/outside the saved target range/i),
+    ).toBeVisible();
+    expect(within(detail).getByText(/only assesses the other/i)).toBeVisible();
+  });
+
+  it('excludes people who are inactive on the purchase target date', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      standardFetch(
+        true,
+        [plan],
+        [
+          person,
+          {
+            ...person,
+            display_name: 'Expired owner',
+            effective_to: '2027-12-31',
+            id: '00000000-0000-0000-0000-000000000099',
+          },
+        ],
+      ),
+    );
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'View details' }),
+    );
+    const detail = await screen.findByRole('dialog', { name: 'Next home' });
+    await user.click(
+      within(detail).getByRole('button', { name: 'Replace ownership' }),
+    );
+    const ownership = await screen.findByRole('dialog', {
+      name: 'Replace proposed ownership',
+    });
+    await user.click(within(ownership).getByLabelText('Person'));
+
+    expect(
+      await screen.findByRole('option', { name: 'Alex Example' }),
+    ).toBeVisible();
+    expect(screen.queryByRole('option', { name: 'Expired owner' })).toBeNull();
+  });
+
+  it('rejects invalid assumptions and reports calculation API failures', async () => {
+    const user = userEvent.setup();
+    const fallback = standardFetch(true, [plan]);
+    const fetchMock = vi.fn<typeof fetch>((input, init) => {
+      if (pathOf(input).endsWith(`/${plan.id}/calculate`))
+        return Promise.resolve(
+          response({ detail: 'Provider settings are unavailable' }, 422),
+        );
+      return fallback(input, init);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'View details' }),
+    );
+    const detail = await screen.findByRole('dialog', { name: 'Next home' });
+    const purchasePrice = within(detail).getByLabelText('Purchase price (NZD)');
+    await user.clear(purchasePrice);
+    await user.type(purchasePrice, '1e5');
+    await user.click(within(detail).getByRole('button', { name: 'Calculate' }));
+    expect(
+      await within(detail).findByText(
+        /Purchase price must be greater than zero/i,
+      ),
+    ).toBeVisible();
+    expect(
+      fetchMock.mock.calls.some(([input]) =>
+        pathOf(input).endsWith(`/${plan.id}/calculate`),
+      ),
+    ).toBe(false);
+
+    await user.clear(purchasePrice);
+    await user.type(purchasePrice, '800000');
+    await user.click(within(detail).getByRole('button', { name: 'Calculate' }));
+    expect(
+      await within(detail).findByText(/Provider settings are unavailable/i),
+    ).toBeVisible();
   });
 
   it('does not offer creation to a viewer', async () => {

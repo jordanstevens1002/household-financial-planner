@@ -1840,6 +1840,8 @@ export interface components {
             code: string;
             /** Display Name */
             display_name: string;
+            /** Id */
+            id: string;
             /** Source */
             source: string;
         };
@@ -2056,6 +2058,8 @@ export interface components {
             funding_gap: string;
             /** Is Feasible */
             is_feasible: boolean;
+            /** Is Within Target Price Range */
+            is_within_target_price_range: boolean;
             /** Lvr */
             lvr: string;
             /** Monthly Loan Repayment */
@@ -2082,10 +2086,16 @@ export interface components {
             annual_interest_rate: number | string;
             /** Current Monthly Surplus */
             current_monthly_surplus: number | string;
+            /** Desired Buffer */
+            desired_buffer?: number | string | null;
             /** Loan Term Years */
             loan_term_years: number;
             /** Maximum Additional Borrowing */
             maximum_additional_borrowing: number | string;
+            /** Provider Settings */
+            provider_settings?: {
+                [key: string]: unknown;
+            } | null;
             /** Purchase Price */
             purchase_price: number | string;
         };

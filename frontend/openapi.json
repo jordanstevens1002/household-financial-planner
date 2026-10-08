@@ -506,12 +506,17 @@
             "title": "Display Name",
             "type": "string"
           },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
           "source": {
             "title": "Source",
             "type": "string"
           }
         },
         "required": [
+          "id",
           "code",
           "display_name",
           "amount",
@@ -1106,6 +1111,10 @@
             "title": "Is Feasible",
             "type": "boolean"
           },
+          "is_within_target_price_range": {
+            "title": "Is Within Target Price Range",
+            "type": "boolean"
+          },
           "lvr": {
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Lvr",
@@ -1164,6 +1173,7 @@
           "lvr",
           "funding_gap",
           "required_total",
+          "is_within_target_price_range",
           "is_feasible",
           "failed_thresholds",
           "assumptions_used",
@@ -1200,6 +1210,22 @@
             ],
             "title": "Current Monthly Surplus"
           },
+          "desired_buffer": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desired Buffer"
+          },
           "loan_term_years": {
             "exclusiveMinimum": 0.0,
             "maximum": 100.0,
@@ -1218,6 +1244,18 @@
               }
             ],
             "title": "Maximum Additional Borrowing"
+          },
+          "provider_settings": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Settings"
           },
           "purchase_price": {
             "anyOf": [

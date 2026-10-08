@@ -21,6 +21,7 @@ import { DataTable, type DataColumn } from '../../shared/DataTable';
 import { formatCurrency, formatDate } from '../../shared/format';
 import { useNotification } from '../../shared/notificationContext';
 import { useAuth } from '../auth/AuthContext';
+import { PurchaseFeasibilityPanel } from './PurchaseFeasibilityPanel';
 
 type Detail = components['schemas']['PurchasePlanDetail'];
 type Funding = components['schemas']['FundingSourceRead'];
@@ -569,6 +570,12 @@ export function PurchasePlanDetailDialog({
       </Dialog>
     );
   const plan = detail.data;
+  const eligibleOwners = people.data.filter(
+    (person) =>
+      person.is_active &&
+      person.effective_from <= plan.target_date &&
+      (person.effective_to == null || person.effective_to >= plan.target_date),
+  );
   const ownerName = (owner: Owner) =>
     owner.owner_type === 'HOUSEHOLD'
       ? 'Household jointly'
@@ -746,6 +753,24 @@ export function PurchasePlanDetailDialog({
               <Alert severity="info">No proposed ownership recorded.</Alert>
             )}
           </Stack>
+          <PurchaseFeasibilityPanel
+            key={JSON.stringify({
+              costs: plan.costs.map(({ id, revision }) => [id, revision]),
+              funding: plan.funding_sources.map(({ id, revision }) => [
+                id,
+                revision,
+              ]),
+              plan: {
+                desiredBuffer: plan.desired_buffer,
+                maxLvr: plan.max_lvr,
+                minimumSurplus: plan.minimum_monthly_surplus,
+                providerCode: plan.provider_code,
+                providerSettings: plan.provider_settings,
+                targetDate: plan.target_date,
+              },
+            })}
+            plan={plan}
+          />
         </Stack>
       </DialogContent>
       <DialogActions>
@@ -763,7 +788,7 @@ export function PurchasePlanDetailDialog({
         <OwnershipDialog
           detail={plan}
           onClose={() => setOwnershipOpen(false)}
-          people={people.data}
+          people={eligibleOwners}
         />
       ) : null}
       {retire ? (

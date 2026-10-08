@@ -72,6 +72,32 @@ test('creates and lists a purchase plan', async ({ page }) => {
       await route.fulfill({ json: [] });
       return;
     }
+    if (path.endsWith('/calculate') && request.method() === 'POST') {
+      await route.fulfill({
+        json: {
+          additional_loan_required: '650000.00',
+          assumptions_used: ['Manual plan without a purchase-cost provider.'],
+          available_equity_funding: '50000.00',
+          calculation_date: '2026-10-08',
+          costs: [],
+          currency: 'NZD',
+          existing_borrowed_funding: '0.00',
+          failed_thresholds: [],
+          funding_gap: '0.00',
+          is_feasible: true,
+          is_within_target_price_range: true,
+          lvr: '92.8571',
+          monthly_loan_repayment: '3896.00',
+          projected_monthly_surplus: '1104.00',
+          purchase_plan_id: plans[0]?.id,
+          purchase_price: '700000.00',
+          required_total: '700000.00',
+          total_debt_funding: '650000.00',
+          warnings: [],
+        },
+      });
+      return;
+    }
     if (path.match(/\/purchase-plans\/[0-9a-f-]+$/)) {
       await route.fulfill({
         json: {
@@ -127,4 +153,11 @@ test('creates and lists a purchase plan', async ({ page }) => {
   await expect(details).toContainText('No funding sources recorded.');
   await expect(details).toContainText('No user-entered costs recorded.');
   await expect(details).toContainText('No proposed ownership recorded.');
+  await details.getByLabel('Maximum additional borrowing (NZD)').fill('650000');
+  await details.getByLabel('Current monthly surplus (NZD)').fill('5000');
+  await details.getByRole('button', { name: 'Calculate' }).click();
+  await expect(details).toContainText(
+    'This plan satisfies the saved comfort thresholds.',
+  );
+  await expect(details).toContainText('No purchase costs were included.');
 });
