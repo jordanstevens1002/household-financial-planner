@@ -234,12 +234,13 @@ describe('purchase plan records', () => {
     const editor = await screen.findByRole('dialog', {
       name: 'Add funding source',
     });
+    const availableDate = within(editor).getByLabelText('Available date');
+    expect(
+      editor.querySelector(`label[for="${availableDate.id}"]`),
+    ).toHaveAttribute('data-shrink', 'true');
     await user.type(within(editor).getByLabelText('Name'), 'Gift');
     await user.type(within(editor).getByLabelText('Source type'), 'GIFT');
-    await user.type(
-      within(editor).getByLabelText('Available date'),
-      '2027-01-15',
-    );
+    await user.type(availableDate, '2027-01-15');
     await user.type(within(editor).getByLabelText('Amount'), '25000.25');
     await user.click(within(editor).getByRole('button', { name: 'Save' }));
 

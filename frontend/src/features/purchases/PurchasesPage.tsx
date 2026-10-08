@@ -208,6 +208,7 @@ function PlanDialog({
               fullWidth
               label="Target date"
               onChange={field('targetDate')}
+              slotProps={{ inputLabel: { shrink: true } }}
               type="date"
               value={form.targetDate}
             />

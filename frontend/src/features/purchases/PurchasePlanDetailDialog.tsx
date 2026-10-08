@@ -169,6 +169,7 @@ function ChildDialog({
               <TextField
                 label="Available date"
                 onChange={field('availableDate')}
+                slotProps={{ inputLabel: { shrink: true } }}
                 type="date"
                 value={draft.availableDate}
               />
