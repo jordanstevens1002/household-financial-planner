@@ -113,6 +113,7 @@ async def test_purchase_plan_with_australian_example_and_feasibility(
         json={
             "purchase_price": 500000,
             "desired_buffer": 5000,
+            "provider_settings": {"transfer_duty_rate": 4},
             "maximum_additional_borrowing": 450000,
             "annual_interest_rate": 6,
             "loan_term_years": 30,
@@ -121,9 +122,9 @@ async def test_purchase_plan_with_australian_example_and_feasibility(
     )
     assert calculation.status_code == 200, calculation.text
     body = calculation.json()
-    assert body["required_total"] == "532000.00"
+    assert body["required_total"] == "527000.00"
     assert body["available_equity_funding"] == "100000.00"
-    assert body["additional_loan_required"] == "432000.00"
+    assert body["additional_loan_required"] == "427000.00"
     assert body["is_feasible"] is False
     assert body["failed_thresholds"] == ["max_lvr"]
     assert {item["source"] for item in body["costs"]} == {"USER", "AU_PURCHASE"}

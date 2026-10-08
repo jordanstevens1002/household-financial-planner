@@ -1235,6 +1235,18 @@
             ],
             "title": "Maximum Additional Borrowing"
           },
+          "provider_settings": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Settings"
+          },
           "purchase_price": {
             "anyOf": [
               {

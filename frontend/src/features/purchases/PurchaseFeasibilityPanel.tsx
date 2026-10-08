@@ -11,7 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { apiRequest } from '../../api/client';
 import type { components } from '../../api/schema';
@@ -77,21 +77,10 @@ function WarningInfo({ warnings }: { warnings: string[] }) {
 export function PurchaseFeasibilityPanel({ plan }: { plan: Detail }) {
   const auth = useAuth();
   const [draft, setDraft] = useState(() => initialDraft(plan));
-  const [validation, setValidation] = useState('');
-  const planFingerprint = useMemo(
-    () =>
-      JSON.stringify({
-        costs: plan.costs.map(({ id, revision }) => [id, revision]),
-        desiredBuffer: plan.desired_buffer,
-        funding: plan.funding_sources.map(({ id, revision }) => [id, revision]),
-        maxLvr: plan.max_lvr,
-        minimumSurplus: plan.minimum_monthly_surplus,
-        providerCode: plan.provider_code,
-        providerSettings: plan.provider_settings,
-        targetDate: plan.target_date,
-      }),
-    [plan],
+  const [providerSettings, setProviderSettings] = useState(() =>
+    JSON.stringify(plan.provider_settings, null, 2),
   );
+  const [validation, setValidation] = useState('');
   const calculation = useMutation({
     mutationFn: (body: components['schemas']['FeasibilityRequest']) =>
       apiRequest<Result>(`/api/v1/purchase-plans/${plan.id}/calculate`, {
@@ -100,11 +89,6 @@ export function PurchaseFeasibilityPanel({ plan }: { plan: Detail }) {
         method: 'POST',
       }),
   });
-  useEffect(() => {
-    calculation.reset();
-    // The mutation result must not survive a saved-plan revision.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planFingerprint]);
   const field =
     (key: keyof FeasibilityDraft) =>
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,12 +100,28 @@ export function PurchaseFeasibilityPanel({ plan }: { plan: Detail }) {
     setValidation('');
     const problem = validateFeasibilityDraft(draft);
     if (problem) return setValidation(problem);
+    let parsedProviderSettings: Record<string, unknown> | null = null;
+    if (plan.provider_code) {
+      try {
+        const parsed = JSON.parse(providerSettings) as unknown;
+        if (
+          typeof parsed !== 'object' ||
+          parsed === null ||
+          Array.isArray(parsed)
+        )
+          throw new Error();
+        parsedProviderSettings = parsed as Record<string, unknown>;
+      } catch {
+        return setValidation('Provider settings must be a valid JSON object.');
+      }
+    }
     calculation.mutate({
       annual_interest_rate: draft.annualInterestRate,
       current_monthly_surplus: draft.currentMonthlySurplus,
       desired_buffer: draft.desiredBuffer || null,
       loan_term_years: Number(draft.loanTermYears),
       maximum_additional_borrowing: draft.maximumAdditionalBorrowing,
+      provider_settings: parsedProviderSettings,
       purchase_price: draft.purchasePrice,
     });
   };
@@ -210,6 +210,23 @@ export function PurchaseFeasibilityPanel({ plan }: { plan: Detail }) {
           : formatCurrency(plan.minimum_monthly_surplus, plan.currency)}
         .
       </Alert>
+      {plan.provider_code ? (
+        <AdvancedSection
+          description={`Configure calculation-only settings for ${plan.provider_code}. Changes here do not modify the saved plan.`}
+        >
+          <TextField
+            label="Provider settings (JSON)"
+            multiline
+            minRows={4}
+            onChange={(event) => {
+              setProviderSettings(event.target.value);
+              setValidation('');
+              calculation.reset();
+            }}
+            value={providerSettings}
+          />
+        </AdvancedSection>
+      ) : null}
       {validation ? <Alert severity="error">{validation}</Alert> : null}
       {calculation.isPending ? (
         <CircularProgress aria-label="Calculating purchase feasibility" />
@@ -290,6 +307,15 @@ export function PurchaseFeasibilityPanel({ plan }: { plan: Detail }) {
             <Alert severity="warning">
               <strong>Thresholds not met:</strong>{' '}
               {result.failed_thresholds.join('; ')}
+            </Alert>
+          ) : null}
+          {result.costs.some((cost) => cost.source !== 'USER') &&
+          result.costs
+            .filter((cost) => cost.source !== 'USER')
+            .every((cost) => Number(cost.amount) === 0) ? (
+            <Alert severity="warning">
+              The installed provider returned zero for every provider-derived
+              cost. Review its settings before relying on this estimate.
             </Alert>
           ) : null}
           {result.costs.length ? (

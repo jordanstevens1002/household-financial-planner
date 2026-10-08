@@ -603,7 +603,13 @@ async def calculate_purchase_plan(
     warnings: list[str] = []
     if plan.provider_code is not None:
         try:
-            result = get_purchase_provider(plan.provider_code).calculate(
+            provider = get_purchase_provider(plan.provider_code)
+            provider_settings = (
+                plan.provider_settings
+                if payload.provider_settings is None
+                else provider.validate_settings(payload.provider_settings)
+            )
+            result = provider.calculate(
                 PurchaseContext(
                     payload.purchase_price,
                     purchase_type.code,
@@ -612,7 +618,7 @@ async def calculate_purchase_plan(
                     plan.target_date,
                     plan.currency,
                 ),
-                plan.provider_settings,
+                provider_settings,
             )
         except (PurchaseProviderError, ValueError) as exc:
             raise HTTPException(422, str(exc)) from exc

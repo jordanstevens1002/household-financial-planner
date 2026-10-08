@@ -5,7 +5,13 @@ import {
   createMemoryHistory,
   type AnyRouter,
 } from '@tanstack/react-router';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { createAppRouter } from '../../app/router';
@@ -76,7 +82,7 @@ const feasibilityResult = {
       source: 'USER',
     },
     {
-      amount: '25000.00',
+      amount: '0.00',
       code: 'TRANSFER_DUTY',
       display_name: 'Transfer duty',
       source: 'AU',
@@ -404,6 +410,13 @@ describe('purchase plan records', () => {
       await screen.findByRole('button', { name: 'View details' }),
     );
     const detail = await screen.findByRole('dialog', { name: 'Next home' });
+    await user.click(within(detail).getByText('Advanced'));
+    fireEvent.change(
+      within(detail).getByLabelText('Provider settings (JSON)'),
+      {
+        target: { value: '{"transfer_duty_rate":5}' },
+      },
+    );
     await user.clear(
       within(detail).getByLabelText('Maximum additional borrowing (NZD)'),
     );
@@ -425,6 +438,11 @@ describe('purchase plan records', () => {
     ).toBeVisible();
     expect(within(detail).getByText('Household entry')).toBeVisible();
     expect(within(detail).getByText('AU provider')).toBeVisible();
+    expect(
+      within(detail).getByText(
+        /returned zero for every provider-derived cost/i,
+      ),
+    ).toBeVisible();
     expect(within(detail).getAllByText('NZ$610,000.00')).toHaveLength(2);
     await user.hover(
       within(detail).getByRole('button', { name: '1 calculation warnings' }),
@@ -441,6 +459,7 @@ describe('purchase plan records', () => {
       current_monthly_surplus: '3000',
       desired_buffer: '10000.00',
       maximum_additional_borrowing: '650000',
+      provider_settings: { transfer_duty_rate: 5 },
       purchase_price: '750000.00',
     });
 

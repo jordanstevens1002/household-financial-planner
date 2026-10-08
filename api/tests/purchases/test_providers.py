@@ -6,6 +6,7 @@ from decimal import Decimal
 import pytest
 from httpx import AsyncClient
 
+from app.purchases.providers.australia import AustralianPurchaseProvider
 from app.purchases.providers.base import PurchaseContext, PurchaseProviderResult
 from app.purchases.providers.registry import PurchaseProviderError, PurchaseProviderRegistry
 
@@ -17,6 +18,24 @@ async def test_purchase_provider_catalogue_is_discoverable(client: AsyncClient) 
     assert response.json() == [
         {"code": "AU_PURCHASE", "display_name": "Australian purchase-cost example"}
     ]
+
+
+def test_australian_provider_warns_about_zero_settings_and_currency() -> None:
+    result = AustralianPurchaseProvider().calculate(
+        PurchaseContext(
+            Decimal("1000000"),
+            "HOME",
+            {},
+            "LIVE_IN",
+            date(2027, 1, 1),
+            "ALL",
+        ),
+        {},
+    )
+
+    assert all(item.amount == 0 for item in result.costs)
+    assert any("settings are zero" in warning for warning in result.warnings)
+    assert any("ALL plan" in warning for warning in result.warnings)
 
 
 class ExampleProvider:

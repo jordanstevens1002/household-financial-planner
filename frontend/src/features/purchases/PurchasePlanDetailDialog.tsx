@@ -747,7 +747,24 @@ export function PurchasePlanDetailDialog({
               <Alert severity="info">No proposed ownership recorded.</Alert>
             )}
           </Stack>
-          <PurchaseFeasibilityPanel plan={plan} />
+          <PurchaseFeasibilityPanel
+            key={JSON.stringify({
+              costs: plan.costs.map(({ id, revision }) => [id, revision]),
+              funding: plan.funding_sources.map(({ id, revision }) => [
+                id,
+                revision,
+              ]),
+              plan: {
+                desiredBuffer: plan.desired_buffer,
+                maxLvr: plan.max_lvr,
+                minimumSurplus: plan.minimum_monthly_surplus,
+                providerCode: plan.provider_code,
+                providerSettings: plan.provider_settings,
+                targetDate: plan.target_date,
+              },
+            })}
+            plan={plan}
+          />
         </Stack>
       </DialogContent>
       <DialogActions>

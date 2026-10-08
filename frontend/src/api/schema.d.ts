@@ -2088,6 +2088,10 @@ export interface components {
             loan_term_years: number;
             /** Maximum Additional Borrowing */
             maximum_additional_borrowing: number | string;
+            /** Provider Settings */
+            provider_settings?: {
+                [key: string]: unknown;
+            } | null;
             /** Purchase Price */
             purchase_price: number | string;
         };
