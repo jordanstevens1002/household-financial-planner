@@ -72,6 +72,17 @@ test('creates and lists a purchase plan', async ({ page }) => {
       await route.fulfill({ json: [] });
       return;
     }
+    if (path.match(/\/purchase-plans\/[0-9a-f-]+$/)) {
+      await route.fulfill({
+        json: {
+          ...plans[0],
+          costs: [],
+          funding_sources: [],
+          ownership: [],
+        },
+      });
+      return;
+    }
     if (path.endsWith('/purchase-plans') && request.method() === 'POST') {
       const body = request.postDataJSON() as Record<string, unknown>;
       plans = [
@@ -110,4 +121,10 @@ test('creates and lists a purchase plan', async ({ page }) => {
     provider_code: null,
     purchase_type_id: purchaseTypeId,
   });
+
+  await page.getByRole('button', { name: 'View details' }).click();
+  const details = page.getByRole('dialog', { name: 'Future home' });
+  await expect(details).toContainText('No funding sources recorded.');
+  await expect(details).toContainText('No user-entered costs recorded.');
+  await expect(details).toContainText('No proposed ownership recorded.');
 });
