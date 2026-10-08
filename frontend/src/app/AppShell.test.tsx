@@ -43,6 +43,7 @@ async function renderRoute(path = '/') {
     },
     { timeout: 5000 },
   );
+  return router;
 }
 
 const authenticated: AuthContextValue = {
@@ -77,6 +78,9 @@ describe('application shell', () => {
       '/income',
     );
     expect(
+      screen.getByRole('link', { name: 'Purchase plans' }),
+    ).toHaveAttribute('href', '/purchase-plans');
+    expect(
       screen.queryByRole('link', { name: 'User administration' }),
     ).not.toBeInTheDocument();
 
@@ -107,6 +111,17 @@ describe('application shell', () => {
 
     expect(
       await screen.findByRole('heading', { name: 'Page not found' }),
+    ).toBeInTheDocument();
+  });
+
+  it('redirects the former purchases path to purchase plans', async () => {
+    const router = await renderRoute('/purchases');
+
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe('/purchase-plans'),
+    );
+    expect(
+      await screen.findByRole('heading', { name: 'Purchase plans' }),
     ).toBeInTheDocument();
   });
 });

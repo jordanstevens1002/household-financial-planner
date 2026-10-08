@@ -7,7 +7,6 @@ const pageNames: Record<string, string> = {
   '/households': 'Households',
   '/people': 'People',
   '/properties': 'Properties',
-  '/purchases': 'Purchase plans',
   '/retirement': 'Retirement',
   '/scenarios': 'Scenarios',
   '/settings': 'Settings',

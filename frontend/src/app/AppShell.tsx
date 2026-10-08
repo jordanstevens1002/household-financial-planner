@@ -22,7 +22,7 @@ const navigation = [
   { label: 'Income & tax', to: '/income' },
   { label: 'Cash flow', to: '/cash-flow' },
   { label: 'Properties', to: '/properties' },
-  { label: 'Purchase plans', to: '/purchases' },
+  { label: 'Purchase plans', to: '/purchase-plans' },
   { label: 'Retirement', to: '/retirement' },
   { label: 'Timeline', to: '/timeline' },
   { label: 'Scenarios', to: '/scenarios' },

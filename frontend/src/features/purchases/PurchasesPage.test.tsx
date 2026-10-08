@@ -83,7 +83,7 @@ async function renderPage() {
   localStorage.setItem(selectionKeys.household, householdId);
   const router = createAppRouter();
   router.update({
-    history: createMemoryHistory({ initialEntries: ['/purchases'] }),
+    history: createMemoryHistory({ initialEntries: ['/purchase-plans'] }),
   });
   render(
     <ThemeProvider theme={appTheme}>

@@ -102,7 +102,7 @@ test('creates and lists a purchase plan', async ({ page }) => {
     await route.abort();
   });
 
-  await page.goto('/purchases');
+  await page.goto('/purchase-plans');
   await page.getByRole('button', { name: 'Add purchase plan' }).click();
   const dialog = page.getByRole('dialog', { name: 'Add purchase plan' });
   await dialog.getByRole('textbox', { name: /Plan name/ }).fill('Future home');
