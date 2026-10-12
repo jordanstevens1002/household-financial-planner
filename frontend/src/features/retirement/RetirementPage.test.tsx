@@ -113,7 +113,7 @@ function fetcher(canEdit = true, accounts: unknown[] = [account]) {
           },
           {
             category: 'retirement_account_type',
-            code: 'AUSTRALIAN_SUP',
+            code: 'AUSTRALIAN_SUPER',
             display_name: 'Australian superannuation',
             id: australianAccountTypeId,
             is_active: true,
@@ -127,8 +127,8 @@ function fetcher(canEdit = true, accounts: unknown[] = [account]) {
             code: 'AU_SUPER',
             display_name: 'Australian superannuation',
             supported_account_type_codes: [
-              'AUSTRALIAN_SUP',
-              'SELF_MANAGED_SUP_FUND',
+              'AUSTRALIAN_SUPER',
+              'SELF_MANAGED_SUPER_FUND',
             ],
           },
         ]),

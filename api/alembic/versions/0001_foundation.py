@@ -164,12 +164,12 @@ def upgrade() -> None:
             "OTHER_NON_TAXABLE",
         ],
         "retirement_account_type": [
-            "AUSTRALIAN_SUP",
+            "AUSTRALIAN_SUPER",
             "DEFINED_BENEFIT",
             "PENSION_ACCOUNT",
             "RETIREMENT_SAVINGS",
             "EMPLOYER_PLAN",
-            "SELF_MANAGED_SUP_FUND",
+            "SELF_MANAGED_SUPER_FUND",
             "OTHER",
         ],
     }

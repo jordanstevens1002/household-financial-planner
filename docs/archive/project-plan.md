@@ -962,12 +962,12 @@ Use generic retirement accounts with jurisdiction-specific account types.
 Initial values:
 
 ```text
-AUSTRALIAN_SUP
+AUSTRALIAN_SUPER
 DEFINED_BENEFIT
 PENSION_ACCOUNT
 RETIREMENT_SAVINGS
 EMPLOYER_PLAN
-SELF_MANAGED_SUP_FUND
+SELF_MANAGED_SUPER_FUND
 OTHER
 ```
 

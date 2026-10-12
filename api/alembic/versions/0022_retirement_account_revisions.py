@@ -16,13 +16,15 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     op.execute(
         sa.text(
-            "UPDATE lookup_items SET display_name = 'Australian superannuation' "
+            "UPDATE lookup_items SET code = 'AUSTRALIAN_SUPER', "
+            "display_name = 'Australian superannuation' "
             "WHERE category = 'retirement_account_type' AND code = 'AUSTRALIAN_SUP'"
         )
     )
     op.execute(
         sa.text(
-            "UPDATE lookup_items SET display_name = 'Self-managed superannuation fund' "
+            "UPDATE lookup_items SET code = 'SELF_MANAGED_SUPER_FUND', "
+            "display_name = 'Self-managed superannuation fund' "
             "WHERE category = 'retirement_account_type' AND code = 'SELF_MANAGED_SUP_FUND'"
         )
     )
@@ -79,13 +81,14 @@ def downgrade() -> None:
     op.drop_column("retirement_accounts", "revision")
     op.execute(
         sa.text(
-            "UPDATE lookup_items SET display_name = 'Australian Sup' "
-            "WHERE category = 'retirement_account_type' AND code = 'AUSTRALIAN_SUP'"
+            "UPDATE lookup_items SET code = 'AUSTRALIAN_SUP', display_name = 'Australian Sup' "
+            "WHERE category = 'retirement_account_type' AND code = 'AUSTRALIAN_SUPER'"
         )
     )
     op.execute(
         sa.text(
-            "UPDATE lookup_items SET display_name = 'Self Managed Sup Fund' "
-            "WHERE category = 'retirement_account_type' AND code = 'SELF_MANAGED_SUP_FUND'"
+            "UPDATE lookup_items SET code = 'SELF_MANAGED_SUP_FUND', "
+            "display_name = 'Self Managed Sup Fund' "
+            "WHERE category = 'retirement_account_type' AND code = 'SELF_MANAGED_SUPER_FUND'"
         )
     )

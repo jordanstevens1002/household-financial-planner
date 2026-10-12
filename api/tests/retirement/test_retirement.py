@@ -90,7 +90,7 @@ def test_retirement_projection_warns_for_caps_and_rejects_invalid_range() -> Non
 async def retirement_types(session: AsyncSession) -> dict[str, LookupItem]:
     australian = LookupItem(
         category="retirement_account_type",
-        code="AUSTRALIAN_SUP",
+        code="AUSTRALIAN_SUPER",
         display_name="Australian superannuation",
         is_active=True,
     )
@@ -175,7 +175,7 @@ async def test_retirement_provider_catalogue_is_discoverable(client: AsyncClient
         {
             "code": "AU_SUPER",
             "display_name": "Australian superannuation",
-            "supported_account_type_codes": ["AUSTRALIAN_SUP", "SELF_MANAGED_SUP_FUND"],
+            "supported_account_type_codes": ["AUSTRALIAN_SUPER", "SELF_MANAGED_SUPER_FUND"],
         }
     ]
 
@@ -263,7 +263,7 @@ async def test_australian_super_profile_rules_and_duplicate_inputs(
         },
     )
     assert incompatible.status_code == 422
-    assert "supports AUSTRALIAN_SUP" in incompatible.json()["detail"]
+    assert "supports AUSTRALIAN_SUPER" in incompatible.json()["detail"]
     account = await create_account(
         client,
         household["id"],
