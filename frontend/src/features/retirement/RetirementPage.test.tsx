@@ -20,6 +20,7 @@ import { AuthProvider } from '../auth/AuthProvider';
 
 const householdId = '10000000-0000-4000-8000-000000000001';
 const accountTypeId = '10000000-0000-4000-8000-000000000002';
+const australianAccountTypeId = '10000000-0000-4000-8000-000000000005';
 const personId = '10000000-0000-4000-8000-000000000003';
 const account = {
   account_type_id: accountTypeId,
@@ -37,6 +38,7 @@ const account = {
   provider_code: null,
   provider_settings: {},
   retirement_age: 67,
+  revision: 1,
 };
 const response = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -109,12 +111,26 @@ function fetcher(canEdit = true, accounts: unknown[] = [account]) {
             id: accountTypeId,
             is_active: true,
           },
+          {
+            category: 'retirement_account_type',
+            code: 'AUSTRALIAN_SUP',
+            display_name: 'Australian superannuation',
+            id: australianAccountTypeId,
+            is_active: true,
+          },
         ]),
       );
     if (path.endsWith('/retirement-providers'))
       return Promise.resolve(
         response([
-          { code: 'AU_SUPER', display_name: 'Australian superannuation' },
+          {
+            code: 'AU_SUPER',
+            display_name: 'Australian superannuation',
+            supported_account_type_codes: [
+              'AUSTRALIAN_SUP',
+              'SELF_MANAGED_SUP_FUND',
+            ],
+          },
         ]),
       );
     if (path.endsWith('/reference/currencies'))
@@ -123,6 +139,11 @@ function fetcher(canEdit = true, accounts: unknown[] = [account]) {
       );
     if (path.endsWith('/retirement-accounts') && init?.method === 'POST')
       return Promise.resolve(response(account, 201));
+    if (
+      path.endsWith(`/retirement-accounts/${account.id}`) &&
+      init?.method === 'PUT'
+    )
+      return Promise.resolve(response({ ...account, revision: 2 }));
     if (path.endsWith('/retirement-accounts'))
       return Promise.resolve(response(accounts));
     throw new Error(`Unexpected request: ${path}`);
@@ -182,11 +203,15 @@ describe('retirement account catalogue', () => {
       'My account',
     );
     await user.click(within(dialog).getByLabelText('Account type'));
-    await user.click(await screen.findByText('Retirement savings'));
+    await user.click(
+      await screen.findByRole('option', { name: 'Australian superannuation' }),
+    );
     await user.click(
       within(dialog).getByLabelText('Installed provider (optional)'),
     );
-    await user.click(await screen.findByText('Australian superannuation'));
+    await user.click(
+      await screen.findByRole('option', { name: 'Australian superannuation' }),
+    );
     await user.click(within(dialog).getByText('Advanced'));
     fireEvent.change(
       within(dialog).getByLabelText('Provider settings (JSON)'),
@@ -211,10 +236,69 @@ describe('retirement account catalogue', () => {
     );
   });
 
+  it('hides providers that do not support the selected account type', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('fetch', fetcher(true, []));
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'Add account' }),
+    );
+    const dialog = await screen.findByRole('dialog');
+    await user.type(
+      within(dialog).getByLabelText('Account name'),
+      'Generic fund',
+    );
+    await user.click(within(dialog).getByLabelText('Account type'));
+    await user.click(await screen.findByText('Retirement savings'));
+    await user.click(
+      within(dialog).getByLabelText('Installed provider (optional)'),
+    );
+    expect(screen.queryByText('Australian superannuation')).toBeNull();
+  });
+
   it('keeps creation unavailable to viewers', async () => {
     vi.stubGlobal('fetch', fetcher(false, []));
     await renderPage();
     expect(await screen.findByText(/view-only access/i)).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Add account' })).toBeNull();
+  });
+
+  it('corrects every core account field with revision protection', async () => {
+    const user = userEvent.setup();
+    const mock = fetcher();
+    vi.stubGlobal('fetch', mock);
+    await renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Correct' }));
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Correct retirement account',
+    });
+    fireEvent.change(within(dialog).getByLabelText('Account name'), {
+      target: { value: 'Corrected account' },
+    });
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Save account' }),
+    );
+    await waitFor(() =>
+      expect(
+        mock.mock.calls.some(
+          ([input, init]) =>
+            pathOf(input).endsWith(`/retirement-accounts/${account.id}`) &&
+            init?.method === 'PUT',
+        ),
+      ).toBe(true),
+    );
+    const request = mock.mock.calls.find(
+      ([input, init]) =>
+        pathOf(input).endsWith(`/retirement-accounts/${account.id}`) &&
+        init?.method === 'PUT',
+    );
+    const requestBody = request?.[1]?.body;
+    expect(typeof requestBody).toBe('string');
+    if (typeof requestBody !== 'string')
+      throw new Error('Missing request body');
+    const body = JSON.parse(requestBody) as Record<string, unknown>;
+    expect(body.expected_revision).toBe(1);
+    expect(body.opening_balance).toBe(account.opening_balance);
+    expect(body.person_id).toBe(account.person_id);
   });
 });

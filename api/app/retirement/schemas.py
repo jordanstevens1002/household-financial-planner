@@ -12,6 +12,7 @@ from app.models import RetirementEventType
 class RetirementProviderRead(BaseModel):
     code: str
     display_name: str
+    supported_account_type_codes: list[str] | None = None
 
 
 class RetirementAccountCreate(BaseModel):
@@ -39,7 +40,13 @@ class RetirementAccountCreate(BaseModel):
 
 
 class RetirementAccountUpdate(BaseModel):
+    expected_revision: int = Field(ge=1)
+    person_id: uuid.UUID | None = None
     display_name: str = Field(min_length=1, max_length=200)
+    account_type_id: uuid.UUID
+    currency: str = Field(pattern=r"^[A-Z]{3}$")
+    opening_balance: Decimal = Field(ge=0, max_digits=18, decimal_places=2)
+    opening_balance_date: date
     expected_return_rate: Decimal = Field(ge=-100, le=100, decimal_places=4)
     annual_fees: Decimal = Field(ge=0, decimal_places=2)
     retirement_age: int | None = Field(default=None, ge=0, le=120)
@@ -62,6 +69,7 @@ class RetirementAccountRead(RetirementAccountCreate):
     id: uuid.UUID
     household_id: uuid.UUID
     currency: str
+    revision: int
 
 
 class ContributionProfileCreate(BaseModel):

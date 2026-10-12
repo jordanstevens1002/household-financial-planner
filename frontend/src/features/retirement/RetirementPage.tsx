@@ -68,7 +68,23 @@ const blank = (currency: string): Draft => ({
   retirementAge: '',
 });
 
+const fromAccount = (account: Account): Draft => ({
+  accountTypeId: account.account_type_id,
+  annualFees: account.annual_fees,
+  currency: account.currency,
+  displayName: account.display_name,
+  expectedReturnRate: account.expected_return_rate,
+  notes: account.notes ?? '',
+  openingBalance: account.opening_balance,
+  openingBalanceDate: account.opening_balance_date,
+  personId: account.person_id ?? '',
+  providerCode: account.provider_code ?? '',
+  providerSettings: JSON.stringify(account.provider_settings, null, 2),
+  retirementAge: account.retirement_age?.toString() ?? '',
+});
+
 function AccountDialog({
+  account,
   accountTypes,
   currencies,
   householdId,
@@ -77,6 +93,7 @@ function AccountDialog({
   people,
   providers,
 }: {
+  account?: Account;
   accountTypes: Lookup[];
   currencies: Currency[];
   householdId: string;
@@ -88,26 +105,35 @@ function AccountDialog({
   const auth = useAuth();
   const queryClient = useQueryClient();
   const notification = useNotification();
-  const [draft, setDraft] = useState(() => blank(householdCurrency));
+  const [draft, setDraft] = useState(() =>
+    account ? fromAccount(account) : blank(householdCurrency),
+  );
   const [validation, setValidation] = useState('');
   const field =
     (key: keyof Draft) => (event: React.ChangeEvent<HTMLInputElement>) =>
       setDraft((current) => ({ ...current, [key]: event.target.value }));
-  const create = useMutation({
+  const save = useMutation({
     mutationFn: (body: components['schemas']['RetirementAccountCreate']) =>
       apiRequest<Account>(
-        `/api/v1/households/${householdId}/retirement-accounts`,
+        account
+          ? `/api/v1/retirement-accounts/${account.id}`
+          : `/api/v1/households/${householdId}/retirement-accounts`,
         {
-          body: JSON.stringify(body),
+          body: JSON.stringify(
+            account ? { ...body, expected_revision: account.revision } : body,
+          ),
           csrfToken: auth.csrfToken(),
-          method: 'POST',
+          method: account ? 'PUT' : 'POST',
         },
       ),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ['retirement-accounts', householdId],
       });
-      notification.notify('Retirement account saved.', 'success');
+      notification.notify(
+        account ? 'Retirement account corrected.' : 'Retirement account saved.',
+        'success',
+      );
       onClose();
     },
   });
@@ -148,7 +174,7 @@ function AccountDialog({
     } catch {
       return setValidation('Provider settings must be a valid JSON object.');
     }
-    create.mutate({
+    save.mutate({
       account_type_id: draft.accountTypeId,
       annual_fees: draft.annualFees,
       currency: draft.currency,
@@ -168,10 +194,12 @@ function AccountDialog({
     <Dialog
       fullWidth
       maxWidth="md"
-      onClose={create.isPending ? undefined : onClose}
+      onClose={save.isPending ? undefined : onClose}
       open
     >
-      <DialogTitle>Add retirement account</DialogTitle>
+      <DialogTitle>
+        {account ? 'Correct retirement account' : 'Add retirement account'}
+      </DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <TextField
@@ -181,7 +209,14 @@ function AccountDialog({
           />
           <TextField
             label="Account type"
-            onChange={field('accountTypeId')}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                accountTypeId: event.target.value,
+                providerCode: '',
+                providerSettings: '{}',
+              }))
+            }
             select
             value={draft.accountTypeId}
           >
@@ -262,11 +297,22 @@ function AccountDialog({
             value={draft.providerCode}
           >
             <MenuItem value="">No provider</MenuItem>
-            {providers.map((item) => (
-              <MenuItem key={item.code} value={item.code}>
-                {item.display_name}
-              </MenuItem>
-            ))}
+            {providers
+              .filter((item) => {
+                const typeCode = accountTypes.find(
+                  (type) => type.id === draft.accountTypeId,
+                )?.code;
+                return (
+                  !typeCode ||
+                  item.supported_account_type_codes == null ||
+                  item.supported_account_type_codes.includes(typeCode)
+                );
+              })
+              .map((item) => (
+                <MenuItem key={item.code} value={item.code}>
+                  {item.display_name}
+                </MenuItem>
+              ))}
           </TextField>
           <AdvancedSection description="Provider-specific settings and personal notes are optional.">
             <Stack spacing={2}>
@@ -287,22 +333,18 @@ function AccountDialog({
             </Stack>
           </AdvancedSection>
           {validation ? <Alert severity="error">{validation}</Alert> : null}
-          {create.error ? (
+          {save.error ? (
             <Alert severity="error">
-              Account could not be saved. {message(create.error)}
+              Account could not be saved. {message(save.error)}
             </Alert>
           ) : null}
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button disabled={create.isPending} onClick={onClose}>
+        <Button disabled={save.isPending} onClick={onClose}>
           Cancel
         </Button>
-        <Button
-          disabled={create.isPending}
-          onClick={submit}
-          variant="contained"
-        >
+        <Button disabled={save.isPending} onClick={submit} variant="contained">
           Save account
         </Button>
       </DialogActions>
@@ -313,6 +355,7 @@ function AccountDialog({
 export function RetirementPage() {
   const household = useHousehold();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Account>();
   const id = household.selected?.id;
   const accounts = useQuery({
     enabled: !!id,
@@ -347,7 +390,7 @@ export function RetirementPage() {
     retry: false,
   });
   const currencies = useQuery({
-    enabled: open,
+    enabled: open || !!editing,
     queryFn: () => apiRequest<Currency[]>('/api/v1/reference/currencies'),
     queryKey: ['reference', 'currencies'],
     retry: false,
@@ -423,6 +466,17 @@ export function RetirementPage() {
       label: 'Status',
       render: (item) => (item.is_active ? 'Active' : 'Inactive'),
     },
+    ...(accessValue.can_edit
+      ? [
+          {
+            key: 'actions',
+            label: 'Actions',
+            render: (item: Account) => (
+              <Button onClick={() => setEditing(item)}>Correct</Button>
+            ),
+          } satisfies DataColumn<Account>,
+        ]
+      : []),
   ];
   return (
     <Stack spacing={3}>
@@ -467,7 +521,7 @@ export function RetirementPage() {
           You have view-only access to this household.
         </Alert>
       ) : null}
-      {open ? (
+      {open || editing ? (
         currencies.isPending ? (
           <CircularProgress aria-label="Loading account form" />
         ) : currencies.error ? (
@@ -476,11 +530,15 @@ export function RetirementPage() {
           </Alert>
         ) : (
           <AccountDialog
+            account={editing}
             accountTypes={typeRows}
             currencies={currencies.data}
             householdCurrency={household.selected.currency}
             householdId={household.selected.id}
-            onClose={() => setOpen(false)}
+            onClose={() => {
+              setOpen(false);
+              setEditing(undefined);
+            }}
             people={peopleRows.filter((item) => item.is_active)}
             providers={providerRows}
           />

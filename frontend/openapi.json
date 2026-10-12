@@ -8180,6 +8180,10 @@
               }
             ],
             "title": "Retirement Age"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
           }
         },
         "required": [
@@ -8190,13 +8194,19 @@
           "opening_balance_date",
           "expected_return_rate",
           "id",
-          "household_id"
+          "household_id",
+          "revision"
         ],
         "title": "RetirementAccountRead",
         "type": "object"
       },
       "RetirementAccountUpdate": {
         "properties": {
+          "account_type_id": {
+            "format": "uuid",
+            "title": "Account Type Id",
+            "type": "string"
+          },
           "annual_fees": {
             "anyOf": [
               {
@@ -8209,6 +8219,11 @@
               }
             ],
             "title": "Annual Fees"
+          },
+          "currency": {
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency",
+            "type": "string"
           },
           "display_name": {
             "maxLength": 200,
@@ -8230,6 +8245,11 @@
             ],
             "title": "Expected Return Rate"
           },
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
           "is_active": {
             "title": "Is Active",
             "type": "boolean"
@@ -8245,6 +8265,36 @@
               }
             ],
             "title": "Notes"
+          },
+          "opening_balance": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Opening Balance"
+          },
+          "opening_balance_date": {
+            "format": "date",
+            "title": "Opening Balance Date",
+            "type": "string"
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Id"
           },
           "provider_code": {
             "anyOf": [
@@ -8279,7 +8329,12 @@
           }
         },
         "required": [
+          "expected_revision",
           "display_name",
+          "account_type_id",
+          "currency",
+          "opening_balance",
+          "opening_balance_date",
           "expected_return_rate",
           "annual_fees",
           "is_active"
@@ -8585,6 +8640,20 @@
           "display_name": {
             "title": "Display Name",
             "type": "string"
+          },
+          "supported_account_type_codes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supported Account Type Codes"
           }
         },
         "required": [

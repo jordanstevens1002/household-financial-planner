@@ -723,6 +723,35 @@ class RetirementAccount(Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     notes: Mapped[str | None] = mapped_column(String(2000))
+    revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+
+
+class RetirementAccountRevision(Base):
+    __tablename__ = "retirement_account_revisions"
+    __table_args__ = (
+        CheckConstraint("action IN ('CREATED', 'CORRECTED')"),
+        Index("ix_retirement_account_revision_cursor", "retirement_account_id", "created_at", "id"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    retirement_account_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("retirement_accounts.id", ondelete="CASCADE"), index=True
+    )
+    household_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("households.id", ondelete="CASCADE"), index=True
+    )
+    actor_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("application_users.id", ondelete="RESTRICT"), index=True
+    )
+    action: Mapped[str] = mapped_column(String(20))
+    previous_state: Mapped[dict[str, object] | None] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql")
+    )
+    resulting_state: Mapped[dict[str, object]] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql")
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), server_default=func.now()
+    )
 
 
 class RetirementContributionProfile(Base):

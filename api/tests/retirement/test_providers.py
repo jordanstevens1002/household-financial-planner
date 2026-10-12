@@ -15,6 +15,7 @@ from app.retirement.providers.registry import (
 class ExampleProvider:
     code = "EX_PLAN"
     display_name = "Example retirement plan"
+    supported_account_type_codes = ("EMPLOYER_PLAN",)
 
     def validate_settings(self, settings: dict[str, object]) -> dict[str, object]:
         return {"limit": str(settings.get("limit", "50000"))}

@@ -23,6 +23,7 @@ from app.models import (
     Person,
     RetirementAccount,
     RetirementAccountEvent,
+    RetirementAccountRevision,
     RetirementContributionProfile,
 )
 from app.retirement.calculations import ContributionTerms, money, project_retirement
@@ -51,7 +52,16 @@ logger = get_logger(component="retirement")
 @router.get("/retirement-providers", response_model=list[RetirementProviderRead])
 async def retirement_providers() -> list[RetirementProviderRead]:
     return [
-        RetirementProviderRead(code=provider.code, display_name=provider.display_name)
+        RetirementProviderRead(
+            code=provider.code,
+            display_name=provider.display_name,
+            supported_account_type_codes=(
+                list(supported)
+                if (supported := getattr(provider, "supported_account_type_codes", None))
+                is not None
+                else None
+            ),
+        )
         for provider in list_retirement_providers()
     ]
 
@@ -100,6 +110,45 @@ def _provider_settings(
         raise HTTPException(422, str(exc)) from exc
 
 
+def _account_snapshot(account: RetirementAccount) -> dict[str, object]:
+    return {
+        "person_id": str(account.person_id) if account.person_id else None,
+        "display_name": account.display_name,
+        "account_type_id": str(account.account_type_id),
+        "currency": account.currency,
+        "opening_balance": str(account.opening_balance),
+        "opening_balance_date": account.opening_balance_date.isoformat(),
+        "expected_return_rate": str(account.expected_return_rate),
+        "annual_fees": str(account.annual_fees),
+        "retirement_age": account.retirement_age,
+        "provider_code": account.provider_code,
+        "provider_settings": account.provider_settings,
+        "is_active": account.is_active,
+        "notes": account.notes,
+        "revision": account.revision,
+    }
+
+
+async def _validated_account_references(
+    household_id: uuid.UUID,
+    account_type_id: uuid.UUID,
+    person_id: uuid.UUID | None,
+    session: AsyncSession,
+) -> LookupItem:
+    account_type = await session.get(LookupItem, account_type_id)
+    if (
+        account_type is None
+        or account_type.category != "retirement_account_type"
+        or not account_type.is_active
+    ):
+        raise HTTPException(422, "Active retirement_account_type lookup required")
+    if person_id is not None:
+        person = await session.get(Person, person_id)
+        if person is None or person.household_id != household_id:
+            raise HTTPException(422, "Account person must belong to the household")
+    return account_type
+
+
 @router.get(
     "/households/{household_id}/retirement-accounts",
     response_model=list[RetirementAccountRead],
@@ -125,22 +174,17 @@ async def list_retirement_accounts(
 async def create_retirement_account(
     household_id: uuid.UUID,
     payload: RetirementAccountCreate,
-    _: Annotated[HouseholdMembership, Depends(require_household_role(HouseholdRole.EDITOR))],
+    membership: Annotated[
+        HouseholdMembership, Depends(require_household_role(HouseholdRole.EDITOR))
+    ],
+    user: ApplicationUser = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ) -> RetirementAccount:
     household = await session.get(Household, household_id)
     assert household is not None
-    account_type = await session.get(LookupItem, payload.account_type_id)
-    if (
-        account_type is None
-        or account_type.category != "retirement_account_type"
-        or not account_type.is_active
-    ):
-        raise HTTPException(422, "Active retirement_account_type lookup required")
-    if payload.person_id is not None:
-        person = await session.get(Person, payload.person_id)
-        if person is None or person.household_id != household_id:
-            raise HTTPException(422, "Account person must belong to the household")
+    account_type = await _validated_account_references(
+        household_id, payload.account_type_id, payload.person_id, session
+    )
     values = payload.model_dump()
     values["currency"] = payload.currency or household.currency
     values["provider_settings"] = _provider_settings(
@@ -148,9 +192,28 @@ async def create_retirement_account(
     )
     account = RetirementAccount(household_id=household_id, **values)
     session.add(account)
+    await session.flush()
+    session.add(
+        RetirementAccountRevision(
+            retirement_account_id=account.id,
+            household_id=household_id,
+            actor_user_id=user.id,
+            action="CREATED",
+            previous_state=None,
+            resulting_state=_account_snapshot(account),
+        )
+    )
     await session.commit()
     await session.refresh(account)
-    logger.info("retirement_account_created", account_id=str(account.id))
+    logger.info(
+        "retirement_account_created",
+        account_id=str(account.id),
+        actor_user_id=str(user.id),
+        household_id=str(household_id),
+        person_id=str(account.person_id) if account.person_id else None,
+        account_type_id=str(account.account_type_id),
+        membership_id=str(membership.id),
+    )
     return account
 
 
@@ -161,17 +224,43 @@ async def update_retirement_account(
     user: ApplicationUser = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ) -> RetirementAccount:
-    account = await _account_with_access(account_id, HouseholdRole.EDITOR, user, session)
-    account_type = await session.get(LookupItem, account.account_type_id)
-    assert account_type is not None
-    values = payload.model_dump()
+    accessible = await _account_with_access(account_id, HouseholdRole.EDITOR, user, session)
+    account = await session.scalar(
+        select(RetirementAccount).where(RetirementAccount.id == accessible.id).with_for_update()
+    )
+    assert account is not None
+    if account.revision != payload.expected_revision:
+        raise HTTPException(409, "Retirement account changed; reload before correcting it")
+    account_type = await _validated_account_references(
+        account.household_id, payload.account_type_id, payload.person_id, session
+    )
+    previous = _account_snapshot(account)
+    values = payload.model_dump(exclude={"expected_revision"})
     values["provider_settings"] = _provider_settings(
         payload.provider_code, payload.provider_settings, account_type.code
     )
     for name, value in values.items():
         setattr(account, name, value)
+    account.revision += 1
+    session.add(
+        RetirementAccountRevision(
+            retirement_account_id=account.id,
+            household_id=account.household_id,
+            actor_user_id=user.id,
+            action="CORRECTED",
+            previous_state=previous,
+            resulting_state=_account_snapshot(account),
+        )
+    )
     await session.commit()
     await session.refresh(account)
+    logger.info(
+        "retirement_account_corrected",
+        account_id=str(account.id),
+        actor_user_id=str(user.id),
+        household_id=str(account.household_id),
+        revision=account.revision,
+    )
     return account
 
 

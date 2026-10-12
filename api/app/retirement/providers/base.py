@@ -18,6 +18,9 @@ class RetirementProvider(Protocol):
     code: str
     display_name: str
 
+    @property
+    def supported_account_type_codes(self) -> tuple[str, ...] | None: ...
+
     def validate_settings(self, settings: dict[str, object]) -> dict[str, object]: ...
 
     def validate_account_type(self, account_type_code: str) -> None: ...
