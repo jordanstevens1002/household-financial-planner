@@ -7,7 +7,7 @@ from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
-revision: str = "0022_retirement_account_revisions"
+revision: str = "0022_retirement_revisions"
 down_revision: str | None = "0021_purchase_plan_details"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
