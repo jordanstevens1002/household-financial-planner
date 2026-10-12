@@ -19,14 +19,15 @@ class AustralianSuperSettings(BaseModel):
 class AustralianSuperProvider:
     code = "AU_SUPER"
     display_name = "Australian superannuation"
+    supported_account_type_codes = ("AUSTRALIAN_SUPER", "SELF_MANAGED_SUPER_FUND")
 
     def validate_settings(self, settings: dict[str, object]) -> dict[str, object]:
         return AustralianSuperSettings.model_validate(settings).model_dump(mode="json")
 
     def validate_account_type(self, account_type_code: str) -> None:
-        if account_type_code not in {"AUSTRALIAN_SUP", "SELF_MANAGED_SUP_FUND"}:
+        if account_type_code not in self.supported_account_type_codes:
             raise ValueError(
-                "AU_SUPER supports AUSTRALIAN_SUP and SELF_MANAGED_SUP_FUND account types"
+                "AU_SUPER supports AUSTRALIAN_SUPER and SELF_MANAGED_SUPER_FUND account types"
             )
 
     def projection_rules(

@@ -73,8 +73,9 @@ test('shows login failure and then restores the intended route', async ({
   await page.getByLabel('Password').fill('correct horse battery staple');
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Retirement is coming soon' }),
+    page.getByRole('heading', { name: 'Choose a household' }),
   ).toBeVisible();
+  await expect(page).toHaveURL(/\/retirement$/);
 });
 
 test('forces a password change and supports logout', async ({ page }) => {

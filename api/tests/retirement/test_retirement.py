@@ -16,6 +16,7 @@ from app.models import (
     LookupItem,
     Person,
     RetirementAccount,
+    RetirementAccountRevision,
 )
 from app.retirement.calculations import ContributionTerms, project_retirement
 from tests.households.test_households import create_household
@@ -89,8 +90,8 @@ def test_retirement_projection_warns_for_caps_and_rejects_invalid_range() -> Non
 async def retirement_types(session: AsyncSession) -> dict[str, LookupItem]:
     australian = LookupItem(
         category="retirement_account_type",
-        code="AUSTRALIAN_SUP",
-        display_name="Australian super",
+        code="AUSTRALIAN_SUPER",
+        display_name="Australian superannuation",
         is_active=True,
     )
     generic = LookupItem(
@@ -170,7 +171,68 @@ async def test_retirement_provider_catalogue_is_discoverable(client: AsyncClient
     response = await client.get("/api/v1/retirement-providers")
 
     assert response.status_code == 200
-    assert response.json() == [{"code": "AU_SUPER", "display_name": "Australian superannuation"}]
+    assert response.json() == [
+        {
+            "code": "AU_SUPER",
+            "display_name": "Australian superannuation",
+            "supported_account_type_codes": ["AUSTRALIAN_SUPER", "SELF_MANAGED_SUPER_FUND"],
+        }
+    ]
+
+
+async def test_retirement_account_correction_preserves_audit_history_and_rejects_stale_write(
+    client: AsyncClient,
+    session: AsyncSession,
+    retirement_types: dict[str, LookupItem],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    household = await create_household(client)
+    audit_events: list[tuple[str, dict[str, object]]] = []
+    monkeypatch.setattr(
+        "app.retirement.router.logger.info",
+        lambda event, **values: audit_events.append((event, values)),
+    )
+    account = await create_account(client, household["id"], retirement_types["generic"])
+    created_event, created_values = audit_events[-1]
+    assert created_event == "retirement_account_created"
+    assert created_values["actor_user_id"]
+    assert created_values["household_id"] == household["id"]
+    assert created_values["account_type_id"] == str(retirement_types["generic"].id)
+    payload = {
+        "expected_revision": 1,
+        "person_id": None,
+        "display_name": "Corrected fund",
+        "account_type_id": str(retirement_types["australian"].id),
+        "currency": "NZD",
+        "opening_balance": "125000.00",
+        "opening_balance_date": "2025-02-01",
+        "expected_return_rate": "5.5000",
+        "annual_fees": "200.00",
+        "retirement_age": 65,
+        "provider_code": "AU_SUPER",
+        "provider_settings": {},
+        "is_active": True,
+        "notes": "corrected",
+    }
+    corrected = await client.put(f"/api/v1/retirement-accounts/{account['id']}", json=payload)
+    assert corrected.status_code == 200, corrected.text
+    assert corrected.json()["revision"] == 2
+    assert corrected.json()["currency"] == "NZD"
+    assert corrected.json()["opening_balance"] == "125000.00"
+    stale = await client.put(f"/api/v1/retirement-accounts/{account['id']}", json=payload)
+    assert stale.status_code == 409
+    revisions = list(
+        await session.scalars(
+            select(RetirementAccountRevision)
+            .where(RetirementAccountRevision.retirement_account_id == uuid.UUID(account["id"]))
+            .order_by(RetirementAccountRevision.created_at)
+        )
+    )
+    assert [item.action for item in revisions] == ["CREATED", "CORRECTED"]
+    assert revisions[1].previous_state["currency"] == "AUD"
+    assert revisions[1].resulting_state["currency"] == "NZD"
+    assert audit_events[-1][0] == "retirement_account_corrected"
+    assert audit_events[-1][1]["household_id"] == household["id"]
 
 
 async def test_australian_super_profile_rules_and_duplicate_inputs(
@@ -189,6 +251,19 @@ async def test_australian_super_profile_rules_and_duplicate_inputs(
         },
     )
     assert unsupported.status_code == 422
+    incompatible = await client.post(
+        f"/api/v1/households/{household['id']}/retirement-accounts",
+        json={
+            "display_name": "Generic savings",
+            "account_type_id": str(retirement_types["generic"].id),
+            "opening_balance": 0,
+            "opening_balance_date": "2025-01-01",
+            "expected_return_rate": 5,
+            "provider_code": "AU_SUPER",
+        },
+    )
+    assert incompatible.status_code == 422
+    assert "supports AUSTRALIAN_SUPER" in incompatible.json()["detail"]
     account = await create_account(
         client,
         household["id"],
@@ -282,10 +357,20 @@ async def test_retirement_writes_require_editor_role(
     update = await client.put(
         f"/api/v1/retirement-accounts/{account['id']}",
         json={
+            "expected_revision": 1,
+            "person_id": None,
             "display_name": "Blocked",
+            "account_type_id": str(retirement_types["generic"].id),
+            "currency": "AUD",
+            "opening_balance": 100000,
+            "opening_balance_date": "2025-01-01",
             "expected_return_rate": 5,
             "annual_fees": 0,
+            "retirement_age": None,
+            "provider_code": None,
+            "provider_settings": {},
             "is_active": True,
+            "notes": None,
         },
     )
     contribution = await client.post(

@@ -1,4 +1,5 @@
 import { CssBaseline, ThemeProvider } from '@mui/material';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   RouterProvider,
   createMemoryHistory,
@@ -43,9 +44,11 @@ async function renderApplication(path = '/') {
     <ThemeProvider theme={appTheme}>
       <CssBaseline />
       <NotificationProvider>
-        <AuthProvider>
-          <RouterProvider router={router as AnyRouter} />
-        </AuthProvider>
+        <QueryClientProvider client={new QueryClient()}>
+          <AuthProvider>
+            <RouterProvider router={router as AnyRouter} />
+          </AuthProvider>
+        </QueryClientProvider>
       </NotificationProvider>
     </ThemeProvider>,
   );
@@ -146,9 +149,7 @@ describe('local authentication flow', () => {
       'correct horse battery staple',
     );
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
-    expect(
-      await screen.findByRole('heading', { name: 'Retirement is coming soon' }),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Choose a household')).toBeInTheDocument();
   });
 
   it('requires a temporary password to be changed before entry', async () => {

@@ -4277,19 +4277,39 @@ export interface components {
             };
             /** Retirement Age */
             retirement_age?: number | null;
+            /** Revision */
+            revision: number;
         };
         /** RetirementAccountUpdate */
         RetirementAccountUpdate: {
+            /**
+             * Account Type Id
+             * Format: uuid
+             */
+            account_type_id: string;
             /** Annual Fees */
             annual_fees: number | string;
+            /** Currency */
+            currency: string;
             /** Display Name */
             display_name: string;
             /** Expected Return Rate */
             expected_return_rate: number | string;
+            /** Expected Revision */
+            expected_revision: number;
             /** Is Active */
             is_active: boolean;
             /** Notes */
             notes?: string | null;
+            /** Opening Balance */
+            opening_balance: number | string;
+            /**
+             * Opening Balance Date
+             * Format: date
+             */
+            opening_balance_date: string;
+            /** Person Id */
+            person_id?: string | null;
             /** Provider Code */
             provider_code?: string | null;
             /** Provider Settings */
@@ -4416,6 +4436,8 @@ export interface components {
             code: string;
             /** Display Name */
             display_name: string;
+            /** Supported Account Type Codes */
+            supported_account_type_codes?: string[] | null;
         };
         /** ScenarioCalculationRead */
         ScenarioCalculationRead: {
