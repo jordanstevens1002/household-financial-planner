@@ -8,8 +8,10 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   MenuItem,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from '@mui/material';
@@ -44,6 +46,7 @@ interface Draft {
   currency: string;
   displayName: string;
   expectedReturnRate: string;
+  isActive: boolean;
   notes: string;
   openingBalance: string;
   openingBalanceDate: string;
@@ -59,6 +62,7 @@ const blank = (currency: string): Draft => ({
   currency,
   displayName: '',
   expectedReturnRate: '0',
+  isActive: true,
   notes: '',
   openingBalance: '0',
   openingBalanceDate: localCalendarDate(),
@@ -74,6 +78,7 @@ const fromAccount = (account: Account): Draft => ({
   currency: account.currency,
   displayName: account.display_name,
   expectedReturnRate: account.expected_return_rate,
+  isActive: account.is_active,
   notes: account.notes ?? '',
   openingBalance: account.opening_balance,
   openingBalanceDate: account.opening_balance_date,
@@ -180,7 +185,7 @@ function AccountDialog({
       currency: draft.currency,
       display_name: draft.displayName.trim(),
       expected_return_rate: draft.expectedReturnRate,
-      is_active: true,
+      is_active: draft.isActive,
       notes: draft.notes.trim() || null,
       opening_balance: draft.openingBalance,
       opening_balance_date: draft.openingBalanceDate,
@@ -290,6 +295,22 @@ function AccountDialog({
               value={draft.retirementAge}
             />
           </Stack>
+          {account ? (
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={draft.isActive}
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      isActive: event.target.checked,
+                    }))
+                  }
+                />
+              }
+              label="Active account"
+            />
+          ) : null}
           <TextField
             label="Installed provider (optional)"
             onChange={field('providerCode')}
