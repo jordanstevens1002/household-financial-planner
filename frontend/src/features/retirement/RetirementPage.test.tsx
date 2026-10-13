@@ -386,6 +386,52 @@ describe('retirement account catalogue', () => {
     );
   });
 
+  it('validates profile dates and mutually exclusive employer inputs', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('fetch', fetcher());
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'Contributions' }),
+    );
+    await user.click(
+      within(await screen.findByRole('dialog')).getByRole('button', {
+        name: 'Add profile',
+      }),
+    );
+    const profile = await screen.findByRole('dialog', {
+      name: 'Add contribution profile',
+    });
+    const save = within(profile).getByRole('button', { name: 'Save profile' });
+    const from = within(profile).getByLabelText('Effective from');
+    const to = within(profile).getByLabelText('Effective to (optional)');
+    const rate = within(profile).getByLabelText(
+      'Employer contribution rate (%)',
+    );
+    const amount = within(profile).getByLabelText(
+      'Employer annual amount (AUD)',
+    );
+
+    fireEvent.change(from, { target: { value: '' } });
+    await user.click(save);
+    expect(screen.getByText(/effective-from date is required/i)).toBeVisible();
+
+    fireEvent.change(from, { target: { value: '2026-02-01' } });
+    fireEvent.change(to, { target: { value: '2026-01-31' } });
+    await user.click(save);
+    expect(screen.getByText(/cannot precede effective from/i)).toBeVisible();
+
+    fireEvent.change(to, { target: { value: '' } });
+    fireEvent.change(rate, { target: { value: '12' } });
+    fireEvent.change(amount, { target: { value: '1000' } });
+    await user.click(save);
+    expect(screen.getByText(/rate or amount, not both/i)).toBeVisible();
+
+    fireEvent.change(amount, { target: { value: '' } });
+    fireEvent.change(rate, { target: { value: '101' } });
+    await user.click(save);
+    expect(screen.getByText(/rate must be from 0 to 100/i)).toBeVisible();
+  });
+
   it('allows viewers to inspect activity without offering mutations', async () => {
     const user = userEvent.setup();
     vi.stubGlobal('fetch', fetcher(false));
