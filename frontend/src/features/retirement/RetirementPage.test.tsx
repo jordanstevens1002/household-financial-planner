@@ -40,6 +40,18 @@ const account = {
   retirement_age: 67,
   revision: 1,
 };
+const contribution = {
+  annual_pre_tax_cap: '30000.00',
+  contribution_tax_rate: '15.0000',
+  effective_from: '2026-01-01',
+  effective_to: null,
+  employer_amount: null,
+  employer_rate: '12.0000',
+  id: '10000000-0000-4000-8000-000000000006',
+  retirement_account_id: account.id,
+  voluntary_post_tax_amount: '600.00',
+  voluntary_pre_tax_amount: '1200.00',
+};
 const response = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     headers: { 'Content-Type': 'application/json' },
@@ -52,7 +64,11 @@ const pathOf = (input: RequestInfo | URL) =>
       ? input.href
       : input.url;
 
-function fetcher(canEdit = true, accounts: unknown[] = [account]) {
+function fetcher(
+  canEdit = true,
+  accounts: unknown[] = [account],
+  failContributions = false,
+) {
   return vi.fn<typeof fetch>((input, init) => {
     const path = pathOf(input);
     if (path.endsWith('/auth/session'))
@@ -136,6 +152,15 @@ function fetcher(canEdit = true, accounts: unknown[] = [account]) {
     if (path.endsWith('/reference/currencies'))
       return Promise.resolve(
         response([{ code: 'AUD', name: 'Australian Dollar' }]),
+      );
+    if (path.endsWith(`/${account.id}/contribution-profiles`))
+      return Promise.resolve(
+        failContributions
+          ? response({ detail: 'Unavailable' }, 503)
+          : response(
+              init?.method === 'POST' ? contribution : [contribution],
+              init?.method === 'POST' ? 201 : 200,
+            ),
       );
     if (path.endsWith('/retirement-accounts') && init?.method === 'POST')
       return Promise.resolve(response(account, 201));
@@ -320,5 +345,129 @@ describe('retirement account catalogue', () => {
     expect(body.is_active).toBe(false);
     expect(body.opening_balance).toBe(account.opening_balance);
     expect(body.person_id).toBe(account.person_id);
+  });
+
+  it('shows contribution history and creates a dated profile', async () => {
+    const user = userEvent.setup();
+    const mock = fetcher();
+    vi.stubGlobal('fetch', mock);
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'Contributions' }),
+    );
+    const activity = await screen.findByRole('dialog', {
+      name: /future fund — contribution profiles/i,
+    });
+    expect(within(activity).getByText('12.0000%')).toBeVisible();
+
+    await user.click(
+      within(activity).getByRole('button', { name: 'Add profile' }),
+    );
+    const profile = await screen.findByRole('dialog', {
+      name: 'Add contribution profile',
+    });
+    fireEvent.change(
+      within(profile).getByLabelText('Employer contribution rate (%)'),
+      {
+        target: { value: '11.5' },
+      },
+    );
+    await user.click(
+      within(profile).getByRole('button', { name: 'Save profile' }),
+    );
+    await waitFor(() =>
+      expect(
+        mock.mock.calls.some(
+          ([input, init]) =>
+            pathOf(input).endsWith(`/${account.id}/contribution-profiles`) &&
+            init?.method === 'POST',
+        ),
+      ).toBe(true),
+    );
+  });
+
+  it('validates profile dates and mutually exclusive employer inputs', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('fetch', fetcher());
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'Contributions' }),
+    );
+    await user.click(
+      within(await screen.findByRole('dialog')).getByRole('button', {
+        name: 'Add profile',
+      }),
+    );
+    const profile = await screen.findByRole('dialog', {
+      name: 'Add contribution profile',
+    });
+    const save = within(profile).getByRole('button', { name: 'Save profile' });
+    const from = within(profile).getByLabelText('Effective from');
+    const to = within(profile).getByLabelText('Effective to (optional)');
+    const rate = within(profile).getByLabelText(
+      'Employer contribution rate (%)',
+    );
+    const amount = within(profile).getByLabelText(
+      'Employer annual amount (AUD)',
+    );
+
+    fireEvent.change(from, { target: { value: '' } });
+    await user.click(save);
+    expect(screen.getByText(/effective-from date is required/i)).toBeVisible();
+
+    fireEvent.change(from, { target: { value: '2026-02-01' } });
+    fireEvent.change(to, { target: { value: '2026-01-31' } });
+    await user.click(save);
+    expect(screen.getByText(/cannot precede effective from/i)).toBeVisible();
+
+    fireEvent.change(to, { target: { value: '' } });
+    fireEvent.change(rate, { target: { value: '12' } });
+    fireEvent.change(amount, { target: { value: '1000' } });
+    await user.click(save);
+    expect(screen.getByText(/rate or amount, not both/i)).toBeVisible();
+
+    fireEvent.change(amount, { target: { value: '' } });
+    fireEvent.change(rate, { target: { value: '101' } });
+    await user.click(save);
+    expect(screen.getByText(/rate must be from 0 to 100/i)).toBeVisible();
+  });
+
+  it('allows viewers to inspect activity without offering mutations', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('fetch', fetcher(false));
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'Contributions' }),
+    );
+    const activity = await screen.findByRole('dialog');
+    expect(within(activity).getByText('12.0000%')).toBeVisible();
+    expect(
+      within(activity).queryByRole('button', { name: 'Add profile' }),
+    ).toBeNull();
+  });
+
+  it('distinguishes failed contribution history loading', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('fetch', fetcher(true, [account], true));
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'Contributions' }),
+    );
+    expect(
+      await screen.findByText(/profiles could not be loaded/i),
+    ).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeVisible();
+  });
+
+  it('keeps inactive contribution history readable but disables creation', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('fetch', fetcher(true, [{ ...account, is_active: false }]));
+    await renderPage();
+    await user.click(
+      await screen.findByRole('button', { name: 'Contributions' }),
+    );
+    expect(await screen.findByText(/account is inactive/i)).toBeVisible();
+    expect(screen.getByText('12.0000%')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Add profile' })).toBeDisabled();
   });
 });
