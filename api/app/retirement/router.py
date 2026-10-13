@@ -287,7 +287,10 @@ async def list_contribution_profiles(
         await session.scalars(
             select(RetirementContributionProfile)
             .where(RetirementContributionProfile.retirement_account_id == account_id)
-            .order_by(RetirementContributionProfile.effective_from)
+            .order_by(
+                RetirementContributionProfile.effective_from,
+                RetirementContributionProfile.id,
+            )
         )
     )
 
@@ -327,6 +330,15 @@ async def create_contribution_profile(
     session.add(profile)
     await session.commit()
     await session.refresh(profile)
+    logger.info(
+        "retirement_contribution_profile_created",
+        account_id=str(account.id),
+        actor_user_id=str(user.id),
+        effective_from=profile.effective_from.isoformat(),
+        effective_to=profile.effective_to.isoformat() if profile.effective_to else None,
+        household_id=str(account.household_id),
+        profile_id=str(profile.id),
+    )
     return profile
 
 

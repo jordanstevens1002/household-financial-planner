@@ -28,6 +28,7 @@ import { useNotification } from '../../shared/notificationContext';
 import { useAuth } from '../auth/AuthContext';
 import { useHousehold } from '../households/HouseholdContext';
 import { localCalendarDate } from '../people/localDate';
+import { RetirementActivityDialog } from './RetirementActivityDialog';
 
 type Access = components['schemas']['HouseholdAccessRead'];
 type Account = components['schemas']['RetirementAccountRead'];
@@ -413,6 +414,7 @@ export function RetirementPage() {
   const household = useHousehold();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Account>();
+  const [managing, setManaging] = useState<Account>();
   const id = household.selected?.id;
   const accounts = useQuery({
     enabled: !!id,
@@ -523,17 +525,18 @@ export function RetirementPage() {
       label: 'Status',
       render: (item) => (item.is_active ? 'Active' : 'Inactive'),
     },
-    ...(accessValue.can_edit
-      ? [
-          {
-            key: 'actions',
-            label: 'Actions',
-            render: (item: Account) => (
-              <Button onClick={() => setEditing(item)}>Correct</Button>
-            ),
-          } satisfies DataColumn<Account>,
-        ]
-      : []),
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (item) => (
+        <Stack direction="row" spacing={1}>
+          <Button onClick={() => setManaging(item)}>Contributions</Button>
+          {accessValue.can_edit ? (
+            <Button onClick={() => setEditing(item)}>Correct</Button>
+          ) : null}
+        </Stack>
+      ),
+    },
   ];
   return (
     <Stack spacing={3}>
@@ -577,6 +580,13 @@ export function RetirementPage() {
         <Alert severity="info">
           You have view-only access to this household.
         </Alert>
+      ) : null}
+      {managing ? (
+        <RetirementActivityDialog
+          account={managing}
+          canEdit={accessValue.can_edit}
+          onClose={() => setManaging(undefined)}
+        />
       ) : null}
       {open || editing ? (
         currencies.isPending ? (

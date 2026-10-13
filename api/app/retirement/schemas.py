@@ -76,11 +76,15 @@ class ContributionProfileCreate(BaseModel):
     effective_from: date
     effective_to: date | None = None
     employer_rate: Decimal | None = Field(default=None, ge=0, le=100, decimal_places=4)
-    employer_amount: Decimal | None = Field(default=None, ge=0, decimal_places=2)
-    voluntary_pre_tax_amount: Decimal = Field(default=Decimal("0"), ge=0)
-    voluntary_post_tax_amount: Decimal = Field(default=Decimal("0"), ge=0)
-    contribution_tax_rate: Decimal = Field(default=Decimal("0"), ge=0, le=100)
-    annual_pre_tax_cap: Decimal | None = Field(default=None, ge=0)
+    employer_amount: Decimal | None = Field(default=None, ge=0, max_digits=18, decimal_places=2)
+    voluntary_pre_tax_amount: Decimal = Field(
+        default=Decimal("0"), ge=0, max_digits=18, decimal_places=2
+    )
+    voluntary_post_tax_amount: Decimal = Field(
+        default=Decimal("0"), ge=0, max_digits=18, decimal_places=2
+    )
+    contribution_tax_rate: Decimal = Field(default=Decimal("0"), ge=0, le=100, decimal_places=4)
+    annual_pre_tax_cap: Decimal | None = Field(default=None, ge=0, max_digits=18, decimal_places=2)
 
     @model_validator(mode="after")
     def validate_profile(self) -> ContributionProfileCreate:

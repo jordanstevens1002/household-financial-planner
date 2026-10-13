@@ -128,8 +128,15 @@ async def create_account(
 
 
 async def test_generic_retirement_account_contributions_events_and_projection(
-    client: AsyncClient, retirement_types: dict[str, LookupItem]
+    client: AsyncClient,
+    retirement_types: dict[str, LookupItem],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    audit_events: list[tuple[str, dict[str, object]]] = []
+    monkeypatch.setattr(
+        "app.retirement.router.logger.info",
+        lambda event, **values: audit_events.append((event, values)),
+    )
     household = await create_household(client)
     account = await create_account(client, household["id"], retirement_types["generic"])
     assert account["currency"] == "AUD"
@@ -144,6 +151,11 @@ async def test_generic_retirement_account_contributions_events_and_projection(
         },
     )
     assert contribution.status_code == 201
+    profile_event, profile_values = audit_events[-1]
+    assert profile_event == "retirement_contribution_profile_created"
+    assert profile_values["actor_user_id"]
+    assert profile_values["household_id"] == household["id"]
+    assert "amount" not in profile_values
     event = await client.post(
         f"/api/v1/retirement-accounts/{account['id']}/events",
         json={
@@ -153,6 +165,21 @@ async def test_generic_retirement_account_contributions_events_and_projection(
         },
     )
     assert event.status_code == 201
+    profiles = await client.get(
+        f"/api/v1/retirement-accounts/{account['id']}/contribution-profiles"
+    )
+    assert profiles.status_code == 200
+    assert profiles.json()[0]["employer_amount"] == "12000.00"
+    invalid_amount = await client.post(
+        f"/api/v1/retirement-accounts/{account['id']}/contribution-profiles",
+        json={"effective_from": "2027-01-01", "employer_amount": "1e100"},
+    )
+    invalid_precision = await client.post(
+        f"/api/v1/retirement-accounts/{account['id']}/contribution-profiles",
+        json={"effective_from": "2027-01-01", "employer_amount": "1.001"},
+    )
+    assert invalid_amount.status_code == 422
+    assert invalid_precision.status_code == 422
     projection = await client.get(
         f"/api/v1/retirement-accounts/{account['id']}/projection",
         params={"projection_date": "2026-01-01"},
