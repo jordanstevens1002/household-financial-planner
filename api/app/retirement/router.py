@@ -133,7 +133,8 @@ def _require_active_account(account: RetirementAccount) -> None:
     if not account.is_active:
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            "Retirement account is inactive; reactivate it before adding records or calculating projections",
+            "Retirement account is inactive; reactivate it before adding records "
+            "or calculating projections",
         )
 
 
