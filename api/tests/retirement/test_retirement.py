@@ -289,6 +289,57 @@ async def test_australian_super_profile_rules_and_duplicate_inputs(
     assert (await client.post(event_url, json=event_payload)).status_code == 409
 
 
+async def test_inactive_retirement_account_blocks_new_records_and_projections_until_reactivated(
+    client: AsyncClient, retirement_types: dict[str, LookupItem]
+) -> None:
+    household = await create_household(client)
+    account = await create_account(client, household["id"], retirement_types["generic"])
+    update_payload = {
+        "expected_revision": account["revision"],
+        "person_id": account["person_id"],
+        "display_name": account["display_name"],
+        "account_type_id": account["account_type_id"],
+        "currency": account["currency"],
+        "opening_balance": account["opening_balance"],
+        "opening_balance_date": account["opening_balance_date"],
+        "expected_return_rate": account["expected_return_rate"],
+        "annual_fees": account["annual_fees"],
+        "retirement_age": account["retirement_age"],
+        "provider_code": account["provider_code"],
+        "provider_settings": account["provider_settings"],
+        "is_active": False,
+        "notes": account["notes"],
+    }
+    deactivated = await client.put(
+        f"/api/v1/retirement-accounts/{account['id']}", json=update_payload
+    )
+    assert deactivated.status_code == 200
+
+    profile_url = f"/api/v1/retirement-accounts/{account['id']}/contribution-profiles"
+    event_url = f"/api/v1/retirement-accounts/{account['id']}/events"
+    projection_url = f"/api/v1/retirement-accounts/{account['id']}/projection"
+    blocked = [
+        await client.post(profile_url, json={"effective_from": "2026-01-01"}),
+        await client.post(event_url, json={"effective_date": "2026-01-01", "amount": 100}),
+        await client.get(projection_url, params={"projection_date": "2026-12-31"}),
+    ]
+    assert [response.status_code for response in blocked] == [409, 409, 409]
+    assert all("inactive" in response.json()["detail"] for response in blocked)
+
+    update_payload["expected_revision"] = deactivated.json()["revision"]
+    update_payload["is_active"] = True
+    reactivated = await client.put(
+        f"/api/v1/retirement-accounts/{account['id']}", json=update_payload
+    )
+    assert reactivated.status_code == 200
+    assert (
+        await client.post(profile_url, json={"effective_from": "2026-01-01"})
+    ).status_code == 201
+    assert (
+        await client.get(projection_url, params={"projection_date": "2026-12-31"})
+    ).status_code == 200
+
+
 async def test_retirement_account_rejects_cross_household_person_and_hides_account(
     client: AsyncClient,
     session: AsyncSession,

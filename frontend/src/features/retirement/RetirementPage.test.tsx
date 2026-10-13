@@ -272,6 +272,24 @@ describe('retirement account catalogue', () => {
     const dialog = await screen.findByRole('dialog', {
       name: 'Correct retirement account',
     });
+    expect(
+      within(dialog).getByRole('heading', {
+        name: 'Historical opening position',
+      }),
+    ).toBeVisible();
+    expect(
+      within(dialog).getByText(
+        /rewrites the account's historical starting point/i,
+      ),
+    ).toBeVisible();
+    expect(
+      within(dialog).getByRole('heading', { name: 'Planning assumptions' }),
+    ).toBeVisible();
+    expect(
+      within(dialog).getByText(
+        /cannot accept new contributions or adjustments/i,
+      ),
+    ).toBeVisible();
     fireEvent.change(within(dialog).getByLabelText('Account name'), {
       target: { value: 'Corrected account' },
     });

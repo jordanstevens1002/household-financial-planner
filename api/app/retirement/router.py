@@ -129,6 +129,14 @@ def _account_snapshot(account: RetirementAccount) -> dict[str, object]:
     }
 
 
+def _require_active_account(account: RetirementAccount) -> None:
+    if not account.is_active:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Retirement account is inactive; reactivate it before adding records or calculating projections",
+        )
+
+
 async def _validated_account_references(
     household_id: uuid.UUID,
     account_type_id: uuid.UUID,
@@ -294,7 +302,8 @@ async def create_contribution_profile(
     user: ApplicationUser = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ) -> RetirementContributionProfile:
-    await _account_with_access(account_id, HouseholdRole.EDITOR, user, session)
+    account = await _account_with_access(account_id, HouseholdRole.EDITOR, user, session)
+    _require_active_account(account)
     overlap_conditions = [
         RetirementContributionProfile.retirement_account_id == account_id,
         or_(
@@ -331,7 +340,8 @@ async def create_retirement_event(
     user: ApplicationUser = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ) -> RetirementAccountEvent:
-    await _account_with_access(account_id, HouseholdRole.EDITOR, user, session)
+    account = await _account_with_access(account_id, HouseholdRole.EDITOR, user, session)
+    _require_active_account(account)
     if payload.idempotency_key is not None:
         duplicate = await session.scalar(
             select(RetirementAccountEvent.id).where(
@@ -356,6 +366,7 @@ async def retirement_projection(
     session: AsyncSession = Depends(get_session),
 ) -> RetirementProjectionRead:
     account = await _account_with_access(account_id, HouseholdRole.VIEWER, user, session)
+    _require_active_account(account)
     profiles = list(
         await session.scalars(
             select(RetirementContributionProfile)

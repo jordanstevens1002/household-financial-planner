@@ -207,6 +207,9 @@ function AccountDialog({
       </DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
+          <Typography component="h3" variant="subtitle1">
+            Account details
+          </Typography>
           <TextField
             label="Account name"
             onChange={field('displayName')}
@@ -259,6 +262,23 @@ function AccountDialog({
               currencies.find((item) => item.code === draft.currency) ?? null
             }
           />
+          <Box>
+            <Typography component="h3" variant="subtitle1">
+              Historical opening position
+            </Typography>
+            <Typography color="text.secondary" variant="body2">
+              The balance and date establish the starting point for every
+              projection.
+            </Typography>
+          </Box>
+          {account ? (
+            <Alert severity="warning">
+              Changing the opening position rewrites the account&apos;s
+              historical starting point and all projections derived from it. The
+              previous values remain available in the account&apos;s audit
+              history.
+            </Alert>
+          ) : null}
           <Stack direction={{ md: 'row', xs: 'column' }} spacing={2}>
             <TextField
               fullWidth
@@ -275,6 +295,15 @@ function AccountDialog({
               value={draft.openingBalanceDate}
             />
           </Stack>
+          <Box>
+            <Typography component="h3" variant="subtitle1">
+              Planning assumptions
+            </Typography>
+            <Typography color="text.secondary" variant="body2">
+              These assumptions shape future estimates without changing the
+              recorded opening position.
+            </Typography>
+          </Box>
           <Stack direction={{ md: 'row', xs: 'column' }} spacing={2}>
             <TextField
               fullWidth
@@ -296,20 +325,27 @@ function AccountDialog({
             />
           </Stack>
           {account ? (
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={draft.isActive}
-                  onChange={(event) =>
-                    setDraft((current) => ({
-                      ...current,
-                      isActive: event.target.checked,
-                    }))
-                  }
-                />
-              }
-              label="Active account"
-            />
+            <Box>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={draft.isActive}
+                    onChange={(event) =>
+                      setDraft((current) => ({
+                        ...current,
+                        isActive: event.target.checked,
+                      }))
+                    }
+                  />
+                }
+                label="Active account"
+              />
+              <Typography color="text.secondary" variant="body2">
+                Inactive accounts keep their history but cannot accept new
+                contributions or adjustments and cannot produce projections.
+                Reactivate the account here to resume planning.
+              </Typography>
+            </Box>
           ) : null}
           <TextField
             label="Installed provider (optional)"
