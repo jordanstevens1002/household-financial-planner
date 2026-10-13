@@ -272,9 +272,28 @@ describe('retirement account catalogue', () => {
     const dialog = await screen.findByRole('dialog', {
       name: 'Correct retirement account',
     });
+    expect(
+      within(dialog).getByRole('heading', {
+        name: 'Historical opening position',
+      }),
+    ).toBeVisible();
+    expect(
+      within(dialog).getByText(
+        /rewrites the account's historical starting point/i,
+      ),
+    ).toBeVisible();
+    expect(
+      within(dialog).getByRole('heading', { name: 'Planning assumptions' }),
+    ).toBeVisible();
+    expect(
+      within(dialog).getByText(
+        /cannot accept new contributions or adjustments/i,
+      ),
+    ).toBeVisible();
     fireEvent.change(within(dialog).getByLabelText('Account name'), {
       target: { value: 'Corrected account' },
     });
+    await user.click(within(dialog).getByLabelText('Active account'));
     await user.click(
       within(dialog).getByRole('button', { name: 'Save account' }),
     );
@@ -298,6 +317,7 @@ describe('retirement account catalogue', () => {
       throw new Error('Missing request body');
     const body = JSON.parse(requestBody) as Record<string, unknown>;
     expect(body.expected_revision).toBe(1);
+    expect(body.is_active).toBe(false);
     expect(body.opening_balance).toBe(account.opening_balance);
     expect(body.person_id).toBe(account.person_id);
   });
