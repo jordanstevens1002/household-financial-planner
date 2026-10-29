@@ -530,7 +530,7 @@ export function RetirementPage() {
       label: 'Actions',
       render: (item) => (
         <Stack direction="row" spacing={1}>
-          <Button onClick={() => setManaging(item)}>Contributions</Button>
+          <Button onClick={() => setManaging(item)}>Activity</Button>
           {accessValue.can_edit ? (
             <Button onClick={() => setEditing(item)}>Correct</Button>
           ) : null}

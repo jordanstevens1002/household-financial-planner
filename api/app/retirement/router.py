@@ -342,6 +342,28 @@ async def create_contribution_profile(
     return profile
 
 
+@router.get(
+    "/retirement-accounts/{account_id}/events",
+    response_model=list[RetirementEventRead],
+)
+async def list_retirement_events(
+    account_id: uuid.UUID,
+    user: ApplicationUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> list[RetirementAccountEvent]:
+    await _account_with_access(account_id, HouseholdRole.VIEWER, user, session)
+    return list(
+        await session.scalars(
+            select(RetirementAccountEvent)
+            .where(RetirementAccountEvent.retirement_account_id == account_id)
+            .order_by(
+                RetirementAccountEvent.effective_date,
+                RetirementAccountEvent.id,
+            )
+        )
+    )
+
+
 @router.post(
     "/retirement-accounts/{account_id}/events",
     response_model=RetirementEventRead,
@@ -368,6 +390,15 @@ async def create_retirement_event(
     session.add(event)
     await session.commit()
     await session.refresh(event)
+    logger.info(
+        "retirement_account_event_created",
+        account_id=str(account.id),
+        actor_user_id=str(user.id),
+        effective_date=event.effective_date.isoformat(),
+        event_id=str(event.id),
+        event_type=event.event_type.value,
+        household_id=str(account.household_id),
+    )
     return event
 
 

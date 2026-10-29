@@ -165,11 +165,20 @@ async def test_generic_retirement_account_contributions_events_and_projection(
         },
     )
     assert event.status_code == 201
+    event_log, event_values = audit_events[-1]
+    assert event_log == "retirement_account_event_created"
+    assert event_values["actor_user_id"]
+    assert event_values["household_id"] == household["id"]
+    assert "amount" not in event_values
+    assert "notes" not in event_values
     profiles = await client.get(
         f"/api/v1/retirement-accounts/{account['id']}/contribution-profiles"
     )
     assert profiles.status_code == 200
     assert profiles.json()[0]["employer_amount"] == "12000.00"
+    events = await client.get(f"/api/v1/retirement-accounts/{account['id']}/events")
+    assert events.status_code == 200
+    assert events.json()[0]["amount"] == "1000.00"
     invalid_amount = await client.post(
         f"/api/v1/retirement-accounts/{account['id']}/contribution-profiles",
         json={"effective_from": "2027-01-01", "employer_amount": "1e100"},
@@ -180,6 +189,20 @@ async def test_generic_retirement_account_contributions_events_and_projection(
     )
     assert invalid_amount.status_code == 422
     assert invalid_precision.status_code == 422
+    zero_adjustment = await client.post(
+        f"/api/v1/retirement-accounts/{account['id']}/events",
+        json={"effective_date": "2025-07-01", "amount": 0},
+    )
+    blank_key = await client.post(
+        f"/api/v1/retirement-accounts/{account['id']}/events",
+        json={
+            "effective_date": "2025-07-01",
+            "amount": 1,
+            "idempotency_key": "   ",
+        },
+    )
+    assert zero_adjustment.status_code == 422
+    assert blank_key.status_code == 422
     projection = await client.get(
         f"/api/v1/retirement-accounts/{account['id']}/projection",
         params={"projection_date": "2026-01-01"},
