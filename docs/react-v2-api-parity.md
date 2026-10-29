@@ -114,6 +114,7 @@ decorators, so route changes require an intentional matrix update.
 | PUT | `/api/v1/retirement-accounts/{account_id}` | Account update | #48 |
 | GET | `/api/v1/retirement-accounts/{account_id}/contribution-profiles` | Contribution history | #49 |
 | POST | `/api/v1/retirement-accounts/{account_id}/contribution-profiles` | Contribution profile | #49 |
+| GET | `/api/v1/retirement-accounts/{account_id}/events` | Balance adjustment history | #49 |
 | POST | `/api/v1/retirement-accounts/{account_id}/events` | Balance adjustment | #49 |
 | GET | `/api/v1/retirement-accounts/{account_id}/projection` | Projection | #49 |
 | GET | `/api/v1/event-types` | Event-type discovery | #50, #120 |
