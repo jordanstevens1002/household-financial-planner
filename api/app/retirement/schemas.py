@@ -108,6 +108,16 @@ class RetirementEventCreate(BaseModel):
     idempotency_key: str | None = Field(default=None, min_length=1, max_length=100)
     notes: str | None = Field(default=None, max_length=2000)
 
+    @model_validator(mode="after")
+    def validate_adjustment(self) -> RetirementEventCreate:
+        if self.amount == 0:
+            raise ValueError("balance adjustment amount must be non-zero")
+        if self.idempotency_key is not None:
+            self.idempotency_key = self.idempotency_key.strip()
+            if not self.idempotency_key:
+                raise ValueError("idempotency_key must not be blank")
+        return self
+
 
 class RetirementEventRead(RetirementEventCreate):
     model_config = ConfigDict(from_attributes=True)

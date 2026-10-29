@@ -17589,6 +17589,72 @@
       }
     },
     "/api/v1/retirement-accounts/{account_id}/events": {
+      "get": {
+        "operationId": "list_retirement_events_api_v1_retirement_accounts__account_id__events_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Development-Subject",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Development-Subject"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RetirementEventRead"
+                  },
+                  "title": "Response List Retirement Events Api V1 Retirement Accounts  Account Id  Events Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Retirement Events",
+        "tags": [
+          "retirement"
+        ]
+      },
       "post": {
         "operationId": "create_retirement_event_api_v1_retirement_accounts__account_id__events_post",
         "parameters": [
