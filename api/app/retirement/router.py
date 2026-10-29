@@ -7,6 +7,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import and_, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -377,18 +378,31 @@ async def create_retirement_event(
 ) -> RetirementAccountEvent:
     account = await _account_with_access(account_id, HouseholdRole.EDITOR, user, session)
     _require_active_account(account)
-    if payload.idempotency_key is not None:
-        duplicate = await session.scalar(
-            select(RetirementAccountEvent.id).where(
-                RetirementAccountEvent.retirement_account_id == account_id,
-                RetirementAccountEvent.idempotency_key == payload.idempotency_key,
-            )
+    if payload.effective_date <= account.opening_balance_date:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "Balance adjustments must be dated after the opening balance date",
         )
-        if duplicate is not None:
-            raise HTTPException(409, "Duplicate retirement event idempotency key")
     event = RetirementAccountEvent(retirement_account_id=account_id, **payload.model_dump())
     session.add(event)
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        duplicate = None
+        if payload.idempotency_key is not None:
+            duplicate = await session.scalar(
+                select(RetirementAccountEvent.id).where(
+                    RetirementAccountEvent.retirement_account_id == account_id,
+                    RetirementAccountEvent.idempotency_key == payload.idempotency_key,
+                )
+            )
+        if duplicate is not None:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                "Duplicate retirement event idempotency key",
+            ) from None
+        raise
     await session.refresh(event)
     logger.info(
         "retirement_account_event_created",

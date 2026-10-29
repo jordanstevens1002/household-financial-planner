@@ -1,15 +1,21 @@
 """Retirement projection tests."""
 
+import asyncio
 import uuid
+from collections.abc import AsyncIterator
 from datetime import date
 from decimal import Decimal
 
 import pytest
-from httpx import AsyncClient
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from app.core.auth import Identity, get_identity
+from app.core.database import Base, get_session
+from app.main import app
 from app.models import (
+    ApplicationUser,
     Household,
     HouseholdMembership,
     HouseholdRole,
@@ -203,6 +209,17 @@ async def test_generic_retirement_account_contributions_events_and_projection(
     )
     assert zero_adjustment.status_code == 422
     assert blank_key.status_code == 422
+    before_opening = await client.post(
+        f"/api/v1/retirement-accounts/{account['id']}/events",
+        json={"effective_date": "2024-12-31", "amount": 1},
+    )
+    on_opening = await client.post(
+        f"/api/v1/retirement-accounts/{account['id']}/events",
+        json={"effective_date": "2025-01-01", "amount": 1},
+    )
+    assert before_opening.status_code == 422
+    assert on_opening.status_code == 422
+    assert "after the opening balance date" in on_opening.json()["detail"]
     projection = await client.get(
         f"/api/v1/retirement-accounts/{account['id']}/projection",
         params={"projection_date": "2026-01-01"},
@@ -215,6 +232,85 @@ async def test_generic_retirement_account_contributions_events_and_projection(
     assert len(body["entries"]) == 12
     listed = await client.get(f"/api/v1/households/{household['id']}/retirement-accounts")
     assert listed.json()[0]["id"] == account["id"]
+
+
+async def test_concurrent_retirement_event_idempotency_conflict_returns_409(tmp_path) -> None:
+    engine = create_async_engine(
+        f"sqlite+aiosqlite:///{tmp_path / 'retirement-event-race.db'}",
+        connect_args={"timeout": 30},
+    )
+    async with engine.begin() as connection:
+        await connection.execute(text("PRAGMA journal_mode=WAL"))
+        await connection.run_sync(Base.metadata.create_all)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    async with factory() as database:
+        user = ApplicationUser(oidc_subject="retirement-race-user")
+        household = Household(display_name="Race household", currency="AUD")
+        account_type = LookupItem(
+            category="retirement_account_type",
+            code="RACE_RETIREMENT",
+            display_name="Race retirement",
+            is_active=True,
+        )
+        database.add_all([user, household, account_type])
+        await database.flush()
+        database.add(
+            HouseholdMembership(
+                household_id=household.id,
+                application_user_id=user.id,
+                role=HouseholdRole.EDITOR,
+            )
+        )
+        account = RetirementAccount(
+            household_id=household.id,
+            display_name="Race fund",
+            account_type_id=account_type.id,
+            currency="AUD",
+            opening_balance=Decimal("100"),
+            opening_balance_date=date(2025, 1, 1),
+            expected_return_rate=Decimal("0"),
+            annual_fees=Decimal("0"),
+            provider_settings={},
+            is_active=True,
+        )
+        database.add(account)
+        await database.commit()
+        user_id = user.id
+        account_id = account.id
+
+    async def independent_session() -> AsyncIterator[AsyncSession]:
+        async with factory() as database:
+            yield database
+
+    async def identity_override() -> Identity:
+        return Identity(
+            subject="retirement-race-user",
+            application_user_id=str(user_id),
+        )
+
+    app.dependency_overrides[get_session] = independent_session
+    app.dependency_overrides[get_identity] = identity_override
+    payload = {
+        "effective_date": "2025-02-01",
+        "amount": 10,
+        "idempotency_key": "concurrent-adjustment",
+    }
+    try:
+        async with (
+            AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as first,
+            AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as second,
+        ):
+            responses = await asyncio.gather(
+                first.post(f"/api/v1/retirement-accounts/{account_id}/events", json=payload),
+                second.post(f"/api/v1/retirement-accounts/{account_id}/events", json=payload),
+            )
+        assert sorted(response.status_code for response in responses) == [201, 409]
+        assert next(response for response in responses if response.status_code == 409).json() == {
+            "detail": "Duplicate retirement event idempotency key"
+        }
+    finally:
+        app.dependency_overrides.clear()
+        await engine.dispose()
 
 
 async def test_retirement_provider_catalogue_is_discoverable(client: AsyncClient) -> None:

@@ -231,6 +231,10 @@ function AdjustmentDialog({
   const submit = () => {
     setValidation('');
     if (!effectiveDate) return setValidation('An effective date is required.');
+    if (effectiveDate <= account.opening_balance_date)
+      return setValidation(
+        `Effective date must be after the opening balance date (${formatDate(account.opening_balance_date)}).`,
+      );
     if (!signedMoney.test(amount) || Number(amount) === 0)
       return setValidation(
         'Enter a non-zero amount with at most 16 whole digits and two decimals.',
@@ -262,6 +266,7 @@ function AdjustmentDialog({
             and a negative amount for a withdrawal or correction.
           </Alert>
           <TextField
+            helperText={`Must be after ${formatDate(account.opening_balance_date)}`}
             label="Effective date"
             onChange={(event) => setEffectiveDate(event.target.value)}
             slotProps={{ inputLabel: { shrink: true } }}

@@ -471,6 +471,18 @@ describe('retirement account catalogue', () => {
     fireEvent.change(within(dialog).getByLabelText('Adjustment amount (AUD)'), {
       target: { value: '-250.50' },
     });
+    fireEvent.change(within(dialog).getByLabelText('Effective date'), {
+      target: { value: account.opening_balance_date },
+    });
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Save adjustment' }),
+    );
+    expect(
+      within(dialog).getByText(/must be after the opening balance date/i),
+    ).toBeVisible();
+    fireEvent.change(within(dialog).getByLabelText('Effective date'), {
+      target: { value: '2026-02-01' },
+    });
     await user.click(within(dialog).getByText('Advanced'));
     await user.type(
       within(dialog).getByLabelText('Idempotency key (optional)'),
