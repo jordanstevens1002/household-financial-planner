@@ -16,6 +16,7 @@ import { createAppRouter } from '../../app/router';
 import { selectionKeys } from '../../app/selectionStorage';
 import { appTheme } from '../../app/theme';
 import { NotificationProvider } from '../../shared/NotificationProvider';
+import { formatDate } from '../../shared/format';
 import { AuthProvider } from '../auth/AuthProvider';
 
 const householdId = '10000000-0000-4000-8000-000000000001';
@@ -580,7 +581,7 @@ describe('retirement account catalogue', () => {
     ).toBeVisible();
     expect(within(dialog).getByText('Page 1 of 2')).toBeVisible();
     await user.click(within(dialog).getByRole('button', { name: 'Next' }));
-    expect(within(dialog).getByText('1 Jan 2027')).toBeVisible();
+    expect(within(dialog).getByText(formatDate('2027-01-01'))).toBeVisible();
     await user.hover(
       within(dialog).getByRole('button', { name: '1 projection warnings' }),
     );
