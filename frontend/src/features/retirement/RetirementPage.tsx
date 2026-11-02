@@ -29,6 +29,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useHousehold } from '../households/HouseholdContext';
 import { localCalendarDate } from '../people/localDate';
 import { RetirementActivityDialog } from './RetirementActivityDialog';
+import { RetirementProjectionDialog } from './RetirementProjectionDialog';
 
 type Access = components['schemas']['HouseholdAccessRead'];
 type Account = components['schemas']['RetirementAccountRead'];
@@ -415,6 +416,7 @@ export function RetirementPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Account>();
   const [managing, setManaging] = useState<Account>();
+  const [projecting, setProjecting] = useState<Account>();
   const id = household.selected?.id;
   const accounts = useQuery({
     enabled: !!id,
@@ -531,6 +533,12 @@ export function RetirementPage() {
       render: (item) => (
         <Stack direction="row" spacing={1}>
           <Button onClick={() => setManaging(item)}>Activity</Button>
+          <Button
+            disabled={!item.is_active}
+            onClick={() => setProjecting(item)}
+          >
+            Projection
+          </Button>
           {accessValue.can_edit ? (
             <Button onClick={() => setEditing(item)}>Correct</Button>
           ) : null}
@@ -586,6 +594,16 @@ export function RetirementPage() {
           account={managing}
           canEdit={accessValue.can_edit}
           onClose={() => setManaging(undefined)}
+        />
+      ) : null}
+      {projecting ? (
+        <RetirementProjectionDialog
+          account={projecting}
+          onClose={() => setProjecting(undefined)}
+          providerName={
+            providerRows.find((item) => item.code === projecting.provider_code)
+              ?.display_name
+          }
         />
       ) : null}
       {open || editing ? (
