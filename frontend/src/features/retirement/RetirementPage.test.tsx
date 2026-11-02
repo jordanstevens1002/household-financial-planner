@@ -52,6 +52,15 @@ const contribution = {
   voluntary_post_tax_amount: '600.00',
   voluntary_pre_tax_amount: '1200.00',
 };
+const adjustment = {
+  amount: '1000.00',
+  effective_date: '2026-02-01',
+  event_type: 'BALANCE_ADJUSTMENT',
+  id: '10000000-0000-4000-8000-000000000007',
+  idempotency_key: 'opening-correction',
+  notes: 'Opening correction',
+  retirement_account_id: account.id,
+};
 const response = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     headers: { 'Content-Type': 'application/json' },
@@ -68,6 +77,7 @@ function fetcher(
   canEdit = true,
   accounts: unknown[] = [account],
   failContributions = false,
+  failAdjustments = false,
 ) {
   return vi.fn<typeof fetch>((input, init) => {
     const path = pathOf(input);
@@ -159,6 +169,15 @@ function fetcher(
           ? response({ detail: 'Unavailable' }, 503)
           : response(
               init?.method === 'POST' ? contribution : [contribution],
+              init?.method === 'POST' ? 201 : 200,
+            ),
+      );
+    if (path.endsWith(`/${account.id}/events`))
+      return Promise.resolve(
+        failAdjustments
+          ? response({ detail: 'Unavailable' }, 503)
+          : response(
+              init?.method === 'POST' ? adjustment : [adjustment],
               init?.method === 'POST' ? 201 : 200,
             ),
       );
@@ -352,11 +371,9 @@ describe('retirement account catalogue', () => {
     const mock = fetcher();
     vi.stubGlobal('fetch', mock);
     await renderPage();
-    await user.click(
-      await screen.findByRole('button', { name: 'Contributions' }),
-    );
+    await user.click(await screen.findByRole('button', { name: 'Activity' }));
     const activity = await screen.findByRole('dialog', {
-      name: /future fund — contribution profiles/i,
+      name: /future fund — contributions and adjustments/i,
     });
     expect(within(activity).getByText('12.0000%')).toBeVisible();
 
@@ -390,9 +407,7 @@ describe('retirement account catalogue', () => {
     const user = userEvent.setup();
     vi.stubGlobal('fetch', fetcher());
     await renderPage();
-    await user.click(
-      await screen.findByRole('button', { name: 'Contributions' }),
-    );
+    await user.click(await screen.findByRole('button', { name: 'Activity' }));
     await user.click(
       within(await screen.findByRole('dialog')).getByRole('button', {
         name: 'Add profile',
@@ -432,17 +447,79 @@ describe('retirement account catalogue', () => {
     expect(screen.getByText(/rate must be from 0 to 100/i)).toBeVisible();
   });
 
+  it('shows adjustment history and creates a signed adjustment', async () => {
+    const user = userEvent.setup();
+    const mock = fetcher();
+    vi.stubGlobal('fetch', mock);
+    await renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Activity' }));
+    const activity = await screen.findByRole('dialog', {
+      name: /future fund — contributions and adjustments/i,
+    });
+    await user.click(within(activity).getByText('Advanced'));
+    expect(within(activity).getByText('Opening correction')).toBeVisible();
+    await user.click(
+      within(activity).getByRole('button', { name: 'Add adjustment' }),
+    );
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Add balance adjustment',
+    });
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Save adjustment' }),
+    );
+    expect(screen.getByText(/enter a non-zero amount/i)).toBeVisible();
+    fireEvent.change(within(dialog).getByLabelText('Adjustment amount (AUD)'), {
+      target: { value: '-250.50' },
+    });
+    fireEvent.change(within(dialog).getByLabelText('Effective date'), {
+      target: { value: account.opening_balance_date },
+    });
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Save adjustment' }),
+    );
+    expect(
+      within(dialog).getByText(/must be after the opening balance date/i),
+    ).toBeVisible();
+    fireEvent.change(within(dialog).getByLabelText('Effective date'), {
+      target: { value: '2026-02-01' },
+    });
+    await user.click(within(dialog).getByText('Advanced'));
+    await user.type(
+      within(dialog).getByLabelText('Idempotency key (optional)'),
+      'withdrawal-1',
+    );
+    await user.type(
+      within(dialog).getByLabelText('Notes (optional)'),
+      'Correction note',
+    );
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Save adjustment' }),
+    );
+    await waitFor(() =>
+      expect(
+        mock.mock.calls.some(
+          ([input, init]) =>
+            pathOf(input).endsWith(`/${account.id}/events`) &&
+            init?.method === 'POST' &&
+            typeof init.body === 'string' &&
+            init.body.includes('withdrawal-1'),
+        ),
+      ).toBe(true),
+    );
+  });
+
   it('allows viewers to inspect activity without offering mutations', async () => {
     const user = userEvent.setup();
     vi.stubGlobal('fetch', fetcher(false));
     await renderPage();
-    await user.click(
-      await screen.findByRole('button', { name: 'Contributions' }),
-    );
+    await user.click(await screen.findByRole('button', { name: 'Activity' }));
     const activity = await screen.findByRole('dialog');
     expect(within(activity).getByText('12.0000%')).toBeVisible();
     expect(
       within(activity).queryByRole('button', { name: 'Add profile' }),
+    ).toBeNull();
+    expect(
+      within(activity).queryByRole('button', { name: 'Add adjustment' }),
     ).toBeNull();
   });
 
@@ -450,11 +527,20 @@ describe('retirement account catalogue', () => {
     const user = userEvent.setup();
     vi.stubGlobal('fetch', fetcher(true, [account], true));
     await renderPage();
-    await user.click(
-      await screen.findByRole('button', { name: 'Contributions' }),
-    );
+    await user.click(await screen.findByRole('button', { name: 'Activity' }));
     expect(
       await screen.findByText(/profiles could not be loaded/i),
+    ).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeVisible();
+  });
+
+  it('distinguishes failed balance-adjustment history loading', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('fetch', fetcher(true, [account], false, true));
+    await renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Activity' }));
+    expect(
+      await screen.findByText(/adjustments could not be loaded/i),
     ).toBeVisible();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeVisible();
   });
@@ -463,11 +549,12 @@ describe('retirement account catalogue', () => {
     const user = userEvent.setup();
     vi.stubGlobal('fetch', fetcher(true, [{ ...account, is_active: false }]));
     await renderPage();
-    await user.click(
-      await screen.findByRole('button', { name: 'Contributions' }),
-    );
+    await user.click(await screen.findByRole('button', { name: 'Activity' }));
     expect(await screen.findByText(/account is inactive/i)).toBeVisible();
     expect(screen.getByText('12.0000%')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Add profile' })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'Add adjustment' }),
+    ).toBeDisabled();
   });
 });

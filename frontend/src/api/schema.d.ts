@@ -1482,7 +1482,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Retirement Events */
+        get: operations["list_retirement_events_api_v1_retirement_accounts__account_id__events_get"];
         put?: never;
         /** Create Retirement Event */
         post: operations["create_retirement_event_api_v1_retirement_accounts__account_id__events_post"];
@@ -8795,6 +8796,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContributionProfileRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_retirement_events_api_v1_retirement_accounts__account_id__events_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Development-Subject"?: string | null;
+            };
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetirementEventRead"][];
                 };
             };
             /** @description Validation Error */
