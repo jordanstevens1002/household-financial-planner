@@ -325,9 +325,7 @@ describe('household timeline', () => {
       within(dialog).getByLabelText('Amount (optional)'),
       '550000',
     );
-    expect(
-      within(dialog).queryByLabelText('Payload (JSON)'),
-    ).not.toBeInTheDocument();
+    expect(within(dialog).queryByLabelText('Payload (JSON)')).not.toBeVisible();
     await user.click(within(dialog).getByText('Advanced'));
     expect(within(dialog).getByLabelText('Payload (JSON)')).toBeVisible();
     await user.click(within(dialog).getByRole('button', { name: 'Add event' }));
