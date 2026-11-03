@@ -6,6 +6,7 @@ import userEvent from '@testing-library/user-event';
 import type { AnyRouter } from '@tanstack/react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type { components } from '../../api/schema';
 import { createAppRouter } from '../../app/router';
 import { selectionKeys } from '../../app/selectionStorage';
 import { appTheme } from '../../app/theme';
@@ -17,8 +18,9 @@ const eventId = '10000000-0000-4000-8000-000000000002';
 const eventTypeId = '10000000-0000-4000-8000-000000000003';
 const userId = '10000000-0000-4000-8000-000000000004';
 const propertyId = '10000000-0000-4000-8000-000000000005';
+type TimelineEvent = components['schemas']['FinancialEventRead'];
 
-const event = {
+const event: TimelineEvent = {
   amount: '500000.00',
   classification: 'OBSERVED',
   created_by_user_id: userId,
@@ -53,7 +55,11 @@ const pathOf = (input: RequestInfo | URL) =>
       ? input.href
       : input.url;
 
-function fetcher(timelineStatus = 200) {
+function fetcher(
+  timelineStatus = 200,
+  events: TimelineEvent[] = [event],
+  flags: string[] = ['FUTURE_OBSERVED_EVENT'],
+) {
   return vi.fn<typeof fetch>((input) => {
     const path = pathOf(input);
     if (path.endsWith('/auth/session'))
@@ -83,8 +89,8 @@ function fetcher(timelineStatus = 200) {
       return Promise.resolve(
         timelineStatus === 200
           ? response({
-              data_quality_flags: ['FUTURE_OBSERVED_EVENT'],
-              events: [event],
+              data_quality_flags: flags,
+              events,
               household_id: householdId,
             })
           : response({ detail: 'Timeline unavailable' }, timelineStatus),
@@ -201,5 +207,71 @@ describe('household timeline', () => {
     expect(await screen.findByText('Timeline unavailable')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeVisible();
     expect(screen.queryByText('No timeline events')).not.toBeInTheDocument();
+  });
+
+  it('presents each related-record scope and disabled state', async () => {
+    vi.stubGlobal(
+      'fetch',
+      fetcher(
+        200,
+        [
+          event,
+          {
+            ...event,
+            data_quality_flags: [],
+            id: '10000000-0000-4000-8000-000000000006',
+            is_enabled: false,
+            loan_id: '10000000-0000-4000-8000-000000000007',
+            notes: null,
+            property_id: null,
+          },
+          {
+            ...event,
+            id: '10000000-0000-4000-8000-000000000008',
+            person_id: '10000000-0000-4000-8000-000000000009',
+            property_id: null,
+          },
+          {
+            ...event,
+            id: '10000000-0000-4000-8000-000000000010',
+            property_id: null,
+          },
+        ],
+        ['FUTURE_OBSERVED_EVENT'],
+      ),
+    );
+    await renderPage();
+
+    expect(
+      await screen.findByText('Loan · 10000000-0000-4000-8000-000000000007'),
+    ).toBeVisible();
+    expect(
+      screen.getByText('Person · 10000000-0000-4000-8000-000000000009'),
+    ).toBeVisible();
+    expect(screen.getByText('Household')).toBeVisible();
+    expect(screen.getByText('Disabled')).toBeVisible();
+  });
+
+  it('distinguishes an empty complete timeline from filtered results', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('fetch', fetcher(200, [], []));
+    await renderPage();
+
+    expect(
+      await screen.findByText(
+        'Events will appear here as household activity is recorded.',
+      ),
+    ).toBeVisible();
+    await user.type(screen.getByLabelText('From'), '2026-01-01');
+    await user.click(screen.getByRole('button', { name: 'Refresh timeline' }));
+    expect(
+      await screen.findByText('No events match the selected timeline filters.'),
+    ).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Clear filters' }));
+    expect(
+      await screen.findByText(
+        'Events will appear here as household activity is recorded.',
+      ),
+    ).toBeVisible();
   });
 });
