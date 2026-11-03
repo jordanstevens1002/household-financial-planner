@@ -94,7 +94,7 @@ edited by hand.
 | `/loans/$loanId/analysis` | Schedule, targets and refinancing | #46 |
 | `/purchases` | Purchase planning and feasibility | #47 |
 | `/retirement` | Accounts, contributions and projections | #48, #49 |
-| `/timeline` | Events and resolved property state | #50 |
+| `/timeline` | Event history, controls and resolved property state | #183, #184, #185 |
 | `/scenarios` | Saved scenarios and comparisons | #51, #52 |
 | `/admin/users` | Local account administration | #34 |
 | `/admin/legacy-identities` | OIDC identity mapping | #36 |

@@ -129,9 +129,17 @@ const retirementRoute = createRoute({
   path: '/retirement',
 });
 
+const timelineRoute = createRoute({
+  component: lazyRouteComponent(
+    () => import('../features/timeline/TimelinePage'),
+    'TimelinePage',
+  ),
+  getParentRoute: () => rootRoute,
+  path: '/timeline',
+});
+
 function placeholderRoute(
-  path:
-    '/households' | '/properties' | '/retirement' | '/scenarios' | '/timeline',
+  path: '/households' | '/properties' | '/retirement' | '/scenarios',
 ) {
   return createRoute({
     component: lazyRouteComponent(
@@ -156,7 +164,7 @@ const routeTree = rootRoute.addChildren([
   purchasePlansRoute,
   legacyPurchasesRoute,
   retirementRoute,
-  placeholderRoute('/timeline'),
+  timelineRoute,
   placeholderRoute('/scenarios'),
   settingsRoute,
 ]);

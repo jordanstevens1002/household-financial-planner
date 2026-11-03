@@ -10,7 +10,6 @@ const pageNames: Record<string, string> = {
   '/retirement': 'Retirement',
   '/scenarios': 'Scenarios',
   '/settings': 'Settings',
-  '/timeline': 'Timeline',
 };
 
 export function PlaceholderPage() {
