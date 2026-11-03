@@ -652,7 +652,7 @@ describe('retirement account catalogue', () => {
       await within(dialog).findByText(/RETIRED_PROVIDER provider/i),
     ).toBeVisible();
     expect(
-      within(dialog).getByText(/no projection periods exist yet/i),
+      within(dialog).getByText(/no projection periods yet/i),
     ).toBeVisible();
     expect(
       within(dialog).queryByRole('button', { name: /projection warnings/i }),
