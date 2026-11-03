@@ -60,7 +60,7 @@ decorators, so route changes require an intentional matrix update.
 | GET | `/api/v1/properties/{property_id}` | Property detail | #43 |
 | POST | `/api/v1/properties/{property_id}/valuations` | Dated valuation | #43 |
 | POST | `/api/v1/properties/{property_id}/baselines` | Dated property baseline | #43 |
-| GET | `/api/v1/properties/{property_id}/state` | Resolved state at a date | #43 |
+| GET | `/api/v1/properties/{property_id}/state` | Resolved state at a date | #43, #185 |
 | GET | `/api/v1/properties/{property_id}/ownership` | Ownership history | #44 |
 | GET | `/api/v1/properties/{property_id}/ownership-position` | Ownership resolved at a date | #44 |
 | POST | `/api/v1/properties/{property_id}/ownership` | Dated ownership interests | #44 |
@@ -117,11 +117,11 @@ decorators, so route changes require an intentional matrix update.
 | GET | `/api/v1/retirement-accounts/{account_id}/events` | Balance adjustment history | #49 |
 | POST | `/api/v1/retirement-accounts/{account_id}/events` | Balance adjustment | #49 |
 | GET | `/api/v1/retirement-accounts/{account_id}/projection` | Projection | #49 |
-| GET | `/api/v1/event-types` | Event-type discovery | #50, #120 |
-| GET | `/api/v1/households/{household_id}/timeline` | Complete or filtered timeline, including loan-event history | #50, #120 |
-| POST | `/api/v1/households/{household_id}/events` | Planned event creation | #50 |
-| PATCH | `/api/v1/events/{event_id}` | Planned event update | #50 |
-| PATCH | `/api/v1/events/{event_id}/enabled` | Enable or disable event | #50 |
+| GET | `/api/v1/event-types` | Event-type discovery | #184, #120 |
+| GET | `/api/v1/households/{household_id}/timeline` | Complete or filtered timeline, including loan-event history | #183, #120 |
+| POST | `/api/v1/households/{household_id}/events` | Planned event creation | #184 |
+| PATCH | `/api/v1/events/{event_id}` | Planned event update | #184 |
+| PATCH | `/api/v1/events/{event_id}/enabled` | Enable or disable event | #184 |
 | GET | `/api/v1/scenario-templates` | Scenario templates | #51 |
 | GET | `/api/v1/households/{household_id}/scenarios` | Saved scenario list | #51 |
 | POST | `/api/v1/households/{household_id}/scenarios` | Custom scenario creation | #51 |
