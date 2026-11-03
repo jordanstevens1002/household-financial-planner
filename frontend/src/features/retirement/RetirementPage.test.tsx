@@ -16,6 +16,7 @@ import { createAppRouter } from '../../app/router';
 import { selectionKeys } from '../../app/selectionStorage';
 import { appTheme } from '../../app/theme';
 import { NotificationProvider } from '../../shared/NotificationProvider';
+import { formatDate } from '../../shared/format';
 import { AuthProvider } from '../auth/AuthProvider';
 
 const householdId = '10000000-0000-4000-8000-000000000001';
@@ -61,6 +62,36 @@ const adjustment = {
   notes: 'Opening correction',
   retirement_account_id: account.id,
 };
+const projectionEntries = Array.from({ length: 13 }, (_, index) => ({
+  balance_adjustments: index === 1 ? '1000.00' : '0.00',
+  closing_balance: String(101000 + index * 1000),
+  contribution_tax: '150.00',
+  earnings: '500.00',
+  employer_contributions: '1000.00',
+  fees: '10.00',
+  opening_balance: String(100000 + index * 1000),
+  projection_date:
+    index === 12
+      ? '2027-01-01'
+      : `2026-${String(index + 1).padStart(2, '0')}-01`,
+  voluntary_post_tax_contributions: '50.00',
+  voluntary_pre_tax_contributions: '100.00',
+}));
+const projection = {
+  account_id: account.id,
+  assumptions_used: ['Expected return: 6% per year, compounded monthly.'],
+  calculation_date: '2026-11-03',
+  currency: 'AUD',
+  entries: projectionEntries,
+  projected_balance: '120000.00',
+  projection_date: '2027-01-01',
+  provider_code: null,
+  total_contribution_tax: '1950.00',
+  total_contributions: '14950.00',
+  total_earnings: '6500.00',
+  total_fees: '130.00',
+  warnings: ['Projection is an estimate.'],
+};
 const response = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     headers: { 'Content-Type': 'application/json' },
@@ -78,6 +109,8 @@ function fetcher(
   accounts: unknown[] = [account],
   failContributions = false,
   failAdjustments = false,
+  failProjection = false,
+  projectionResult: unknown = projection,
 ) {
   return vi.fn<typeof fetch>((input, init) => {
     const path = pathOf(input);
@@ -180,6 +213,12 @@ function fetcher(
               init?.method === 'POST' ? adjustment : [adjustment],
               init?.method === 'POST' ? 201 : 200,
             ),
+      );
+    if (path.includes(`/${account.id}/projection?projection_date=`))
+      return Promise.resolve(
+        failProjection
+          ? response({ detail: 'Provider rules unavailable' }, 422)
+          : response(projectionResult),
       );
     if (path.endsWith('/retirement-accounts') && init?.method === 'POST')
       return Promise.resolve(response(account, 201));
@@ -521,6 +560,111 @@ describe('retirement account catalogue', () => {
     expect(
       within(activity).queryByRole('button', { name: 'Add adjustment' }),
     ).toBeNull();
+  });
+
+  it('calculates backend projection results, warnings and paged periods', async () => {
+    const user = userEvent.setup();
+    const mock = fetcher();
+    vi.stubGlobal('fetch', mock);
+    await renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Projection' }));
+    const dialog = await screen.findByRole('dialog', {
+      name: /future fund — projection/i,
+    });
+    expect(within(dialog).getByText('No projection calculated')).toBeVisible();
+    fireEvent.change(within(dialog).getByLabelText('Projection date'), {
+      target: { value: '2027-01-01' },
+    });
+    await user.click(within(dialog).getByRole('button', { name: 'Calculate' }));
+    expect(await within(dialog).findByText('A$120,000.00')).toBeVisible();
+    expect(
+      within(dialog).getByText(/generic account assumptions/i),
+    ).toBeVisible();
+    expect(within(dialog).getByText('Page 1 of 2')).toBeVisible();
+    await user.click(within(dialog).getByRole('button', { name: 'Next' }));
+    expect(within(dialog).getByText(formatDate('2027-01-01'))).toBeVisible();
+    await user.click(within(dialog).getByRole('button', { name: 'Previous' }));
+    expect(within(dialog).getByText('Page 1 of 2')).toBeVisible();
+    await user.hover(
+      within(dialog).getByRole('button', { name: '1 projection warnings' }),
+    );
+    expect(await screen.findByText('Projection is an estimate.')).toBeVisible();
+    fireEvent.change(within(dialog).getByLabelText('Projection date'), {
+      target: { value: '2027-02-01' },
+    });
+    expect(within(dialog).queryByText('A$120,000.00')).toBeNull();
+  });
+
+  it('validates projection dates and reports provider calculation failures', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('fetch', fetcher(true, [account], false, false, true));
+    await renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Projection' }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Projection date'), {
+      target: { value: '' },
+    });
+    await user.click(within(dialog).getByRole('button', { name: 'Calculate' }));
+    expect(
+      within(dialog).getByText(/enter a valid projection date/i),
+    ).toBeVisible();
+    fireEvent.change(within(dialog).getByLabelText('Projection date'), {
+      target: { value: '2025-12-31' },
+    });
+    await user.click(within(dialog).getByRole('button', { name: 'Calculate' }));
+    expect(
+      within(dialog).getByText(/cannot precede the opening balance date/i),
+    ).toBeVisible();
+    fireEvent.change(within(dialog).getByLabelText('Projection date'), {
+      target: { value: '2027-01-01' },
+    });
+    await user.click(within(dialog).getByRole('button', { name: 'Calculate' }));
+    expect(
+      await within(dialog).findByText(/provider rules unavailable/i),
+    ).toBeVisible();
+  });
+
+  it('handles future openings, empty results and unavailable provider metadata', async () => {
+    const user = userEvent.setup();
+    const futureAccount = {
+      ...account,
+      opening_balance_date: '2099-01-01',
+      provider_code: 'RETIRED_PROVIDER',
+    };
+    vi.stubGlobal(
+      'fetch',
+      fetcher(true, [futureAccount], false, false, false, {
+        ...projection,
+        entries: [],
+        projection_date: '2099-01-01',
+        provider_code: 'RETIRED_PROVIDER',
+        warnings: [],
+      }),
+    );
+    await renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Projection' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByLabelText('Projection date')).toHaveValue(
+      '2099-01-01',
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Calculate' }));
+    expect(
+      await within(dialog).findByText(/RETIRED_PROVIDER provider/i),
+    ).toBeVisible();
+    expect(
+      within(dialog).getByText(/no projection periods yet/i),
+    ).toBeVisible();
+    expect(
+      within(dialog).queryByRole('button', { name: /projection warnings/i }),
+    ).toBeNull();
+  });
+
+  it('does not offer projections for inactive accounts', async () => {
+    vi.stubGlobal('fetch', fetcher(true, [{ ...account, is_active: false }]));
+    await renderPage();
+    expect(
+      await screen.findByRole('button', { name: 'Projection' }),
+    ).toBeDisabled();
   });
 
   it('distinguishes failed contribution history loading', async () => {
