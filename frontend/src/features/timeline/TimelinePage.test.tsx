@@ -1,7 +1,7 @@
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryHistory, RouterProvider } from '@tanstack/react-router';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { AnyRouter } from '@tanstack/react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -85,6 +85,35 @@ function fetcher(
           },
         ]),
       );
+    if (path.endsWith('/access'))
+      return Promise.resolve(
+        response({
+          can_administer: false,
+          can_edit: true,
+          can_manage_owners: false,
+          can_view: true,
+          role: 'EDITOR',
+        }),
+      );
+    if (path.endsWith('/event-types'))
+      return Promise.resolve(
+        response([
+          {
+            code: 'PROPERTY_VALUED',
+            display_name: 'Property valued',
+            id: eventTypeId,
+            is_active: true,
+            priority: 10,
+          },
+        ]),
+      );
+    if (
+      path.endsWith('/people') ||
+      path.endsWith('/properties') ||
+      path.endsWith('/loans')
+    )
+      return Promise.resolve(response([]));
+    if (path.endsWith('/events')) return Promise.resolve(response(event, 201));
     if (path.includes(`/households/${householdId}/timeline`))
       return Promise.resolve(
         timelineStatus === 200
@@ -273,5 +302,46 @@ describe('household timeline', () => {
         'Events will appear here as household activity is recorded.',
       ),
     ).toBeVisible();
+  });
+
+  it('creates an event and keeps specialist fields advanced', async () => {
+    const user = userEvent.setup();
+    const mock = fetcher();
+    vi.stubGlobal('fetch', mock);
+    await renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Add event' }));
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Add timeline event',
+    });
+    await user.click(within(dialog).getByLabelText('Event type'));
+    await user.click(
+      await screen.findByRole('option', { name: 'Property valued' }),
+    );
+    await user.type(
+      within(dialog).getByLabelText('Effective time (UTC)'),
+      '2026-11-03T09:30',
+    );
+    await user.type(
+      within(dialog).getByLabelText('Amount (optional)'),
+      '550000',
+    );
+    expect(
+      within(dialog).queryByLabelText('Payload (JSON)'),
+    ).not.toBeInTheDocument();
+    await user.click(within(dialog).getByText('Advanced'));
+    expect(within(dialog).getByLabelText('Payload (JSON)')).toBeVisible();
+    await user.click(within(dialog).getByRole('button', { name: 'Add event' }));
+
+    await waitFor(() =>
+      expect(
+        mock.mock.calls.some(
+          ([input, init]) =>
+            pathOf(input).endsWith('/events') &&
+            init?.method === 'POST' &&
+            typeof init.body === 'string' &&
+            init.body.includes('550000'),
+        ),
+      ).toBe(true),
+    );
   });
 });
