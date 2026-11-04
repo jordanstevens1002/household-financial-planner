@@ -21,9 +21,12 @@ import { DataTable, type DataColumn } from '../../shared/DataTable';
 import { EmptyState } from '../../shared/EmptyState';
 import { formatDate } from '../../shared/format';
 import { useHousehold } from '../households/HouseholdContext';
+import { EventCreateDialog } from './EventCreateDialog';
 
 type Event = components['schemas']['FinancialEventRead'];
 type Timeline = components['schemas']['TimelineRead'];
+type Access = components['schemas']['HouseholdAccessRead'];
+type EventType = components['schemas']['EventTypeRead'];
 
 interface Filters {
   from: string;
@@ -124,6 +127,7 @@ export function TimelinePage() {
   const { error: householdError, loading, selected } = useHousehold();
   const [draft, setDraft] = useState(initialFilters);
   const [filters, setFilters] = useState(initialFilters);
+  const [creating, setCreating] = useState(false);
   const invalidRange = Boolean(draft.from && draft.to && draft.from > draft.to);
   const householdId = selected?.id ?? '';
   const timeline = useQuery({
@@ -140,6 +144,18 @@ export function TimelinePage() {
     },
     queryKey: ['household-timeline', householdId, filters],
   });
+  const access = useQuery({
+    enabled: Boolean(householdId),
+    queryFn: () =>
+      apiRequest<Access>(`/api/v1/households/${householdId}/access`),
+    queryKey: ['household-access', householdId],
+  });
+  const eventTypes = useQuery({
+    enabled: Boolean(householdId),
+    queryFn: () => apiRequest<EventType[]>('/api/v1/event-types'),
+    queryKey: ['event-types'],
+    retry: false,
+  });
 
   if (loading) return <CircularProgress aria-label="Loading households" />;
   if (householdError)
@@ -154,15 +170,39 @@ export function TimelinePage() {
 
   return (
     <Stack spacing={3}>
-      <Box>
-        <Typography component="h1" variant="h4">
-          Timeline
-        </Typography>
-        <Typography color="text.secondary">
-          Review observed, planned and projected events for{' '}
-          {selected.display_name}.
-        </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Box>
+          <Typography component="h1" variant="h4">
+            Timeline
+          </Typography>
+          <Typography color="text.secondary">
+            Review observed, planned and projected events for{' '}
+            {selected.display_name}.
+          </Typography>
+        </Box>
+        {access.data?.can_edit ? (
+          <Button
+            disabled={eventTypes.isPending || Boolean(eventTypes.error)}
+            onClick={() => setCreating(true)}
+            variant="outlined"
+          >
+            Add event
+          </Button>
+        ) : null}
       </Box>
+
+      {eventTypes.error ? (
+        <Alert
+          action={
+            <Button color="inherit" onClick={() => void eventTypes.refetch()}>
+              Retry
+            </Button>
+          }
+          severity="error"
+        >
+          Event types could not be loaded.
+        </Alert>
+      ) : null}
 
       <Box
         component="form"
@@ -266,6 +306,13 @@ export function TimelinePage() {
           />
         </>
       )}
+      {creating && eventTypes.data ? (
+        <EventCreateDialog
+          eventTypes={eventTypes.data}
+          householdId={householdId}
+          onClose={() => setCreating(false)}
+        />
+      ) : null}
     </Stack>
   );
 }
