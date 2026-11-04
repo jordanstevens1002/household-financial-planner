@@ -12,16 +12,20 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { apiRequest } from '../../api/client';
 import type { components } from '../../api/schema';
 import { DataTable, type DataColumn } from '../../shared/DataTable';
+import { ConfirmDialog } from '../../shared/ConfirmDialog';
 import { EmptyState } from '../../shared/EmptyState';
 import { formatDate } from '../../shared/format';
+import { useNotification } from '../../shared/notificationContext';
+import { useAuth } from '../auth/AuthContext';
 import { useHousehold } from '../households/HouseholdContext';
 import { EventCreateDialog } from './EventCreateDialog';
+import { EventCorrectionDialog } from './EventCorrectionDialog';
 
 type Event = components['schemas']['FinancialEventRead'];
 type Timeline = components['schemas']['TimelineRead'];
@@ -71,7 +75,7 @@ function FlagInfo({ event }: { event: Event }) {
   );
 }
 
-const columns: DataColumn<Event>[] = [
+const baseColumns: DataColumn<Event>[] = [
   {
     key: 'date',
     label: 'Effective date',
@@ -124,10 +128,15 @@ const columns: DataColumn<Event>[] = [
 ];
 
 export function TimelinePage() {
+  const auth = useAuth();
+  const notification = useNotification();
+  const queryClient = useQueryClient();
   const { error: householdError, loading, selected } = useHousehold();
   const [draft, setDraft] = useState(initialFilters);
   const [filters, setFilters] = useState(initialFilters);
   const [creating, setCreating] = useState(false);
+  const [correctingId, setCorrectingId] = useState<string | null>(null);
+  const [toggleId, setToggleId] = useState<string | null>(null);
   const invalidRange = Boolean(draft.from && draft.to && draft.from > draft.to);
   const householdId = selected?.id ?? '';
   const timeline = useQuery({
@@ -156,6 +165,62 @@ export function TimelinePage() {
     queryKey: ['event-types'],
     retry: false,
   });
+  const correctingEvent =
+    timeline.data?.events.find((item) => item.id === correctingId) ?? null;
+  const toggleEvent =
+    timeline.data?.events.find((item) => item.id === toggleId) ?? null;
+  const toggle = useMutation({
+    mutationFn: (item: Event) =>
+      apiRequest<Event>(`/api/v1/events/${item.id}/enabled`, {
+        body: JSON.stringify({ is_enabled: !item.is_enabled }),
+        csrfToken: auth.csrfToken(),
+        method: 'PATCH',
+      }),
+    onError: (error) => {
+      notification.notify(errorMessage(error), 'error');
+      setToggleId(null);
+      void timeline.refetch();
+    },
+    onSuccess: async (saved) => {
+      setToggleId(null);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['household-timeline', householdId],
+        }),
+        queryClient.invalidateQueries({ queryKey: ['property-state'] }),
+        queryClient.invalidateQueries({ queryKey: ['loan-schedule'] }),
+        queryClient.invalidateQueries({ queryKey: ['household-cashflow'] }),
+      ]);
+      notification.notify(
+        saved.is_enabled ? 'Event enabled.' : 'Event disabled.',
+        'success',
+      );
+    },
+  });
+  const columns: DataColumn<Event>[] = access.data?.can_edit
+    ? [
+        ...baseColumns,
+        {
+          key: 'actions',
+          label: 'Actions',
+          render: (item) =>
+            item.classification === 'OBSERVED' ? (
+              <Typography color="text.secondary" variant="caption">
+                Recorded event
+              </Typography>
+            ) : (
+              <Stack direction="row" spacing={1}>
+                <Button onClick={() => setCorrectingId(item.id)} size="small">
+                  Correct
+                </Button>
+                <Button onClick={() => setToggleId(item.id)} size="small">
+                  {item.is_enabled ? 'Disable' : 'Enable'}
+                </Button>
+              </Stack>
+            ),
+        },
+      ]
+    : baseColumns;
 
   if (loading) return <CircularProgress aria-label="Loading households" />;
   if (householdError)
@@ -244,12 +309,17 @@ export function TimelinePage() {
             control={
               <Checkbox
                 checked={draft.includeDisabled}
-                onChange={(event) =>
+                onChange={(event) => {
+                  const includeDisabled = event.target.checked;
                   setDraft((current) => ({
                     ...current,
-                    includeDisabled: event.target.checked,
-                  }))
-                }
+                    includeDisabled,
+                  }));
+                  setFilters((current) => ({
+                    ...current,
+                    includeDisabled,
+                  }));
+                }}
               />
             }
             label="Include disabled events"
@@ -313,6 +383,32 @@ export function TimelinePage() {
           onClose={() => setCreating(false)}
         />
       ) : null}
+      {correctingEvent ? (
+        <EventCorrectionDialog
+          event={correctingEvent}
+          householdId={householdId}
+          onClose={() => setCorrectingId(null)}
+        />
+      ) : null}
+      <ConfirmDialog
+        confirmLabel={
+          toggleEvent?.is_enabled ? 'Disable event' : 'Enable event'
+        }
+        description={
+          toggleEvent
+            ? `${toggleEvent.is_enabled ? 'Disable' : 'Enable'} ${displayCode(toggleEvent.event_type_code)} dated ${formatDate(toggleEvent.effective_at)}? ${toggleEvent.is_enabled ? 'It will be excluded from timeline results and dependent calculations unless disabled events are requested.' : 'It will again be included in timeline results and dependent calculations.'}`
+            : ''
+        }
+        onCancel={() => setToggleId(null)}
+        onConfirm={() => toggleEvent && toggle.mutate(toggleEvent)}
+        open={toggleEvent !== null}
+        pending={toggle.isPending}
+        title={
+          toggleEvent?.is_enabled
+            ? 'Disable planned event?'
+            : 'Enable planned event?'
+        }
+      />
     </Stack>
   );
 }
