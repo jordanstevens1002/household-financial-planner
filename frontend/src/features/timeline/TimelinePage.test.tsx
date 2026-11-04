@@ -59,8 +59,9 @@ function fetcher(
   timelineStatus = 200,
   events: TimelineEvent[] = [event],
   flags: string[] = ['FUTURE_OBSERVED_EVENT'],
+  canEdit = true,
 ) {
-  return vi.fn<typeof fetch>((input) => {
+  return vi.fn<typeof fetch>((input, init) => {
     const path = pathOf(input);
     if (path.endsWith('/auth/session'))
       return Promise.resolve(
@@ -89,10 +90,10 @@ function fetcher(
       return Promise.resolve(
         response({
           can_administer: false,
-          can_edit: true,
+          can_edit: canEdit,
           can_manage_owners: false,
           can_view: true,
-          role: 'EDITOR',
+          role: canEdit ? 'EDITOR' : 'VIEWER',
         }),
       );
     if (path.endsWith('/event-types'))
@@ -113,6 +114,22 @@ function fetcher(
       path.endsWith('/loans')
     )
       return Promise.resolve(response([]));
+    const selectedEvent = events.find((item) => path.includes(item.id));
+    if (selectedEvent && path.endsWith('/enabled') && init?.method === 'PATCH')
+      return Promise.resolve(
+        response({ ...selectedEvent, is_enabled: !selectedEvent.is_enabled }),
+      );
+    if (
+      selectedEvent &&
+      path.endsWith(selectedEvent.id) &&
+      init?.method === 'PATCH'
+    ) {
+      const body = JSON.parse(String(init.body)) as {
+        effective_at: string;
+        notes: string | null;
+      };
+      return Promise.resolve(response({ ...selectedEvent, ...body }));
+    }
     if (path.endsWith('/events')) return Promise.resolve(response(event, 201));
     if (path.includes(`/households/${householdId}/timeline`))
       return Promise.resolve(
@@ -342,5 +359,76 @@ describe('household timeline', () => {
         ),
       ).toBe(true),
     );
+  });
+
+  it('corrects a planned event using a date-only value', async () => {
+    const user = userEvent.setup();
+    const planned = { ...event, classification: 'PLANNED' as const };
+    const mock = fetcher(200, [planned], []);
+    vi.stubGlobal('fetch', mock);
+    await renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Correct' }));
+    const dialog = screen.getByRole('dialog', {
+      name: 'Correct timeline event',
+    });
+    const effectiveDate = within(dialog).getByLabelText('Effective date');
+    await user.clear(effectiveDate);
+    await user.type(effectiveDate, '2026-12-20');
+    await user.clear(within(dialog).getByLabelText('Notes (optional)'));
+    await user.type(
+      within(dialog).getByLabelText('Notes (optional)'),
+      'Revised plan',
+    );
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Save correction' }),
+    );
+
+    await waitFor(() =>
+      expect(
+        mock.mock.calls.some(
+          ([input, init]) =>
+            pathOf(input).endsWith(`/events/${eventId}`) &&
+            init?.method === 'PATCH' &&
+            String(init.body).includes('2026-12-20T00:00:00Z') &&
+            String(init.body).includes('Revised plan'),
+        ),
+      ).toBe(true),
+    );
+  });
+
+  it('confirms a projected event toggle before submitting it', async () => {
+    const user = userEvent.setup();
+    const planned = { ...event, classification: 'PROJECTED' as const };
+    const mock = fetcher(200, [planned], []);
+    vi.stubGlobal('fetch', mock);
+    await renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Disable' }));
+    const confirmation = screen.getByRole('dialog', {
+      name: 'Disable planned event?',
+    });
+    expect(within(confirmation).getByText(/Property Valued/)).toBeVisible();
+    await user.click(
+      within(confirmation).getByRole('button', { name: 'Disable event' }),
+    );
+    await waitFor(() =>
+      expect(
+        mock.mock.calls.some(
+          ([input, init]) =>
+            pathOf(input).endsWith(`/events/${eventId}/enabled`) &&
+            init?.method === 'PATCH' &&
+            init.body === JSON.stringify({ is_enabled: false }),
+        ),
+      ).toBe(true),
+    );
+  });
+
+  it('does not offer mutation actions for observed events or viewers', async () => {
+    vi.stubGlobal('fetch', fetcher(200, [event], [], false));
+    await renderPage();
+    expect(await screen.findByText('Property Valued')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Correct' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Disable' })).toBeNull();
   });
 });
