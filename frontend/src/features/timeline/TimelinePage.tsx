@@ -309,12 +309,17 @@ export function TimelinePage() {
             control={
               <Checkbox
                 checked={draft.includeDisabled}
-                onChange={(event) =>
+                onChange={(event) => {
+                  const includeDisabled = event.target.checked;
                   setDraft((current) => ({
                     ...current,
-                    includeDisabled: event.target.checked,
-                  }))
-                }
+                    includeDisabled,
+                  }));
+                  setFilters((current) => ({
+                    ...current,
+                    includeDisabled,
+                  }));
+                }}
               />
             }
             label="Include disabled events"

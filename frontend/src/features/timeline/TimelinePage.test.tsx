@@ -407,6 +407,14 @@ describe('household timeline', () => {
     vi.stubGlobal('fetch', mock);
     await renderPage();
 
+    await user.click(await screen.findByLabelText('Include disabled events'));
+    await waitFor(() =>
+      expect(
+        mock.mock.calls.some(([input]) =>
+          pathOf(input).includes('include_disabled=true'),
+        ),
+      ).toBe(true),
+    );
     await user.click(await screen.findByRole('button', { name: 'Disable' }));
     const confirmation = screen.getByRole('dialog', {
       name: 'Disable planned event?',
@@ -423,6 +431,16 @@ describe('household timeline', () => {
             init?.method === 'PATCH' &&
             init.body === JSON.stringify({ is_enabled: false }),
         ),
+      ).toBe(true),
+    );
+    const toggleRequestIndex = mock.mock.calls.findIndex(([input]) =>
+      pathOf(input).endsWith(`/events/${eventId}/enabled`),
+    );
+    await waitFor(() =>
+      expect(
+        mock.mock.calls
+          .slice(toggleRequestIndex + 1)
+          .some(([input]) => pathOf(input).includes('include_disabled=true')),
       ).toBe(true),
     );
   });
