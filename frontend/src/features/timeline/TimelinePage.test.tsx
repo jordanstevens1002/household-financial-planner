@@ -318,8 +318,8 @@ describe('household timeline', () => {
       await screen.findByRole('option', { name: 'Property valued' }),
     );
     await user.type(
-      within(dialog).getByLabelText('Effective time (UTC)'),
-      '2026-11-03T09:30',
+      within(dialog).getByLabelText('Effective date'),
+      '2026-11-03',
     );
     await user.type(
       within(dialog).getByLabelText('Amount (optional)'),
@@ -337,7 +337,8 @@ describe('household timeline', () => {
             pathOf(input).endsWith('/events') &&
             init?.method === 'POST' &&
             typeof init.body === 'string' &&
-            init.body.includes('550000'),
+            init.body.includes('550000') &&
+            init.body.includes('2026-11-03T00:00:00Z'),
         ),
       ).toBe(true),
     );

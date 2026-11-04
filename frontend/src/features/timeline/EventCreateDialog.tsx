@@ -17,7 +17,6 @@ import type { components } from '../../api/schema';
 import { AdvancedSection } from '../../shared/AdvancedSection';
 import { useNotification } from '../../shared/notificationContext';
 import { useAuth } from '../auth/AuthContext';
-import { utcInstant } from '../properties/loanEventValidation';
 
 type EventType = components['schemas']['EventTypeRead'];
 type FinancialEvent = components['schemas']['FinancialEventRead'];
@@ -29,7 +28,7 @@ type Loan = components['schemas']['LoanRead'];
 interface Draft {
   amount: string;
   classification: Classification;
-  effectiveAt: string;
+  effectiveDate: string;
   eventTypeId: string;
   idempotencyKey: string;
   loanId: string;
@@ -43,7 +42,7 @@ interface Draft {
 const blank: Draft = {
   amount: '',
   classification: 'PLANNED',
-  effectiveAt: '',
+  effectiveDate: '',
   eventTypeId: '',
   idempotencyKey: '',
   loanId: '',
@@ -117,8 +116,8 @@ export function EventCreateDialog({
   });
   const submit = () => {
     setValidation('');
-    if (!draft.eventTypeId || !draft.effectiveAt)
-      return setValidation('Event type and effective time are required.');
+    if (!draft.eventTypeId || !draft.effectiveDate)
+      return setValidation('Event type and effective date are required.');
     if (draft.amount && !money.test(draft.amount.trim()))
       return setValidation(
         'Amount requires up to 16 whole digits and 2 decimal places.',
@@ -143,7 +142,7 @@ export function EventCreateDialog({
     save.mutate({
       amount: draft.amount || null,
       classification: draft.classification,
-      effective_at: utcInstant(draft.effectiveAt),
+      effective_at: `${draft.effectiveDate}T00:00:00Z`,
       event_type_id: draft.eventTypeId,
       idempotency_key: draft.idempotencyKey.trim() || null,
       is_enabled: true,
@@ -196,11 +195,11 @@ export function EventCreateDialog({
             <MenuItem value="PROJECTED">Projected — calculated</MenuItem>
           </TextField>
           <TextField
-            label="Effective time (UTC)"
-            onChange={field('effectiveAt')}
+            label="Effective date"
+            onChange={field('effectiveDate')}
             slotProps={{ inputLabel: { shrink: true } }}
-            type="datetime-local"
-            value={draft.effectiveAt}
+            type="date"
+            value={draft.effectiveDate}
           />
           <Stack direction={{ md: 'row', xs: 'column' }} spacing={2}>
             <TextField
