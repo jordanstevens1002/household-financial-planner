@@ -124,7 +124,9 @@ function fetcher(
       path.endsWith(selectedEvent.id) &&
       init?.method === 'PATCH'
     ) {
-      const body = JSON.parse(String(init.body)) as {
+      const body = JSON.parse(
+        typeof init.body === 'string' ? init.body : '',
+      ) as {
         effective_at: string;
         notes: string | null;
       };
@@ -390,8 +392,9 @@ describe('household timeline', () => {
           ([input, init]) =>
             pathOf(input).endsWith(`/events/${eventId}`) &&
             init?.method === 'PATCH' &&
-            String(init.body).includes('2026-12-20T00:00:00Z') &&
-            String(init.body).includes('Revised plan'),
+            typeof init.body === 'string' &&
+            init.body.includes('2026-12-20T00:00:00Z') &&
+            init.body.includes('Revised plan'),
         ),
       ).toBe(true),
     );
