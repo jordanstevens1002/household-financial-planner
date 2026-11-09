@@ -3,6 +3,7 @@
 import uuid
 from collections.abc import Sequence
 from dataclasses import asdict
+from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
@@ -14,6 +15,8 @@ from app.core.dependencies import ROLE_LEVEL, current_user, require_household_ro
 from app.core.logging import get_logger
 from app.models import (
     ApplicationUser,
+    EventClassification,
+    EventType,
     FinancialEvent,
     HouseholdMembership,
     HouseholdRole,
@@ -35,7 +38,11 @@ from app.scenarios.schemas import (
     TemplateRead,
     TemplateScenarioCreate,
 )
-from app.scenarios.templates import TEMPLATE_BY_CODE, TEMPLATES
+from app.scenarios.templates import (
+    TEMPLATE_BY_CODE,
+    TEMPLATES,
+    validate_template_value,
+)
 
 router = APIRouter(prefix="/api/v1", tags=["scenarios"])
 logger = get_logger(component="scenarios")
@@ -219,6 +226,29 @@ async def create_from_template(
     template = TEMPLATE_BY_CODE.get(payload.template_code)
     if template is None or template.code == "CUSTOM":
         raise HTTPException(422, "Template does not provide a default override")
+    value = payload.value if payload.value is not None else Decimal(template.default_value)
+    try:
+        validate_template_value(template.code, value)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from error
+    if template.target_entity_type == "FINANCIAL_EVENT":
+        event_row = await session.execute(
+            select(FinancialEvent, EventType)
+            .join(EventType, EventType.id == FinancialEvent.event_type_id)
+            .where(FinancialEvent.id == payload.target_entity_id)
+        )
+        event_with_type = event_row.one_or_none()
+        if (
+            event_with_type is None
+            or event_with_type[0].household_id != household_id
+            or event_with_type[0].classification != EventClassification.PLANNED
+            or not event_with_type[0].is_enabled
+            or event_with_type[1].code != "PROPERTY_PURCHASED"
+        ):
+            raise HTTPException(
+                422,
+                "Purchase-shift template requires an enabled planned property-purchase event",
+            )
     override_payload = OverrideCreate(
         target_entity_type=template.target_entity_type,
         target_entity_id=payload.target_entity_id,
@@ -226,9 +256,7 @@ async def create_from_template(
         effective_to=payload.effective_to,
         override_key=template.override_key,
         operation=template.operation,
-        value_json={
-            "value": str(payload.value if payload.value is not None else template.default_value)
-        },
+        value_json={"value": str(value)},
     )
     await _validate_override(household_id, override_payload, session)
     scenario = Scenario(

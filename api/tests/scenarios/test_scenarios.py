@@ -5,6 +5,7 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 from time import perf_counter
 
+import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,7 +22,7 @@ from app.models import (
     ScenarioOverride,
 )
 from app.scenarios.calculations import calculate_scenario
-from app.scenarios.templates import TEMPLATES
+from app.scenarios.templates import TEMPLATES, validate_template_value
 from tests.households.test_households import create_household
 
 
@@ -222,6 +223,114 @@ async def test_template_value_zero_is_respected(client: AsyncClient) -> None:
         json={"as_of": "2027-01-01", "baseline_metrics": {"annual_net_income": 100}},
     )
     assert calculation.json()["metrics"]["annual_net_income"] == "100"
+
+
+@pytest.mark.parametrize(
+    ("template_code", "value", "accepted"),
+    [
+        ("HIGHER_EXPENSES", "-1", False),
+        ("HIGHER_EXPENSES", "0", True),
+        ("HIGHER_EXPENSES", "1000", True),
+        ("HIGHER_EXPENSES", "1000.0001", False),
+        ("HIGHER_EXPENSES", "1e1000000", False),
+        ("DELAYED_PROPERTY_PURCHASE", "-1", False),
+        ("DELAYED_PROPERTY_PURCHASE", "0", True),
+        ("DELAYED_PROPERTY_PURCHASE", "1.5", False),
+        ("DELAYED_PROPERTY_PURCHASE", "3650", True),
+        ("DELAYED_PROPERTY_PURCHASE", "3651", False),
+        ("MAJOR_MAINTENANCE_COST", "9999999999999999.99", True),
+        ("MAJOR_MAINTENANCE_COST", "9999999999999999.999", False),
+    ],
+)
+def test_template_values_are_bounded_by_operation(
+    template_code: str,
+    value: str,
+    accepted: bool,
+) -> None:
+    if accepted:
+        validate_template_value(template_code, Decimal(value))
+    else:
+        with pytest.raises(ValueError):
+            validate_template_value(template_code, Decimal(value))
+
+
+async def test_template_api_rejects_malformed_and_extreme_values(
+    client: AsyncClient,
+) -> None:
+    household = await create_household(client)
+    for value in ("not-a-number", "1e1000000"):
+        response = await client.post(
+            f"/api/v1/households/{household['id']}/scenarios/from-template",
+            json={
+                "display_name": f"Invalid {value}",
+                "template_code": "HIGHER_EXPENSES",
+                "effective_from": "2027-01-01",
+                "value": value,
+            },
+        )
+        assert response.status_code == 422, response.text
+
+
+async def test_purchase_shift_template_requires_compatible_planned_event(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    household = await create_household(client)
+    household_id = uuid.UUID(household["id"])
+    user_id = uuid.UUID((await client.get("/api/v1/me")).json()["id"])
+    purchase_type = await session.scalar(
+        select(EventType).where(EventType.code == "PROPERTY_PURCHASED")
+    )
+    if purchase_type is None:
+        purchase_type = EventType(
+            code="PROPERTY_PURCHASED", display_name="Property purchased", priority=10
+        )
+        session.add(purchase_type)
+    unrelated_type = EventType(
+        code=f"UNRELATED_{uuid.uuid4().hex}", display_name="Unrelated", priority=100
+    )
+    session.add(unrelated_type)
+    await session.flush()
+
+    def event(
+        event_type: EventType,
+        classification: EventClassification,
+        *,
+        enabled: bool = True,
+    ) -> FinancialEvent:
+        return FinancialEvent(
+            household_id=household_id,
+            event_type_id=event_type.id,
+            effective_at=datetime(2027, 1, 1, tzinfo=UTC),
+            payload={},
+            classification=classification,
+            is_enabled=enabled,
+            data_quality_flags=[],
+            created_by_user_id=user_id,
+        )
+
+    valid = event(purchase_type, EventClassification.PLANNED)
+    unrelated = event(unrelated_type, EventClassification.PLANNED)
+    projected = event(purchase_type, EventClassification.PROJECTED)
+    disabled = event(purchase_type, EventClassification.PLANNED, enabled=False)
+    session.add_all([valid, unrelated, projected, disabled])
+    await session.commit()
+
+    async def create(target: FinancialEvent) -> int:
+        response = await client.post(
+            f"/api/v1/households/{household['id']}/scenarios/from-template",
+            json={
+                "display_name": f"Shift {target.id}",
+                "template_code": "DELAYED_PROPERTY_PURCHASE",
+                "effective_from": "2026-01-01",
+                "target_entity_id": str(target.id),
+            },
+        )
+        return response.status_code
+
+    assert await create(unrelated) == 422
+    assert await create(projected) == 422
+    assert await create(disabled) == 422
+    assert await create(valid) == 201
 
 
 async def test_event_override_is_non_mutating_and_household_scoped(
