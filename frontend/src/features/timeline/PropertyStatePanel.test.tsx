@@ -1,6 +1,6 @@
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -49,7 +49,7 @@ const status = {
   display_name: 'Owner occupied',
   generates_rental_income: false,
   id: statusId,
-  is_active: true,
+  is_active: false,
   is_active_asset: true,
   sort_order: 10,
 };
@@ -93,7 +93,7 @@ describe('dated property position', () => {
       const path = pathOf(input);
       if (path.endsWith('/property-summaries'))
         return Promise.resolve(response([property]));
-      if (path.endsWith('/lookups/property_status'))
+      if (path.includes('/lookups/property_status'))
         return Promise.resolve(response([status]));
       if (path.includes(`/properties/${propertyId}/state`))
         return Promise.resolve(response(resolved));
@@ -102,18 +102,41 @@ describe('dated property position', () => {
     vi.stubGlobal('fetch', mock);
     renderPanel();
 
+    await user.click(
+      await screen.findByRole('button', { name: 'Resolve position' }),
+    );
+    expect(
+      screen.getByText('Choose a property to resolve its position.'),
+    ).toBeVisible();
     await user.click(await screen.findByLabelText('Property'));
     await user.click(screen.getByRole('option', { name: 'Family home' }));
     const date = screen.getByLabelText('Position date');
     await user.clear(date);
+    await user.click(screen.getByRole('button', { name: 'Resolve position' }));
+    expect(screen.getByText('Choose a valid position date.')).toBeVisible();
     await user.type(date, '2026-11-01');
     await user.click(screen.getByRole('button', { name: 'Resolve position' }));
 
     expect(await screen.findByText(/820,000\.00/)).toBeVisible();
     expect(screen.getByText(/295,000\.00/)).toBeVisible();
     expect(screen.getByText(/Owner occupied/)).toBeVisible();
+    expect(screen.getByText(/User Estimate · Estimate/)).toBeVisible();
     expect(screen.getByText(/Applied timeline events: 1/)).toBeVisible();
     expect(screen.getByText('Estimated Historical Position')).toBeVisible();
+    expect(
+      mock.mock.calls.some(([input]) =>
+        pathOf(input).endsWith('/lookups/property_status?active_only=false'),
+      ),
+    ).toBe(true);
+
+    await user.click(screen.getByRole('button', { name: 'Resolve position' }));
+    await waitFor(() =>
+      expect(
+        mock.mock.calls.filter(([input]) =>
+          pathOf(input).includes(`/properties/${propertyId}/state`),
+        ),
+      ).toHaveLength(2),
+    );
 
     await user.clear(date);
     await user.type(date, '2026-12-01');
@@ -125,7 +148,7 @@ describe('dated property position', () => {
       mock.mock.calls.filter(([input]) =>
         pathOf(input).includes(`/properties/${propertyId}/state`),
       ),
-    ).toHaveLength(1);
+    ).toHaveLength(2);
   });
 
   it('distinguishes an empty household from a property request failure', async () => {
@@ -141,7 +164,7 @@ describe('dated property position', () => {
               ? response({ detail: 'Properties unavailable' }, 503)
               : response([]),
           );
-        if (path.endsWith('/lookups/property_status'))
+        if (path.includes('/lookups/property_status'))
           return Promise.resolve(response([]));
         throw new Error(`Unexpected request: ${path}`);
       }),
@@ -164,7 +187,7 @@ describe('dated property position', () => {
         const path = pathOf(input);
         if (path.endsWith('/property-summaries'))
           return Promise.resolve(response([property]));
-        if (path.endsWith('/lookups/property_status'))
+        if (path.includes('/lookups/property_status'))
           return Promise.resolve(response([status]));
         if (path.includes(`/properties/${propertyId}/state`))
           return Promise.resolve(

@@ -55,8 +55,9 @@ export function PropertyStatePanel({ householdId }: { householdId: string }) {
     retry: false,
   });
   const statuses = useQuery({
-    queryFn: () => apiRequest<Lookup[]>('/api/v1/lookups/property_status'),
-    queryKey: ['lookups', 'property_status'],
+    queryFn: () =>
+      apiRequest<Lookup[]>('/api/v1/lookups/property_status?active_only=false'),
+    queryKey: ['lookups', 'property_status', 'all'],
     retry: false,
   });
   const state = useQuery({
@@ -243,7 +244,10 @@ export function PropertyStatePanel({ householdId }: { householdId: string }) {
             · Valuation:{' '}
             {state.data.valuation_date
               ? formatDate(state.data.valuation_date)
-              : 'None'}{' '}
+              : 'None'}
+            {state.data.valuation_date
+              ? ` · ${state.data.valuation_type ? displayCode(state.data.valuation_type) : 'Type unavailable'} · ${state.data.valuation_is_estimate === null ? 'Estimate status unavailable' : state.data.valuation_is_estimate ? 'Estimate' : 'Not an estimate'}`
+              : ''}{' '}
             · Applied timeline events: {state.data.applied_event_ids.length}
           </Typography>
           {state.data.data_quality_flags.length ? (
