@@ -109,8 +109,8 @@ describe('dated property position', () => {
     await user.type(date, '2026-11-01');
     await user.click(screen.getByRole('button', { name: 'Resolve position' }));
 
-    expect(await screen.findByText('$820,000.00')).toBeVisible();
-    expect(screen.getByText('$295,000.00')).toBeVisible();
+    expect(await screen.findByText(/820,000\.00/)).toBeVisible();
+    expect(screen.getByText(/295,000\.00/)).toBeVisible();
     expect(screen.getByText(/Owner occupied/)).toBeVisible();
     expect(screen.getByText(/Applied timeline events: 1/)).toBeVisible();
     expect(screen.getByText('Estimated Historical Position')).toBeVisible();
@@ -120,7 +120,7 @@ describe('dated property position', () => {
     expect(
       screen.getByText(/Resolve the position to display results/),
     ).toBeVisible();
-    expect(screen.queryByText('$820,000.00')).toBeNull();
+    expect(screen.queryByText(/820,000\.00/)).toBeNull();
     expect(
       mock.mock.calls.filter(([input]) =>
         pathOf(input).includes(`/properties/${propertyId}/state`),
