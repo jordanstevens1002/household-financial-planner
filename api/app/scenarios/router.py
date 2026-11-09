@@ -331,6 +331,11 @@ async def delete_scenario(
 ) -> Response:
     scenario = await _scenario_with_access(scenario_id, HouseholdRole.EDITOR, user, session)
     household_id = scenario.household_id
+    dependent_scenarios = list(
+        await session.scalars(select(Scenario).where(Scenario.base_scenario_id == scenario_id))
+    )
+    for dependent in dependent_scenarios:
+        dependent.base_scenario_id = None
     await session.delete(scenario)
     await session.commit()
     logger.info(
@@ -338,6 +343,7 @@ async def delete_scenario(
         actor_user_id=str(user.id),
         household_id=str(household_id),
         scenario_id=str(scenario_id),
+        detached_scenario_count=len(dependent_scenarios),
     )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

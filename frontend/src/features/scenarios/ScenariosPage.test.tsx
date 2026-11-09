@@ -357,7 +357,7 @@ describe('saved scenario catalogue', () => {
     );
     expect(within(correction).getByText('Name is required.')).toBeVisible();
     await user.type(name, 'Higher living costs');
-    await user.click(within(correction).getByLabelText('Inherits from'));
+    await user.click(within(correction).getByLabelText(/Inherits from/));
     await user.click(screen.getByRole('option', { name: 'None' }));
     await user.click(
       within(correction).getByRole('button', { name: 'Save correction' }),
@@ -416,7 +416,7 @@ describe('saved scenario catalogue', () => {
       const path = pathOf(input);
       if (path.endsWith(`/scenarios/${childId}`) && init?.method === 'PUT')
         return Promise.resolve(response({ detail: 'Scenario not found' }, 404));
-      if (path.endsWith('/scenarios') && !init?.method) {
+      if (path.endsWith('/scenarios') && (init?.method ?? 'GET') === 'GET') {
         catalogueRequests += 1;
         return Promise.resolve(
           response(catalogueRequests === 1 ? scenarios : [scenarios[0]]),
