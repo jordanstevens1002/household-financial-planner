@@ -108,6 +108,10 @@ function fetcher(
           },
         ]),
       );
+    if (path.endsWith('/property-summaries'))
+      return Promise.resolve(response([]));
+    if (path.includes('/lookups/property_status'))
+      return Promise.resolve(response([]));
     if (
       path.endsWith('/people') ||
       path.endsWith('/properties') ||

@@ -26,6 +26,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useHousehold } from '../households/HouseholdContext';
 import { EventCreateDialog } from './EventCreateDialog';
 import { EventCorrectionDialog } from './EventCorrectionDialog';
+import { PropertyStatePanel } from './PropertyStatePanel';
 
 type Event = components['schemas']['FinancialEventRead'];
 type Timeline = components['schemas']['TimelineRead'];
@@ -337,6 +338,8 @@ export function TimelinePage() {
           </Button>
         </Stack>
       </Box>
+
+      <PropertyStatePanel householdId={householdId} />
 
       {timeline.isPending ? (
         <CircularProgress aria-label="Loading timeline" />

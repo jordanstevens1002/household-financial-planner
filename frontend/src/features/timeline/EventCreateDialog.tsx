@@ -102,9 +102,14 @@ export function EventCreateDialog({
       }),
     onError: (error) => notification.notify(message(error), 'error'),
     onSuccess: async (created) => {
-      await queryClient.invalidateQueries({
-        queryKey: ['household-timeline', householdId],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['household-timeline', householdId],
+        }),
+        queryClient.invalidateQueries({ queryKey: ['property-state'] }),
+        queryClient.invalidateQueries({ queryKey: ['loan-schedule'] }),
+        queryClient.invalidateQueries({ queryKey: ['household-cashflow'] }),
+      ]);
       notification.notify(
         created.data_quality_flags.length
           ? 'Event added with data-quality notes.'
