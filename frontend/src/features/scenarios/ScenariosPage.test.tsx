@@ -374,8 +374,18 @@ describe('saved scenario catalogue', () => {
         ),
       ).toBe(true),
     );
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Correct scenario' }),
+      ).toBeNull(),
+    );
 
-    await user.click(within(row).getByRole('button', { name: 'Activate' }));
+    const refreshedRow = screen.getByText('Higher costs').closest('tr');
+    expect(refreshedRow).not.toBeNull();
+    if (!refreshedRow) throw new Error('Refreshed scenario row missing');
+    await user.click(
+      within(refreshedRow).getByRole('button', { name: 'Activate' }),
+    );
     await waitFor(() =>
       expect(
         mock.mock.calls.some(
@@ -386,8 +396,14 @@ describe('saved scenario catalogue', () => {
         ),
       ).toBe(true),
     );
+    expect(await screen.findByText('Scenario activated.')).toBeVisible();
 
-    await user.click(within(row).getByRole('button', { name: 'Delete' }));
+    const activatedRow = screen.getByText('Higher costs').closest('tr');
+    expect(activatedRow).not.toBeNull();
+    if (!activatedRow) throw new Error('Activated scenario row missing');
+    await user.click(
+      within(activatedRow).getByRole('button', { name: 'Delete' }),
+    );
     const confirmation = screen.getByRole('dialog', {
       name: 'Delete Higher costs?',
     });
