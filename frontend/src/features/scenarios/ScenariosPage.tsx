@@ -24,6 +24,7 @@ import { useNotification } from '../../shared/notificationContext';
 import { useAuth } from '../auth/AuthContext';
 import { useHousehold } from '../households/HouseholdContext';
 import { localCalendarDate } from '../people/localDate';
+import { validateTemplateValue } from './templateValueValidation';
 
 type Access = components['schemas']['HouseholdAccessRead'];
 type Scenario = components['schemas']['ScenarioRead'];
@@ -168,6 +169,11 @@ export function ScenariosPage() {
         return setValidation(
           'Choose the planned event affected by this template.',
         );
+      const valueError = validateTemplateValue(
+        draft.templateCode,
+        draft.value.trim() || selectedTemplate?.default_value || '',
+      );
+      if (valueError) return setValidation(valueError);
     }
     save.mutate();
   };
@@ -230,6 +236,11 @@ export function ScenariosPage() {
           </Button>
         ) : null}
       </Box>
+      <Alert severity="info">
+        Saving a scenario records reusable assumptions only. It does not change
+        household records or calculate a result; calculations run separately
+        against explicit baseline metrics.
+      </Alert>
       {templates.error ? (
         <Alert
           action={
@@ -390,7 +401,12 @@ export function ScenariosPage() {
                       value={draft.targetEntityId}
                     >
                       {(timeline.data?.events ?? [])
-                        .filter((item) => item.classification !== 'OBSERVED')
+                        .filter(
+                          (item) =>
+                            item.classification === 'PLANNED' &&
+                            item.is_enabled &&
+                            item.event_type_code === 'PROPERTY_PURCHASED',
+                        )
                         .map((item) => (
                           <MenuItem key={item.id} value={item.id}>
                             {displayCode(item.event_type_code)} ·{' '}

@@ -136,6 +136,30 @@ function fetcher(canEdit = true, saved = scenarios, scenarioStatus = 200) {
               id: eventId,
               is_enabled: true,
             },
+            {
+              classification: 'PLANNED',
+              data_quality_flags: [],
+              effective_at: '2027-01-16T00:00:00Z',
+              event_type_code: 'INCOME_CHANGED',
+              id: '10000000-0000-4000-8000-000000000006',
+              is_enabled: true,
+            },
+            {
+              classification: 'PROJECTED',
+              data_quality_flags: [],
+              effective_at: '2027-01-17T00:00:00Z',
+              event_type_code: 'PROPERTY_PURCHASED',
+              id: '10000000-0000-4000-8000-000000000007',
+              is_enabled: true,
+            },
+            {
+              classification: 'PLANNED',
+              data_quality_flags: [],
+              effective_at: '2027-01-18T00:00:00Z',
+              event_type_code: 'PROPERTY_PURCHASED',
+              id: '10000000-0000-4000-8000-000000000008',
+              is_enabled: false,
+            },
           ],
           household_id: householdId,
         }),
@@ -250,8 +274,25 @@ describe('saved scenario catalogue', () => {
       'Buy later',
     );
     await user.click(within(dialog).getByLabelText('Planned event'));
+    const eventOptions = screen.getAllByRole('option');
+    expect(eventOptions).toHaveLength(1);
+    const eventOption = eventOptions[0];
+    expect(eventOption).toBeDefined();
+    if (!eventOption) throw new Error('Compatible planned event missing');
+    expect(eventOption).toHaveTextContent('Property Purchased');
+    await user.click(eventOption);
+    await user.type(
+      within(dialog).getByLabelText('Template value (optional)'),
+      '1.5',
+    );
     await user.click(
-      screen.getByRole('option', { name: /Property Purchased/ }),
+      within(dialog).getByRole('button', { name: 'Create scenario' }),
+    );
+    expect(
+      within(dialog).getByText('Template value must be a whole number.'),
+    ).toBeVisible();
+    await user.clear(
+      within(dialog).getByLabelText('Template value (optional)'),
     );
     await user.type(
       within(dialog).getByLabelText('Template value (optional)'),
