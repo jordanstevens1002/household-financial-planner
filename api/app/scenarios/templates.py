@@ -153,5 +153,7 @@ def validate_template_value(template_code: str, value: Decimal) -> None:
         raise ValueError("Template value must be finite")
     actual_places = max(0, -exponent)
     if actual_places > decimal_places:
-        precision = "a whole number" if decimal_places == 0 else f"at most {decimal_places} decimals"
+        precision = "a whole number"
+        if decimal_places:
+            precision = f"at most {decimal_places} decimals"
         raise ValueError(f"Template value requires {precision}")
