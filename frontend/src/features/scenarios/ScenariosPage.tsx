@@ -17,6 +17,7 @@ import { useState } from 'react';
 
 import { apiRequest } from '../../api/client';
 import type { components } from '../../api/schema';
+import { ConfirmDialog } from '../../shared/ConfirmDialog';
 import { DataTable, type DataColumn } from '../../shared/DataTable';
 import { EmptyState } from '../../shared/EmptyState';
 import { formatDate } from '../../shared/format';
@@ -38,6 +39,12 @@ interface Draft {
   targetEntityId: string;
   templateCode: string;
   value: string;
+}
+
+interface LifecycleDraft {
+  baseScenarioId: string;
+  description: string;
+  displayName: string;
 }
 
 const blankDraft = (): Draft => ({
@@ -66,8 +73,16 @@ export function ScenariosPage() {
   const notification = useNotification();
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Scenario | null>(null);
+  const [deleting, setDeleting] = useState<Scenario | null>(null);
   const [draft, setDraft] = useState<Draft>(blankDraft);
+  const [lifecycleDraft, setLifecycleDraft] = useState<LifecycleDraft>({
+    baseScenarioId: '',
+    description: '',
+    displayName: '',
+  });
   const [validation, setValidation] = useState('');
+  const [lifecycleError, setLifecycleError] = useState('');
   const householdId = household.selected?.id ?? '';
   const scenarios = useQuery({
     enabled: Boolean(householdId),
@@ -113,6 +128,19 @@ export function ScenariosPage() {
     setValidation('');
     setDraft(blankDraft());
   };
+  const beginEditing = (scenario: Scenario) => {
+    setLifecycleError('');
+    setLifecycleDraft({
+      baseScenarioId: scenario.base_scenario_id ?? '',
+      description: scenario.description ?? '',
+      displayName: scenario.display_name,
+    });
+    setEditing(scenario);
+  };
+  const closeEditing = () => {
+    setEditing(null);
+    setLifecycleError('');
+  };
   const save = useMutation({
     mutationFn: () => {
       if (draft.templateCode !== 'CUSTOM') {
@@ -154,6 +182,68 @@ export function ScenariosPage() {
       closeForm();
     },
   });
+  const recoverLifecycleFailure = async (
+    error: unknown,
+    selected = editing ?? deleting,
+  ) => {
+    const refreshed = await scenarios.refetch();
+    if (
+      selected &&
+      refreshed.data &&
+      !refreshed.data.some((item) => item.id === selected.id)
+    ) {
+      setEditing(null);
+      setDeleting(null);
+      setLifecycleError(
+        'This scenario is no longer available. The catalogue has been refreshed.',
+      );
+      return;
+    }
+    setLifecycleError(message(error));
+  };
+  const updateScenario = useMutation({
+    mutationFn: ({
+      id,
+      values,
+    }: {
+      id: string;
+      values: components['schemas']['ScenarioUpdate'];
+    }) =>
+      apiRequest<Scenario>(`/api/v1/scenarios/${id}`, {
+        body: JSON.stringify(values),
+        csrfToken: auth.csrfToken(),
+        method: 'PUT',
+      }),
+    onError: (error) => recoverLifecycleFailure(error, editing),
+    onSuccess: async (_, variables) => {
+      await refresh();
+      notification.notify(
+        'is_active' in variables.values
+          ? `Scenario ${variables.values.is_active ? 'activated' : 'deactivated'}.`
+          : 'Scenario updated.',
+        'success',
+      );
+      closeEditing();
+    },
+  });
+  const deleteScenario = useMutation({
+    mutationFn: (id: string) =>
+      apiRequest<void>(`/api/v1/scenarios/${id}`, {
+        csrfToken: auth.csrfToken(),
+        method: 'DELETE',
+      }),
+    onError: async (error) => {
+      const selected = deleting;
+      setDeleting(null);
+      await recoverLifecycleFailure(error, selected);
+    },
+    onSuccess: async () => {
+      setDeleting(null);
+      setLifecycleError('');
+      await refresh();
+      notification.notify('Scenario deleted.', 'success');
+    },
+  });
   const submit = () => {
     setValidation('');
     if (!draft.displayName.trim()) return setValidation('Name is required.');
@@ -176,6 +266,22 @@ export function ScenariosPage() {
       if (valueError) return setValidation(valueError);
     }
     save.mutate();
+  };
+  const submitCorrection = () => {
+    setLifecycleError('');
+    if (!editing) return;
+    if (!lifecycleDraft.displayName.trim())
+      return setLifecycleError('Name is required.');
+    if (lifecycleDraft.description.length > 2_000)
+      return setLifecycleError('Description cannot exceed 2,000 characters.');
+    updateScenario.mutate({
+      id: editing.id,
+      values: {
+        base_scenario_id: lifecycleDraft.baseScenarioId || null,
+        description: lifecycleDraft.description.trim() || null,
+        display_name: lifecycleDraft.displayName.trim(),
+      },
+    });
   };
   const templateName = (scenario: Scenario) =>
     templates.data?.find((item) => item.code === scenario.template_code)
@@ -201,6 +307,43 @@ export function ScenariosPage() {
       label: 'Description',
       render: (item) => item.description ?? '—',
     },
+    ...(access.data?.can_edit
+      ? [
+          {
+            key: 'actions',
+            label: 'Actions',
+            render: (item: Scenario) => (
+              <Stack direction="row" spacing={1}>
+                <Button onClick={() => beginEditing(item)} size="small">
+                  Correct
+                </Button>
+                <Button
+                  disabled={updateScenario.isPending}
+                  onClick={() =>
+                    updateScenario.mutate({
+                      id: item.id,
+                      values: { is_active: !item.is_active },
+                    })
+                  }
+                  size="small"
+                >
+                  {item.is_active ? 'Deactivate' : 'Activate'}
+                </Button>
+                <Button
+                  color="error"
+                  onClick={() => {
+                    setLifecycleError('');
+                    setDeleting(item);
+                  }}
+                  size="small"
+                >
+                  Delete
+                </Button>
+              </Stack>
+            ),
+          },
+        ]
+      : []),
   ];
 
   if (household.loading)
@@ -252,6 +395,9 @@ export function ScenariosPage() {
         >
           Scenario templates could not be loaded. {message(templates.error)}
         </Alert>
+      ) : null}
+      {lifecycleError && !editing ? (
+        <Alert severity="error">{lifecycleError}</Alert>
       ) : null}
       {scenarios.isPending ? (
         <CircularProgress aria-label="Loading scenarios" />
@@ -433,6 +579,92 @@ export function ScenariosPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Dialog
+        fullWidth
+        maxWidth="sm"
+        onClose={updateScenario.isPending ? undefined : closeEditing}
+        open={Boolean(editing)}
+      >
+        <DialogTitle>Correct scenario</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            {lifecycleError ? (
+              <Alert severity="error">{lifecycleError}</Alert>
+            ) : null}
+            <Alert severity="info">
+              Corrections change this saved scenario only. Household records are
+              not modified.
+            </Alert>
+            <TextField
+              label="Scenario name"
+              onChange={(input) =>
+                setLifecycleDraft((current) => ({
+                  ...current,
+                  displayName: input.target.value,
+                }))
+              }
+              value={lifecycleDraft.displayName}
+            />
+            <TextField
+              label="Description (optional)"
+              minRows={2}
+              multiline
+              onChange={(input) =>
+                setLifecycleDraft((current) => ({
+                  ...current,
+                  description: input.target.value,
+                }))
+              }
+              value={lifecycleDraft.description}
+            />
+            <TextField
+              label="Inherits from (optional)"
+              onChange={(input) =>
+                setLifecycleDraft((current) => ({
+                  ...current,
+                  baseScenarioId: input.target.value,
+                }))
+              }
+              select
+              value={lifecycleDraft.baseScenarioId}
+            >
+              <MenuItem value="">None</MenuItem>
+              {(scenarios.data ?? [])
+                .filter((item) => item.id !== editing?.id)
+                .map((item) => (
+                  <MenuItem key={item.id} value={item.id}>
+                    {item.display_name}
+                  </MenuItem>
+                ))}
+            </TextField>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button disabled={updateScenario.isPending} onClick={closeEditing}>
+            Cancel
+          </Button>
+          <Button
+            disabled={updateScenario.isPending}
+            onClick={submitCorrection}
+            variant="contained"
+          >
+            Save correction
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <ConfirmDialog
+        confirmLabel="Delete scenario"
+        description={`Delete “${deleting?.display_name ?? ''}”? Its assumptions will be removed. Scenarios that inherit from it will no longer have this starting point. Household records are not changed.`}
+        onCancel={() => setDeleting(null)}
+        onConfirm={() => {
+          if (deleting) deleteScenario.mutate(deleting.id);
+        }}
+        open={Boolean(deleting)}
+        pending={deleteScenario.isPending}
+        title={`Delete ${deleting?.display_name ?? 'scenario'}?`}
+      />
     </Stack>
   );
 }

@@ -313,6 +313,13 @@ async def update_scenario(
         setattr(scenario, key, value)
     await session.commit()
     await session.refresh(scenario)
+    logger.info(
+        "scenario_updated",
+        actor_user_id=str(user.id),
+        household_id=str(scenario.household_id),
+        scenario_id=str(scenario.id),
+        updated_fields=sorted(payload.model_fields_set),
+    )
     return scenario
 
 
@@ -323,8 +330,15 @@ async def delete_scenario(
     session: AsyncSession = Depends(get_session),
 ) -> Response:
     scenario = await _scenario_with_access(scenario_id, HouseholdRole.EDITOR, user, session)
+    household_id = scenario.household_id
     await session.delete(scenario)
     await session.commit()
+    logger.info(
+        "scenario_deleted",
+        actor_user_id=str(user.id),
+        household_id=str(household_id),
+        scenario_id=str(scenario_id),
+    )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
