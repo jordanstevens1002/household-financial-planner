@@ -43,6 +43,16 @@ class ScenarioUpdate(BaseModel):
     base_scenario_id: uuid.UUID | None = None
     is_active: bool | None = None
 
+    @model_validator(mode="after")
+    def validate_update(self) -> ScenarioUpdate:
+        if not self.model_fields_set:
+            raise ValueError("At least one scenario field must be provided")
+        if "display_name" in self.model_fields_set and self.display_name is None:
+            raise ValueError("display_name cannot be null")
+        if "is_active" in self.model_fields_set and self.is_active is None:
+            raise ValueError("is_active cannot be null")
+        return self
+
 
 class TemplateScenarioCreate(BaseModel):
     display_name: str = Field(min_length=1, max_length=200)

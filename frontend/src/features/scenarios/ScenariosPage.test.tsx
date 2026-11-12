@@ -168,6 +168,10 @@ function fetcher(canEdit = true, saved = scenarios, scenarioStatus = 200) {
       return Promise.resolve(response(scenarios[0], 201));
     if (path.endsWith('/scenarios/from-template') && init?.method === 'POST')
       return Promise.resolve(response(scenarios[1], 201));
+    if (path.includes('/scenarios/') && init?.method === 'PUT')
+      return Promise.resolve(response(scenarios[1]));
+    if (path.includes('/scenarios/') && init?.method === 'DELETE')
+      return Promise.resolve(new Response(null, { status: 204 }));
     if (path.endsWith('/scenarios'))
       return Promise.resolve(
         scenarioStatus === 200
@@ -218,6 +222,7 @@ describe('saved scenario catalogue', () => {
     expect(screen.getByText('Higher household expenses')).toBeVisible();
     expect(screen.getByText('Inactive')).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Add scenario' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Correct' })).toBeNull();
   });
 
   it('validates and creates a custom scenario with inheritance', async () => {
@@ -330,5 +335,130 @@ describe('saved scenario catalogue', () => {
     expect(await screen.findByText(/Scenarios unavailable/)).toBeVisible();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeVisible();
     expect(screen.queryByText('No saved scenarios')).toBeNull();
+  });
+
+  it('corrects, activates and explicitly confirms scenario deletion', async () => {
+    const user = userEvent.setup();
+    const mock = fetcher();
+    vi.stubGlobal('fetch', mock);
+    await renderPage();
+
+    const row = (await screen.findByText('Higher costs')).closest('tr');
+    expect(row).not.toBeNull();
+    if (!row) throw new Error('Scenario row missing');
+    await user.click(within(row).getByRole('button', { name: 'Correct' }));
+    const correction = screen.getByRole('dialog', {
+      name: 'Correct scenario',
+    });
+    const name = within(correction).getByLabelText('Scenario name');
+    await user.clear(name);
+    await user.click(
+      within(correction).getByRole('button', { name: 'Save correction' }),
+    );
+    expect(within(correction).getByText('Name is required.')).toBeVisible();
+    await user.type(name, 'Higher living costs');
+    await user.click(within(correction).getByLabelText(/Inherits from/));
+    await user.click(screen.getByRole('option', { name: 'None' }));
+    await user.click(
+      within(correction).getByRole('button', { name: 'Save correction' }),
+    );
+    await waitFor(() =>
+      expect(
+        mock.mock.calls.some(
+          ([input, init]) =>
+            pathOf(input).endsWith(`/scenarios/${childId}`) &&
+            init?.method === 'PUT' &&
+            typeof init.body === 'string' &&
+            init.body.includes('Higher living costs') &&
+            init.body.includes('"base_scenario_id":null'),
+        ),
+      ).toBe(true),
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Correct scenario' }),
+      ).toBeNull(),
+    );
+
+    const refreshedRow = screen.getByText('Higher costs').closest('tr');
+    expect(refreshedRow).not.toBeNull();
+    if (!refreshedRow) throw new Error('Refreshed scenario row missing');
+    await user.click(
+      within(refreshedRow).getByRole('button', { name: 'Activate' }),
+    );
+    await waitFor(() =>
+      expect(
+        mock.mock.calls.some(
+          ([input, init]) =>
+            pathOf(input).endsWith(`/scenarios/${childId}`) &&
+            init?.method === 'PUT' &&
+            init.body === JSON.stringify({ is_active: true }),
+        ),
+      ).toBe(true),
+    );
+    expect(await screen.findByText('Scenario activated.')).toBeVisible();
+
+    const activatedRow = screen.getByText('Higher costs').closest('tr');
+    expect(activatedRow).not.toBeNull();
+    if (!activatedRow) throw new Error('Activated scenario row missing');
+    await user.click(
+      within(activatedRow).getByRole('button', { name: 'Delete' }),
+    );
+    const confirmation = screen.getByRole('dialog', {
+      name: 'Delete Higher costs?',
+    });
+    expect(
+      within(confirmation).getByText(/Scenarios that inherit from it/),
+    ).toBeVisible();
+    await user.click(
+      within(confirmation).getByRole('button', { name: 'Delete scenario' }),
+    );
+    await waitFor(() =>
+      expect(
+        mock.mock.calls.some(
+          ([input, init]) =>
+            pathOf(input).endsWith(`/scenarios/${childId}`) &&
+            init?.method === 'DELETE',
+        ),
+      ).toBe(true),
+    );
+  });
+
+  it('closes a stale correction after refreshing the catalogue', async () => {
+    const user = userEvent.setup();
+    let catalogueRequests = 0;
+    const baseFetcher = fetcher();
+    const mock = vi.fn<typeof fetch>((input, init) => {
+      const path = pathOf(input);
+      if (path.endsWith(`/scenarios/${childId}`) && init?.method === 'PUT')
+        return Promise.resolve(response({ detail: 'Scenario not found' }, 404));
+      if (path.endsWith('/scenarios') && (init?.method ?? 'GET') === 'GET') {
+        catalogueRequests += 1;
+        return Promise.resolve(
+          response(catalogueRequests === 1 ? scenarios : [scenarios[0]]),
+        );
+      }
+      return baseFetcher(input, init);
+    });
+    vi.stubGlobal('fetch', mock);
+    await renderPage();
+
+    const row = (await screen.findByText('Higher costs')).closest('tr');
+    expect(row).not.toBeNull();
+    if (!row) throw new Error('Scenario row missing');
+    await user.click(within(row).getByRole('button', { name: 'Correct' }));
+    await user.click(
+      within(
+        screen.getByRole('dialog', { name: 'Correct scenario' }),
+      ).getByRole('button', { name: 'Save correction' }),
+    );
+
+    expect(
+      await screen.findByText(/This scenario is no longer available/),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole('dialog', { name: 'Correct scenario' }),
+    ).toBeNull();
+    expect(screen.queryByText('Higher costs')).toBeNull();
   });
 });

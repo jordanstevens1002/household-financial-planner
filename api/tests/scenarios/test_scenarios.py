@@ -447,6 +447,72 @@ async def test_scenario_access_roles_and_cross_household_bases(
     assert forbidden.status_code == 403
 
 
+async def test_scenario_lifecycle_preserves_inheritance_and_editor_boundary(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    household = await create_household(client)
+    base = await client.post(
+        f"/api/v1/households/{household['id']}/scenarios",
+        json={"display_name": "Original base"},
+    )
+    child = await client.post(
+        f"/api/v1/households/{household['id']}/scenarios",
+        json={
+            "display_name": "Child",
+            "base_scenario_id": base.json()["id"],
+        },
+    )
+    assert base.status_code == child.status_code == 201
+
+    corrected = await client.put(
+        f"/api/v1/scenarios/{child.json()['id']}",
+        json={
+            "display_name": "Corrected child",
+            "description": "Updated description",
+            "base_scenario_id": None,
+            "is_active": False,
+        },
+    )
+    assert corrected.status_code == 200, corrected.text
+    assert corrected.json()["display_name"] == "Corrected child"
+    assert corrected.json()["description"] == "Updated description"
+    assert corrected.json()["base_scenario_id"] is None
+    assert corrected.json()["is_active"] is False
+
+    restored_base = await client.put(
+        f"/api/v1/scenarios/{child.json()['id']}",
+        json={"base_scenario_id": base.json()["id"]},
+    )
+    assert restored_base.status_code == 200, restored_base.text
+    deleted = await client.delete(f"/api/v1/scenarios/{base.json()['id']}")
+    assert deleted.status_code == 204, deleted.text
+    session.expire_all()
+    saved_child = await client.get(f"/api/v1/scenarios/{child.json()['id']}")
+    assert saved_child.status_code == 200, saved_child.text
+    assert saved_child.json()["base_scenario_id"] is None
+
+    user = await session.scalar(
+        select(ApplicationUser).where(ApplicationUser.oidc_subject == "test-user")
+    )
+    assert user is not None
+    membership = await session.scalar(
+        select(HouseholdMembership).where(
+            HouseholdMembership.household_id == uuid.UUID(household["id"]),
+            HouseholdMembership.application_user_id == user.id,
+        )
+    )
+    assert membership is not None
+    membership.role = HouseholdRole.VIEWER
+    await session.commit()
+    forbidden_update = await client.put(
+        f"/api/v1/scenarios/{child.json()['id']}",
+        json={"display_name": "Forbidden"},
+    )
+    forbidden_delete = await client.delete(f"/api/v1/scenarios/{child.json()['id']}")
+    assert forbidden_update.status_code == 403
+    assert forbidden_delete.status_code == 403
+
+
 def test_scenario_calculation_performance() -> None:
     overrides = [override("income", "ADD", "1") for _ in range(1000)]
     samples: list[float] = []
